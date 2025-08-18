@@ -20,7 +20,7 @@ COPY periodic-docker-input /etc/cron.d/periodic-docker-input
 RUN chmod 0644 /etc/cron.d/periodic-docker-input
 
 # Apply the cron job
-RUN crontab /etc/cron.d/periodic-docker-input
+# RUN crontab /etc/cron.d/periodic-docker-input
 
 # Create the log file to be able to run tail
 RUN touch /var/log/cron.log
