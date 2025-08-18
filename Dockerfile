@@ -11,16 +11,16 @@ WORKDIR /usr/src/app
 COPY . .
 
 # Install any needed packages (none needed in this case)
-# RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the cron job file into the cron.d directory
-COPY cronjob /etc/cron.d/cronjob
+# COPY cronjob /etc/cron.d/cronjob
 
 # Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/cronjob
+# RUN chmod 0644 /etc/cron.d/cronjob
 
 # Apply the cron job
-RUN crontab /etc/cron.d/cronjob
+# RUN crontab /etc/cron.d/cronjob
 
 # Create the log file to be able to run tail
 RUN touch /var/log/cron.log
