@@ -29,7 +29,7 @@ def update_miniflux_feed(config, cookies):
     data = {'cookie': cookies_str}
     
     response = requests.put(api_url, json=data, headers=headers)
-    if response.status_code == 200:
+    if response.status_code == 201:
         print("Feed updated successfully.")
     else:
         print("Failed to update feed:", response.text)
