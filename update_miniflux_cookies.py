@@ -26,7 +26,7 @@ def update_miniflux_feed(config, cookies):
         'Content-Type': 'application/json'
     }
     
-    data = {'scraper_rules': cookies_str}
+    data = {'cookie': cookies_str}
     
     response = requests.put(api_url, json=data, headers=headers)
     if response.status_code == 200:
