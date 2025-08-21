@@ -7,36 +7,38 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update the package list and install necessary packages
 RUN apt-get update && apt-get install -y \
     wget \
-    gnupg \
+    ca-certificates \
+    gnupg2 \
+    software-properties-common \
     unzip \
+    xvfb \
     cron
 
 # Add Google Chrome to the repositories
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main' >> /etc/apt/sources.list.d/google-chrome.list \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --yes --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg
 
 # Install Google Chrome
-RUN apt-get update && apt-get install -y google-chrome-stable
+RUN apt-get update && apt-get install -y google-chrome-stable --no-install-recommends
 
 # Install ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | cut -d ' ' -f 3 | cut -d '.' -f 1) \
-    && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION") \
-    && wget --no-verbose -O chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip \
-    && rm chromedriver_linux64.zip \
-    && mv chromedriver /usr/bin/chromedriver \
-    && chmod +x /usr/bin/chromedriver
+RUN get -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
+    && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip 
+
+# Clean up to reduce image size
+RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certficates software-properties-common \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install any needed packages (none needed in this case)
 RUN pip install --no-cache-dir -r selenium requests argparse configparser webdriver-manager
 
-# Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget gnupg unzip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Reset the frontend variable (safety)
 ENV DEBIAN_FRONTEND=dialog
+
+# Set display port to avoid crash
+ENV DISPLAY=:99
 
 # Set the working directory
 WORKDIR /app
