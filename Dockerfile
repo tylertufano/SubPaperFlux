@@ -9,25 +9,24 @@ RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
     gnupg2 \
-    software-properties-common \
     unzip \
     xvfb \
     cron
 
 # Add Google Chrome to the repositories
-RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main' >> /etc/apt/sources.list.d/google-chrome.list \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --yes --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg
+RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --yes --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg \
 
 # Install Google Chrome
 RUN apt-get update && apt-get install -y google-chrome-stable --no-install-recommends
 
 # Install ChromeDriver
-RUN get -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
+RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
     && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip 
+    && rm /tmp/chromedriver.zip \
 
 # Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certficates software-properties-common \
+RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certficates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
