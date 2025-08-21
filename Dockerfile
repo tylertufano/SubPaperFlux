@@ -31,7 +31,7 @@ RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install any needed packages (none needed in this case)
-RUN pip install --no-cache-dir -r selenium requests argparse configparser webdriver-manager
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Reset the frontend variable (safety)
 ENV DEBIAN_FRONTEND=dialog
