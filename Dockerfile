@@ -26,7 +26,7 @@ RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(
     && rm /tmp/chromedriver.zip
 
 # Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certficates \
+RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
