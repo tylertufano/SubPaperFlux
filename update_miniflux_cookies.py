@@ -47,32 +47,42 @@ DD_LOGIN_URL = "https://member.democracydocket.com/_hcms/mem/login"
 DD_EXPECTED_WELCOME_TEXT = "Welcome to the members-only section of our website, a home for pro-democracy readers to find the news, ideas and resources needed to fight back."
 SUBSTACK_LOGIN_API = "https://substack.com/api/v1/login"
 
-def update_miniflux_feed(miniflux_url, api_key, feed_id, cookies):
-    """Updates a Miniflux feed with captured cookies only."""
-    print(f"\n--- Updating Miniflux Feed {feed_id} ---")
-    
-    api_endpoint = f"{miniflux_url}/v1/feeds/{feed_id}"
-    headers = {
-        "X-Auth-Token": api_key,
-        "Content-Type": "application/json",
-    }
-    
-    cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
-    
-    payload = {
-        "cookie": cookie_str,
-    }
-    
-    try:
-        response = requests.put(api_endpoint, headers=headers, json=payload)
-        response.raise_for_status()
-        print(f"Miniflux feed {feed_id} updated successfully with new cookies.")
-        if DEBUG_LOGGING:
-            print("Response:", response.json())
-    except requests.exceptions.RequestException as e:
-        print(f"Error updating Miniflux feed {feed_id}: {e}")
-        if DEBUG_LOGGING:
-            print("Response text:", response.text if 'response' in locals() else 'No response')
+def update_miniflux_feed_with_cookies(miniflux_config, cookies):
+    """
+    Updates all specified Miniflux feeds with captured cookies.
+    This is the common function for updating miniflux feeds.
+    """
+    if miniflux_config:
+        miniflux_url = miniflux_config.get('miniflux_url')
+        api_key = miniflux_config.get('api_key')
+        feed_ids_str = miniflux_config.get('feed_ids')
+        if feed_ids_str:
+            feed_ids = [int(fid.strip()) for fid in feed_ids_str.split(',')]
+            for feed_id in feed_ids:
+                print(f"\n--- Updating Miniflux Feed {feed_id} ---")
+                
+                api_endpoint = f"{miniflux_url}/v1/feeds/{feed_id}"
+                headers = {
+                    "X-Auth-Token": api_key,
+                    "Content-Type": "application/json",
+                }
+                
+                cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+                
+                payload = {
+                    "cookie": cookie_str,
+                }
+                
+                try:
+                    response = requests.put(api_endpoint, headers=headers, json=payload)
+                    response.raise_for_status()
+                    print(f"Miniflux feed {feed_id} updated successfully with new cookies.")
+                    if DEBUG_LOGGING:
+                        print("Response:", response.json())
+                except requests.exceptions.RequestException as e:
+                    print(f"Error updating Miniflux feed {feed_id}: {e}")
+                    if DEBUG_LOGGING:
+                        print("Response text:", response.text if 'response' in locals() else 'No response')
 
 def democracy_docket_login(email, password, config_source, miniflux_config):
     """Automates login for Democracy Docket using Selenium."""
@@ -124,16 +134,8 @@ def democracy_docket_login(email, password, config_source, miniflux_config):
             driver.save_screenshot(success_screenshot_path)
             print(f"Screenshot of successful login saved to {success_screenshot_path}")
 
-        if miniflux_config:
-            cookies = driver.get_cookies()
-            miniflux_url = miniflux_config.get('miniflux_url')
-            api_key = miniflux_config.get('api_key')
-            # Handle multiple feed IDs
-            feed_ids_str = miniflux_config.get('feed_ids')
-            if feed_ids_str:
-                feed_ids = [int(fid.strip()) for fid in feed_ids_str.split(',')]
-                for feed_id in feed_ids:
-                    update_miniflux_feed(miniflux_url, api_key, feed_id, cookies)
+        cookies = driver.get_cookies()
+        update_miniflux_feed_with_cookies(miniflux_config, cookies)
 
     except (WebDriverException, TimeoutException, AssertionError, Exception) as e:
         print(f"\n--- Script Failed ---\nAn error occurred during DD login for {config_source}: {e}")
@@ -190,15 +192,7 @@ def substack_login(email, password, config_source, miniflux_config):
         cookies_jar = response.cookies
         cookies = [{'name': c.name, 'value': c.value} for c in cookies_jar]
         
-        if miniflux_config:
-            miniflux_url = miniflux_config.get('miniflux_url')
-            api_key = miniflux_config.get('api_key')
-            # Handle multiple feed IDs
-            feed_ids_str = miniflux_config.get('feed_ids')
-            if feed_ids_str:
-                feed_ids = [int(fid.strip()) for fid in feed_ids_str.split(',')]
-                for feed_id in feed_ids:
-                    update_miniflux_feed(miniflux_url, api_key, feed_id, cookies)
+        update_miniflux_feed_with_cookies(miniflux_config, cookies)
             
         if ENABLE_SCREENSHOTS:
             print("Screenshot functionality not available for API login.")
