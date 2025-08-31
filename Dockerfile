@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     gnupg2 \
     unzip \
     xvfb \
+    libxcb1 \
+    libnss3 \
+    libglib2.0-0 \
     cron
 
 # Add Google Chrome to the repositories
@@ -25,8 +28,12 @@ RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(
     && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
     && rm /tmp/chromedriver.zip
 
+RUN wget -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$(/usr/bin/google-chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')/linux64/chromedriver-linux64.zip \
+    && unzip -j /tmp/chromedriver-linux64.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ \
+    && rm /tmp/chromedriver-linux64.zip
+
 # Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget gnupg2 unzip xvfb ca-certificates \
+RUN apt-get purge --auto-remove -y wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
