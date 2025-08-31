@@ -1,68 +1,63 @@
-# Use an official Python runtime as a parent image
-FROM python:3-slim
+# Use a minimal Debian-based image for a lean environment.
+FROM debian:stable-slim
 
-# Set environment variables to non-interactive (to skip any interactive post-install configuration steps)
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables for non-interactive installations.
+ENV DEBIAN_FRONTEND=noninteractive \
+    CHROME_VERSION=127.0.6533.72-1
 
-# Update the package list and install necessary packages
-RUN apt-get update && apt-get install -y \
-    wget \
+# Install necessary system packages.
+# `ca-certificates` is needed for HTTPS.
+# `gnupg` is for adding external GPG keys.
+# `wget` is for downloading the Chrome repository key.
+# `curl` is used by the webdriver_manager.
+# `unzip` is needed for the webdriver_manager to extract the driver.
+# `libglib2.0-0`, `libnss3`, `libxss1`, `libxtst6`, `libdbus-1-3`, `libatk-bridge2.0-0` are essential dependencies for running headless Chrome.
+# `fontconfig`, `fonts-liberation` are for font rendering, which can be required even in headless mode for some page layouts.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     ca-certificates \
-    gnupg2 \
+    gnupg \
+    wget \
+    curl \
     unzip \
-    xvfb \
-    libxcb1 \
-    libnss3 \
     libglib2.0-0 \
-    cron
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    libdbus-1-3 \
+    libatk-bridge2.0-0 \
+    fontconfig \
+    fonts-liberation \
+    xvfb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome to the repositories
-RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --yes --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg
+# Add Google Chrome's official repository and key.
+# This ensures we get the official, stable version of Chrome.
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
 
-# Install Google Chrome
-RUN apt-get update && apt-get install -y google-chrome-stable --no-install-recommends
+# Update and install Google Chrome Stable.
+# Use a specific version to ensure consistency, matching the ChromeDriver version that webdriver_manager will install.
+RUN apt-get update && apt-get install -y google-chrome-stable=$CHROME_VERSION && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install ChromeDriver
-RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
-    && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip
-
-# RUN wget -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$(/usr/bin/google-chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')/linux64/chromedriver-linux64.zip \
-#     && unzip -j /tmp/chromedriver-linux64.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ \
-#     && rm /tmp/chromedriver-linux64.zip
-
-# Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install any needed packages (none needed in this case)
-RUN pip install --no-cache-dir requests argparse configparser selenium webdriver_manager
-
-# Reset the frontend variable (safety)
-ENV DEBIAN_FRONTEND=dialog
-
-# Set display port to avoid crash
-ENV DISPLAY=:99
-
-# Set the working directory
+# Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the current directory contents into the container at /usr/src/app
+# Install Python and pip.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy the requirements file and install Python dependencies first.
+# This allows Docker to use the build cache for subsequent builds if requirements don't change.
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code into the container.
 COPY . .
 
-# Copy the cron job file into the cron.d directory
-COPY periodic-docker-input /etc/cron.d/periodic-docker-input
-
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/periodic-docker-input
-
-# Apply the cron job
-# RUN crontab /etc/cron.d/periodic-docker-input
-
-# Create the log file to be able to run tail
-RUN touch /var/log/cron.log
-
-# Run the command on container startup
-CMD cron && tail -f /var/log/cron.log
+# Set the entry point to execute the Python script.
+ENTRYPOINT ["python3", "your_script_name.py"]
