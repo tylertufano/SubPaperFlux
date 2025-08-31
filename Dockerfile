@@ -24,6 +24,7 @@ RUN apt-get update && \
     fontconfig \
     fonts-liberation \
     xvfb && \
+    cron && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Add Google Chrome's official repository and key.
@@ -33,6 +34,9 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
 # Update and install Google Chrome Stable.
 RUN apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set display port to avoid crash
+ENV DISPLAY=:99
 
 # Set the working directory inside the container.
 WORKDIR /app
@@ -44,5 +48,17 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container.
 COPY . .
 
-# Set the entry point to execute the Python script.
-ENTRYPOINT ["python3", "your_script_name.py"]
+# Copy the cron job file into the cron.d directory
+COPY periodic-docker-input /etc/cron.d/periodic-docker-input
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/periodic-docker-input
+
+# Apply the cron job
+# RUN crontab /etc/cron.d/periodic-docker-input
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# Run the command on container startup
+CMD cron && tail -f /var/log/cron.log
