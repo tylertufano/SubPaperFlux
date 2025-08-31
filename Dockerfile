@@ -53,7 +53,7 @@ RUN apt-get update && \
 # Copy the requirements file and install Python dependencies first.
 # This allows Docker to use the build cache for subsequent builds if requirements don't change.
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container.
 COPY . .
