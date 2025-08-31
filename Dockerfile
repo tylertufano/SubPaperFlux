@@ -2,8 +2,7 @@
 FROM debian:stable-slim
 
 # Set environment variables for non-interactive installations.
-ENV DEBIAN_FRONTEND=noninteractive \
-    CHROME_VERSION=127.0.6533.72-1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary system packages.
 # `ca-certificates` is needed for HTTPS.
@@ -38,7 +37,7 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
 
 # Update and install Google Chrome Stable.
 # Use a specific version to ensure consistency, matching the ChromeDriver version that webdriver_manager will install.
-RUN apt-get update && apt-get install -y google-chrome-stable=$CHROME_VERSION && \
+RUN apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container.
