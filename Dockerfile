@@ -24,13 +24,13 @@ RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http:
 RUN apt-get update && apt-get install -y google-chrome-stable --no-install-recommends
 
 # Install ChromeDriver
-# RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
-#     && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
-#     && rm /tmp/chromedriver.zip
+RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
+    && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip
 
-RUN wget -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$(/usr/bin/google-chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')/linux64/chromedriver-linux64.zip \
-    && unzip -j /tmp/chromedriver-linux64.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ \
-    && rm /tmp/chromedriver-linux64.zip
+# RUN wget -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$(/usr/bin/google-chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')/linux64/chromedriver-linux64.zip \
+#     && unzip -j /tmp/chromedriver-linux64.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ \
+#     && rm /tmp/chromedriver-linux64.zip
 
 # Clean up to reduce image size
 RUN apt-get purge --auto-remove -y wget \
