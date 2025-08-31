@@ -1,5 +1,5 @@
 # Use a minimal Debian-based image for a lean environment.
-FROM debian:stable-slim
+FROM python:3-slim
 
 # Set environment variables for non-interactive installations.
 ENV DEBIAN_FRONTEND=noninteractive
