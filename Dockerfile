@@ -23,7 +23,7 @@ RUN apt-get update && \
     libatk-bridge2.0-0 \
     fontconfig \
     fonts-liberation \
-    xvfb && \
+    xvfb \
     cron && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
