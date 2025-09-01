@@ -6,4 +6,4 @@
 # 0       3       *       *       6       run-parts /config/weekly
 # 0       5       1       *       *       run-parts /config/monthly
 
-0       2       *       *       *       python /app/update_miniflux_cookies.py /config
+0       2       *       *       *       python /app/rss_feed_bridge.py /config
