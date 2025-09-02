@@ -31,9 +31,13 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
 # Set the working directory for the build stage
 WORKDIR /app
 
-# Copy requirements file and install Python dependencies
+# Copy requirements file
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Create a virtual environment and install Python dependencies into it
+RUN python3 -m venv /app/venv && \
+    . /app/venv/bin/activate && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy all application code to the container
 COPY . .
@@ -71,8 +75,7 @@ ENV DISPLAY=:99
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary files from the builder stage
-# This includes the Python application code and the installed dependencies
+# Copy the application code and the virtual environment from the builder stage
 COPY --from=builder /app /app
 
 # Create a non-root user and set permissions for security
@@ -83,5 +86,5 @@ RUN addgroup --system bridge && \
 # Switch to the non-root user
 USER bridge
 
-# Set the entry point for the application
-CMD ["python", "./rss_feed_bridge.py", "/config"]
+# Set the entry point for the application, using the virtual environment's python
+CMD ["/app/venv/bin/python3", "./rss_feed_bridge.py", "/config"]
