@@ -89,5 +89,5 @@ ENV HOME=/app
 # Switch to the non-root user
 USER bridge
 
-# Set the entry point for the application, using the virtual environment's python
-CMD ["/app/venv/bin/python3", "./rss_feed_bridge.py", "/config"]
+# Set the entry point for the application, first changing permissions of the mounted volume
+CMD ["sh", "-c", "chown -R bridge:bridge /config && /app/venv/bin/python3 ./rss_feed_bridge.py /config"]
