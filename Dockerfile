@@ -80,6 +80,9 @@ RUN addgroup --system bridge && \
     adduser --system --ingroup bridge --disabled-password --shell /bin/bash bridge && \
     chown -R bridge:bridge /app
 
+# Create the logs directory and ensure it is owned by the bridge user
+RUN mkdir /app/selenium_logs && chown bridge:bridge /app/selenium_logs
+
 # Explicitly set the home directory for the non-root user
 ENV HOME=/app
 
