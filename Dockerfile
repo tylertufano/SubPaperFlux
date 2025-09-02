@@ -86,8 +86,8 @@ RUN chmod -R a+w /app
 # Explicitly set the home directory for the non-root user
 ENV HOME=/app
 
-# Explicitly set the path to the Chrome binary for Selenium
-ENV CHROME_BINARY_LOCATION=/usr/bin/google-chrome-stable
+# Explicitly set the path to the Chrome binary for webdriver_manager
+ENV WEBDRIVER_CHROME_BINARY=/usr/bin/google-chrome-stable
 
 # Switch to the non-root user
 USER bridge
