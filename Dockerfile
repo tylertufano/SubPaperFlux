@@ -5,14 +5,12 @@ FROM python:3.13-slim AS builder
 # Set environment variables for non-interactive installations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary system packages for Google Chrome and other tools
+# Install core dependencies for Google Chrome and utilities
 # xvfb is included for headless browser support
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    ca-certificates \
-    gnupg \
     wget \
-    curl \
+    gnupg \
     unzip \
     libglib2.0-0 \
     libnss3 \
@@ -25,14 +23,10 @@ RUN apt-get update && \
     xvfb \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome's official repository and key
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
-    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
-
-# Update and install Google Chrome Stable
-RUN apt-get update && \
-    apt-get install -y google-chrome-stable \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Download Google Chrome .deb file directly and install
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    dpkg -i google-chrome-stable_current_amd64.deb; apt-get -y install -f && \
+    rm google-chrome-stable_current_amd64.deb
 
 # Set the working directory for the build stage
 WORKDIR /app
@@ -63,8 +57,12 @@ RUN apt-get update && \
     fontconfig \
     fonts-liberation \
     xvfb \
-    google-chrome-stable \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Download Google Chrome .deb file directly and install
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    dpkg -i google-chrome-stable_current_amd64.deb; apt-get -y install -f && \
+    rm google-chrome-stable_current_amd64.deb
 
 # Set display port to avoid crash
 ENV DISPLAY=:99
