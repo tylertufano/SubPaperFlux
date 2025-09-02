@@ -23,8 +23,7 @@ RUN apt-get update && \
     libatk-bridge2.0-0 \
     fontconfig \
     fonts-liberation \
-    xvfb \
-    cron && \
+    xvfb && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Add Google Chrome's official repository and key.
@@ -51,10 +50,5 @@ COPY . .
 # Ensure the start script is executable
 RUN chmod +x ./start.sh
 
-# Install the crontab file
-RUN crontab crontab.txt
-
-# Set the entrypoint to the start script
-# The `start.sh` script will run cron in the foreground,
-# ensuring all cron job output is visible in the container logs.
-CMD ["./start.sh"]
+# Set the entrypoint to run the script directly
+CMD ["python", "./rss_feed_bridge.py", "/config"]

@@ -8,7 +8,7 @@ import requests
 import feedparser
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from glob import glob
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -61,6 +61,27 @@ INSTAPAPER_OAUTH_TOKEN_URL = "https://www.instapaper.com/api/1/oauth/access_toke
 INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 INSTAPAPER_FOLDERS_ADD_URL = "https://www.instapaper.com/api/1.1/folders/add"
 
+def parse_frequency_to_seconds(freq_str):
+    """
+    Parses a frequency string like '1h', '30m', '1d' into seconds.
+    """
+    if not freq_str:
+        return 0
+    freq_str = freq_str.lower()
+    value = int(re.findall(r'\d+', freq_str)[0])
+    unit = re.findall(r'[a-z]', freq_str)[0]
+    
+    if unit == 's':
+        return value
+    elif unit == 'm':
+        return value * 60
+    elif unit == 'h':
+        return value * 3600
+    elif unit == 'd':
+        return value * 86400
+    else:
+        raise ValueError(f"Invalid frequency unit in '{freq_str}'. Use s, m, h, or d.")
+
 def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
     """
     Updates all specified Miniflux feeds with captured cookies.
@@ -90,7 +111,7 @@ def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
             "X-Auth-Token": api_key,
             "Content-Type": "application/json",
         }
-        cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+        cookie_str = "; ".join([f"{c['name']}={c['value']} " for c in cookies])
         
         if DEBUG_LOGGING:
             print(f"DEBUG: Updating feed {feed_id} at URL: {api_endpoint}")
@@ -610,8 +631,6 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
         print(f"Unsupported login_type '{login_type}' defined in config. Skipping.")
         return []
 
-
-# --- Helper Functions ---
 def get_config_files(path):
     """Parses the command-line argument to return a list of INI files."""
     if os.path.isfile(path) and path.endswith('.ini'):
@@ -622,101 +641,121 @@ def get_config_files(path):
         print("Error: Invalid path provided. Please specify a .ini file or a directory containing .ini files.")
         sys.exit(1)
 
+def run_service(config_path):
+    """The main service loop that processes configs continuously."""
+    config_files = get_config_files(config_path)
+    # Dictionary to track last run times for each task/config file
+    last_run_times = {}
+
+    while True:
+        print(f"\n[{datetime.now()}] --- Starting a new service poll loop ---")
+        
+        for config_file in config_files:
+            config = configparser.ConfigParser()
+            try:
+                config.read(config_file)
+                config_name = os.path.basename(config_file)
+                
+                # Initialize last run times for this config if not present
+                if config_name not in last_run_times:
+                    last_run_times[config_name] = {
+                        'miniflux_last_run': datetime.min,
+                        'rss_last_run': datetime.min,
+                        'cookies': []
+                    }
+
+                # --- Handle Login & Miniflux Cookie Update (if configured) ---
+                if 'SITE_CONFIG' in config and 'LOGIN_CREDENTIALS' in config and 'MINIFLUX_API' in config:
+                    site_config = config['SITE_CONFIG']
+                    login_credentials = config['LOGIN_CREDENTIALS']
+                    miniflux_config = config['MINIFLUX_API']
+                    
+                    email = login_credentials.get('email')
+                    password = login_credentials.get('password')
+                    refresh_frequency_str = miniflux_config.get('refresh_frequency')
+                    
+                    if not all([email, password, refresh_frequency_str]):
+                        print(f"Skipping login for {config_name}: incomplete credentials or refresh_frequency is missing.")
+                    else:
+                        refresh_frequency_sec = parse_frequency_to_seconds(refresh_frequency_str)
+                        time_since_last_run = datetime.now() - last_run_times[config_name]['miniflux_last_run']
+
+                        if time_since_last_run.total_seconds() >= refresh_frequency_sec:
+                            print(f"\n--- Running scheduled login for {config_name} ---")
+                            last_run_times[config_name]['cookies'] = login_and_update(config_name, email, password, miniflux_config, site_config)
+                            last_run_times[config_name]['miniflux_last_run'] = datetime.now()
+                        else:
+                            print(f"\n--- Skipping login for {config_name}: Not yet time to refresh. ---")
+
+                # --- Handle RSS to Instapaper Publishing (if configured) ---
+                if 'INSTAPAPER_API' in config and 'RSS_FEED_CONFIG' in config:
+                    instapaper_config = config['INSTAPAPER_API']
+                    rss_feed_config = config['RSS_FEED_CONFIG']
+                    feed_url = rss_feed_config.get('feed_url')
+                    poll_frequency_str = rss_feed_config.get('poll_frequency', '1h')
+                    
+                    if not feed_url:
+                        print(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
+                    else:
+                        poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
+                        time_since_last_poll = datetime.now() - last_run_times[config_name]['rss_last_run']
+
+                        if time_since_last_poll.total_seconds() >= poll_frequency_sec:
+                            print(f"\n--- Running scheduled RSS poll for {config_name} ---")
+                            cookies_to_use = last_run_times[config_name].get('cookies', [])
+                            process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_config, cookies_to_use)
+                            last_run_times[config_name]['rss_last_run'] = datetime.now()
+                        else:
+                            print(f"\n--- Skipping RSS poll for {config_name}: Not yet time to poll. ---")
+
+            except (configparser.Error, KeyError) as e:
+                print(f"\nError reading or parsing INI file {config_file}: {e}")
+                continue
+
+        # Sleep for a minute before the next loop iteration to prevent a busy loop.
+        print(f"\n[{datetime.now()}] --- Service poll loop finished. Sleeping for 60 seconds. ---")
+        time.sleep(60)
+
 def main():
-    """Main function to parse arguments and run the login and/or publishing processes."""
-    parser = argparse.ArgumentParser(description="Automate login and/or Instapaper publishing using INI file(s).")
+    """Main function to parse arguments and start the service loop."""
+    parser = argparse.ArgumentParser(description="Run RSS to Instapaper bridge as a continuous service.")
     parser.add_argument("config_path", help="Path to a specific .ini file or a directory containing .ini files.")
     args = parser.parse_args()
 
+    # Initial check for Instapaper OAuth tokens before starting the service loop
+    print("Performing initial check for Instapaper OAuth tokens...")
     config_files = get_config_files(args.config_path)
-
     for config_file in config_files:
         config = configparser.ConfigParser()
-        try:
-            config.read(config_file)
-            config_name = os.path.basename(config_file)
+        config.read(config_file)
+        if 'INSTAPAPER_OAUTH' in config:
+            print(f"Found 'INSTAPAPER_OAUTH' section in {os.path.basename(config_file)}. Attempting to generate tokens...")
+            oauth_credentials = config['INSTAPAPER_OAUTH']
+            consumer_key = oauth_credentials.get('consumer_key')
+            consumer_secret = oauth_credentials.get('consumer_secret')
+            username = oauth_credentials.get('username')
+            password = oauth_credentials.get('password')
             
-            # Initialize cookies variable, will be filled if a login is configured and successful
-            cookies = []
-            
-            # --- Part 1: Handle Login & Miniflux Cookie Update (if configured) ---
-            if 'SITE_CONFIG' in config and 'LOGIN_CREDENTIALS' in config:
-                if DEBUG_LOGGING:
-                    print(f"\nDEBUG: Found sections for login in {config_name}. Checking for Miniflux.")
-                site_config = config['SITE_CONFIG']
-                login_credentials = config['LOGIN_CREDENTIALS']
-                
-                # Corrected line to check for section existence
-                miniflux_config = config['MINIFLUX_API'] if 'MINIFLUX_API' in config else None
-                
-                email = login_credentials.get('email')
-                password = login_credentials.get('password')
-                
-                if not all([email, password]):
-                    print(f"Skipping login for {config_name}: 'email' or 'password' is missing.")
+            if all([consumer_key, consumer_secret, username, password]):
+                tokens = get_instapaper_tokens(consumer_key, consumer_secret, username, password)
+                if tokens:
+                    if 'INSTAPAPER_API' not in config:
+                        config['INSTAPAPER_API'] = {}
+                    config['INSTAPAPER_API']['oauth_token'] = tokens['oauth_token']
+                    config['INSTAPAPER_API']['oauth_token_secret'] = tokens['oauth_token_secret']
+                    config['INSTAPAPER_API']['consumer_key'] = consumer_key
+                    config['INSTAPAPER_API']['consumer_secret'] = consumer_secret
+                    config.remove_section('INSTAPAPER_OAUTH')
+                    with open(config_file, 'w') as f:
+                        config.write(f)
+                    print(f"Successfully wrote Instapaper tokens to {os.path.basename(config_file)}.")
                 else:
-                    cookies = login_and_update(config_name, email, password, miniflux_config, site_config)
+                    print(f"Failed to generate Instapaper tokens for {os.path.basename(config_file)}. Please check credentials.")
             else:
-                if DEBUG_LOGGING:
-                    print(f"\nDEBUG: Skipping login for {config_name}: Missing one or more of 'SITE_CONFIG' or 'LOGIN_CREDENTIALS'.")
-                print(f"\n--- Skipping Login for {config_name}: Not all required sections found. ---")
-
-
-            # --- Part 2: Handle Instapaper Token Generation (if configured) ---
-            if 'INSTAPAPER_OAUTH' in config:
-                if DEBUG_LOGGING:
-                    print(f"DEBUG: Found 'INSTAPAPER_OAUTH' section in {config_name}. Attempting to generate tokens.")
-                print(f"\n--- Attempting to generate Instapaper tokens for {config_name} ---")
-                oauth_credentials = config['INSTAPAPER_OAUTH']
-                
-                consumer_key = oauth_credentials.get('consumer_key')
-                consumer_secret = oauth_credentials.get('consumer_secret')
-                username = oauth_credentials.get('username')
-                password = oauth_credentials.get('password')
-                
-                if all([consumer_key, consumer_secret, username, password]):
-                    tokens = get_instapaper_tokens(consumer_key, consumer_secret, username, password)
-                    if tokens:
-                        if 'INSTAPAPER_API' not in config:
-                            config['INSTAPAPER_API'] = {}
-                        
-                        config['INSTAPAPER_API']['oauth_token'] = tokens['oauth_token']
-                        config['INSTAPAPER_API']['oauth_token_secret'] = tokens['oauth_token_secret']
-                        config['INSTAPAPER_API']['consumer_key'] = consumer_key
-                        config['INSTAPAPER_API']['consumer_secret'] = consumer_secret
-                        
-                        config.remove_section('INSTAPAPER_OAUTH')
-                        with open(config_file, 'w') as f:
-                            config.write(f)
-                        print(f"Successfully wrote Instapaper tokens to {config_file}.")
-                    else:
-                        print(f"Failed to generate Instapaper tokens for {config_file}. Will not proceed with publishing.")
-                        continue
-                else:
-                    print(f"Skipping token generation for {config_name}: Incomplete credentials.")
-
-            # --- Part 3: Handle RSS to Instapaper Publishing (if configured) ---
-            if 'INSTAPAPER_API' in config and 'RSS_FEED_CONFIG' in config:
-                if DEBUG_LOGGING:
-                    print(f"\nDEBUG: Found sections for RSS to Instapaper publishing in {config_name}.")
-                print(f"\n--- Processing RSS to Instapaper for {config_name} ---")
-                instapaper_config = config['INSTAPAPER_API']
-                rss_feed_config = config['RSS_FEED_CONFIG']
-                
-                feed_url = rss_feed_config.get('feed_url')
-                
-                if not feed_url:
-                    print(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
-                else:
-                    process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_config, cookies)
-            else:
-                if DEBUG_LOGGING:
-                    print(f"\nDEBUG: Skipping RSS to Instapaper publishing for {config_name}: Missing 'INSTAPAPER_API' or 'RSS_FEED_CONFIG'.")
-                print(f"\n--- Skipping RSS to Instapaper for {config_name}: Not all required sections found. ---")
-
-        except (configparser.Error, KeyError) as e:
-            print(f"\nError reading or parsing INI file {config_file}: {e}")
-            continue
+                print(f"Skipping token generation for {os.path.basename(config_file)}: Incomplete credentials.")
+    
+    print("\nStarting the continuous service loop...")
+    run_service(args.config_path)
 
 if __name__ == "__main__":
     main()

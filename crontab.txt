@@ -1,9 +1,0 @@
-# do daily/weekly/monthly maintenance
-# min   hour    day     month   weekday command
-# */15    *       *       *       *       run-parts /config/15min
-# 0       *       *       *       *       run-parts /config/hourly
-# 0       2       *       *       *       run-parts /config/daily
-# 0       3       *       *       6       run-parts /config/weekly
-# 0       5       1       *       *       run-parts /config/monthly
-
-*/15     *       *       *       *       python /app/rss_feed_bridge.py /config >> /proc/1/fd/1 2>> /proc/1/fd/2
