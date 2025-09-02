@@ -82,6 +82,66 @@ def parse_frequency_to_seconds(freq_str):
     else:
         raise ValueError(f"Invalid frequency unit in '{freq_str}'. Use s, m, h, or d.")
 
+def load_state(config_file):
+    """Loads the state from the .ctrl file."""
+    base_name = os.path.splitext(os.path.basename(config_file))[0]
+    ctrl_file_path = os.path.join(os.path.dirname(config_file), f"{base_name}.ctrl")
+    
+    state = {
+        'last_rss_timestamp': datetime.min,
+        'last_rss_poll_time': datetime.min,
+        'last_miniflux_refresh_time': datetime.min,
+    }
+    
+    if os.path.exists(ctrl_file_path):
+        try:
+            with open(ctrl_file_path, 'r') as f:
+                data = json.load(f)
+                
+                last_rss_str = data.get('last_rss_timestamp')
+                if last_rss_str:
+                    state['last_rss_timestamp'] = datetime.fromisoformat(last_rss_str)
+                
+                last_poll_str = data.get('last_rss_poll_time')
+                if last_poll_str:
+                    state['last_rss_poll_time'] = datetime.fromisoformat(last_poll_str)
+                    
+                last_miniflux_str = data.get('last_miniflux_refresh_time')
+                if last_miniflux_str:
+                    state['last_miniflux_refresh_time'] = datetime.fromisoformat(last_miniflux_str)
+                    
+            print(f"[{datetime.now()}] Successfully loaded state for {os.path.basename(config_file)}.")
+            print(f"  - Last RSS entry processed: {state['last_rss_timestamp'].isoformat()}")
+            print(f"  - Last RSS poll time: {state['last_rss_poll_time'].isoformat()}")
+            print(f"  - Last Miniflux refresh time: {state['last_miniflux_refresh_time'].isoformat()}")
+        except (IOError, json.JSONDecodeError, ValueError) as e:
+            print(f"Warning: Could not read or parse {ctrl_file_path}. Starting with clean state. Error: {e}")
+            
+    else:
+        print(f"[{datetime.now()}] No state file found for {os.path.basename(config_file)}. Starting with a clean state.")
+    
+    return state
+
+def save_state(config_file, state):
+    """Saves the state to the .ctrl file."""
+    base_name = os.path.splitext(os.path.basename(config_file))[0]
+    ctrl_file_path = os.path.join(os.path.dirname(config_file), f"{base_name}.ctrl")
+
+    # Convert datetime objects to ISO 8601 strings for JSON serialization
+    state_to_save = {
+        'last_rss_timestamp': state['last_rss_timestamp'].isoformat(),
+        'last_rss_poll_time': state['last_rss_poll_time'].isoformat(),
+        'last_miniflux_refresh_time': state['last_miniflux_refresh_time'].isoformat()
+    }
+
+    try:
+        with open(ctrl_file_path, 'w') as f:
+            json.dump(state_to_save, f, indent=4)
+        if DEBUG_LOGGING:
+            print(f"DEBUG: State successfully saved to {ctrl_file_path}.")
+    except IOError as e:
+        print(f"Error: Could not save state to {ctrl_file_path}. Error: {e}")
+
 def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
     """
     Updates all specified Miniflux feeds with captured cookies.
@@ -365,39 +425,26 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         if 'response' in locals() and DEBUG_LOGGING:
             print(f"DEBUG: Instapaper API Response Text: {response.text}")
 
-def process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_config, cookies=None):
+def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookies, state):
     """
     Fetches the RSS feed from a given URL and publishes new entries to Instapaper.
     Accepts an optional `cookies` argument for authenticated content fetching.
     """
-    base_name = os.path.splitext(os.path.basename(config_file))[0]
-    control_file_path = os.path.join(os.path.dirname(config_file), f"{base_name}.ctrl")
     
-    last_run_timestamp = 0
-    if os.path.exists(control_file_path):
-        with open(control_file_path, 'r') as f:
-            try:
-                content = f.read().strip()
-                if content:
-                    last_run_timestamp = int(content)
-            except (ValueError, FileNotFoundError):
-                print("Control file is corrupted or empty. Will process all entries.")
-                last_run_timestamp = 0
-    else:
-        print(f"No control file found at {control_file_path}. Processing all entries and creating a new file.")
+    last_run_timestamp = state['last_rss_timestamp'].timestamp()
     
     if DEBUG_LOGGING:
-        print(f"DEBUG: Last run timestamp from control file: {last_run_timestamp}")
+        print(f"DEBUG: Last RSS entry timestamp from state: {last_run_timestamp}")
 
     try:
         print(f"\n--- Fetching RSS feed from {feed_url} ---")
         # Add a User-Agent header to mimic a browser
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
         feed_response = requests.get(feed_url, headers=headers, timeout=30)
         feed_response.raise_for_status()
         
         feed = feedparser.parse(feed_response.content)
-        newest_timestamp = last_run_timestamp
+        newest_timestamp_dt = state['last_rss_timestamp']
         published_count = 0
         
         resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
@@ -416,7 +463,6 @@ def process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_c
             if not folder_id:
                 folder_id = create_instapaper_folder(oauth_session, folder_name)
 
-
         if DEBUG_LOGGING:
             print(f"DEBUG: `resolve_final_url` setting is: {resolve_final_url_flag}")
             print(f"DEBUG: `sanitize_content` setting is: {sanitize_content_flag}")
@@ -424,21 +470,20 @@ def process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_c
             if folder_name:
                 print(f"DEBUG: `folder` setting is: '{folder_name}' with ID '{folder_id}'")
 
-
         if DEBUG_LOGGING:
             print(f"DEBUG: Found {len(feed.entries)} entries in the RSS feed.")
 
         for entry in reversed(feed.entries):
-            entry_timestamp = 0
+            entry_timestamp_dt = None
             if hasattr(entry, 'published_parsed'):
-                entry_timestamp = time.mktime(entry.published_parsed)
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
             elif hasattr(entry, 'updated_parsed'):
-                entry_timestamp = time.mktime(entry.updated_parsed)
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
             
             if DEBUG_LOGGING:
-                print(f"DEBUG: Processing entry '{entry.title}'. Timestamp: {entry_timestamp}")
+                print(f"DEBUG: Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
 
-            if entry_timestamp > last_run_timestamp:
+            if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
                 url = entry.link
                 title = entry.title
                 
@@ -453,7 +498,7 @@ def process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_c
                     if DEBUG_LOGGING:
                         print("DEBUG: Using RSS entry content as fallback.")
                 
-                print(f"Found new entry: '{title}' from {datetime.fromtimestamp(entry_timestamp)}")
+                print(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
                 if DEBUG_LOGGING:
                     print(f"DEBUG: Article URL to be sent to Instapaper: {url}")
                 publish_to_instapaper(
@@ -468,24 +513,24 @@ def process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_c
                 )
                 published_count += 1
                 
-                if entry_timestamp > newest_timestamp:
-                    newest_timestamp = entry_timestamp
+                if entry_timestamp_dt > newest_timestamp_dt:
+                    newest_timestamp_dt = entry_timestamp_dt
 
         if published_count > 0:
             print(f"Finished processing. Published {published_count} new entries to Instapaper.")
-            with open(control_file_path, 'w') as f:
-                f.write(str(int(newest_timestamp)))
-            print(f"Control file updated with timestamp: {newest_timestamp}")
+            state['last_rss_timestamp'] = newest_timestamp_dt
+            print(f"State updated with newest RSS entry timestamp: {newest_timestamp_dt.isoformat()}")
         else:
             print("No new entries found to publish.")
-
+    
     except requests.exceptions.RequestException as e:
-        print(f"\nError fetching RSS feed for {os.path.basename(config_file)}: {e}")
+        print(f"\nError fetching RSS feed: {e}")
         if DEBUG_LOGGING and 'response' in locals():
             print(f"DEBUG: HTTP status code: {feed_response.status_code}")
             print(f"DEBUG: HTTP response body: {feed_response.text}")
     except Exception as e:
-        print(f"\nAn unexpected error occurred while processing feed for {os.path.basename(config_file)}: {e}")
+        print(f"\nAn unexpected error occurred while processing feed: {e}")
+
 
 def login_and_update(config_name, email, password, miniflux_config, site_config):
     """
@@ -644,8 +689,15 @@ def get_config_files(path):
 def run_service(config_path):
     """The main service loop that processes configs continuously."""
     config_files = get_config_files(config_path)
-    # Dictionary to track last run times for each task/config file
-    last_run_times = {}
+    
+    # Load initial state from .ctrl files for all configs
+    last_run_times = {
+        os.path.basename(f): load_state(f) for f in config_files
+    }
+    
+    # Add a cookies key to each state entry
+    for key in last_run_times:
+        last_run_times[key]['cookies'] = []
 
     while True:
         print(f"\n[{datetime.now()}] --- Starting a new service poll loop ---")
@@ -655,15 +707,8 @@ def run_service(config_path):
             try:
                 config.read(config_file)
                 config_name = os.path.basename(config_file)
+                state = last_run_times[config_name]
                 
-                # Initialize last run times for this config if not present
-                if config_name not in last_run_times:
-                    last_run_times[config_name] = {
-                        'miniflux_last_run': datetime.min,
-                        'rss_last_run': datetime.min,
-                        'cookies': []
-                    }
-
                 # --- Handle Login & Miniflux Cookie Update (if configured) ---
                 if 'SITE_CONFIG' in config and 'LOGIN_CREDENTIALS' in config and 'MINIFLUX_API' in config:
                     site_config = config['SITE_CONFIG']
@@ -678,12 +723,14 @@ def run_service(config_path):
                         print(f"Skipping login for {config_name}: incomplete credentials or refresh_frequency is missing.")
                     else:
                         refresh_frequency_sec = parse_frequency_to_seconds(refresh_frequency_str)
-                        time_since_last_run = datetime.now() - last_run_times[config_name]['miniflux_last_run']
+                        time_since_last_run = datetime.now() - state['last_miniflux_refresh_time']
 
                         if time_since_last_run.total_seconds() >= refresh_frequency_sec:
                             print(f"\n--- Running scheduled login for {config_name} ---")
-                            last_run_times[config_name]['cookies'] = login_and_update(config_name, email, password, miniflux_config, site_config)
-                            last_run_times[config_name]['miniflux_last_run'] = datetime.now()
+                            cookies = login_and_update(config_name, email, password, miniflux_config, site_config)
+                            state['cookies'] = cookies
+                            state['last_miniflux_refresh_time'] = datetime.now()
+                            save_state(config_file, state)
                         else:
                             print(f"\n--- Skipping login for {config_name}: Not yet time to refresh. ---")
 
@@ -698,13 +745,13 @@ def run_service(config_path):
                         print(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
                     else:
                         poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
-                        time_since_last_poll = datetime.now() - last_run_times[config_name]['rss_last_run']
+                        time_since_last_poll = datetime.now() - state['last_rss_poll_time']
 
                         if time_since_last_poll.total_seconds() >= poll_frequency_sec:
                             print(f"\n--- Running scheduled RSS poll for {config_name} ---")
-                            cookies_to_use = last_run_times[config_name].get('cookies', [])
-                            process_rss_and_publish(config_file, feed_url, instapaper_config, rss_feed_config, cookies_to_use)
-                            last_run_times[config_name]['rss_last_run'] = datetime.now()
+                            process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
+                            state['last_rss_poll_time'] = datetime.now()
+                            save_state(config_file, state)
                         else:
                             print(f"\n--- Skipping RSS poll for {config_name}: Not yet time to poll. ---")
 
