@@ -1,14 +1,19 @@
-# Stage 1: The Build Environment
-FROM python:3.13-slim AS builder
+# Use the official Python 3 slim image, which is based on Debian.
+FROM python:3-slim
 
-# Set environment variables for non-interactive installations
+# Set environment variables for non-interactive installations.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install core dependencies for Google Chrome and utilities
+# Install necessary system packages for Google Chrome.
+# `ca-certificates`, `gnupg`, `wget`, `curl`, `unzip` are general utilities.
+# `libglib2.0-0`, `libnss3`, `libxss1`, `libxtst6`, `libdbus-1-3`, `libatk-bridge2.0-0` are core dependencies for headless Chrome.
+# `fontconfig`, `fonts-liberation` are for font rendering.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    wget \
+    ca-certificates \
     gnupg \
+    wget \
+    curl \
     unzip \
     libglib2.0-0 \
     libnss3 \
@@ -18,79 +23,29 @@ RUN apt-get update && \
     libatk-bridge2.0-0 \
     fontconfig \
     fonts-liberation \
-    xvfb \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    xvfb && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download Google Chrome .deb file directly and install
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb; apt-get -y install -f && \
-    rm google-chrome-stable_current_amd64.deb
+# Add Google Chrome's official repository and key.
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
 
-# Set the working directory for the build stage
-WORKDIR /app
-
-# Copy requirements file
-COPY requirements.txt .
-
-# Create a virtual environment and install Python dependencies into it
-RUN python3 -m venv /app/venv && \
-    . /app/venv/bin/activate && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy all application code to the container
-COPY . .
-
-# Stage 2: The Final, Lean Runtime Environment
-FROM python:3.13-slim
-
-# Set environment variables for non-interactive installations
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install only the runtime dependencies for Google Chrome and the application
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    wget \
-    libglib2.0-0 \
-    libnss3 \
-    libxss1 \
-    libxtst6 \
-    libdbus-1-3 \
-    libatk-bridge2.0-0 \
-    fontconfig \
-    fonts-liberation \
-    xvfb \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Download Google Chrome .deb file directly and install
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb; apt-get -y install -f && \
-    rm google-chrome-stable_current_amd64.deb
+# Update and install Google Chrome Stable.
+RUN apt-get update && apt-get install -y google-chrome-stable && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set display port to avoid crash
 ENV DISPLAY=:99
 
-# Set the working directory
+# Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the application code and the virtual environment from the builder stage
-COPY --from=builder /app /app
+# Copy the requirements file and install Python dependencies.
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Create a non-root user and set permissions for security
-RUN addgroup --system bridge && \
-    adduser --system --ingroup bridge --disabled-password --shell /bin/bash bridge && \
-    chown -R bridge:bridge /app
+# Copy the rest of the application code into the container.
+COPY . .
 
-# Make the /app directory writable by all users to fix permission issues with mounted volumes
-RUN chmod -R a+w /app
-
-# Explicitly set the home directory for the non-root user
-ENV HOME=/app
-
-# Explicitly set the path to the Chrome binary for webdriver_manager
-ENV WEBDRIVER_CHROME_BINARY=/usr/bin/google-chrome-stable
-
-# Switch to the non-root user
-USER bridge
-
-# Set the entry point for the application
-CMD ["/app/venv/bin/python3", "./rss_feed_bridge.py", "/config"]
+# Set the entrypoint to run the script directly
+CMD ["python", "./rss_feed_bridge.py", "/config"]
