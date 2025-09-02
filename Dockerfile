@@ -48,17 +48,13 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container.
 COPY . .
 
-# Copy the cron job file into the cron.d directory
-COPY periodic-docker-input /etc/cron.d/periodic-docker-input
+# Ensure the start script is executable
+RUN chmod +x ./start.sh
 
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/periodic-docker-input
+# Install the crontab file
+RUN crontab crontab.txt
 
-# Apply the cron job
-# RUN crontab /etc/cron.d/periodic-docker-input
-
-# Create the log file to be able to run tail
-RUN touch /var/log/cron.log
-
-# Run the command on container startup
-CMD cron && tail -f /var/log/cron.log
+# Set the entrypoint to the start script
+# The `start.sh` script will run cron in the foreground,
+# ensuring all cron job output is visible in the container logs.
+CMD ["./start.sh"]

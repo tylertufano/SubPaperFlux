@@ -6,4 +6,4 @@
 # 0       3       *       *       6       run-parts /config/weekly
 # 0       5       1       *       *       run-parts /config/monthly
 
-*/15     *       *       *       *       python /app/rss_feed_bridge.py /config  > /dev/stdout 2>&1
+*/15     *       *       *       *       python /app/rss_feed_bridge.py /config >> /proc/1/fd/1 2>> /proc/1/fd/2

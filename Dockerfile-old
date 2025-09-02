@@ -1,55 +1,51 @@
-# Use an official Python runtime as a parent image
+# Use the official Python 3 slim image, which is based on Debian.
 FROM python:3-slim
 
-# Set environment variables to non-interactive (to skip any interactive post-install configuration steps)
+# Set environment variables for non-interactive installations.
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update the package list and install necessary packages
-RUN apt-get update && apt-get install -y \
-    wget \
+# Install necessary system packages for Google Chrome.
+# `ca-certificates`, `gnupg`, `wget`, `curl`, `unzip` are general utilities.
+# `libglib2.0-0`, `libnss3`, `libxss1`, `libxtst6`, `libdbus-1-3`, `libatk-bridge2.0-0` are core dependencies for headless Chrome.
+# `fontconfig`, `fonts-liberation` are for font rendering.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     ca-certificates \
-    gnupg2 \
+    gnupg \
+    wget \
+    curl \
     unzip \
-    xvfb \
-    libxcb1 \
-    libnss3 \
     libglib2.0-0 \
-    cron
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    libdbus-1-3 \
+    libatk-bridge2.0-0 \
+    fontconfig \
+    fonts-liberation \
+    xvfb \
+    cron && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome to the repositories
-RUN echo 'deb [signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --yes --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg
+# Add Google Chrome's official repository and key.
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
 
-# Install Google Chrome
-RUN apt-get update && apt-get install -y google-chrome-stable --no-install-recommends
-
-# Install ChromeDriver
-RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -qO- chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip \
-    && unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip
-
-# RUN wget -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$(/usr/bin/google-chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')/linux64/chromedriver-linux64.zip \
-#     && unzip -j /tmp/chromedriver-linux64.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ \
-#     && rm /tmp/chromedriver-linux64.zip
-
-# Clean up to reduce image size
-RUN apt-get purge --auto-remove -y wget \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install any needed packages (none needed in this case)
-RUN pip install --no-cache-dir requests argparse configparser selenium webdriver_manager
-
-# Reset the frontend variable (safety)
-ENV DEBIAN_FRONTEND=dialog
+# Update and install Google Chrome Stable.
+RUN apt-get update && apt-get install -y google-chrome-stable && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set display port to avoid crash
 ENV DISPLAY=:99
 
-# Set the working directory
+# Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the current directory contents into the container at /usr/src/app
+# Copy the requirements file and install Python dependencies.
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code into the container.
 COPY . .
 
 # Copy the cron job file into the cron.d directory
