@@ -425,7 +425,7 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         if 'response' in locals() and DEBUG_LOGGING:
             print(f"DEBUG: Instapaper API Response Text: {response.text}")
 
-def get_new_rss_entries(feed_url, instapaper_config, rss_feed_config, cookies, state):
+def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, cookies, state):
     """
     Fetches the RSS feed from a given URL and returns a list of new entries.
     Accepts an optional `cookies` argument for authenticated content fetching.
@@ -476,6 +476,7 @@ def get_new_rss_entries(feed_url, instapaper_config, rss_feed_config, cookies, s
                 
                 if raw_html_content:
                     new_entry = {
+                        'config_file': config_file,
                         'url': url,
                         'title': title,
                         'raw_html_content': raw_html_content,
@@ -720,7 +721,7 @@ def run_service(config_path):
 
                         if time_since_last_poll.total_seconds() >= poll_frequency_sec:
                             print(f"\n--- Polling RSS feed for new entries ({config_name}) ---")
-                            new_entries = get_new_rss_entries(feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
+                            new_entries = get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
                             all_new_entries.extend(new_entries)
                             # Update the poll time regardless of new entries found
                             state['last_rss_poll_time'] = datetime.now()
@@ -742,6 +743,7 @@ def run_service(config_path):
             for entry in all_new_entries:
                 instapaper_config = entry['instapaper_config']
                 rss_feed_config = entry['rss_feed_config']
+                config_file_for_entry = entry['config_file']
                 
                 resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
                 sanitize_content_flag = instapaper_config.getboolean('sanitize_content', fallback=False)
@@ -772,9 +774,9 @@ def run_service(config_path):
                 published_count += 1
                 
                 # Update the last_rss_timestamp for the specific config that this entry came from
-                config_name = os.path.basename(rss_feed_config.get('config_file'))
+                config_name = os.path.basename(config_file_for_entry)
                 last_run_times[config_name]['last_rss_timestamp'] = entry['published_dt']
-                save_state(rss_feed_config.get('config_file'), last_run_times[config_name])
+                save_state(config_file_for_entry, last_run_times[config_name])
 
             print(f"Finished processing. Published {published_count} new entries to Instapaper.")
         else:
