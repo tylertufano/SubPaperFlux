@@ -1,12 +1,10 @@
 # Stage 1: The Build Environment
-# Use a full-featured Debian base for the build process
 FROM python:3.13-slim AS builder
 
 # Set environment variables for non-interactive installations
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install core dependencies for Google Chrome and utilities
-# xvfb is included for headless browser support
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     wget \
@@ -43,7 +41,6 @@ RUN python3 -m venv /app/venv && \
 COPY . .
 
 # Stage 2: The Final, Lean Runtime Environment
-# Use a minimal base image for the final product
 FROM python:3.13-slim
 
 # Set environment variables for non-interactive installations
@@ -89,5 +86,5 @@ ENV HOME=/app
 # Switch to the non-root user
 USER bridge
 
-# Set the entry point for the application, first changing permissions of the mounted volume
-CMD ["sh", "-c", "chown -R bridge:bridge /config && /app/venv/bin/python3 ./rss_feed_bridge.py /config"]
+# Set the entry point for the application
+CMD ["/app/venv/bin/python3", "./rss_feed_bridge.py", "/config"]
