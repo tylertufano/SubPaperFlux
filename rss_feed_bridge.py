@@ -88,9 +88,9 @@ def load_state(config_file):
     ctrl_file_path = os.path.join(os.path.dirname(config_file), f"{base_name}.ctrl")
     
     state = {
-        'last_rss_timestamp': datetime.min,
-        'last_rss_poll_time': datetime.min,
-        'last_miniflux_refresh_time': datetime.min,
+        'last_rss_timestamp': datetime.fromtimestamp(0),
+        'last_rss_poll_time': datetime.fromtimestamp(0),
+        'last_miniflux_refresh_time': datetime.fromtimestamp(0),
     }
     
     if os.path.exists(ctrl_file_path):
@@ -431,10 +431,11 @@ def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookie
     Accepts an optional `cookies` argument for authenticated content fetching.
     """
     
-    last_run_timestamp = state['last_rss_timestamp'].timestamp()
+    # We no longer need to convert to a timestamp, as all state timestamps are datetime objects
+    last_run_dt = state['last_rss_timestamp']
     
     if DEBUG_LOGGING:
-        print(f"DEBUG: Last RSS entry timestamp from state: {last_run_timestamp}")
+        print(f"DEBUG: Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
 
     try:
         print(f"\n--- Fetching RSS feed from {feed_url} ---")
@@ -444,7 +445,7 @@ def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookie
         feed_response.raise_for_status()
         
         feed = feedparser.parse(feed_response.content)
-        newest_timestamp_dt = state['last_rss_timestamp']
+        newest_timestamp_dt = last_run_dt
         published_count = 0
         
         resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
