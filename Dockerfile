@@ -48,6 +48,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install only the runtime dependencies for Google Chrome and the application
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    wget \
     libglib2.0-0 \
     libnss3 \
     libxss1 \
