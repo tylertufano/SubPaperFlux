@@ -24,10 +24,20 @@ from urllib.parse import urlencode
 
 # --- Configure Execution Based on Environment Variables ---
 DEBUG_LOGGING = os.getenv('DEBUG_LOGGING', '0').lower() in ('1', 'true')
-OAUTH_DEBUG_LOGGING = os.getenv('OAUTH_DEBUG_LOGGING', '0').lower() in ('1', 'true')
 ENABLE_SCREENSHOTS = os.getenv('ENABLE_SCREENSHOTS', '0').lower() in ('1', 'true')
 log_dir = "selenium_logs"
 os.makedirs(log_dir, exist_ok=True)
+
+# --- Setup Logging ---
+log_level = logging.DEBUG if DEBUG_LOGGING else logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+if DEBUG_LOGGING:
+    logging.getLogger('oauthlib').setLevel(logging.DEBUG)
+    logging.getLogger('requests_oauthlib').setLevel(logging.DEBUG)
 
 # --- Setup WebDriver Options ---
 options = Options()
@@ -47,12 +57,6 @@ if DEBUG_LOGGING:
 else:
     service_log_path = os.devnull
 
-if OAUTH_DEBUG_LOGGING:
-    # Enable detailed logging for the OAuth library
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger('oauthlib').setLevel(logging.DEBUG)
-    logging.getLogger('requests_oauthlib').setLevel(logging.DEBUG)
-    
 service = Service(ChromeDriverManager().install(), log_output=service_log_path)
 
 # --- Instapaper API Constants ---
@@ -110,15 +114,15 @@ def load_state(config_file):
                 if last_miniflux_str:
                     state['last_miniflux_refresh_time'] = datetime.fromisoformat(last_miniflux_str)
                     
-            print(f"[{datetime.now()}] Successfully loaded state for {os.path.basename(config_file)}.")
-            print(f"  - Last RSS entry processed: {state['last_rss_timestamp'].isoformat()}")
-            print(f"  - Last RSS poll time: {state['last_rss_poll_time'].isoformat()}")
-            print(f"  - Last Miniflux refresh time: {state['last_miniflux_refresh_time'].isoformat()}")
+            logging.info(f"Successfully loaded state for {os.path.basename(config_file)}.")
+            logging.info(f"  - Last RSS entry processed: {state['last_rss_timestamp'].isoformat()}")
+            logging.info(f"  - Last RSS poll time: {state['last_rss_poll_time'].isoformat()}")
+            logging.info(f"  - Last Miniflux refresh time: {state['last_miniflux_refresh_time'].isoformat()}")
         except (IOError, json.JSONDecodeError, ValueError) as e:
-            print(f"Warning: Could not read or parse {ctrl_file_path}. Starting with clean state. Error: {e}")
+            logging.warning(f"Could not read or parse {ctrl_file_path}. Starting with clean state. Error: {e}")
             
     else:
-        print(f"[{datetime.now()}] No state file found for {os.path.basename(config_file)}. Starting with a clean state.")
+        logging.info(f"No state file found for {os.path.basename(config_file)}. Starting with a clean state.")
     
     return state
 
@@ -137,35 +141,33 @@ def save_state(config_file, state):
     try:
         with open(ctrl_file_path, 'w') as f:
             json.dump(state_to_save, f, indent=4)
-        if DEBUG_LOGGING:
-            print(f"DEBUG: State successfully saved to {ctrl_file_path}.")
+        logging.debug(f"State successfully saved to {ctrl_file_path}.")
     except IOError as e:
-        print(f"Error: Could not save state to {ctrl_file_path}. Error: {e}")
+        logging.error(f"Could not save state to {ctrl_file_path}. Error: {e}")
 
 def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
     """
     Updates all specified Miniflux feeds with captured cookies.
     """
     if not miniflux_config:
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Miniflux config missing for {config_name}. Skipping.")
+        logging.debug(f"Miniflux config missing for {config_name}. Skipping.")
         return
         
     miniflux_url = miniflux_config.get('miniflux_url')
     api_key = miniflux_config.get('api_key')
     feed_ids_str = miniflux_config.get('feed_ids')
     if not all([miniflux_url, api_key, feed_ids_str]):
-        print(f"Miniflux configuration in {config_name} is incomplete. Skipping cookie update.")
+        logging.warning(f"Miniflux configuration in {config_name} is incomplete. Skipping cookie update.")
         return
 
     for feed_id in feed_ids_str.split(','):
         try:
             feed_id = int(feed_id.strip())
         except ValueError:
-            print(f"Invalid feed_ids format in Miniflux configuration for {config_name}. Skipping cookie update.")
+            logging.warning(f"Invalid feed_ids format in Miniflux configuration for {config_name}. Skipping cookie update.")
             continue
 
-        print(f"\n--- Updating Miniflux Feed {feed_id} ---")
+        logging.info(f"Updating Miniflux Feed {feed_id}")
         api_endpoint = f"{miniflux_url.rstrip('/')}/v1/feeds/{feed_id}"
         headers = {
             "X-Auth-Token": api_key,
@@ -173,33 +175,30 @@ def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
         }
         cookie_str = "; ".join([f"{c['name']}={c['value']} " for c in cookies])
         
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Updating feed {feed_id} at URL: {api_endpoint}")
-            print(f"DEBUG: Cookies being sent: {cookie_str}")
+        logging.debug(f"Updating feed {feed_id} at URL: {api_endpoint}")
+        logging.debug(f"Cookies being sent: {cookie_str}")
         
         payload = {"cookie": cookie_str}
 
         try:
             response = requests.put(api_endpoint, headers=headers, json=payload, timeout=20)
             response.raise_for_status()
-            print(f"Miniflux feed {feed_id} updated successfully with new cookies.")
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Miniflux API Response Status: {response.status_code}")
-                print(f"DEBUG: Miniflux API Response Body: {response.json()}")
+            logging.info(f"Miniflux feed {feed_id} updated successfully with new cookies.")
+            logging.debug(f"Miniflux API Response Status: {response.status_code}")
+            logging.debug(f"Miniflux API Response Body: {response.json()}")
         except requests.exceptions.RequestException as e:
-            print(f"Error updating Miniflux feed {feed_id}: {e}")
-            if 'response' in locals() and DEBUG_LOGGING:
-                print(f"DEBUG: Miniflux API Response Text: {response.text}")
+            logging.error(f"Error updating Miniflux feed {feed_id}: {e}")
+            if 'response' in locals():
+                logging.debug(f"Miniflux API Response Text: {response.text}")
 
 def get_instapaper_tokens(consumer_key, consumer_secret, username, password):
     """
     Obtains OAuth access tokens for Instapaper using username and password.
     Returns a dictionary with 'oauth_token' and 'oauth_token_secret' on success.
     """
-    print("Attempting to obtain Instapaper OAuth tokens...")
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Using consumer_key: {consumer_key}")
-        print(f"DEBUG: Using username: {username}")
+    logging.info("Attempting to obtain Instapaper OAuth tokens...")
+    logging.debug(f"Using consumer_key: {consumer_key}")
+    logging.debug(f"Using username: {username}")
         
     try:
         oauth = OAuth1Client(consumer_key, client_secret=consumer_secret, signature_method='HMAC-SHA1')
@@ -217,37 +216,33 @@ def get_instapaper_tokens(consumer_key, consumer_secret, username, password):
             headers={'Content-Type': 'application/x-www-form-urlencoded'}
         )
         
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Signed request URI: {uri}")
-            print(f"DEBUG: Signed request headers: {headers}")
-            print(f"DEBUG: Request body parameters: {body_params}")
+        logging.debug(f"Signed request URI: {uri}")
+        logging.debug(f"Signed request headers: {headers}")
+        logging.debug(f"Request body parameters: {body_params}")
 
         response = requests.post(uri, headers=headers, data=body_params, timeout=30)
         response.raise_for_status()
         
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Raw response from Instapaper: {response.text}")
+        logging.debug(f"Raw response from Instapaper: {response.text}")
 
         token_data = dict(re.findall(r'(\w+)=([^&]+)', response.text))
         
         if 'oauth_token' in token_data and 'oauth_token_secret' in token_data:
-            print("Successfully obtained Instapaper tokens.")
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Obtained tokens: {token_data}")
+            logging.info("Successfully obtained Instapaper tokens.")
+            logging.debug(f"Obtained tokens: {token_data}")
             return token_data
         else:
-            print("Failed to get tokens. Response format was not as expected.")
-            if DEBUG_LOGGING:
-                print("DEBUG: Final parsed token data:", token_data)
+            logging.error("Failed to get tokens. Response format was not as expected.")
+            logging.debug(f"Final parsed token data: {token_data}")
             return None
 
     except requests.exceptions.RequestException as e:
-        print(f"Error obtaining Instapaper tokens: {e}")
-        if 'response' in locals() and DEBUG_LOGGING:
-            print(f"DEBUG: Instapaper API Response Text: {response.text}")
+        logging.error(f"Error obtaining Instapaper tokens: {e}")
+        if 'response' in locals():
+            logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
     except Exception as e:
-        print(f"An unexpected error occurred while getting tokens: {e}")
+        logging.error(f"An unexpected error occurred while getting tokens: {e}")
         return None
 
 def get_article_html_with_cookies(url, cookies):
@@ -256,12 +251,10 @@ def get_article_html_with_cookies(url, cookies):
     Returns the HTML content or None on failure.
     """
     if not cookies:
-        if DEBUG_LOGGING:
-            print("DEBUG: No cookies provided. Cannot fetch full article HTML.")
+        logging.debug("No cookies provided. Cannot fetch full article HTML.")
         return None
 
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Attempting to fetch full article HTML from URL: {url}")
+    logging.debug(f"Attempting to fetch full article HTML from URL: {url}")
     
     session = requests.Session()
     for cookie in cookies:
@@ -270,14 +263,13 @@ def get_article_html_with_cookies(url, cookies):
     try:
         response = session.get(url, timeout=30)
         response.raise_for_status()
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Successfully fetched article content from {url}.")
+        logging.debug(f"Successfully fetched article content from {url}.")
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching article content with cookies from {url}: {e}")
-        if 'response' in locals() and DEBUG_LOGGING:
-            print(f"DEBUG: HTTP status code: {response.status_code}")
-            print(f"DEBUG: Response body: {response.text[:200]}...") # Print first 200 chars
+        logging.error(f"Error fetching article content with cookies from {url}: {e}")
+        if 'response' in locals():
+            logging.debug(f"HTTP status code: {response.status_code}")
+            logging.debug(f"Response body: {response.text[:200]}...")
         return None
 
 def get_instapaper_folder_id(oauth_session, folder_name):
@@ -285,8 +277,7 @@ def get_instapaper_folder_id(oauth_session, folder_name):
     Checks if a folder with the given name exists and returns its ID.
     Returns the folder ID (str) or None if not found.
     """
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Checking for existing folder: '{folder_name}'")
+    logging.debug(f"Checking for existing folder: '{folder_name}'")
     try:
         response = oauth_session.post(INSTAPAPER_FOLDERS_LIST_URL)
         response.raise_for_status()
@@ -295,16 +286,15 @@ def get_instapaper_folder_id(oauth_session, folder_name):
         
         for folder in folders:
             if folder.get('title') == folder_name:
-                print(f"Found existing folder '{folder_name}' with ID: {folder['folder_id']}")
+                logging.info(f"Found existing folder '{folder_name}' with ID: {folder['folder_id']}")
                 return folder['folder_id']
 
     except Exception as e:
-        print(f"Error listing Instapaper folders: {e}")
-        if 'response' in locals() and DEBUG_LOGGING:
-            print(f"DEBUG: Instapaper API Response Text: {response.text}")
+        logging.error(f"Error listing Instapaper folders: {e}")
+        if 'response' in locals():
+            logging.debug(f"Instapaper API Response Text: {response.text}")
     
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Folder '{folder_name}' not found.")
+    logging.debug(f"Folder '{folder_name}' not found.")
     return None
 
 def create_instapaper_folder(oauth_session, folder_name):
@@ -312,8 +302,7 @@ def create_instapaper_folder(oauth_session, folder_name):
     Creates a new folder with the given name and returns its ID.
     Returns the new folder ID (str) or None on failure.
     """
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Creating new folder: '{folder_name}'")
+    logging.debug(f"Creating new folder: '{folder_name}'")
     try:
         payload = {'title': folder_name}
         response = oauth_session.post(INSTAPAPER_FOLDERS_ADD_URL, data=payload)
@@ -322,23 +311,23 @@ def create_instapaper_folder(oauth_session, folder_name):
         new_folder = json.loads(response.text)
         new_id = new_folder[0].get('folder_id')
         if new_id:
-            print(f"Successfully created new folder '{folder_name}' with ID: {new_id}")
+            logging.info(f"Successfully created new folder '{folder_name}' with ID: {new_id}")
             return new_id
         else:
-            print(f"Failed to create folder. Response did not contain a folder ID.")
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Instapaper API Response Text: {response.text}")
+            logging.error(f"Failed to create folder. Response did not contain a folder ID.")
+            if 'response' in locals():
+                logging.debug(f"Instapaper API Response Text: {response.text}")
             return None
 
     except Exception as e:
-        print(f"Error creating Instapaper folder: {e}")
-        if 'response' in locals() and DEBUG_LOGGING:
+        logging.error(f"Error creating Instapaper folder: {e}")
+        if 'response' in locals():
             # Instapaper returns a 400 Bad Request if the folder already exists.
             # We can handle this as a success.
             if response.status_code == 400 and "Folder already exists" in response.text:
-                print(f"Folder '{folder_name}' already exists. Handling as success.")
+                logging.info(f"Folder '{folder_name}' already exists. Handling as success.")
                 return get_instapaper_folder_id(oauth_session, folder_name)
-            print(f"DEBUG: Instapaper API Response Text: {response.text}")
+            logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
 def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None):
@@ -356,7 +345,7 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         oauth_token_secret = instapaper_config.get('oauth_token_secret')
         
         if not all([consumer_key, consumer_secret, oauth_token, oauth_token_secret]):
-            print("Incomplete Instapaper credentials. Cannot publish.")
+            logging.error("Incomplete Instapaper credentials. Cannot publish.")
             return
 
         # 1. Extract only the HTML body content
@@ -365,8 +354,7 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         
         # 2. Conditionally sanitize the content
         if sanitize_content:
-            if DEBUG_LOGGING:
-                print("DEBUG: Sanitizing content: Removing <img> tags.")
+            logging.debug("Sanitizing content: Removing <img> tags.")
             processed_content = re.sub(r'<img[^>]+>', '', processed_content, flags=re.I)
 
         oauth = OAuth1Session(consumer_key,
@@ -393,37 +381,35 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         if folder_id:
             payload['folder_id'] = folder_id
 
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Publishing URL: {url}")
-            print(f"DEBUG: Publishing Title: {title}")
-            print(f"DEBUG: Payload being sent to Instapaper API (content truncated): {payload['content'][:100]}...")
-            if 'resolve_final_url' in payload:
-                print(f"DEBUG: 'resolve_final_url' parameter is set to '0' to prevent URL resolution.")
-            else:
-                print(f"DEBUG: 'resolve_final_url' parameter is not explicitly set. Instapaper will resolve redirects.")
-            if sanitize_content:
-                print("DEBUG: Content sanitization is ENABLED.")
-            else:
-                print("DEBUG: Content sanitization is DISABLED.")
-            if tags_string:
-                print(f"DEBUG: Tags being added: '{tags_string}'.")
-                print(f"DEBUG: Formatted tags being sent: '{payload['tags']}'.")
-            if folder_id:
-                print(f"DEBUG: Folder ID being used: '{folder_id}'.")
+        logging.debug(f"Publishing URL: {url}")
+        logging.debug(f"Publishing Title: {title}")
+        logging.debug(f"Payload being sent to Instapaper API (content truncated): {payload['content'][:100]}...")
+        if 'resolve_final_url' in payload:
+            logging.debug("'resolve_final_url' parameter is set to '0' to prevent URL resolution.")
+        else:
+            logging.debug("'resolve_final_url' parameter is not explicitly set. Instapaper will resolve redirects.")
+        if sanitize_content:
+            logging.debug("Content sanitization is ENABLED.")
+        else:
+            logging.debug("Content sanitization is DISABLED.")
+        if tags_string:
+            logging.debug(f"Tags being added: '{tags_string}'.")
+            logging.debug(f"Formatted tags being sent: '{payload['tags']}'.")
+        if folder_id:
+            logging.debug(f"Folder ID being used: '{folder_id}'.")
 
         # Use `data` parameter to send the payload as application/x-www-form-urlencoded
         response = oauth.post(INSTAPAPER_ADD_URL, data=payload)
         response.raise_for_status()
         
-        print(f"Successfully published '{title}' to Instapaper.")
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Instapaper API Response Status: {response.status_code}")
-            print(f"DEBUG: Instapaper API Response Text: {response.text}")
+        logging.info(f"Successfully published '{title}' to Instapaper.")
+        logging.debug(f"Instapaper API Response Status: {response.status_code}")
+        logging.debug(f"Instapaper API Response Text: {response.text}")
 
     except Exception as e:
-        print(f"Error publishing to Instapaper: {e}")
-        if 'response' in locals() and DEBUG_LOGGING:
-            print(f"DEBUG: Instapaper API Response Text: {response.text}")
+        logging.error(f"Error publishing to Instapaper: {e}")
+        if 'response' in locals():
+            logging.debug(f"Instapaper API Response Text: {response.text}")
 
 def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, cookies, state):
     """
@@ -434,11 +420,10 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
     last_run_dt = state['last_rss_timestamp']
     new_entries = []
     
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
+    logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
 
     try:
-        print(f"\n--- Fetching RSS feed from {feed_url} ---")
+        logging.info(f"Fetching RSS feed from {feed_url}")
         # Add a User-Agent header to mimic a browser
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
         feed_response = requests.get(feed_url, headers=headers, timeout=30)
@@ -446,8 +431,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
         
         feed = feedparser.parse(feed_response.content)
 
-        if DEBUG_LOGGING:
-            print(f"DEBUG: Found {len(feed.entries)} entries in the RSS feed.")
+        logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
 
         for entry in feed.entries:
             entry_timestamp_dt = None
@@ -456,8 +440,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
             elif hasattr(entry, 'updated_parsed'):
                 entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
             
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
+            logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
 
             if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
                 url = entry.link
@@ -471,8 +454,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
                 # Fallback to RSS content if full content is not available
                 if not raw_html_content:
                     raw_html_content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '') or entry.get('description', '')
-                    if DEBUG_LOGGING:
-                        print("DEBUG: Using RSS entry content as fallback.")
+                    logging.debug("Using RSS entry content as fallback.")
                 
                 if raw_html_content:
                     new_entry = {
@@ -485,19 +467,19 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
                         'rss_feed_config': rss_feed_config,
                     }
                     new_entries.append(new_entry)
-                    print(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
+                    logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
                 else:
-                    print(f"Warning: Skipping entry '{title}' as no content could be retrieved.")
+                    logging.warning(f"Skipping entry '{title}' as no content could be retrieved.")
 
-        print(f"Found {len(new_entries)} new entries from this feed.")
+        logging.info(f"Found {len(new_entries)} new entries from this feed.")
     
     except requests.exceptions.RequestException as e:
-        print(f"\nError fetching RSS feed: {e}")
-        if DEBUG_LOGGING and 'response' in locals():
-            print(f"DEBUG: HTTP status code: {feed_response.status_code}")
-            print(f"DEBUG: HTTP response body: {feed_response.text}")
+        logging.error(f"Error fetching RSS feed: {e}")
+        if 'response' in locals():
+            logging.debug(f"HTTP status code: {feed_response.status_code}")
+            logging.debug(f"HTTP response body: {feed_response.text}")
     except Exception as e:
-        print(f"\nAn unexpected error occurred while processing feed: {e}")
+        logging.error(f"An unexpected error occurred while processing feed: {e}")
 
     return new_entries
 
@@ -510,49 +492,41 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
     login_type = site_config.get('login_type')
     cookies = []
 
-    print(f"\n--- Running {site_config.get('site_name')} login for: {config_name} using {login_type} method ---")
-    if DEBUG_LOGGING:
-        print(f"DEBUG: Login URL: {site_config.get('login_url')}")
+    logging.info(f"Running {site_config.get('site_name')} login for: {config_name} using {login_type} method")
+    logging.debug(f"Login URL: {site_config.get('login_url')}")
 
     if login_type == "selenium":
         driver = None
         try:
-            if DEBUG_LOGGING:
-                print("DEBUG: Initializing WebDriver with headless mode.")
+            logging.debug("Initializing WebDriver with headless mode.")
             driver = webdriver.Chrome(service=service, options=options)
             driver.get(site_config.get('login_url'))
-            print(f"Navigated to {site_config.get('login_url')}")
+            logging.info(f"Navigated to {site_config.get('login_url')}")
 
             wait = WebDriverWait(driver, 20)
             required_cookies_str = site_config.get('required_cookies', '')
             if required_cookies_str:
                 required_cookies = [c.strip() for c in required_cookies_str.split(',')]
-                if DEBUG_LOGGING:
-                    print(f"DEBUG: Waiting for required cookies: {required_cookies}")
+                logging.debug(f"Waiting for required cookies: {required_cookies}")
                 for cookie in required_cookies:
                     wait.until(lambda d: cookie in [c['name'] for c in d.get_cookies()])
-                    if DEBUG_LOGGING:
-                        print(f"DEBUG: Found required cookie '{cookie}'.")
+                    logging.debug(f"Found required cookie '{cookie}'.")
             else:
-                if DEBUG_LOGGING:
-                    print("DEBUG: No specific cookies to wait for.")
+                logging.debug("No specific cookies to wait for.")
                 time.sleep(2)
 
             email_field = wait.until(EC.visibility_of_element_located((By.ID, site_config.get('email_field_id'))))
             email_field.send_keys(email)
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Email field filled (ID: {site_config.get('email_field_id')}).")
+            logging.debug(f"Email field filled (ID: {site_config.get('email_field_id')}).")
 
             password_field = wait.until(EC.visibility_of_element_located((By.ID, site_config.get('password_field_id'))))
             password_field.send_keys(password)
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Password field filled (ID: {site_config.get('password_field_id')}).")
+            logging.debug(f"Password field filled (ID: {site_config.get('password_field_id')}).")
 
             signin_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, site_config.get('login_button_selector'))))
             signin_button.click()
-            print("Login button clicked successfully.")
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Login button clicked (Selector: {site_config.get('login_button_selector')}).")
+            logging.info("Login button clicked successfully.")
+            logging.debug(f"Login button clicked (Selector: {site_config.get('login_button_selector')}).")
 
             success_text = site_config.get('expected_success_text')
             success_locator_class = site_config.get('success_text_class')
@@ -560,27 +534,25 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             if success_text and success_locator_class:
                 welcome_element = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, success_locator_class)))
                 assert welcome_element.text.strip() == success_text.strip(), "Login verification failed: Welcome message not found or text mismatch."
-                print("Login successful and welcome message verified.")
-                if DEBUG_LOGGING:
-                    print(f"DEBUG: Verified success text: '{success_text}'")
+                logging.info("Login successful and welcome message verified.")
+                logging.debug(f"Verified success text: '{success_text}'")
             else:
-                print("No success text or locator provided. Assuming login was successful.")
+                logging.info("No success text or locator provided. Assuming login was successful.")
                 time.sleep(5)
 
             if ENABLE_SCREENSHOTS:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 success_screenshot_path = os.path.join(log_dir, f"{site_config.get('site_name')}_success_screenshot_{config_name}_{timestamp}.png")
                 driver.save_screenshot(success_screenshot_path)
-                print(f"Screenshot of successful login saved to {success_screenshot_path}")
+                logging.info(f"Screenshot of successful login saved to {success_screenshot_path}")
 
             cookies = driver.get_cookies()
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Captured {len(cookies)} cookies.")
+            logging.debug(f"Captured {len(cookies)} cookies.")
             update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name)
             return cookies
 
         except (WebDriverException, TimeoutException, AssertionError, Exception) as e:
-            print(f"\n--- Script Failed ---\nAn error occurred during {site_config.get('site_name')} login for {config_name}: {e}")
+            logging.error(f"An error occurred during {site_config.get('site_name')} login for {config_name}: {e}")
             if driver and ENABLE_SCREENSHOTS:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 failure_screenshot_path = os.path.join(log_dir, f"{site_config.get('site_name')}_failure_screenshot_{config_name}_{timestamp}.png")
@@ -588,16 +560,15 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             return []
         finally:
             if driver:
-                if DEBUG_LOGGING:
-                    try:
-                        print("\n--- Browser Cookies After Session ---")
-                        print(json.dumps(driver.get_cookies(), indent=2))
-                        print("\n--- Browser Logs ---")
-                        for entry in driver.get_log('browser'):
-                            print(entry)
-                    except WebDriverException as e:
-                        print(f"Failed to retrieve logs/cookies: {e}")
-                print("\nQuitting WebDriver.")
+                try:
+                    logging.debug("Browser Cookies After Session:")
+                    logging.debug(json.dumps(driver.get_cookies(), indent=2))
+                    logging.debug("Browser Logs:")
+                    for entry in driver.get_log('browser'):
+                        logging.debug(entry)
+                except WebDriverException as e:
+                    logging.debug(f"Failed to retrieve logs/cookies: {e}")
+                logging.info("Quitting WebDriver.")
                 driver.quit()
 
     elif login_type == "api":
@@ -610,40 +581,36 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             'password': password,
             'captcha_response': 'None'
         }
-        if DEBUG_LOGGING:
-            print(f"DEBUG: API Login URL: {site_config.get('login_url')}")
-            print(f"DEBUG: API Payload: {data}")
+        logging.debug(f"API Login URL: {site_config.get('login_url')}")
+        logging.debug(f"API Payload: {data}")
 
         try:
-            if DEBUG_LOGGING:
-                print("DEBUG: Sending POST request to API...")
+            logging.debug("Sending POST request to API...")
             response = requests.post(site_config.get('login_url'), headers=headers, data=data, timeout=30)
             response.raise_for_status()
 
-            print("API login successful.")
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Response status: {response.status_code}")
-                print(f"DEBUG: Response headers: {response.headers}")
+            logging.info("API login successful.")
+            logging.debug(f"Response status: {response.status_code}")
+            logging.debug(f"Response headers: {response.headers}")
 
             cookies_jar = response.cookies
             cookies = [{'name': c.name, 'value': c.value} for c in cookies_jar]
-            if DEBUG_LOGGING:
-                print(f"DEBUG: Captured {len(cookies)} cookies.")
+            logging.debug(f"Captured {len(cookies)} cookies.")
 
             update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name)
             return cookies
 
         except requests.exceptions.RequestException as e:
-            print(f"\n--- Script Failed ---\nAn error occurred during API login for {config_name}: {e}")
-            if 'response' in locals() and DEBUG_LOGGING:
-                print(f"DEBUG: Response text: {response.text}")
+            logging.error(f"An error occurred during API login for {config_name}: {e}")
+            if 'response' in locals():
+                logging.debug(f"Response text: {response.text}")
             return []
         except Exception as e:
-            print(f"\n--- Script Failed ---\nAn unexpected error occurred during API login for {config_name}: {e}")
+            logging.error(f"An unexpected error occurred during API login for {config_name}: {e}")
             return []
 
     else:
-        print(f"Unsupported login_type '{login_type}' defined in config. Skipping.")
+        logging.warning(f"Unsupported login_type '{login_type}' defined in config. Skipping.")
         return []
 
 def get_config_files(path):
@@ -653,7 +620,7 @@ def get_config_files(path):
     elif os.path.isdir(path):
         return glob(os.path.join(path, '*.ini'))
     else:
-        print("Error: Invalid path provided. Please specify a .ini file or a directory containing .ini files.")
+        logging.error("Invalid path provided. Please specify a .ini file or a directory containing .ini files.")
         sys.exit(1)
 
 def run_service(config_path):
@@ -670,7 +637,7 @@ def run_service(config_path):
         last_run_times[key]['cookies'] = []
 
     while True:
-        print(f"\n[{datetime.now()}] --- Starting a new service poll loop ---")
+        logging.info("Starting a new service poll loop")
         
         all_new_entries = []
 
@@ -692,19 +659,19 @@ def run_service(config_path):
                     refresh_frequency_str = miniflux_config.get('refresh_frequency')
                     
                     if not all([email, password, refresh_frequency_str]):
-                        print(f"Skipping login for {config_name}: incomplete credentials or refresh_frequency is missing.")
+                        logging.warning(f"Skipping login for {config_name}: incomplete credentials or refresh_frequency is missing.")
                     else:
                         refresh_frequency_sec = parse_frequency_to_seconds(refresh_frequency_str)
                         time_since_last_run = datetime.now() - state['last_miniflux_refresh_time']
 
                         if time_since_last_run.total_seconds() >= refresh_frequency_sec:
-                            print(f"\n--- Running scheduled login for {config_name} ---")
+                            logging.info(f"Running scheduled login for {config_name}")
                             cookies = login_and_update(config_name, email, password, miniflux_config, site_config)
                             state['cookies'] = cookies
                             state['last_miniflux_refresh_time'] = datetime.now()
                             save_state(config_file, state)
                         else:
-                            print(f"\n--- Skipping login for {config_name}: Not yet time to refresh. ---")
+                            logging.info(f"Skipping login for {config_name}: Not yet time to refresh.")
 
                 # --- Handle RSS to Instapaper Publishing (if configured) ---
                 if 'INSTAPAPER_API' in config and 'RSS_FEED_CONFIG' in config:
@@ -714,28 +681,28 @@ def run_service(config_path):
                     poll_frequency_str = rss_feed_config.get('poll_frequency', '1h')
                     
                     if not feed_url:
-                        print(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
+                        logging.warning(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
                     else:
                         poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
                         time_since_last_poll = datetime.now() - state['last_rss_poll_time']
 
                         if time_since_last_poll.total_seconds() >= poll_frequency_sec:
-                            print(f"\n--- Polling RSS feed for new entries ({config_name}) ---")
+                            logging.info(f"Polling RSS feed for new entries ({config_name})")
                             new_entries = get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
                             all_new_entries.extend(new_entries)
                             # Update the poll time regardless of new entries found
                             state['last_rss_poll_time'] = datetime.now()
                             save_state(config_file, state)
                         else:
-                            print(f"\n--- Skipping RSS poll for {config_name}: Not yet time to poll. ---")
+                            logging.info(f"Skipping RSS poll for {config_name}: Not yet time to poll.")
 
             except (configparser.Error, KeyError) as e:
-                print(f"\nError reading or parsing INI file {config_file}: {e}")
+                logging.error(f"Error reading or parsing INI file {config_file}: {e}")
                 continue
 
         # --- Process and Publish all collected new entries in chronological order ---
         if all_new_entries:
-            print("\n--- Found new entries across all feeds. Sorting and publishing chronologically. ---")
+            logging.info("Found new entries across all feeds. Sorting and publishing chronologically.")
             # Sort entries by their published date
             all_new_entries.sort(key=lambda x: x['published_dt'])
             
@@ -778,13 +745,13 @@ def run_service(config_path):
                 last_run_times[config_name]['last_rss_timestamp'] = entry['published_dt']
                 save_state(config_file_for_entry, last_run_times[config_name])
 
-            print(f"Finished processing. Published {published_count} new entries to Instapaper.")
+            logging.info(f"Finished processing. Published {published_count} new entries to Instapaper.")
         else:
-            print("\nNo new entries found to publish.")
+            logging.info("No new entries found to publish.")
 
 
         # Sleep for a minute before the next loop iteration to prevent a busy loop.
-        print(f"\n[{datetime.now()}] --- Service poll loop finished. Sleeping for 60 seconds. ---")
+        logging.info("Service poll loop finished. Sleeping for 60 seconds.")
         time.sleep(60)
 
 def main():
@@ -794,13 +761,13 @@ def main():
     args = parser.parse_args()
 
     # Initial check for Instapaper OAuth tokens before starting the service loop
-    print("Performing initial check for Instapaper OAuth tokens...")
+    logging.info("Performing initial check for Instapaper OAuth tokens...")
     config_files = get_config_files(args.config_path)
     for config_file in config_files:
         config = configparser.ConfigParser()
         config.read(config_file)
         if 'INSTAPAPER_OAUTH' in config:
-            print(f"Found 'INSTAPAPER_OAUTH' section in {os.path.basename(config_file)}. Attempting to generate tokens...")
+            logging.info(f"Found 'INSTAPAPER_OAUTH' section in {os.path.basename(config_file)}. Attempting to generate tokens...")
             oauth_credentials = config['INSTAPAPER_OAUTH']
             consumer_key = oauth_credentials.get('consumer_key')
             consumer_secret = oauth_credentials.get('consumer_secret')
@@ -819,13 +786,13 @@ def main():
                     config.remove_section('INSTAPAPER_OAUTH')
                     with open(config_file, 'w') as f:
                         config.write(f)
-                    print(f"Successfully wrote Instapaper tokens to {os.path.basename(config_file)}.")
+                    logging.info(f"Successfully wrote Instapaper tokens to {os.path.basename(config_file)}.")
                 else:
-                    print(f"Failed to generate Instapaper tokens for {os.path.basename(config_file)}. Please check credentials.")
+                    logging.error(f"Failed to generate Instapaper tokens for {os.path.basename(config_file)}. Please check credentials.")
             else:
-                print(f"Skipping token generation for {os.path.basename(config_file)}: Incomplete credentials.")
+                logging.warning(f"Skipping token generation for {os.path.basename(config_file)}: Incomplete credentials.")
     
-    print("\nStarting the continuous service loop...")
+    logging.info("Starting the continuous service loop...")
     run_service(args.config_path)
 
 if __name__ == "__main__":
