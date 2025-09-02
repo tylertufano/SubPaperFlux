@@ -1,58 +1,88 @@
 # Stage 1: The Build Environment
-# Use a base image that already has Chrome and a WebDriver
-FROM python:3.11-slim AS builder
+# Use a full-featured Debian base for the build process
+FROM python:3.13-slim AS builder
 
-# Set the working directory inside the container
-WORKDIR /app
+# Set environment variables for non-interactive installations
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies needed for the application
-RUN apt-get update && apt-get install -y \
-    wget \
+# Install necessary system packages for Google Chrome and other tools
+# xvfb is included for headless browser support
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
     gnupg \
+    wget \
+    curl \
     unzip \
+    libglib2.0-0 \
     libnss3 \
     libxss1 \
-    libappindicator3-1 \
-    libsecret-1-0 \
-    libgconf-2-4 \
-    libasound2 \
-    libcurl4 \
-    libfontconfig1 \
-    libgtk-3-0 \
-    libnotify4 \
-    libxslt1-dev \
-    libxml2-dev \
-    zlib1g \
-    && rm -rf /var/lib/apt/lists/*
+    libxtst6 \
+    libdbus-1-3 \
+    libatk-bridge2.0-0 \
+    fontconfig \
+    fonts-liberation \
+    xvfb \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome and ChromeDriver
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Add Google Chrome's official repository and key
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
 
-# Install Python dependencies from a requirements.txt file
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Update and install Google Chrome Stable
+RUN apt-get update && \
+    apt-get install -y google-chrome-stable \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Stage 2: The Final, Small Image
-FROM python:3.11-slim
-
-# Set environment variables for running a non-root user
-ENV HOME=/app
-
-# Create a non-root user and switch to it
-RUN addgroup --system appgroup && \
-    adduser --system --ingroup appgroup --disabled-password --shell /bin/bash appuser && \
-    chown -R appuser:appgroup /app
-
-USER appuser
-
-# Copy the Python script and requirements from the builder stage
+# Set the working directory for the build stage
 WORKDIR /app
-COPY --from=builder /usr/bin/google-chrome /usr/bin/google-chrome
-COPY --from=builder /usr/lib/chromium/chromedriver /usr/bin/chromedriver
-COPY --from=builder /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
-COPY rss_feed_bridge.py .
 
-# Set the entrypoint to run the script directly
+# Copy requirements file and install Python dependencies
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy all application code to the container
+COPY . .
+
+# Stage 2: The Final, Lean Runtime Environment
+# Use a minimal base image for the final product
+FROM python:3.13-slim
+
+# Set environment variables for non-interactive installations
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install only the runtime dependencies for Google Chrome and the application
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libglib2.0-0 \
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    libdbus-1-3 \
+    libatk-bridge2.0-0 \
+    fontconfig \
+    fonts-liberation \
+    xvfb \
+    google-chrome-stable \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set display port to avoid crash
+ENV DISPLAY=:99
+
+# Set the working directory
+WORKDIR /app
+
+# Copy only the necessary files from the builder stage
+# This includes the Python application code and the installed dependencies
+COPY --from=builder /app /app
+
+# Create a non-root user and set permissions for security
+RUN addgroup --system bridge && \
+    adduser --system --ingroup bridge --disabled-password --shell /bin/bash bridge && \
+    chown -R bridge:bridge /app
+
+# Switch to the non-root user
+USER bridge
+
+# Set the entry point for the application
 CMD ["python", "./rss_feed_bridge.py", "/config"]
