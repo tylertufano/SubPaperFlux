@@ -47,8 +47,5 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container.
 COPY . .
 
-# Ensure the start script is executable
-RUN chmod +x ./start.sh
-
 # Set the entrypoint to run the script directly
 CMD ["python", "./rss_feed_bridge.py", "/config"]
