@@ -425,14 +425,14 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         if 'response' in locals() and DEBUG_LOGGING:
             print(f"DEBUG: Instapaper API Response Text: {response.text}")
 
-def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookies, state):
+def get_new_rss_entries(feed_url, instapaper_config, rss_feed_config, cookies, state):
     """
-    Fetches the RSS feed from a given URL and publishes new entries to Instapaper.
+    Fetches the RSS feed from a given URL and returns a list of new entries.
     Accepts an optional `cookies` argument for authenticated content fetching.
     """
     
-    # We no longer need to convert to a timestamp, as all state timestamps are datetime objects
     last_run_dt = state['last_rss_timestamp']
+    new_entries = []
     
     if DEBUG_LOGGING:
         print(f"DEBUG: Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
@@ -445,36 +445,11 @@ def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookie
         feed_response.raise_for_status()
         
         feed = feedparser.parse(feed_response.content)
-        newest_timestamp_dt = last_run_dt
-        published_count = 0
-        
-        resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
-        sanitize_content_flag = instapaper_config.getboolean('sanitize_content', fallback=False)
-        tags_to_add = rss_feed_config.get('tags', '')
-        folder_name = rss_feed_config.get('folder', '')
-        
-        # Initialize Instapaper folder_id if a folder is specified
-        folder_id = None
-        if folder_name:
-            oauth_session = OAuth1Session(instapaper_config.get('consumer_key'),
-                                          client_secret=instapaper_config.get('consumer_secret'),
-                                          resource_owner_key=instapaper_config.get('oauth_token'),
-                                          resource_owner_secret=instapaper_config.get('oauth_token_secret'))
-            folder_id = get_instapaper_folder_id(oauth_session, folder_name)
-            if not folder_id:
-                folder_id = create_instapaper_folder(oauth_session, folder_name)
-
-        if DEBUG_LOGGING:
-            print(f"DEBUG: `resolve_final_url` setting is: {resolve_final_url_flag}")
-            print(f"DEBUG: `sanitize_content` setting is: {sanitize_content_flag}")
-            print(f"DEBUG: `tags` setting is: '{tags_to_add}'")
-            if folder_name:
-                print(f"DEBUG: `folder` setting is: '{folder_name}' with ID '{folder_id}'")
 
         if DEBUG_LOGGING:
             print(f"DEBUG: Found {len(feed.entries)} entries in the RSS feed.")
 
-        for entry in reversed(feed.entries):
+        for entry in feed.entries:
             entry_timestamp_dt = None
             if hasattr(entry, 'published_parsed'):
                 entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
@@ -499,30 +474,21 @@ def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookie
                     if DEBUG_LOGGING:
                         print("DEBUG: Using RSS entry content as fallback.")
                 
-                print(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
-                if DEBUG_LOGGING:
-                    print(f"DEBUG: Article URL to be sent to Instapaper: {url}")
-                publish_to_instapaper(
-                    instapaper_config, 
-                    url, 
-                    title, 
-                    raw_html_content, 
-                    resolve_final_url=resolve_final_url_flag,
-                    sanitize_content=sanitize_content_flag,
-                    tags_string=tags_to_add,
-                    folder_id=folder_id
-                )
-                published_count += 1
-                
-                if entry_timestamp_dt > newest_timestamp_dt:
-                    newest_timestamp_dt = entry_timestamp_dt
+                if raw_html_content:
+                    new_entry = {
+                        'url': url,
+                        'title': title,
+                        'raw_html_content': raw_html_content,
+                        'published_dt': entry_timestamp_dt,
+                        'instapaper_config': instapaper_config,
+                        'rss_feed_config': rss_feed_config,
+                    }
+                    new_entries.append(new_entry)
+                    print(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
+                else:
+                    print(f"Warning: Skipping entry '{title}' as no content could be retrieved.")
 
-        if published_count > 0:
-            print(f"Finished processing. Published {published_count} new entries to Instapaper.")
-            state['last_rss_timestamp'] = newest_timestamp_dt
-            print(f"State updated with newest RSS entry timestamp: {newest_timestamp_dt.isoformat()}")
-        else:
-            print("No new entries found to publish.")
+        print(f"Found {len(new_entries)} new entries from this feed.")
     
     except requests.exceptions.RequestException as e:
         print(f"\nError fetching RSS feed: {e}")
@@ -531,6 +497,8 @@ def process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, cookie
             print(f"DEBUG: HTTP response body: {feed_response.text}")
     except Exception as e:
         print(f"\nAn unexpected error occurred while processing feed: {e}")
+
+    return new_entries
 
 
 def login_and_update(config_name, email, password, miniflux_config, site_config):
@@ -703,6 +671,8 @@ def run_service(config_path):
     while True:
         print(f"\n[{datetime.now()}] --- Starting a new service poll loop ---")
         
+        all_new_entries = []
+
         for config_file in config_files:
             config = configparser.ConfigParser()
             try:
@@ -749,8 +719,10 @@ def run_service(config_path):
                         time_since_last_poll = datetime.now() - state['last_rss_poll_time']
 
                         if time_since_last_poll.total_seconds() >= poll_frequency_sec:
-                            print(f"\n--- Running scheduled RSS poll for {config_name} ---")
-                            process_rss_and_publish(feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
+                            print(f"\n--- Polling RSS feed for new entries ({config_name}) ---")
+                            new_entries = get_new_rss_entries(feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
+                            all_new_entries.extend(new_entries)
+                            # Update the poll time regardless of new entries found
                             state['last_rss_poll_time'] = datetime.now()
                             save_state(config_file, state)
                         else:
@@ -759,6 +731,55 @@ def run_service(config_path):
             except (configparser.Error, KeyError) as e:
                 print(f"\nError reading or parsing INI file {config_file}: {e}")
                 continue
+
+        # --- Process and Publish all collected new entries in chronological order ---
+        if all_new_entries:
+            print("\n--- Found new entries across all feeds. Sorting and publishing chronologically. ---")
+            # Sort entries by their published date
+            all_new_entries.sort(key=lambda x: x['published_dt'])
+            
+            published_count = 0
+            for entry in all_new_entries:
+                instapaper_config = entry['instapaper_config']
+                rss_feed_config = entry['rss_feed_config']
+                
+                resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
+                sanitize_content_flag = instapaper_config.getboolean('sanitize_content', fallback=False)
+                tags_to_add = rss_feed_config.get('tags', '')
+                folder_name = rss_feed_config.get('folder', '')
+                
+                # Re-fetch folder ID for each entry, as it could be different
+                folder_id = None
+                if folder_name:
+                    oauth_session = OAuth1Session(instapaper_config.get('consumer_key'),
+                                                  client_secret=instapaper_config.get('consumer_secret'),
+                                                  resource_owner_key=instapaper_config.get('oauth_token'),
+                                                  resource_owner_secret=instapaper_config.get('oauth_token_secret'))
+                    folder_id = get_instapaper_folder_id(oauth_session, folder_name)
+                    if not folder_id:
+                        folder_id = create_instapaper_folder(oauth_session, folder_name)
+
+                publish_to_instapaper(
+                    instapaper_config, 
+                    entry['url'], 
+                    entry['title'], 
+                    entry['raw_html_content'], 
+                    resolve_final_url=resolve_final_url_flag,
+                    sanitize_content=sanitize_content_flag,
+                    tags_string=tags_to_add,
+                    folder_id=folder_id
+                )
+                published_count += 1
+                
+                # Update the last_rss_timestamp for the specific config that this entry came from
+                config_name = os.path.basename(rss_feed_config.get('config_file'))
+                last_run_times[config_name]['last_rss_timestamp'] = entry['published_dt']
+                save_state(rss_feed_config.get('config_file'), last_run_times[config_name])
+
+            print(f"Finished processing. Published {published_count} new entries to Instapaper.")
+        else:
+            print("\nNo new entries found to publish.")
+
 
         # Sleep for a minute before the next loop iteration to prevent a busy loop.
         print(f"\n[{datetime.now()}] --- Service poll loop finished. Sleeping for 60 seconds. ---")
