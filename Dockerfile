@@ -83,6 +83,9 @@ RUN addgroup --system bridge && \
     adduser --system --ingroup bridge --disabled-password --shell /bin/bash bridge && \
     chown -R bridge:bridge /app
 
+# Explicitly set the home directory for the non-root user
+ENV HOME=/app
+
 # Switch to the non-root user
 USER bridge
 
