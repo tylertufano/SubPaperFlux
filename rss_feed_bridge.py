@@ -669,18 +669,7 @@ def login_and_update(config_name, site_config, login_credentials):
             logging.info(f"Navigated to {site_config.get('login_url')}")
 
             wait = WebDriverWait(driver, 20)
-            required_cookies_str = site_config.get('required_cookies', '')
-            if required_cookies_str:
-                required_cookies = [c.strip() for c in required_cookies_str.split(',')]
-                logging.debug(f"Waiting for required cookies: {required_cookies}")
-                for cookie in required_cookies:
-                    wait.until(lambda d: cookie in [c['name'] for c in d.get_cookies()])
-                    logging.debug(f"Found required cookie '{cookie}'.")
-            else:
-                logging.debug("No specific cookies to wait for.")
-                time.sleep(2)
 
-            # Use the new generic key for the login field ID, with a fallback
             login_field_id = site_config.get('login_field_id', site_config.get('email_field_id'))
             if not login_field_id:
                 raise ValueError("Missing 'login_field_id' or 'email_field_id' in site config.")
@@ -698,17 +687,28 @@ def login_and_update(config_name, site_config, login_credentials):
             logging.info("Login button clicked successfully.")
             logging.debug(f"Login button clicked (Selector: {site_config.get('login_button_selector')}).")
 
+            # --- Validation Checks ---
+            required_cookies_str = site_config.get('required_cookies', '')
+            if required_cookies_str:
+                required_cookies = [c.strip() for c in required_cookies_str.split(',')]
+                logging.debug(f"Waiting for required cookies: {required_cookies}")
+                for cookie in required_cookies:
+                    wait.until(lambda d: cookie in [c['name'] for c in d.get_cookies()])
+                    logging.debug(f"Found required cookie '{cookie}'.")
+            else:
+                logging.debug("No specific cookies to wait for. Proceeding with a short wait.")
+                time.sleep(3)
+
             success_text = site_config.get('expected_success_text')
             success_locator_class = site_config.get('success_text_class')
 
             if success_text and success_locator_class:
                 welcome_element = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, success_locator_class)))
                 assert welcome_element.text.strip() == success_text.strip(), "Login verification failed: Welcome message not found or text mismatch."
-                logging.info("Login successful and welcome message verified.")
-                logging.debug(f"Verified success text: '{success_text}'")
+                logging.info("Login verified via expected success text.")
             else:
-                logging.info("No success text or locator provided. Assuming login was successful.")
-                time.sleep(5)
+                logging.debug("No success text or locator provided. Skipping this verification step.")
+                time.sleep(2)
 
             if ENABLE_SCREENSHOTS:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -732,7 +732,9 @@ def login_and_update(config_name, site_config, login_credentials):
                 for name in cookies_to_store_names:
                     if name not in captured_cookie_names:
                         logging.warning(f"Required cookie '{name}' was not found after login. This may cause subsequent requests to fail.")
-
+            
+            # This is the single, definitive success log. It only runs if no exceptions were raised.
+            logging.info("Login process successfully completed and verified.")
             return cookies
 
         except (WebDriverException, TimeoutException, AssertionError, ValueError, Exception) as e:
@@ -761,7 +763,6 @@ def login_and_update(config_name, site_config, login_credentials):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'
         }
 
-        # Use new generic parameter names, with fallbacks to old ones
         login_id_param_name = site_config.get('login_id_param_name', 'email')
         password_param_name = site_config.get('password_param_name', 'password')
 
@@ -814,6 +815,80 @@ def login_and_update(config_name, site_config, login_credentials):
     else:
         logging.warning(f"Unsupported login_type '{login_type}' defined in site config. Skipping.")
         return []
+
+def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state):
+    """
+    Fetches the RSS feed from a given URL and returns a list of new entries.
+    Accepts an optional `cookies` argument for authenticated content fetching.
+    """
+
+    last_run_dt = state['last_rss_timestamp']
+    new_entries = []
+
+    logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
+
+    try:
+        logging.info(f"Fetching RSS feed from {feed_url}")
+        # Add a User-Agent header to mimic a browser
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
+        feed_response = requests.get(feed_url, headers=headers, timeout=30)
+        feed_response.raise_for_status()
+
+        feed = feedparser.parse(feed_response.content)
+
+        logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
+
+        for entry in feed.entries:
+            entry_timestamp_dt = None
+            if hasattr(entry, 'published_parsed'):
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
+            elif hasattr(entry, 'updated_parsed'):
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
+
+            logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
+
+            if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
+                url = entry.link
+                title = entry.title
+
+                # Use cookies to fetch full article content if available
+                raw_html_content = None
+                if cookies:
+                    raw_html_content = get_article_html_with_cookies(url, cookies)
+
+                # Fallback to RSS content if full content is not available
+                if not raw_html_content:
+                    raw_html_content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '') or entry.get('description', '')
+                    logging.debug("Using RSS entry content as fallback.")
+
+                if raw_html_content:
+                    new_entry = {
+                        'config_file': config_file,
+                        'url': url,
+                        'title': title,
+                        'raw_html_content': raw_html_content,
+                        'published_dt': entry_timestamp_dt,
+                        'instapaper_config': instapaper_config,
+                        'app_creds': app_creds, # Pass the app creds
+                        'rss_feed_config': rss_feed_config,
+                        'instapaper_ini_config': instapaper_ini_config,
+                    }
+                    new_entries.append(new_entry)
+                    logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
+                else:
+                    logging.warning(f"Skipping entry '{title}' as no content could be retrieved.")
+
+        logging.info(f"Found {len(new_entries)} new entries from this feed.")
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching RSS feed: {e}")
+        if 'response' in locals():
+            logging.debug(f"HTTP status code: {feed_response.status_code}")
+            logging.debug(f"HTTP response body: {feed_response.text}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while processing feed: {e}")
+
+    return new_entries
 
 def get_config_files(path):
     """Parses the command-line argument to return a list of INI files."""
