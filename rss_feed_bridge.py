@@ -5,10 +5,9 @@ import configparser
 import json
 import time
 import requests
-import feedparser
 import re
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from glob import glob
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -22,6 +21,12 @@ from requests_oauthlib import OAuth1Session
 from oauthlib.oauth1 import Client as OAuth1Client
 from urllib.parse import urlencode
 
+try:
+    import feedparser
+except ImportError:
+    logging.error("feedparser library not found. Please install it with 'pip install feedparser'.")
+    sys.exit(1)
+
 # --- Configure Execution Based on Environment Variables ---
 DEBUG_LOGGING = os.getenv('DEBUG_LOGGING', '0').lower() in ('1', 'true')
 ENABLE_SCREENSHOTS = os.getenv('ENABLE_SCREENSHOTS', '0').lower() in ('1', 'true')
@@ -33,13 +38,16 @@ log_level = logging.DEBUG if DEBUG_LOGGING else logging.INFO
 logging.basicConfig(
     level=log_level,
     format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='[%Y-%m-%d %H:%M:%S]'
 )
 if DEBUG_LOGGING:
     logging.getLogger('oauthlib').setLevel(logging.DEBUG)
     logging.getLogger('requests_oauthlib').setLevel(logging.DEBUG)
 
-# --- Setup WebDriver Options ---
+# --- Suppress webdriver-manager logs ---
+logging.getLogger('webdriver_manager').setLevel(logging.WARNING)
+
+# --- Setup WebDriver Options and Service ---
 options = Options()
 options.add_argument("--headless=new")
 options.add_argument("--disable-gpu")
@@ -51,13 +59,19 @@ options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--no-proxy-server")
 options.add_argument("--disable-dev-shm-usage")
 
+# Unconditionally define service_log_path before its use
+service_log_path = os.devnull
 if DEBUG_LOGGING:
     options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
     service_log_path = os.path.join(log_dir, "chromedriver.log")
-else:
-    service_log_path = os.devnull
 
-service = Service(ChromeDriverManager().install(), log_output=service_log_path)
+# Initialize the driver service ONCE at the start
+try:
+    driver_path = ChromeDriverManager().install()
+    service = Service(driver_path, log_output=service_log_path)
+except Exception as e:
+    logging.error(f"Failed to initialize Chrome driver: {e}. Ensure Chrome is installed and updated.")
+    sys.exit(1)
 
 # --- Instapaper API Constants ---
 INSTAPAPER_ADD_URL = "https://www.instapaper.com/api/1.1/bookmarks/add"
@@ -74,7 +88,7 @@ def parse_frequency_to_seconds(freq_str):
     freq_str = freq_str.lower()
     value = int(re.findall(r'\d+', freq_str)[0])
     unit = re.findall(r'[a-z]', freq_str)[0]
-    
+
     if unit == 's':
         return value
     elif unit == 'm':
@@ -86,44 +100,121 @@ def parse_frequency_to_seconds(freq_str):
     else:
         raise ValueError(f"Invalid frequency unit in '{freq_str}'. Use s, m, h, or d.")
 
+def load_credentials_from_json(config_dir):
+    """
+    Loads all credentials and configs from a single credentials.json file.
+    Returns the loaded dictionary.
+    """
+    credentials_file_path = os.path.join(config_dir, "credentials.json")
+    if os.path.exists(credentials_file_path):
+        try:
+            with open(credentials_file_path, 'r') as f:
+                all_configs = json.load(f)
+            logging.info(f"Successfully loaded credentials from credentials.json.")
+            return all_configs
+        except (IOError, json.JSONDecodeError) as e:
+            logging.error(f"Error reading or parsing credentials.json file: {e}")
+            return {}
+    else:
+        logging.error(f"Credentials file {credentials_file_path} not found. Exiting.")
+        sys.exit(1)
+
+def load_site_configs_from_json(config_dir):
+    """
+    Loads all site configurations from a site_configs.json file.
+    Returns the loaded dictionary.
+    """
+    site_configs_file_path = os.path.join(config_dir, "site_configs.json")
+    if os.path.exists(site_configs_file_path):
+        try:
+            with open(site_configs_file_path, 'r') as f:
+                all_site_configs = json.load(f)
+            logging.info(f"Successfully loaded site configurations from site_configs.json.")
+            return all_site_configs
+        except (IOError, json.JSONDecodeError) as e:
+            logging.error(f"Error reading or parsing site_configs.json file: {e}")
+            return {}
+    else:
+        logging.error(f"Site configurations file {site_configs_file_path} not found. Exiting.")
+        sys.exit(1)
+
+def save_credentials_to_json(config_dir, all_configs):
+    """
+    Saves the credentials dictionary to credentials.json.
+    """
+    credentials_file_path = os.path.join(config_dir, "credentials.json")
+    try:
+        with open(credentials_file_path, 'w') as f:
+            json.dump(all_configs, f, indent=4)
+        logging.info("Successfully saved updated credentials to credentials.json.")
+    except IOError as e:
+        logging.error(f"Error saving to credentials.json: {e}")
+
+def load_instapaper_app_creds(config_dir):
+    """
+    Loads the Instapaper application consumer keys from a separate file.
+    """
+    app_creds_path = os.path.join(config_dir, "instapaper_app_creds.json")
+    if os.path.exists(app_creds_path):
+        try:
+            with open(app_creds_path, 'r') as f:
+                app_creds = json.load(f)
+            logging.info("Successfully loaded Instapaper application credentials.")
+            return app_creds
+        except (IOError, json.JSONDecodeError) as e:
+            logging.error(f"Error reading or parsing instapaper_app_creds.json file: {e}")
+            return {}
+    else:
+        logging.error(f"Instapaper application credentials file {app_creds_path} not found. Exiting.")
+        sys.exit(1)
+
 def load_state(config_file):
-    """Loads the state from the .ctrl file."""
+    """
+    Loads the state from the .ctrl file.
+    """
     base_name = os.path.splitext(os.path.basename(config_file))[0]
     ctrl_file_path = os.path.join(os.path.dirname(config_file), f"{base_name}.ctrl")
-    
+    logging.debug(f"Attempting to load state from: {ctrl_file_path}")
+
+    # Initialize with timezone-aware datetimes
+    min_datetime = datetime.fromtimestamp(0, tz=timezone.utc)
     state = {
-        'last_rss_timestamp': datetime.fromtimestamp(0),
-        'last_rss_poll_time': datetime.fromtimestamp(0),
-        'last_miniflux_refresh_time': datetime.fromtimestamp(0),
+        'last_rss_timestamp': min_datetime,
+        'last_rss_poll_time': min_datetime,
+        'last_miniflux_refresh_time': min_datetime,
+        'force_run': False
     }
-    
+
     if os.path.exists(ctrl_file_path):
         try:
             with open(ctrl_file_path, 'r') as f:
                 data = json.load(f)
-                
-                last_rss_str = data.get('last_rss_timestamp')
-                if last_rss_str:
-                    state['last_rss_timestamp'] = datetime.fromisoformat(last_rss_str)
-                
-                last_poll_str = data.get('last_rss_poll_time')
-                if last_poll_str:
-                    state['last_rss_poll_time'] = datetime.fromisoformat(last_poll_str)
-                    
-                last_miniflux_str = data.get('last_miniflux_refresh_time')
-                if last_miniflux_str:
-                    state['last_miniflux_refresh_time'] = datetime.fromisoformat(last_miniflux_str)
-                    
+
+                # Helper function to load a string and make it timezone-aware
+                def load_aware_datetime(dt_str):
+                    if dt_str:
+                        dt_obj = datetime.fromisoformat(dt_str)
+                        if dt_obj.tzinfo is None or dt_obj.tzinfo.utcoffset(dt_obj) is None:
+                            # It's naive, so make it aware in UTC
+                            return dt_obj.replace(tzinfo=timezone.utc)
+                        return dt_obj
+                    return min_datetime
+
+                state['last_rss_timestamp'] = load_aware_datetime(data.get('last_rss_timestamp'))
+                state['last_rss_poll_time'] = load_aware_datetime(data.get('last_rss_poll_time'))
+                state['last_miniflux_refresh_time'] = load_aware_datetime(data.get('last_miniflux_refresh_time'))
+
+                state['force_run'] = data.get('force_run', False)
+
             logging.info(f"Successfully loaded state for {os.path.basename(config_file)}.")
             logging.info(f"  - Last RSS entry processed: {state['last_rss_timestamp'].isoformat()}")
             logging.info(f"  - Last RSS poll time: {state['last_rss_poll_time'].isoformat()}")
             logging.info(f"  - Last Miniflux refresh time: {state['last_miniflux_refresh_time'].isoformat()}")
         except (IOError, json.JSONDecodeError, ValueError) as e:
             logging.warning(f"Could not read or parse {ctrl_file_path}. Starting with clean state. Error: {e}")
-            
     else:
-        logging.info(f"No state file found for {os.path.basename(config_file)}. Starting with a clean state.")
-    
+        logging.info(f"No state file found for {os.path.basename(config_file)}. A new one will be created.")
+
     return state
 
 def save_state(config_file, state):
@@ -135,7 +226,8 @@ def save_state(config_file, state):
     state_to_save = {
         'last_rss_timestamp': state['last_rss_timestamp'].isoformat(),
         'last_rss_poll_time': state['last_rss_poll_time'].isoformat(),
-        'last_miniflux_refresh_time': state['last_miniflux_refresh_time'].isoformat()
+        'last_miniflux_refresh_time': state['last_miniflux_refresh_time'].isoformat(),
+        'force_run': state['force_run'] # Save the flag
     }
 
     try:
@@ -145,19 +237,66 @@ def save_state(config_file, state):
     except IOError as e:
         logging.error(f"Could not save state to {ctrl_file_path}. Error: {e}")
 
-def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
+def load_cookies_from_json(config_dir):
+    """
+    Loads the cookies from a single cookie_state.json file.
+    Returns a dictionary with cookies keyed by a unique ID.
+    """
+    cookie_file_path = os.path.join(config_dir, "cookie_state.json")
+    cookies_state = {}
+    if os.path.exists(cookie_file_path):
+        try:
+            with open(cookie_file_path, 'r') as f:
+                cookies_state = json.load(f)
+            logging.info("Successfully loaded cookies from cookie_state.json.")
+        except (IOError, json.JSONDecodeError) as e:
+            logging.warning(f"Could not read or parse {cookie_file_path}. Starting with no cached cookies. Error: {e}")
+    else:
+        logging.info(f"No cookie state file found. A new one will be created.")
+    return cookies_state
+
+def save_cookies_to_json(config_dir, cookies_state):
+    """Saves the entire cookies dictionary to cookie_state.json."""
+    cookie_file_path = os.path.join(config_dir, "cookie_state.json")
+    try:
+        with open(cookie_file_path, 'w') as f:
+            json.dump(cookies_state, f, indent=4)
+        logging.debug(f"Cookies state successfully saved to {cookie_file_path}.")
+    except IOError as e:
+        logging.error(f"Could not save cookies state to {cookie_file_path}. Error: {e}")
+
+def check_cookies_expiry(cookies, cookies_to_store_names=None):
+    """
+    Checks if any cookie in the list that is required by the current
+    configuration has a Unix timestamp that is in the past.
+    Returns True if any required cookie is expired, False otherwise.
+    """
+    cookies_to_check = cookies
+    if cookies_to_store_names and isinstance(cookies_to_store_names, list):
+        cookies_to_check = [c for c in cookies if c['name'] in cookies_to_store_names]
+
+    current_time = time.time()
+    for cookie in cookies_to_check:
+        # Cookies from Selenium have 'expiry', requests cookies have 'expires'
+        expiry_timestamp = cookie.get('expiry') or cookie.get('expires')
+        if expiry_timestamp and expiry_timestamp <= current_time:
+            logging.info(f"A required cookie named '{cookie.get('name')}' has expired. Triggering re-login.")
+            return True
+    return False
+
+def update_miniflux_feed_with_cookies(miniflux_config_json, cookies, config_name, feed_ids_str):
     """
     Updates all specified Miniflux feeds with captured cookies.
     """
-    if not miniflux_config:
+    if not miniflux_config_json:
         logging.debug(f"Miniflux config missing for {config_name}. Skipping.")
         return
-        
-    miniflux_url = miniflux_config.get('miniflux_url')
-    api_key = miniflux_config.get('api_key')
-    feed_ids_str = miniflux_config.get('feed_ids')
+
+    miniflux_url = miniflux_config_json.get('miniflux_url')
+    api_key = miniflux_config_json.get('api_key')
+
     if not all([miniflux_url, api_key, feed_ids_str]):
-        logging.warning(f"Miniflux configuration in {config_name} is incomplete. Skipping cookie update.")
+        logging.warning(f"Miniflux configuration (URL, API key or feed ID) is incomplete. Skipping cookie update.")
         return
 
     for feed_id in feed_ids_str.split(','):
@@ -173,11 +312,11 @@ def update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name):
             "X-Auth-Token": api_key,
             "Content-Type": "application/json",
         }
-        cookie_str = "; ".join([f"{c['name']}={c['value']} " for c in cookies])
-        
+        cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+
         logging.debug(f"Updating feed {feed_id} at URL: {api_endpoint}")
         logging.debug(f"Cookies being sent: {cookie_str}")
-        
+
         payload = {"cookie": cookie_str}
 
         try:
@@ -199,10 +338,10 @@ def get_instapaper_tokens(consumer_key, consumer_secret, username, password):
     logging.info("Attempting to obtain Instapaper OAuth tokens...")
     logging.debug(f"Using consumer_key: {consumer_key}")
     logging.debug(f"Using username: {username}")
-        
+
     try:
         oauth = OAuth1Client(consumer_key, client_secret=consumer_secret, signature_method='HMAC-SHA1')
-        
+
         body_params = {
             'x_auth_username': username,
             'x_auth_password': password,
@@ -215,18 +354,18 @@ def get_instapaper_tokens(consumer_key, consumer_secret, username, password):
             body=body_params,
             headers={'Content-Type': 'application/x-www-form-urlencoded'}
         )
-        
+
         logging.debug(f"Signed request URI: {uri}")
         logging.debug(f"Signed request headers: {headers}")
         logging.debug(f"Request body parameters: {body_params}")
 
         response = requests.post(uri, headers=headers, data=body_params, timeout=30)
         response.raise_for_status()
-        
+
         logging.debug(f"Raw response from Instapaper: {response.text}")
 
         token_data = dict(re.findall(r'(\w+)=([^&]+)', response.text))
-        
+
         if 'oauth_token' in token_data and 'oauth_token_secret' in token_data:
             logging.info("Successfully obtained Instapaper tokens.")
             logging.debug(f"Obtained tokens: {token_data}")
@@ -255,7 +394,7 @@ def get_article_html_with_cookies(url, cookies):
         return None
 
     logging.debug(f"Attempting to fetch full article HTML from URL: {url}")
-    
+
     session = requests.Session()
     for cookie in cookies:
         session.cookies.set(cookie['name'], cookie['value'])
@@ -281,9 +420,9 @@ def get_instapaper_folder_id(oauth_session, folder_name):
     try:
         response = oauth_session.post(INSTAPAPER_FOLDERS_LIST_URL)
         response.raise_for_status()
-        
+
         folders = json.loads(response.text)
-        
+
         for folder in folders:
             if folder.get('title') == folder_name:
                 logging.info(f"Found existing folder '{folder_name}' with ID: {folder['folder_id']}")
@@ -293,7 +432,7 @@ def get_instapaper_folder_id(oauth_session, folder_name):
         logging.error(f"Error listing Instapaper folders: {e}")
         if 'response' in locals():
             logging.debug(f"Instapaper API Response Text: {response.text}")
-    
+
     logging.debug(f"Folder '{folder_name}' not found.")
     return None
 
@@ -307,7 +446,7 @@ def create_instapaper_folder(oauth_session, folder_name):
         payload = {'title': folder_name}
         response = oauth_session.post(INSTAPAPER_FOLDERS_ADD_URL, data=payload)
         response.raise_for_status()
-        
+
         new_folder = json.loads(response.text)
         new_id = new_folder[0].get('folder_id')
         if new_id:
@@ -330,20 +469,18 @@ def create_instapaper_folder(oauth_session, folder_name):
             logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
-def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None):
+def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None, add_default_tag=True):
     """
     Publishes a single article entry to Instapaper.
-    `resolve_final_url`: Set to False to prevent Instapaper from resolving the URL.
-    `sanitize_content`: Set to True to remove <img> tags before sending.
-    `tags_string`: A comma-separated string of tags to add to the bookmark.
-    `folder_id`: Optional. The integer folder ID for the destination folder.
+    `app_creds`: A dict with `consumer_key` and `consumer_secret`.
+    `add_default_tag`: If True, adds the 'RSS' tag by default.
     """
     try:
-        consumer_key = instapaper_config.get('consumer_key')
-        consumer_secret = instapaper_config.get('consumer_secret')
+        consumer_key = app_creds.get('consumer_key')
+        consumer_secret = app_creds.get('consumer_secret')
         oauth_token = instapaper_config.get('oauth_token')
         oauth_token_secret = instapaper_config.get('oauth_token_secret')
-        
+
         if not all([consumer_key, consumer_secret, oauth_token, oauth_token_secret]):
             logging.error("Incomplete Instapaper credentials. Cannot publish.")
             return
@@ -351,7 +488,7 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         # 1. Extract only the HTML body content
         body_match = re.search(r'<body.*?>(.*?)</body>', raw_html_content, re.DOTALL | re.I)
         processed_content = body_match.group(1) if body_match else raw_html_content
-        
+
         # 2. Conditionally sanitize the content
         if sanitize_content:
             logging.debug("Sanitizing content: Removing <img> tags.")
@@ -367,16 +504,25 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
             'title': title,
             'content': processed_content
         }
-        
+
         # Explicitly set resolve_final_url to '0' if the config is false
         if not resolve_final_url:
             payload['resolve_final_url'] = '0'
 
         # Conditionally add tags if they are provided, formatted as a JSON string
+        final_tags = []
         if tags_string:
-            tags_list = [{'name': tag.strip()} for tag in tags_string.split(',') if tag.strip()]
+            final_tags.extend([tag.strip() for tag in tags_string.split(',') if tag.strip()])
+
+        # Add the default tag if enabled
+        if add_default_tag:
+            final_tags.append('RSS')
+            logging.debug("Adding default 'RSS' tag.")
+
+        if final_tags:
+            tags_list = [{'name': tag} for tag in final_tags]
             payload['tags'] = json.dumps(tags_list)
-        
+
         # Conditionally add folder ID
         if folder_id:
             payload['folder_id'] = folder_id
@@ -392,8 +538,8 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
             logging.debug("Content sanitization is ENABLED.")
         else:
             logging.debug("Content sanitization is DISABLED.")
-        if tags_string:
-            logging.debug(f"Tags being added: '{tags_string}'.")
+        if 'tags' in payload:
+            logging.debug(f"Tags being added: {', '.join(final_tags)}.")
             logging.debug(f"Formatted tags being sent: '{payload['tags']}'.")
         if folder_id:
             logging.debug(f"Folder ID being used: '{folder_id}'.")
@@ -401,7 +547,7 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         # Use `data` parameter to send the payload as application/x-www-form-urlencoded
         response = oauth.post(INSTAPAPER_ADD_URL, data=payload)
         response.raise_for_status()
-        
+
         logging.info(f"Successfully published '{title}' to Instapaper.")
         logging.debug(f"Instapaper API Response Status: {response.status_code}")
         logging.debug(f"Instapaper API Response Text: {response.text}")
@@ -411,15 +557,15 @@ def publish_to_instapaper(instapaper_config, url, title, raw_html_content, resol
         if 'response' in locals():
             logging.debug(f"Instapaper API Response Text: {response.text}")
 
-def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, cookies, state):
+def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state):
     """
     Fetches the RSS feed from a given URL and returns a list of new entries.
     Accepts an optional `cookies` argument for authenticated content fetching.
     """
-    
+
     last_run_dt = state['last_rss_timestamp']
     new_entries = []
-    
+
     logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
 
     try:
@@ -428,7 +574,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
         feed_response = requests.get(feed_url, headers=headers, timeout=30)
         feed_response.raise_for_status()
-        
+
         feed = feedparser.parse(feed_response.content)
 
         logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
@@ -436,26 +582,26 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
         for entry in feed.entries:
             entry_timestamp_dt = None
             if hasattr(entry, 'published_parsed'):
-                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
             elif hasattr(entry, 'updated_parsed'):
-                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
-            
+                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
+
             logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
 
             if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
                 url = entry.link
                 title = entry.title
-                
+
                 # Use cookies to fetch full article content if available
                 raw_html_content = None
                 if cookies:
                     raw_html_content = get_article_html_with_cookies(url, cookies)
-                
+
                 # Fallback to RSS content if full content is not available
                 if not raw_html_content:
                     raw_html_content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '') or entry.get('description', '')
                     logging.debug("Using RSS entry content as fallback.")
-                
+
                 if raw_html_content:
                     new_entry = {
                         'config_file': config_file,
@@ -464,7 +610,9 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
                         'raw_html_content': raw_html_content,
                         'published_dt': entry_timestamp_dt,
                         'instapaper_config': instapaper_config,
+                        'app_creds': app_creds, # Pass the app creds
                         'rss_feed_config': rss_feed_config,
+                        'instapaper_ini_config': instapaper_ini_config,
                     }
                     new_entries.append(new_entry)
                     logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
@@ -472,7 +620,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
                     logging.warning(f"Skipping entry '{title}' as no content could be retrieved.")
 
         logging.info(f"Found {len(new_entries)} new entries from this feed.")
-    
+
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching RSS feed: {e}")
         if 'response' in locals():
@@ -483,17 +631,34 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_confi
 
     return new_entries
 
-
-def login_and_update(config_name, email, password, miniflux_config, site_config):
+def login_and_update(config_name, site_config, login_credentials):
     """
-    Performs login and returns captured cookies.
+    Performs login using site configuration and user credentials.
     Returns: a list of cookie dictionaries, or an empty list on failure.
     """
+    if not site_config or not login_credentials:
+        logging.warning(f"Missing site config or login credentials for {config_name}. Skipping login.")
+        return []
+
     login_type = site_config.get('login_type')
+
+    # Use 'login_name' as the preferred key, with a fallback to 'email'
+    login_value = login_credentials.get('login_name')
+    if login_value is None:
+        login_value = login_credentials.get('email')
+        if login_value is not None:
+            logging.warning(f"Using deprecated 'email' key for login for {config_name}. Please update your credentials.json to use 'login_name'.")
+
+    password = login_credentials.get('password')
+    cookies_to_store_names = site_config.get('cookies_to_store')
+
+    if not all([login_value, password]):
+        logging.error(f"Missing 'login_name' (or 'email') or 'password' in credentials for {config_name}. Cannot proceed.")
+        return []
+
     cookies = []
 
     logging.info(f"Running {site_config.get('site_name')} login for: {config_name} using {login_type} method")
-    logging.debug(f"Login URL: {site_config.get('login_url')}")
 
     if login_type == "selenium":
         driver = None
@@ -515,9 +680,14 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
                 logging.debug("No specific cookies to wait for.")
                 time.sleep(2)
 
-            email_field = wait.until(EC.visibility_of_element_located((By.ID, site_config.get('email_field_id'))))
-            email_field.send_keys(email)
-            logging.debug(f"Email field filled (ID: {site_config.get('email_field_id')}).")
+            # Use the new generic key for the login field ID, with a fallback
+            login_field_id = site_config.get('login_field_id', site_config.get('email_field_id'))
+            if not login_field_id:
+                raise ValueError("Missing 'login_field_id' or 'email_field_id' in site config.")
+
+            login_field = wait.until(EC.visibility_of_element_located((By.ID, login_field_id)))
+            login_field.send_keys(login_value)
+            logging.debug(f"Login field filled (ID: {login_field_id}).")
 
             password_field = wait.until(EC.visibility_of_element_located((By.ID, site_config.get('password_field_id'))))
             password_field.send_keys(password)
@@ -530,7 +700,7 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
 
             success_text = site_config.get('expected_success_text')
             success_locator_class = site_config.get('success_text_class')
-            
+
             if success_text and success_locator_class:
                 welcome_element = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, success_locator_class)))
                 assert welcome_element.text.strip() == success_text.strip(), "Login verification failed: Welcome message not found or text mismatch."
@@ -546,12 +716,26 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
                 driver.save_screenshot(success_screenshot_path)
                 logging.info(f"Screenshot of successful login saved to {success_screenshot_path}")
 
-            cookies = driver.get_cookies()
-            logging.debug(f"Captured {len(cookies)} cookies.")
-            update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name)
+            all_captured_cookies = driver.get_cookies()
+            logging.debug(f"Captured {len(all_captured_cookies)} cookies.")
+
+            if cookies_to_store_names:
+                cookies = [c for c in all_captured_cookies if c['name'] in cookies_to_store_names]
+                logging.info(f"Filtered cookies to store: {len(cookies)} out of {len(all_captured_cookies)} captured cookies.")
+                logging.debug(f"Filtered cookie names: {[c['name'] for c in cookies]}")
+            else:
+                cookies = all_captured_cookies
+                logging.debug("No 'cookies_to_store' list specified. Saving all captured cookies.")
+
+            if cookies_to_store_names:
+                captured_cookie_names = {c['name'] for c in cookies}
+                for name in cookies_to_store_names:
+                    if name not in captured_cookie_names:
+                        logging.warning(f"Required cookie '{name}' was not found after login. This may cause subsequent requests to fail.")
+
             return cookies
 
-        except (WebDriverException, TimeoutException, AssertionError, Exception) as e:
+        except (WebDriverException, TimeoutException, AssertionError, ValueError, Exception) as e:
             logging.error(f"An error occurred during {site_config.get('site_name')} login for {config_name}: {e}")
             if driver and ENABLE_SCREENSHOTS:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -576,9 +760,14 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'
         }
+
+        # Use new generic parameter names, with fallbacks to old ones
+        login_id_param_name = site_config.get('login_id_param_name', 'email')
+        password_param_name = site_config.get('password_param_name', 'password')
+
         data = {
-            'email': email,
-            'password': password,
+            login_id_param_name: login_value,
+            password_param_name: password,
             'captcha_response': 'None'
         }
         logging.debug(f"API Login URL: {site_config.get('login_url')}")
@@ -594,10 +783,23 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             logging.debug(f"Response headers: {response.headers}")
 
             cookies_jar = response.cookies
-            cookies = [{'name': c.name, 'value': c.value} for c in cookies_jar]
-            logging.debug(f"Captured {len(cookies)} cookies.")
+            all_captured_cookies = [{'name': c.name, 'value': c.value, 'expires': c.expires} for c in cookies_jar]
+            logging.debug(f"Captured {len(all_captured_cookies)} cookies.")
 
-            update_miniflux_feed_with_cookies(miniflux_config, cookies, config_name)
+            if cookies_to_store_names:
+                cookies = [c for c in all_captured_cookies if c['name'] in cookies_to_store_names]
+                logging.info(f"Filtered cookies to store: {len(cookies)} out of {len(all_captured_cookies)} captured cookies.")
+                logging.debug(f"Filtered cookie names: {[c['name'] for c in cookies]}")
+            else:
+                cookies = all_captured_cookies
+                logging.debug("No 'cookies_to_store' list specified. Saving all captured cookies.")
+
+            if cookies_to_store_names:
+                captured_cookie_names = {c['name'] for c in cookies}
+                for name in cookies_to_store_names:
+                    if name not in captured_cookie_names:
+                        logging.warning(f"Required cookie '{name}' was not found after login. This may cause subsequent requests to fail.")
+
             return cookies
 
         except requests.exceptions.RequestException as e:
@@ -610,7 +812,7 @@ def login_and_update(config_name, email, password, miniflux_config, site_config)
             return []
 
     else:
-        logging.warning(f"Unsupported login_type '{login_type}' defined in config. Skipping.")
+        logging.warning(f"Unsupported login_type '{login_type}' defined in site config. Skipping.")
         return []
 
 def get_config_files(path):
@@ -623,22 +825,13 @@ def get_config_files(path):
         logging.error("Invalid path provided. Please specify a .ini file or a directory containing .ini files.")
         sys.exit(1)
 
-def run_service(config_path):
+def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds, all_cookie_state):
     """The main service loop that processes configs continuously."""
     config_files = get_config_files(config_path)
-    
-    # Load initial state from .ctrl files for all configs
-    last_run_times = {
-        os.path.basename(f): load_state(f) for f in config_files
-    }
-    
-    # Add a cookies key to each state entry
-    for key in last_run_times:
-        last_run_times[key]['cookies'] = []
 
     while True:
         logging.info("Starting a new service poll loop")
-        
+
         all_new_entries = []
 
         for config_file in config_files:
@@ -646,111 +839,248 @@ def run_service(config_path):
             try:
                 config.read(config_file)
                 config_name = os.path.basename(config_file)
-                state = last_run_times[config_name]
+
+                state = load_state(config_file)
+                current_time = datetime.now(timezone.utc)
+
+                if 'CONFIG_REFERENCES' not in config:
+                    logging.warning(f"Missing [CONFIG_REFERENCES] section in {config_name}. Skipping this config.")
+                    continue
+                ref_config = config['CONFIG_REFERENCES']
+
+                login_id = ref_config.get('login_id')
+                site_config_id = ref_config.get('site_config_id')
+                instapaper_id = ref_config.get('instapaper_id')
+                miniflux_id = ref_config.get('miniflux_id')
+
+                cookie_key = f"{login_id}-{site_config_id}"
+
+                login_credentials = all_configs.get(login_id)
+                site_config = all_site_configs.get(site_config_id)
+                instapaper_config_from_json = all_configs.get(instapaper_id)
+                miniflux_config_from_json = all_configs.get(miniflux_id)
+
+                instapaper_ini_config = config['INSTAPAPER_CONFIG'] if 'INSTAPAPER_CONFIG' in config else {}
+                rss_feed_config = config['RSS_FEED_CONFIG'] if 'RSS_FEED_CONFIG' in config else {}
+                miniflux_ini_config = config['MINIFLUX_CONFIG'] if 'MINIFLUX_CONFIG' in config else {}
+
+                # --- Login and Cookie Management ---
+                cookies = []
                 
-                # --- Handle Login & Miniflux Cookie Update (if configured) ---
-                if 'SITE_CONFIG' in config and 'LOGIN_CREDENTIALS' in config and 'MINIFLUX_API' in config:
-                    site_config = config['SITE_CONFIG']
-                    login_credentials = config['LOGIN_CREDENTIALS']
-                    miniflux_config = config['MINIFLUX_API']
+                # Check if a login is configured for this INI file
+                if login_credentials and site_config:
+                    cached_cookies_data = all_cookie_state.get(cookie_key, {})
+                    cached_cookies = cached_cookies_data.get('cookies', [])
+                    cookies_to_store_names = site_config.get('cookies_to_store', []) if site_config else []
+                    cookies_expired = check_cookies_expiry(cached_cookies, cookies_to_store_names)
                     
-                    email = login_credentials.get('email')
-                    password = login_credentials.get('password')
-                    refresh_frequency_str = miniflux_config.get('refresh_frequency')
+                    required_cookie_missing = False
+                    if cookies_to_store_names:
+                        cached_cookie_names = {c['name'] for c in cached_cookies}
+                        if not all(name in cached_cookie_names for name in cookies_to_store_names):
+                            required_cookie_missing = True
                     
-                    if not all([email, password, refresh_frequency_str]):
-                        logging.warning(f"Skipping login for {config_name}: incomplete credentials or refresh_frequency is missing.")
-                    else:
-                        refresh_frequency_sec = parse_frequency_to_seconds(refresh_frequency_str)
-                        time_since_last_run = datetime.now() - state['last_miniflux_refresh_time']
+                    imminent_expiry = False
+                    miniflux_refresh_frequency_sec = 0
+                    if miniflux_ini_config and miniflux_ini_config.get('refresh_frequency'):
+                        miniflux_refresh_frequency_sec = parse_frequency_to_seconds(miniflux_ini_config.get('refresh_frequency'))
+                    rss_poll_frequency_sec = 0
+                    if rss_feed_config:
+                        poll_frequency_str = rss_feed_config.get('poll_frequency')
+                        if not poll_frequency_str:
+                            poll_frequency_str = '1h'  # Default value
+                        rss_poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
+                    
+                    if cached_cookies and cookies_to_store_names:
+                        min_expiry_timestamp = float('inf')
+                        required_cookies_with_expiry = [c for c in cached_cookies if c.get('name') in cookies_to_store_names and c.get('expiry')]
+                        if required_cookies_with_expiry:
+                            min_expiry_timestamp = min(c['expiry'] for c in required_cookies_with_expiry)
+                        
+                        next_miniflux_refresh_time = state['last_miniflux_refresh_time'] + timedelta(seconds=miniflux_refresh_frequency_sec)
+                        next_rss_poll_time = state['last_rss_poll_time'] + timedelta(seconds=rss_poll_frequency_sec)
+                        
+                        if min_expiry_timestamp <= next_miniflux_refresh_time.timestamp() or min_expiry_timestamp <= next_rss_poll_time.timestamp():
+                            imminent_expiry = True
 
-                        if time_since_last_run.total_seconds() >= refresh_frequency_sec:
-                            logging.info(f"Running scheduled login for {config_name}")
-                            cookies = login_and_update(config_name, email, password, miniflux_config, site_config)
-                            state['cookies'] = cookies
-                            state['last_miniflux_refresh_time'] = datetime.now()
-                            save_state(config_file, state)
+                    # The logic to decide if a login should be performed
+                    should_perform_login = (
+                        not cached_cookies or
+                        cookies_expired or
+                        required_cookie_missing or
+                        imminent_expiry or
+                        state.get('force_run', False) # This flag allows an external override
+                    )
+
+                    if should_perform_login:
+                        reasons = []
+                        if not cached_cookies: reasons.append("No cached cookies found")
+                        if cookies_expired: reasons.append("Cookies expired")
+                        if required_cookie_missing: reasons.append("Required cookie missing")
+                        if imminent_expiry: reasons.append("Imminent expiry")
+                        if state.get('force_run', False): reasons.append("Force Run flag set")
+                        logging.info(f"Triggering login for {config_name}. Reasons: {', '.join(reasons)}")
+
+                        cookies = login_and_update(config_name, site_config, login_credentials)
+
+                        if cookies:
+                            all_cookie_state[cookie_key] = {
+                                'cookies': cookies,
+                                'last_refresh': current_time.isoformat()
+                            }
+                            save_cookies_to_json(os.path.dirname(config_file), all_cookie_state)
+                            # Update state timestamps after a successful login
+                            state['last_miniflux_refresh_time'] = current_time
+                            state['last_rss_poll_time'] = current_time
                         else:
-                            logging.info(f"Skipping login for {config_name}: Not yet time to refresh.")
+                            logging.warning(f"Login failed for {config_name}. Cannot update state with new cookies.")
+                        
+                        state['force_run'] = False
+                        save_state(config_file, state)
+                    else:
+                        cookies = cached_cookies
+                        logging.info(f"Using cached cookies for {config_name}. Login was not required.")
+                else:
+                    logging.warning(f"Bypassing login and cookie caching for {config_name}. Missing login credentials or site configuration.")
+                    cookies = []
+                    
+                # --- Scheduled Actions (Miniflux and RSS) ---
+                miniflux_refresh_due = False
+                rss_poll_due = False
+                
+                # Check due times based on the state file
+                miniflux_refresh_frequency_sec = 0
+                if miniflux_ini_config and miniflux_ini_config.get('refresh_frequency'):
+                    miniflux_refresh_frequency_sec = parse_frequency_to_seconds(miniflux_ini_config.get('refresh_frequency'))
+                    if (current_time - state['last_miniflux_refresh_time']).total_seconds() >= miniflux_refresh_frequency_sec:
+                        miniflux_refresh_due = True
+                    else:
+                        logging.info(f"Miniflux refresh for {config_name} not yet due.")
 
-                # --- Handle RSS to Instapaper Publishing (if configured) ---
-                if 'INSTAPAPER_API' in config and 'RSS_FEED_CONFIG' in config:
-                    instapaper_config = config['INSTAPAPER_API']
-                    rss_feed_config = config['RSS_FEED_CONFIG']
+                rss_poll_frequency_sec = 0
+                if rss_feed_config:
+                    poll_frequency_str = rss_feed_config.get('poll_frequency')
+                    if not poll_frequency_str:
+                        poll_frequency_str = '1h'  # Default value
+                        logging.info("RSS poll frequency not configured. Using default of 1h.")
+                    
+                    rss_poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
+                    
+                    if (current_time - state['last_rss_poll_time']).total_seconds() >= rss_poll_frequency_sec:
+                        rss_poll_due = True
+                    else:
+                        logging.info(f"RSS poll for {config_name} not yet due.")
+                        
+                # Special case: If this is the first time running for a given INI file,
+                # we force a poll to catch all initial entries.
+                if state['last_rss_timestamp'] == datetime.fromtimestamp(0, tz=timezone.utc):
+                    rss_poll_due = True
+                    logging.info("First run detected for this INI's state file. All entries from RSS feed will be processed.")
+
+                # Miniflux Update Logic
+                if miniflux_config_from_json and miniflux_refresh_due:
+                    feed_ids_str = miniflux_ini_config.get('feed_ids')
+                    if feed_ids_str:
+                        logging.info(f"Updating Miniflux feed(s) with most recent cookies for {config_name}.")
+                        update_miniflux_feed_with_cookies(miniflux_config_from_json, cookies, config_name, feed_ids_str)
+                        state['last_miniflux_refresh_time'] = current_time
+                        save_state(config_file, state)
+                    else:
+                        logging.warning(f"Skipping Miniflux update for {config_name}: 'feed_ids' is missing from INI file.")
+                else:
+                    if not miniflux_config_from_json:
+                        logging.info(f"Skipping Miniflux update for {config_name}: Configuration not found in credentials.json.")
+                    # (The 'not yet due' case is handled above)
+
+                # RSS Polling Logic
+                if instapaper_config_from_json and rss_feed_config and rss_poll_due:
                     feed_url = rss_feed_config.get('feed_url')
-                    poll_frequency_str = rss_feed_config.get('poll_frequency', '1h')
-                    
-                    if not feed_url:
-                        logging.warning(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
+                    if feed_url:
+                        logging.info("Starting RSS polling and state update sequence.")
+                        logging.info(f"Polling RSS feed for new entries ({config_name})")
+                        new_entries = get_new_rss_entries(
+                            config_file,
+                            feed_url,
+                            instapaper_config_from_json,
+                            instapaper_app_creds,
+                            rss_feed_config,
+                            instapaper_ini_config,
+                            cookies,
+                            state
+                        )
+                        all_new_entries.extend(new_entries)
+                        state['last_rss_poll_time'] = current_time
+                        save_state(config_file, state)
+                        logging.info("RSS polling and state update sequence finished.")
                     else:
-                        poll_frequency_sec = parse_frequency_to_seconds(poll_frequency_str)
-                        time_since_last_poll = datetime.now() - state['last_rss_poll_time']
-
-                        if time_since_last_poll.total_seconds() >= poll_frequency_sec:
-                            logging.info(f"Polling RSS feed for new entries ({config_name})")
-                            new_entries = get_new_rss_entries(config_file, feed_url, instapaper_config, rss_feed_config, state['cookies'], state)
-                            all_new_entries.extend(new_entries)
-                            # Update the poll time regardless of new entries found
-                            state['last_rss_poll_time'] = datetime.now()
-                            save_state(config_file, state)
-                        else:
-                            logging.info(f"Skipping RSS poll for {config_name}: Not yet time to poll.")
-
+                        logging.warning(f"Skipping RSS to Instapaper for {config_name}: 'feed_url' is missing.")
+                else:
+                    if not instapaper_config_from_json:
+                        logging.info(f"Skipping RSS poll for {config_name}: Instapaper configuration not found in credentials.json.")
+                    elif not rss_feed_config:
+                        logging.info(f"Skipping RSS poll for {config_name}: RSS feed configuration not found in INI file.")
+                    # (The 'not yet due' case is handled above, with the exception of the first run)
+            
             except (configparser.Error, KeyError) as e:
                 logging.error(f"Error reading or parsing INI file {config_file}: {e}")
                 continue
 
-        # --- Process and Publish all collected new entries in chronological order ---
         if all_new_entries:
             logging.info("Found new entries across all feeds. Sorting and publishing chronologically.")
-            # Sort entries by their published date
             all_new_entries.sort(key=lambda x: x['published_dt'])
-            
+
             published_count = 0
             for entry in all_new_entries:
-                instapaper_config = entry['instapaper_config']
-                rss_feed_config = entry['rss_feed_config']
+                instapaper_config_from_json = entry['instapaper_config']
+                app_creds = entry['app_creds']
+                instapaper_ini_config = entry['instapaper_ini_config']
                 config_file_for_entry = entry['config_file']
-                
-                resolve_final_url_flag = instapaper_config.getboolean('resolve_final_url', fallback=True)
-                sanitize_content_flag = instapaper_config.getboolean('sanitize_content', fallback=False)
-                tags_to_add = rss_feed_config.get('tags', '')
-                folder_name = rss_feed_config.get('folder', '')
-                
-                # Re-fetch folder ID for each entry, as it could be different
+
+                try:
+                    resolve_final_url_flag = instapaper_ini_config.getboolean('resolve_final_url', fallback=True)
+                    sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
+                    add_default_tag_flag = instapaper_ini_config.getboolean('add_default_tag', fallback=True)
+                except ValueError as e:
+                    logging.warning(f"Invalid boolean value for Instapaper config: {e}. Defaulting to fallback values.")
+                    resolve_final_url_flag = True
+                    sanitize_content_flag = False
+                    add_default_tag_flag = True
+
+                tags_to_add = instapaper_ini_config.get('tags', '')
+                folder_name = instapaper_ini_config.get('folder', '')
+
                 folder_id = None
                 if folder_name:
-                    oauth_session = OAuth1Session(instapaper_config.get('consumer_key'),
-                                                  client_secret=instapaper_config.get('consumer_secret'),
-                                                  resource_owner_key=instapaper_config.get('oauth_token'),
-                                                  resource_owner_secret=instapaper_config.get('oauth_token_secret'))
+                    oauth_session = OAuth1Session(app_creds.get('consumer_key'),
+                                                  client_secret=app_creds.get('consumer_secret'),
+                                                  resource_owner_key=instapaper_config_from_json.get('oauth_token'),
+                                                  resource_owner_secret=instapaper_config_from_json.get('oauth_token_secret'))
                     folder_id = get_instapaper_folder_id(oauth_session, folder_name)
                     if not folder_id:
                         folder_id = create_instapaper_folder(oauth_session, folder_name)
 
                 publish_to_instapaper(
-                    instapaper_config, 
-                    entry['url'], 
-                    entry['title'], 
-                    entry['raw_html_content'], 
+                    instapaper_config_from_json,
+                    app_creds,
+                    entry['url'],
+                    entry['title'],
+                    entry['raw_html_content'],
                     resolve_final_url=resolve_final_url_flag,
                     sanitize_content=sanitize_content_flag,
                     tags_string=tags_to_add,
-                    folder_id=folder_id
+                    folder_id=folder_id,
+                    add_default_tag=add_default_tag_flag
                 )
                 published_count += 1
-                
-                # Update the last_rss_timestamp for the specific config that this entry came from
-                config_name = os.path.basename(config_file_for_entry)
-                last_run_times[config_name]['last_rss_timestamp'] = entry['published_dt']
-                save_state(config_file_for_entry, last_run_times[config_name])
+
+                state_to_update = load_state(config_file_for_entry)
+                state_to_update['last_rss_timestamp'] = entry['published_dt']
+                save_state(config_file_for_entry, state_to_update)
 
             logging.info(f"Finished processing. Published {published_count} new entries to Instapaper.")
         else:
             logging.info("No new entries found to publish.")
 
-
-        # Sleep for a minute before the next loop iteration to prevent a busy loop.
         logging.info("Service poll loop finished. Sleeping for 60 seconds.")
         time.sleep(60)
 
@@ -760,40 +1090,51 @@ def main():
     parser.add_argument("config_path", help="Path to a specific .ini file or a directory containing .ini files.")
     args = parser.parse_args()
 
-    # Initial check for Instapaper OAuth tokens before starting the service loop
-    logging.info("Performing initial check for Instapaper OAuth tokens...")
+    config_dir = os.path.dirname(args.config_path) if os.path.isfile(args.config_path) else args.config_path
+
+    all_external_configs = load_credentials_from_json(config_dir)
+    all_site_configs = load_site_configs_from_json(config_dir)
+    instapaper_app_creds = load_instapaper_app_creds(config_dir)
+    all_cookie_state = load_cookies_from_json(config_dir)
+
+    logging.info("Checking for Instapaper credentials to migrate...")
     config_files = get_config_files(args.config_path)
     for config_file in config_files:
         config = configparser.ConfigParser()
         config.read(config_file)
-        if 'INSTAPAPER_OAUTH' in config:
-            logging.info(f"Found 'INSTAPAPER_OAUTH' section in {os.path.basename(config_file)}. Attempting to generate tokens...")
-            oauth_credentials = config['INSTAPAPER_OAUTH']
-            consumer_key = oauth_credentials.get('consumer_key')
-            consumer_secret = oauth_credentials.get('consumer_secret')
-            username = oauth_credentials.get('username')
-            password = oauth_credentials.get('password')
-            
-            if all([consumer_key, consumer_secret, username, password]):
-                tokens = get_instapaper_tokens(consumer_key, consumer_secret, username, password)
-                if tokens:
-                    if 'INSTAPAPER_API' not in config:
-                        config['INSTAPAPER_API'] = {}
-                    config['INSTAPAPER_API']['oauth_token'] = tokens['oauth_token']
-                    config['INSTAPAPER_API']['oauth_token_secret'] = tokens['oauth_token_secret']
-                    config['INSTAPAPER_API']['consumer_key'] = consumer_key
-                    config['INSTAPAPER_API']['consumer_secret'] = consumer_secret
-                    config.remove_section('INSTAPAPER_OAUTH')
-                    with open(config_file, 'w') as f:
-                        config.write(f)
-                    logging.info(f"Successfully wrote Instapaper tokens to {os.path.basename(config_file)}.")
+        if 'CONFIG_REFERENCES' in config and 'instapaper_id' in config['CONFIG_REFERENCES']:
+            instapaper_id = config['CONFIG_REFERENCES']['instapaper_id']
+            instapaper_config_data = all_external_configs.get(instapaper_id, {})
+
+            if not instapaper_config_data.get('oauth_token') or not instapaper_config_data.get('oauth_token_secret'):
+                logging.info(f"Instapaper tokens not found for '{instapaper_id}'. Checking for migration credentials.")
+
+                if 'INSTAPAPER_LOGIN' in config and 'email' in config['INSTAPAPER_LOGIN'] and 'password' in config['INSTAPAPER_LOGIN']:
+                    username = config['INSTAPAPER_LOGIN']['email']
+                    password = config['INSTAPAPER_LOGIN']['password']
+
+                    if instapaper_app_creds:
+                        tokens = get_instapaper_tokens(instapaper_app_creds.get('consumer_key'), instapaper_app_creds.get('consumer_secret'), username, password)
+
+                        if tokens:
+                            all_external_configs[instapaper_id]['oauth_token'] = tokens['oauth_token']
+                            all_external_configs[instapaper_id]['oauth_token_secret'] = tokens['oauth_token_secret']
+                            save_credentials_to_json(config_dir, all_external_configs)
+
+                            config.remove_section('INSTAPAPER_LOGIN')
+                            with open(config_file, 'w') as f:
+                                config.write(f)
+
+                            logging.info(f"Successfully migrated Instapaper credentials for '{os.path.basename(config_file)}' and cleaned up INI file.")
+                        else:
+                            logging.error(f"Failed to generate Instapaper tokens for '{os.path.basename(config_file)}'. Please check INI credentials and consumer keys.")
+                    else:
+                        logging.error(f"Instapaper application credentials not found. Cannot generate tokens.")
                 else:
-                    logging.error(f"Failed to generate Instapaper tokens for {os.path.basename(config_file)}. Please check credentials.")
-            else:
-                logging.warning(f"Skipping token generation for {os.path.basename(config_file)}: Incomplete credentials.")
-    
+                    logging.warning(f"No Instapaper credentials (email/password) found in '{os.path.basename(config_file)}'. Cannot perform migration.")
+
     logging.info("Starting the continuous service loop...")
-    run_service(args.config_path)
+    run_service(args.config_path, all_external_configs, all_site_configs, instapaper_app_creds, all_cookie_state)
 
 if __name__ == "__main__":
     main()
