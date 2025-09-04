@@ -78,6 +78,8 @@ INSTAPAPER_ADD_URL = "https://www.instapaper.com/api/1.1/bookmarks/add"
 INSTAPAPER_OAUTH_TOKEN_URL = "https://www.instapaper.com/api/1/oauth/access_token"
 INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 INSTAPAPER_FOLDERS_ADD_URL = "https://www.instapaper.com/api/1.1/folders/add"
+INSTAPAPER_BOOKMARKS_LIST_URL = "https://www.instapaper.com/api/1.1/bookmarks/list"
+INSTAPAPER_BOOKMARKS_DELETE_URL = "https://www.instapaper.com/api/1.1/bookmarks/delete"
 
 def parse_frequency_to_seconds(freq_str):
     """
@@ -182,7 +184,9 @@ def load_state(config_file):
         'last_rss_timestamp': min_datetime,
         'last_rss_poll_time': min_datetime,
         'last_miniflux_refresh_time': min_datetime,
-        'force_run': False
+        'force_run': False,
+        'force_sync_and_purge': False,  # New flag for force sync/purge
+        'bookmarks': {}  # New key for tracking bookmarks
     }
 
     if os.path.exists(ctrl_file_path):
@@ -205,11 +209,14 @@ def load_state(config_file):
                 state['last_miniflux_refresh_time'] = load_aware_datetime(data.get('last_miniflux_refresh_time'))
 
                 state['force_run'] = data.get('force_run', False)
+                state['force_sync_and_purge'] = data.get('force_sync_and_purge', False) # Load new flag
+                state['bookmarks'] = data.get('bookmarks', {})
 
             logging.info(f"Successfully loaded state for {os.path.basename(config_file)}.")
             logging.info(f"  - Last RSS entry processed: {state['last_rss_timestamp'].isoformat()}")
             logging.info(f"  - Last RSS poll time: {state['last_rss_poll_time'].isoformat()}")
             logging.info(f"  - Last Miniflux refresh time: {state['last_miniflux_refresh_time'].isoformat()}")
+            logging.debug(f"  - Bookmarks tracked: {len(state['bookmarks'])}")
         except (IOError, json.JSONDecodeError, ValueError) as e:
             logging.warning(f"Could not read or parse {ctrl_file_path}. Starting with clean state. Error: {e}")
     else:
@@ -227,7 +234,9 @@ def save_state(config_file, state):
         'last_rss_timestamp': state['last_rss_timestamp'].isoformat(),
         'last_rss_poll_time': state['last_rss_poll_time'].isoformat(),
         'last_miniflux_refresh_time': state['last_miniflux_refresh_time'].isoformat(),
-        'force_run': state['force_run'] # Save the flag
+        'force_run': state['force_run'],
+        'force_sync_and_purge': state['force_sync_and_purge'], # Save new flag
+        'bookmarks': state['bookmarks']
     }
 
     try:
@@ -469,11 +478,10 @@ def create_instapaper_folder(oauth_session, folder_name):
             logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
-def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None, add_default_tag=True):
+def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, categories_from_feed, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None, add_default_tag=True, add_categories_as_tags=False):
     """
     Publishes a single article entry to Instapaper.
-    `app_creds`: A dict with `consumer_key` and `consumer_secret`.
-    `add_default_tag`: If True, adds the 'RSS' tag by default.
+    Returns a dictionary with 'bookmark_id' and 'content_location' on success, or None on failure.
     """
     try:
         consumer_key = app_creds.get('consumer_key')
@@ -483,7 +491,7 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
 
         if not all([consumer_key, consumer_secret, oauth_token, oauth_token_secret]):
             logging.error("Incomplete Instapaper credentials. Cannot publish.")
-            return
+            return None
 
         oauth = OAuth1Session(consumer_key,
                               client_secret=consumer_secret,
@@ -516,18 +524,28 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             payload['resolve_final_url'] = '0'
 
         # Conditionally add tags if they are provided, formatted as a JSON string
-        final_tags = []
+        final_tags = set()
         if tags_string:
-            final_tags.extend([tag.strip() for tag in tags_string.split(',') if tag.strip()])
+            final_tags.update([tag.strip() for tag in tags_string.split(',') if tag.strip()])
 
         # Add the default tag if enabled
         if add_default_tag:
-            final_tags.append('RSS')
+            final_tags.add('RSS')
             logging.debug("Adding default 'RSS' tag.")
+
+        # Add categories as tags if the new flag is true
+        if add_categories_as_tags and categories_from_feed:
+            logging.debug(f"Adding categories as tags: {categories_from_feed}")
+            for cat in categories_from_feed:
+                final_tags.add(cat)
 
         if final_tags:
             tags_list = [{'name': tag} for tag in final_tags]
             payload['tags'] = json.dumps(tags_list)
+            logging.debug(f"Formatted tags being sent: '{payload['tags']}'.")
+        else:
+            logging.debug("No tags will be added to this bookmark.")
+
 
         # Conditionally add folder ID
         if folder_id:
@@ -543,25 +561,47 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         if sanitize_content:
             logging.debug("Content sanitization is ENABLED.")
         else:
-            logging.debug("Content sanitization is DISABLED.")
-        if 'tags' in payload:
-            logging.debug(f"Tags being added: {', '.join(final_tags)}.")
-            logging.debug(f"Formatted tags being sent: '{payload['tags']}'.")
+        # User defined a parameter, but we want to ignore it if no value is assigned.
+            pass
         if folder_id:
             logging.debug(f"Folder ID being used: '{folder_id}'.")
+        
+        # Log the full payload being sent to the API
+        logging.debug(f"Payload being sent to Instapaper: {payload}")
 
         # Use `data` parameter to send the payload as application/x-www-form-urlencoded
         response = oauth.post(INSTAPAPER_ADD_URL, data=payload)
         response.raise_for_status()
 
-        logging.info(f"Successfully published '{title}' to Instapaper.")
-        logging.debug(f"Instapaper API Response Status: {response.status_code}")
-        logging.debug(f"Instapaper API Response Text: {response.text}")
+        # Log the raw response text regardless of its content
+        logging.debug(f"Raw response text from Instapaper: {response.text}")
+        content_location = response.headers.get('Content-Location')
+        logging.debug(f"Content-Location header: {content_location}")
+
+        response_json = response.json()
+        bookmark_id = None
+        for item in response_json:
+            if item.get('type') == 'bookmark':
+                bookmark_id = item.get('bookmark_id')
+                break
+
+        if bookmark_id:
+            logging.info(f"Successfully published '{title}' to Instapaper. Bookmark ID: {bookmark_id}")
+            logging.debug(f"Instapaper API Response Status: {response.status_code}")
+            return {
+                'bookmark_id': bookmark_id,
+                'content_location': content_location,
+                'title': title
+            }
+        else:
+            logging.error(f"Failed to retrieve bookmark_id from successful response for '{title}'.")
+            return None
 
     except Exception as e:
         logging.error(f"Error publishing to Instapaper: {e}")
         if 'response' in locals():
             logging.debug(f"Instapaper API Response Text: {response.text}")
+        return None
 
 def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state):
     """
@@ -594,6 +634,17 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
         feed = feedparser.parse(feed_response.content)
         logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
 
+        # Extract feed-level categories
+        feed_categories = set()
+        if hasattr(feed.feed, 'tags'):
+            for tag in feed.feed.tags:
+                if 'term' in tag:
+                    feed_categories.add(tag['term'])
+        if hasattr(feed.feed, 'category'):
+            feed_categories.add(feed.feed.category)
+        
+        logging.debug(f"Feed-level categories: {list(feed_categories)}")
+
         for entry in feed.entries:
             entry_timestamp_dt = None
             if hasattr(entry, 'published_parsed'):
@@ -607,6 +658,18 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                 url = entry.link
                 title = entry.title
 
+                # Extract entry-specific categories
+                entry_categories = set(feed_categories) # Start with feed categories
+                if hasattr(entry, 'tags'):
+                    for tag in entry.tags:
+                        if 'term' in tag:
+                            entry_categories.add(tag['term'])
+                if hasattr(entry, 'category'):
+                    entry_categories.add(entry.category)
+                
+                # Convert to a list for JSON serialization later
+                categories_list = list(entry_categories)
+                
                 raw_html_content = None
                 
                 if is_paywalled and cookies:
@@ -623,6 +686,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                         'title': title,
                         'raw_html_content': raw_html_content,
                         'published_dt': entry_timestamp_dt,
+                        'categories_from_feed': categories_list,
                         'instapaper_config': instapaper_config,
                         'app_creds': app_creds,
                         'rss_feed_config': rss_feed_config,
@@ -644,6 +708,141 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
         logging.error(f"An unexpected error occurred while processing feed: {e}")
 
     return new_entries
+
+def sync_instapaper_bookmarks(instapaper_config, app_creds, bookmarks_to_sync):
+    """
+    Syncs the local list of bookmarks with Instapaper using the 'have' parameter.
+    Modifies the bookmarks_to_sync dictionary in place.
+    """
+    if not bookmarks_to_sync:
+        logging.info("No bookmarks to sync in local state. Skipping.")
+        return
+
+    logging.info(f"Starting Instapaper bookmark sync for {len(bookmarks_to_sync)} bookmarks.")
+
+    try:
+        oauth = OAuth1Session(app_creds.get('consumer_key'),
+                              client_secret=app_creds.get('consumer_secret'),
+                              resource_owner_key=instapaper_config.get('oauth_token'),
+                              resource_owner_secret=instapaper_config.get('oauth_token_secret'))
+        
+        # Prepare the 'have' parameter payload
+        # The 'have' parameter is a JSON object where keys are the bookmark IDs
+        # and values are the last known timestamp, or '0' if not available.
+        have_payload = {bookmark_id: '0' for bookmark_id in bookmarks_to_sync.keys()}
+        
+        logging.debug(f"Using 'have' parameter with {len(have_payload)} bookmark IDs.")
+        
+        # Make the API call with the 'have' parameter
+        response = oauth.post(INSTAPAPER_BOOKMARKS_LIST_URL, data={'have': json.dumps(have_payload)})
+        response.raise_for_status()
+        
+        logging.debug(f"Raw Instapaper sync response: {response.text}")
+        
+        # --- FIXED LOGIC: Handle the top-level dictionary response ---
+        api_response_data = response.json()
+        
+        # The bookmarks are in a list under the 'bookmarks' key.
+        # The API documentation is slightly misleading, the response is a dictionary, not an array.
+        returned_items = api_response_data.get('bookmarks', [])
+        
+        deleted_count = 0
+        
+        for item in returned_items:
+            # Check if the item is a dictionary as expected
+            if isinstance(item, dict):
+                if item.get('type') == 'delete':
+                    deleted_bookmark_id = item.get('bookmark_id')
+                    if deleted_bookmark_id in bookmarks_to_sync:
+                        del bookmarks_to_sync[deleted_bookmark_id]
+                        logging.info(f"Found deleted bookmark. Removing from local state. Bookmark ID: {deleted_bookmark_id}")
+                        deleted_count += 1
+            else:
+                logging.warning(f"Unexpected item type in sync response: {type(item)}. Skipping.")
+        
+        logging.info(f"Sync complete. {deleted_count} bookmarks removed from local state.")
+
+    except Exception as e:
+        logging.error(f"Error during Instapaper bookmark sync: {e}")
+        if 'response' in locals():
+            logging.debug(f"Instapaper API Response Text: {response.text}")
+
+def apply_retention_policy(instapaper_ini_config, instapaper_config, app_creds, bookmarks_to_sync):
+    """
+    Deletes bookmarks from Instapaper that have exceeded the defined retention period.
+    Modifies the bookmarks_to_sync dictionary in place.
+    """
+    retention_str = instapaper_ini_config.get('retention', '')
+    if not retention_str:
+        logging.info("No retention policy configured. Skipping.")
+        return
+
+    try:
+        retention_seconds = parse_frequency_to_seconds(retention_str)
+    except ValueError as e:
+        logging.error(f"Invalid retention value: {e}. Skipping retention policy.")
+        return
+        
+    logging.info(f"Applying retention policy for bookmarks older than {retention_str}.")
+
+    current_time = datetime.now(timezone.utc)
+    bookmarks_to_delete_ids = []
+
+    for bookmark_id, bookmark_data in list(bookmarks_to_sync.items()):
+        try:
+            publish_time_str = bookmark_data.get('published_timestamp')
+            if not publish_time_str:
+                logging.warning(f"Bookmark ID {bookmark_id} has no publish timestamp. Skipping retention check.")
+                continue
+
+            publish_time = datetime.fromisoformat(publish_time_str)
+            
+            # Make sure the publish time is timezone-aware
+            if publish_time.tzinfo is None or publish_time.tzinfo.utcoffset(publish_time) is None:
+                publish_time = publish_time.replace(tzinfo=timezone.utc)
+
+            if (current_time - publish_time).total_seconds() > retention_seconds:
+                bookmarks_to_delete_ids.append(bookmark_id)
+                logging.info(f"Bookmark ID {bookmark_id} is older than the retention policy. Marked for deletion.")
+
+        except ValueError as e:
+            logging.warning(f"Error parsing timestamp for bookmark ID {bookmark_id}: {e}. Skipping.")
+            continue
+    
+    if not bookmarks_to_delete_ids:
+        logging.info("No bookmarks found that have exceeded the retention period.")
+        return
+
+    logging.info(f"Deleting {len(bookmarks_to_delete_ids)} bookmarks from Instapaper.")
+    deleted_count = 0
+    
+    try:
+        oauth = OAuth1Session(app_creds.get('consumer_key'),
+                              client_secret=app_creds.get('consumer_secret'),
+                              resource_owner_key=instapaper_config.get('oauth_token'),
+                              resource_owner_secret=instapaper_config.get('oauth_token_secret'))
+
+        for bookmark_id in bookmarks_to_delete_ids:
+            try:
+                payload = {'bookmark_id': bookmark_id}
+                response = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data=payload)
+                response.raise_for_status()
+                
+                # --- NEW LOGIC: Relying on successful HTTP status for confirmation ---
+                del bookmarks_to_sync[bookmark_id]
+                logging.info(f"Successfully deleted bookmark {bookmark_id} from Instapaper and local state.")
+                deleted_count += 1
+                # --- END NEW LOGIC ---
+            
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Failed to delete bookmark {bookmark_id}: {e}. Will not remove from local state.")
+                if 'response' in locals():
+                    logging.debug(f"Instapaper API Response Text: {response.text}")
+    
+    except Exception as e:
+        logging.error(f"An error occurred during Instapaper API communication: {e}.")
+    
+    logging.info(f"Retention policy applied. {deleted_count} bookmarks deleted from Instapaper and local state.")
 
 def get_config_files(path):
     """Parses the command-line argument to return a list of INI files."""
@@ -883,14 +1082,17 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                     resolve_final_url_flag = instapaper_ini_config.getboolean('resolve_final_url', fallback=True)
                     sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
                     add_default_tag_flag = instapaper_ini_config.getboolean('add_default_tag', fallback=True)
+                    add_categories_as_tags_flag = instapaper_ini_config.getboolean('add_categories_as_tags', fallback=False)
                 except ValueError as e:
                     logging.warning(f"Invalid boolean value for Instapaper config: {e}. Defaulting to fallback values.")
                     resolve_final_url_flag = True
                     sanitize_content_flag = False
                     add_default_tag_flag = True
+                    add_categories_as_tags_flag = False
 
                 tags_to_add = instapaper_ini_config.get('tags', '')
                 folder_name = instapaper_ini_config.get('folder', '')
+                categories_for_tags = entry.get('categories_from_feed', [])
 
                 folder_id = None
                 if folder_name:
@@ -902,27 +1104,72 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                     if not folder_id:
                         folder_id = create_instapaper_folder(oauth_session, folder_name)
 
-                publish_to_instapaper(
+                publish_result = publish_to_instapaper(
                     instapaper_config_from_json,
                     app_creds,
                     entry['url'],
                     entry['title'],
                     entry['raw_html_content'],
+                    categories_from_feed=categories_for_tags,
                     resolve_final_url=resolve_final_url_flag,
                     sanitize_content=sanitize_content_flag,
                     tags_string=tags_to_add,
                     folder_id=folder_id,
-                    add_default_tag=add_default_tag_flag
+                    add_default_tag=add_default_tag_flag,
+                    add_categories_as_tags=add_categories_as_tags_flag
                 )
+                
+                if publish_result:
+                    state_to_update = load_state(config_file_for_entry)
+                    
+                    # Store the new bookmark information
+                    bookmark_id = publish_result['bookmark_id']
+                    state_to_update['bookmarks'][bookmark_id] = {
+                        'content_location': publish_result['content_location'],
+                        'title': publish_result['title'],
+                        'published_timestamp': datetime.now(timezone.utc).isoformat()
+                    }
+                    
+                    # Update the last RSS entry timestamp
+                    state_to_update['last_rss_timestamp'] = entry['published_dt']
+                    save_state(config_file_for_entry, state_to_update)
+
                 published_count += 1
+            
+            logging.info(f"Finished publishing. Published {published_count} new entries to Instapaper.")
+            
+        
+        # --- NEW CODE: Sync & Purge Check outside of the new entries block ---
+        for config_file in config_files:
+            config = configparser.ConfigParser()
+            config.read(config_file)
+            state_to_sync_purge = load_state(config_file)
 
-                state_to_update = load_state(config_file_for_entry)
-                state_to_update['last_rss_timestamp'] = entry['published_dt']
-                save_state(config_file_for_entry, state_to_update)
+            if instapaper_id and state_to_sync_purge.get('force_sync_and_purge', False):
+                logging.info(f"Force sync and purge flag detected for {os.path.basename(config_file)}. Running sync and retention policy.")
 
-            logging.info(f"Finished processing. Published {published_count} new entries to Instapaper.")
-        else:
-            logging.info("No new entries found to publish.")
+                instapaper_id = config['CONFIG_REFERENCES'].get('instapaper_id')
+                instapaper_config_from_json = all_configs.get(instapaper_id)
+                instapaper_ini_config = config['INSTAPAPER_CONFIG'] if 'INSTAPAPER_CONFIG' in config else {}
+
+                sync_instapaper_bookmarks(
+                    instapaper_config_from_json,
+                    instapaper_app_creds,
+                    state_to_sync_purge['bookmarks']
+                )
+
+                apply_retention_policy(
+                    instapaper_ini_config,
+                    instapaper_config_from_json,
+                    instapaper_app_creds,
+                    state_to_sync_purge['bookmarks']
+                )
+                
+                # Reset the flag after a successful run
+                state_to_sync_purge['force_sync_and_purge'] = False
+                save_state(config_file, state_to_sync_purge)
+                logging.info(f"Force sync and purge finished and flag has been reset for {os.path.basename(config_file)}.")
+        # --- END NEW CODE ---
 
         logging.info("Service poll loop finished. Sleeping for 60 seconds.")
         time.sleep(60)
