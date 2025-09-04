@@ -485,15 +485,6 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             logging.error("Incomplete Instapaper credentials. Cannot publish.")
             return
 
-        # 1. Extract only the HTML body content
-        body_match = re.search(r'<body.*?>(.*?)</body>', raw_html_content, re.DOTALL | re.I)
-        processed_content = body_match.group(1) if body_match else raw_html_content
-
-        # 2. Conditionally sanitize the content
-        if sanitize_content:
-            logging.debug("Sanitizing content: Removing <img> tags.")
-            processed_content = re.sub(r'<img[^>]+>', '', processed_content, flags=re.I)
-
         oauth = OAuth1Session(consumer_key,
                               client_secret=consumer_secret,
                               resource_owner_key=oauth_token,
@@ -502,8 +493,23 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         payload = {
             'url': url,
             'title': title,
-            'content': processed_content
         }
+
+        # Conditionally add content if provided
+        if raw_html_content:
+            # 1. Extract only the HTML body content
+            body_match = re.search(r'<body.*?>(.*?)</body>', raw_html_content, re.DOTALL | re.I)
+            processed_content = body_match.group(1) if body_match else raw_html_content
+
+            # 2. Conditionally sanitize the content
+            if sanitize_content:
+                logging.debug("Sanitizing content: Removing <img> tags.")
+                processed_content = re.sub(r'<img[^>]+>', '', processed_content, flags=re.I)
+            
+            payload['content'] = processed_content
+            logging.debug(f"Payload includes HTML content (truncated): {payload['content'][:100]}...")
+        else:
+            logging.debug("Payload does not include HTML content. Instapaper will attempt to resolve the URL.")
 
         # Explicitly set resolve_final_url to '0' if the config is false
         if not resolve_final_url:
@@ -529,7 +535,7 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
 
         logging.debug(f"Publishing URL: {url}")
         logging.debug(f"Publishing Title: {title}")
-        logging.debug(f"Payload being sent to Instapaper API (content truncated): {payload['content'][:100]}...")
+        
         if 'resolve_final_url' in payload:
             logging.debug("'resolve_final_url' parameter is set to '0' to prevent URL resolution.")
         else:
@@ -562,21 +568,30 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
     Fetches the RSS feed from a given URL and returns a list of new entries.
     Accepts an optional `cookies` argument for authenticated content fetching.
     """
-
     last_run_dt = state['last_rss_timestamp']
     new_entries = []
 
     logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
 
     try:
-        logging.info(f"Fetching RSS feed from {feed_url}")
-        # Add a User-Agent header to mimic a browser
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
-        feed_response = requests.get(feed_url, headers=headers, timeout=30)
+        # Load the two new, independent flags
+        rss_requires_auth = rss_feed_config.getboolean('rss_requires_auth', fallback=False)
+        is_paywalled = rss_feed_config.getboolean('is_paywalled', fallback=False)
+        
+        # Determine if we need to use a session with cookies for the RSS feed
+        if rss_requires_auth and cookies:
+            logging.info(f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies.")
+            session = requests.Session()
+            for cookie in cookies:
+                session.cookies.set(cookie['name'], cookie['value'])
+            feed_response = session.get(feed_url, timeout=30)
+        else:
+            logging.info(f"Feed is public. Fetching RSS feed from {feed_url} without cookies.")
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
+            feed_response = requests.get(feed_url, headers=headers, timeout=30)
+
         feed_response.raise_for_status()
-
         feed = feedparser.parse(feed_response.content)
-
         logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
 
         for entry in feed.entries:
@@ -592,17 +607,16 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                 url = entry.link
                 title = entry.title
 
-                # Use cookies to fetch full article content if available
                 raw_html_content = None
-                if cookies:
+                
+                if is_paywalled and cookies:
+                    logging.info(f"Article is paywalled. Attempting to fetch full HTML body with cookies from {url}.")
                     raw_html_content = get_article_html_with_cookies(url, cookies)
-
-                # Fallback to RSS content if full content is not available
-                if not raw_html_content:
-                    raw_html_content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '') or entry.get('description', '')
-                    logging.debug("Using RSS entry content as fallback.")
-
-                if raw_html_content:
+                else:
+                    logging.info("Article is not paywalled. Sending URL-only request to Instapaper.")
+                
+                # Check if we have content to send to Instapaper
+                if raw_html_content or not is_paywalled:
                     new_entry = {
                         'config_file': config_file,
                         'url': url,
@@ -610,273 +624,14 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                         'raw_html_content': raw_html_content,
                         'published_dt': entry_timestamp_dt,
                         'instapaper_config': instapaper_config,
-                        'app_creds': app_creds, # Pass the app creds
+                        'app_creds': app_creds,
                         'rss_feed_config': rss_feed_config,
                         'instapaper_ini_config': instapaper_ini_config,
                     }
                     new_entries.append(new_entry)
                     logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
                 else:
-                    logging.warning(f"Skipping entry '{title}' as no content could be retrieved.")
-
-        logging.info(f"Found {len(new_entries)} new entries from this feed.")
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching RSS feed: {e}")
-        if 'response' in locals():
-            logging.debug(f"HTTP status code: {feed_response.status_code}")
-            logging.debug(f"HTTP response body: {feed_response.text}")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred while processing feed: {e}")
-
-    return new_entries
-
-def login_and_update(config_name, site_config, login_credentials):
-    """
-    Performs login using site configuration and user credentials.
-    Returns: a list of cookie dictionaries, or an empty list on failure.
-    """
-    if not site_config or not login_credentials:
-        logging.warning(f"Missing site config or login credentials for {config_name}. Skipping login.")
-        return []
-
-    login_type = site_config.get('login_type')
-
-    # Use 'login_name' as the preferred key, with a fallback to 'email'
-    login_value = login_credentials.get('login_name')
-    if login_value is None:
-        login_value = login_credentials.get('email')
-        if login_value is not None:
-            logging.warning(f"Using deprecated 'email' key for login for {config_name}. Please update your credentials.json to use 'login_name'.")
-
-    password = login_credentials.get('password')
-    cookies_to_store_names = site_config.get('cookies_to_store')
-
-    if not all([login_value, password]):
-        logging.error(f"Missing 'login_name' (or 'email') or 'password' in credentials for {config_name}. Cannot proceed.")
-        return []
-
-    cookies = []
-
-    logging.info(f"Running {site_config.get('site_name')} login for: {config_name} using {login_type} method")
-
-    if login_type == "selenium":
-        driver = None
-        try:
-            logging.debug("Initializing WebDriver with headless mode.")
-            driver = webdriver.Chrome(service=service, options=options)
-            driver.get(site_config.get('login_url'))
-            logging.info(f"Navigated to {site_config.get('login_url')}")
-
-            wait = WebDriverWait(driver, 20)
-
-            login_field_id = site_config.get('login_field_id', site_config.get('email_field_id'))
-            if not login_field_id:
-                raise ValueError("Missing 'login_field_id' or 'email_field_id' in site config.")
-
-            login_field = wait.until(EC.visibility_of_element_located((By.ID, login_field_id)))
-            login_field.send_keys(login_value)
-            logging.debug(f"Login field filled (ID: {login_field_id}).")
-
-            password_field = wait.until(EC.visibility_of_element_located((By.ID, site_config.get('password_field_id'))))
-            password_field.send_keys(password)
-            logging.debug(f"Password field filled (ID: {site_config.get('password_field_id')}).")
-
-            signin_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, site_config.get('login_button_selector'))))
-            signin_button.click()
-            logging.info("Login button clicked successfully.")
-            logging.debug(f"Login button clicked (Selector: {site_config.get('login_button_selector')}).")
-
-            # --- Validation Checks ---
-            required_cookies_str = site_config.get('required_cookies', '')
-            if required_cookies_str:
-                required_cookies = [c.strip() for c in required_cookies_str.split(',')]
-                logging.debug(f"Waiting for required cookies: {required_cookies}")
-                for cookie in required_cookies:
-                    wait.until(lambda d: cookie in [c['name'] for c in d.get_cookies()])
-                    logging.debug(f"Found required cookie '{cookie}'.")
-            else:
-                logging.debug("No specific cookies to wait for. Proceeding with a short wait.")
-                time.sleep(3)
-
-            success_text = site_config.get('expected_success_text')
-            success_locator_class = site_config.get('success_text_class')
-
-            if success_text and success_locator_class:
-                welcome_element = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, success_locator_class)))
-                assert welcome_element.text.strip() == success_text.strip(), "Login verification failed: Welcome message not found or text mismatch."
-                logging.info("Login verified via expected success text.")
-            else:
-                logging.debug("No success text or locator provided. Skipping this verification step.")
-                time.sleep(2)
-
-            if ENABLE_SCREENSHOTS:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                success_screenshot_path = os.path.join(log_dir, f"{site_config.get('site_name')}_success_screenshot_{config_name}_{timestamp}.png")
-                driver.save_screenshot(success_screenshot_path)
-                logging.info(f"Screenshot of successful login saved to {success_screenshot_path}")
-
-            all_captured_cookies = driver.get_cookies()
-            logging.debug(f"Captured {len(all_captured_cookies)} cookies.")
-
-            if cookies_to_store_names:
-                cookies = [c for c in all_captured_cookies if c['name'] in cookies_to_store_names]
-                logging.info(f"Filtered cookies to store: {len(cookies)} out of {len(all_captured_cookies)} captured cookies.")
-                logging.debug(f"Filtered cookie names: {[c['name'] for c in cookies]}")
-            else:
-                cookies = all_captured_cookies
-                logging.debug("No 'cookies_to_store' list specified. Saving all captured cookies.")
-
-            if cookies_to_store_names:
-                captured_cookie_names = {c['name'] for c in cookies}
-                for name in cookies_to_store_names:
-                    if name not in captured_cookie_names:
-                        logging.warning(f"Required cookie '{name}' was not found after login. This may cause subsequent requests to fail.")
-            
-            # This is the single, definitive success log. It only runs if no exceptions were raised.
-            logging.info("Login process successfully completed and verified.")
-            return cookies
-
-        except (WebDriverException, TimeoutException, AssertionError, ValueError, Exception) as e:
-            logging.error(f"An error occurred during {site_config.get('site_name')} login for {config_name}: {e}")
-            if driver and ENABLE_SCREENSHOTS:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                failure_screenshot_path = os.path.join(log_dir, f"{site_config.get('site_name')}_failure_screenshot_{config_name}_{timestamp}.png")
-                driver.save_screenshot(failure_screenshot_path)
-            return []
-        finally:
-            if driver:
-                try:
-                    logging.debug("Browser Cookies After Session:")
-                    logging.debug(json.dumps(driver.get_cookies(), indent=2))
-                    logging.debug("Browser Logs:")
-                    for entry in driver.get_log('browser'):
-                        logging.debug(entry)
-                except WebDriverException as e:
-                    logging.debug(f"Failed to retrieve logs/cookies: {e}")
-                logging.info("Quitting WebDriver.")
-                driver.quit()
-
-    elif login_type == "api":
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'
-        }
-
-        login_id_param_name = site_config.get('login_id_param_name', 'email')
-        password_param_name = site_config.get('password_param_name', 'password')
-
-        data = {
-            login_id_param_name: login_value,
-            password_param_name: password,
-            'captcha_response': 'None'
-        }
-        logging.debug(f"API Login URL: {site_config.get('login_url')}")
-        logging.debug(f"API Payload: {data}")
-
-        try:
-            logging.debug("Sending POST request to API...")
-            response = requests.post(site_config.get('login_url'), headers=headers, data=data, timeout=30)
-            response.raise_for_status()
-
-            logging.info("API login successful.")
-            logging.debug(f"Response status: {response.status_code}")
-            logging.debug(f"Response headers: {response.headers}")
-
-            cookies_jar = response.cookies
-            all_captured_cookies = [{'name': c.name, 'value': c.value, 'expires': c.expires} for c in cookies_jar]
-            logging.debug(f"Captured {len(all_captured_cookies)} cookies.")
-
-            if cookies_to_store_names:
-                cookies = [c for c in all_captured_cookies if c['name'] in cookies_to_store_names]
-                logging.info(f"Filtered cookies to store: {len(cookies)} out of {len(all_captured_cookies)} captured cookies.")
-                logging.debug(f"Filtered cookie names: {[c['name'] for c in cookies]}")
-            else:
-                cookies = all_captured_cookies
-                logging.debug("No 'cookies_to_store' list specified. Saving all captured cookies.")
-
-            if cookies_to_store_names:
-                captured_cookie_names = {c['name'] for c in cookies}
-                for name in cookies_to_store_names:
-                    if name not in captured_cookie_names:
-                        logging.warning(f"Required cookie '{name}' was not found after login. This may cause subsequent requests to fail.")
-
-            return cookies
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"An error occurred during API login for {config_name}: {e}")
-            if 'response' in locals():
-                logging.debug(f"Response text: {response.text}")
-            return []
-        except Exception as e:
-            logging.error(f"An unexpected error occurred during API login for {config_name}: {e}")
-            return []
-
-    else:
-        logging.warning(f"Unsupported login_type '{login_type}' defined in site config. Skipping.")
-        return []
-
-def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state):
-    """
-    Fetches the RSS feed from a given URL and returns a list of new entries.
-    Accepts an optional `cookies` argument for authenticated content fetching.
-    """
-
-    last_run_dt = state['last_rss_timestamp']
-    new_entries = []
-
-    logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
-
-    try:
-        logging.info(f"Fetching RSS feed from {feed_url}")
-        # Add a User-Agent header to mimic a browser
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36'}
-        feed_response = requests.get(feed_url, headers=headers, timeout=30)
-        feed_response.raise_for_status()
-
-        feed = feedparser.parse(feed_response.content)
-
-        logging.debug(f"Found {len(feed.entries)} entries in the RSS feed.")
-
-        for entry in feed.entries:
-            entry_timestamp_dt = None
-            if hasattr(entry, 'published_parsed'):
-                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
-            elif hasattr(entry, 'updated_parsed'):
-                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
-
-            logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
-
-            if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
-                url = entry.link
-                title = entry.title
-
-                # Use cookies to fetch full article content if available
-                raw_html_content = None
-                if cookies:
-                    raw_html_content = get_article_html_with_cookies(url, cookies)
-
-                # Fallback to RSS content if full content is not available
-                if not raw_html_content:
-                    raw_html_content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '') or entry.get('description', '')
-                    logging.debug("Using RSS entry content as fallback.")
-
-                if raw_html_content:
-                    new_entry = {
-                        'config_file': config_file,
-                        'url': url,
-                        'title': title,
-                        'raw_html_content': raw_html_content,
-                        'published_dt': entry_timestamp_dt,
-                        'instapaper_config': instapaper_config,
-                        'app_creds': app_creds, # Pass the app creds
-                        'rss_feed_config': rss_feed_config,
-                        'instapaper_ini_config': instapaper_ini_config,
-                    }
-                    new_entries.append(new_entry)
-                    logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
-                else:
-                    logging.warning(f"Skipping entry '{title}' as no content could be retrieved.")
+                    logging.warning(f"Skipping entry '{title}' as no content could be retrieved and it's marked as paywalled.")
 
         logging.info(f"Found {len(new_entries)} new entries from this feed.")
 
@@ -938,6 +693,19 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                 instapaper_ini_config = config['INSTAPAPER_CONFIG'] if 'INSTAPAPER_CONFIG' in config else {}
                 rss_feed_config = config['RSS_FEED_CONFIG'] if 'RSS_FEED_CONFIG' in config else {}
                 miniflux_ini_config = config['MINIFLUX_CONFIG'] if 'MINIFLUX_CONFIG' in config else {}
+                
+                # --- New Validation Check for Configuration Mismatch ---
+                is_paywalled = rss_feed_config.getboolean('is_paywalled', fallback=False) if rss_feed_config else False
+                rss_requires_auth = rss_feed_config.getboolean('rss_requires_auth', fallback=False) if rss_feed_config else False
+                
+                if (is_paywalled or rss_requires_auth) and (not login_id or not site_config_id):
+                    logging.warning(
+                        f"Configuration mismatch in '{config_name}': 'is_paywalled' or 'rss_requires_auth' is set to true, but "
+                        f"the required 'login_id' and/or 'site_config_id' are missing in "
+                        f"[CONFIG_REFERENCES]. This will likely cause the script to fail to fetch "
+                        f"content."
+                    )
+                # --- End of Validation Check ---
 
                 # --- Login and Cookie Management ---
                 cookies = []
