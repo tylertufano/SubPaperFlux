@@ -613,6 +613,20 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
 
     logging.debug(f"Last RSS entry timestamp from state: {last_run_dt.isoformat()}")
 
+    # Determine the time cutoff for initial runs
+    is_initial_run = (last_run_dt == datetime.fromtimestamp(0, tz=timezone.utc))
+    cutoff_dt = last_run_dt
+
+    if is_initial_run:
+        initial_lookback_str = rss_feed_config.get('initial_lookback_period', '24h')
+        try:
+            lookback_seconds = parse_frequency_to_seconds(initial_lookback_str)
+            cutoff_dt = datetime.now(timezone.utc) - timedelta(seconds=lookback_seconds)
+            logging.info(f"Initial run detected. Limiting sync to entries published after: {cutoff_dt.isoformat()}")
+        except ValueError as e:
+            logging.error(f"Invalid 'initial_lookback_period' value: {e}. Defaulting to no limit.")
+            # Keep cutoff_dt as the min_datetime, which means all entries will be fetched.
+
     try:
         # Load the two new, independent flags
         rss_requires_auth = rss_feed_config.getboolean('rss_requires_auth', fallback=False)
@@ -654,7 +668,8 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
 
             logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
 
-            if entry_timestamp_dt and entry_timestamp_dt > state['last_rss_timestamp']:
+            # NEW LOGIC: Check against the dynamic cutoff date
+            if entry_timestamp_dt and entry_timestamp_dt > cutoff_dt:
                 url = entry.link
                 title = entry.title
 
