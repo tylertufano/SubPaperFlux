@@ -523,21 +523,22 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         if not resolve_final_url:
             payload['resolve_final_url'] = '0'
 
-        # Conditionally add tags if they are provided, formatted as a JSON string
-        final_tags = set()
+        # --- NEW LOGIC: Order tags for consistency ---
+        user_defined_tags = []
         if tags_string:
-            final_tags.update([tag.strip() for tag in tags_string.split(',') if tag.strip()])
+            user_defined_tags = sorted([tag.strip() for tag in tags_string.split(',') if tag.strip()])
 
-        # Add the default tag if enabled
-        if add_default_tag:
-            final_tags.add('RSS')
-            logging.debug("Adding default 'RSS' tag.")
-
-        # Add categories as tags if the new flag is true
+        category_tags = []
         if add_categories_as_tags and categories_from_feed:
             logging.debug(f"Adding categories as tags: {categories_from_feed}")
-            for cat in categories_from_feed:
-                final_tags.add(cat)
+            category_tags = sorted(list(set(categories_from_feed)))
+
+        default_tags = []
+        if add_default_tag:
+            default_tags.append('RSS')
+            logging.debug("Adding default 'RSS' tag.")
+
+        final_tags = user_defined_tags + category_tags + default_tags
 
         if final_tags:
             tags_list = [{'name': tag} for tag in final_tags]
@@ -545,7 +546,7 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             logging.debug(f"Formatted tags being sent: '{payload['tags']}'.")
         else:
             logging.debug("No tags will be added to this bookmark.")
-
+        # --- END NEW LOGIC ---
 
         # Conditionally add folder ID
         if folder_id:
