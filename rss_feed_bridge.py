@@ -478,7 +478,25 @@ def create_instapaper_folder(oauth_session, folder_name):
             logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
-def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, categories_from_feed, resolve_final_url=True, sanitize_content=False, tags_string='', folder_id=None, add_default_tag=True, add_categories_as_tags=False):
+def sanitize_html_content(raw_html_content, sanitizing_regexes):
+    """
+    Sanitizes HTML content by applying a list of regular expressions.
+    Returns the sanitized content.
+    """
+    if not raw_html_content:
+        return ""
+    
+    sanitized_content = raw_html_content
+    for pattern in sanitizing_regexes:
+        try:
+            # Use re.DOTALL to match across newlines
+            sanitized_content = re.sub(pattern, '', sanitized_content, flags=re.DOTALL | re.I)
+        except re.error as e:
+            logging.error(f"Invalid regex pattern for sanitization: '{pattern}'. Error: {e}")
+            
+    return sanitized_content
+
+def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, categories_from_feed, instapaper_ini_config, site_config, resolve_final_url=True):
     """
     Publishes a single article entry to Instapaper.
     Returns a dictionary with 'bookmark_id' and 'content_location' on success, or None on failure.
@@ -502,39 +520,64 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             'url': url,
             'title': title,
         }
-
-        # Conditionally add content if provided
-        if raw_html_content:
-            # 1. Extract only the HTML body content
-            body_match = re.search(r'<body.*?>(.*?)</body>', raw_html_content, re.DOTALL | re.I)
-            processed_content = body_match.group(1) if body_match else raw_html_content
-
-            # 2. Conditionally sanitize the content
-            if sanitize_content:
-                logging.debug("Sanitizing content: Removing <img> tags.")
-                processed_content = re.sub(r'<img[^>]+>', '', processed_content, flags=re.I)
-            
-            payload['content'] = processed_content
-            logging.debug(f"Payload includes HTML content (truncated): {payload['content'][:100]}...")
+        
+        # --- NEW SANITIZATION LOGIC ---
+        sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
+        
+        sanitizing_regexes = []
+        
+        ini_custom_criteria = instapaper_ini_config.get('custom_sanitizing_criteria')
+        site_custom_criteria = site_config.get('sanitizing_criteria') if site_config else None
+        
+        if not sanitize_content_flag:
+            logging.debug("Content sanitization is explicitly DISABLED.")
+            if ini_custom_criteria or site_custom_criteria:
+                logging.warning("Custom sanitization criteria specified, but 'sanitize_content' is false. Skipping sanitization.")
         else:
-            logging.debug("Payload does not include HTML content. Instapaper will attempt to resolve the URL.")
+            if ini_custom_criteria:
+                logging.info("Using custom sanitizing criteria from INI file. This overrides any site configuration.")
+                sanitizing_regexes = [s.strip() for s in ini_custom_criteria.split(',') if s.strip()]
+            elif site_custom_criteria:
+                logging.info("Using custom sanitizing criteria from site configuration.")
+                sanitizing_regexes = [s.strip() for s in site_custom_criteria if s.strip()]
+            else:
+                logging.info("Using default sanitizing criteria: removing img tags.")
+                # Default to removing all img tags
+                sanitizing_regexes = [r'<img[^>]+>']
 
+            if raw_html_content:
+                processed_content = sanitize_html_content(raw_html_content, sanitizing_regexes)
+                
+                # Extract only the HTML body content after sanitization
+                body_match = re.search(r'<body.*?>(.*?)</body>', processed_content, re.DOTALL | re.I)
+                payload['content'] = body_match.group(1) if body_match else processed_content
+                logging.debug(f"Payload includes sanitized HTML content (truncated): {payload['content'][:100]}...")
+            else:
+                logging.debug("Payload does not include HTML content. Instapaper will attempt to resolve the URL.")
+                
+        # --- END NEW SANITIZATION LOGIC ---
+        
         # Explicitly set resolve_final_url to '0' if the config is false
         if not resolve_final_url:
             payload['resolve_final_url'] = '0'
 
         # --- NEW LOGIC: Order tags for consistency ---
+        add_default_tag_flag = instapaper_ini_config.getboolean('add_default_tag', fallback=True)
+        add_categories_as_tags_flag = instapaper_ini_config.getboolean('add_categories_as_tags', fallback=False)
+        tags_string = instapaper_ini_config.get('tags', '')
+        folder_id = instapaper_ini_config.get('folder_id')
+
         user_defined_tags = []
         if tags_string:
             user_defined_tags = sorted([tag.strip() for tag in tags_string.split(',') if tag.strip()])
 
         category_tags = []
-        if add_categories_as_tags and categories_from_feed:
+        if add_categories_as_tags_flag and categories_from_feed:
             logging.debug(f"Adding categories as tags: {categories_from_feed}")
             category_tags = sorted(list(set(categories_from_feed)))
 
         default_tags = []
-        if add_default_tag:
+        if add_default_tag_flag:
             default_tags.append('RSS')
             logging.debug("Adding default 'RSS' tag.")
 
@@ -559,11 +602,6 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             logging.debug("'resolve_final_url' parameter is set to '0' to prevent URL resolution.")
         else:
             logging.debug("'resolve_final_url' parameter is not explicitly set. Instapaper will resolve redirects.")
-        if sanitize_content:
-            logging.debug("Content sanitization is ENABLED.")
-        else:
-        # User defined a parameter, but we want to ignore it if no value is assigned.
-            pass
         if folder_id:
             logging.debug(f"Folder ID being used: '{folder_id}'.")
         
@@ -604,7 +642,7 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
-def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state):
+def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss_feed_config, instapaper_ini_config, cookies, state, site_config):
     """
     Fetches the RSS feed from a given URL and returns a list of new entries.
     Accepts an optional `cookies` argument for authenticated content fetching.
@@ -707,6 +745,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                         'app_creds': app_creds,
                         'rss_feed_config': rss_feed_config,
                         'instapaper_ini_config': instapaper_ini_config,
+                        'site_config': site_config,
                     }
                     new_entries.append(new_entry)
                     logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
@@ -1148,7 +1187,8 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                             rss_feed_config,
                             instapaper_ini_config,
                             cookies,
-                            state
+                            state,
+                            site_config
                         )
                         all_new_entries.extend(new_entries)
                         state['last_rss_poll_time'] = current_time
@@ -1176,21 +1216,15 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                 instapaper_config_from_json = entry['instapaper_config']
                 app_creds = entry['app_creds']
                 instapaper_ini_config = entry['instapaper_ini_config']
+                site_config = entry['site_config']
                 config_file_for_entry = entry['config_file']
 
                 try:
                     resolve_final_url_flag = instapaper_ini_config.getboolean('resolve_final_url', fallback=True)
-                    sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
-                    add_default_tag_flag = instapaper_ini_config.getboolean('add_default_tag', fallback=True)
-                    add_categories_as_tags_flag = instapaper_ini_config.getboolean('add_categories_as_tags', fallback=False)
                 except ValueError as e:
                     logging.warning(f"Invalid boolean value for Instapaper config: {e}. Defaulting to fallback values.")
                     resolve_final_url_flag = True
-                    sanitize_content_flag = False
-                    add_default_tag_flag = True
-                    add_categories_as_tags_flag = False
 
-                tags_to_add = instapaper_ini_config.get('tags', '')
                 folder_name = instapaper_ini_config.get('folder', '')
                 categories_for_tags = entry.get('categories_from_feed', [])
 
@@ -1211,12 +1245,9 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                     entry['title'],
                     entry['raw_html_content'],
                     categories_from_feed=categories_for_tags,
+                    instapaper_ini_config=instapaper_ini_config,
+                    site_config=site_config,
                     resolve_final_url=resolve_final_url_flag,
-                    sanitize_content=sanitize_content_flag,
-                    tags_string=tags_to_add,
-                    folder_id=folder_id,
-                    add_default_tag=add_default_tag_flag,
-                    add_categories_as_tags=add_categories_as_tags_flag
                 )
                 
                 if publish_result:
