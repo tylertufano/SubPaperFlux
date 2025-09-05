@@ -727,30 +727,28 @@ def sync_instapaper_bookmarks(instapaper_config, app_creds, bookmarks_to_sync):
                               resource_owner_secret=instapaper_config.get('oauth_token_secret'))
         
         # Prepare the 'have' parameter payload
-        # The 'have' parameter is a JSON object where keys are the bookmark IDs
-        # and values are the last known timestamp, or '0' if not available.
         have_payload = {bookmark_id: '0' for bookmark_id in bookmarks_to_sync.keys()}
         
         logging.debug(f"Using 'have' parameter with {len(have_payload)} bookmark IDs.")
         
-        # Make the API call with the 'have' parameter
         response = oauth.post(INSTAPAPER_BOOKMARKS_LIST_URL, data={'have': json.dumps(have_payload)})
         response.raise_for_status()
         
         logging.debug(f"Raw Instapaper sync response: {response.text}")
         
-        # --- FIXED LOGIC: Handle the top-level dictionary response ---
-        api_response_data = response.json()
+        # --- FIXED LOGIC: Iterate directly over the top-level response array ---
+        returned_items = response.json()
         
-        # The bookmarks are in a list under the 'bookmarks' key.
-        # The API documentation is slightly misleading, the response is a dictionary, not an array.
-        returned_items = api_response_data.get('bookmarks', [])
-        
+        if not isinstance(returned_items, list):
+            logging.error(f"Instapaper API returned unexpected response format for sync. Expected a list, got {type(returned_items)}.")
+            return
+
         deleted_count = 0
         
         for item in returned_items:
             # Check if the item is a dictionary as expected
             if isinstance(item, dict):
+                # The API returns a 'delete' object for removed bookmarks
                 if item.get('type') == 'delete':
                     deleted_bookmark_id = item.get('bookmark_id')
                     if deleted_bookmark_id in bookmarks_to_sync:
@@ -759,6 +757,8 @@ def sync_instapaper_bookmarks(instapaper_config, app_creds, bookmarks_to_sync):
                         deleted_count += 1
             else:
                 logging.warning(f"Unexpected item type in sync response: {type(item)}. Skipping.")
+        
+        # --- END FIXED LOGIC ---
         
         logging.info(f"Sync complete. {deleted_count} bookmarks removed from local state.")
 
