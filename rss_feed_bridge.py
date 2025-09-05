@@ -1,5 +1,5 @@
-import os
 import sys
+import os
 import argparse
 import configparser
 import json
@@ -714,51 +714,47 @@ def sync_instapaper_bookmarks(instapaper_config, app_creds, bookmarks_to_sync):
     Syncs the local list of bookmarks with Instapaper using the 'have' parameter.
     Modifies the bookmarks_to_sync dictionary in place.
     """
-    if not bookmarks_to_sync:
-        logging.info("No bookmarks to sync in local state. Skipping.")
-        return
-
     logging.info(f"Starting Instapaper bookmark sync for {len(bookmarks_to_sync)} bookmarks.")
-
+    
     try:
         oauth = OAuth1Session(app_creds.get('consumer_key'),
                               client_secret=app_creds.get('consumer_secret'),
                               resource_owner_key=instapaper_config.get('oauth_token'),
                               resource_owner_secret=instapaper_config.get('oauth_token_secret'))
+
+        # Prepare the 'have' parameter as a comma-separated string of bookmark IDs
+        bookmark_ids_string = ','.join(bookmarks_to_sync.keys())
         
-        # Prepare the 'have' parameter payload
-        have_payload = {bookmark_id: '0' for bookmark_id in bookmarks_to_sync.keys()}
+        # Check if the string is not empty before adding to the payload
+        if bookmark_ids_string:
+            payload = {'have': bookmark_ids_string}
+        else:
+            payload = {}
         
-        logging.debug(f"Using 'have' parameter with {len(have_payload)} bookmark IDs.")
-        
-        response = oauth.post(INSTAPAPER_BOOKMARKS_LIST_URL, data={'have': json.dumps(have_payload)})
+        logging.debug(f"Payload to be sent: {payload}")
+
+        response = oauth.post(INSTAPAPER_BOOKMARKS_LIST_URL, data=payload)
         response.raise_for_status()
         
-        logging.debug(f"Raw Instapaper sync response: {response.text}")
+        logging.debug(f"Raw response text from Instapaper: {response.text}")
         
-        # --- FIXED LOGIC: Iterate directly over the top-level response array ---
-        returned_items = response.json()
+        api_response = response.json()
         
-        if not isinstance(returned_items, list):
-            logging.error(f"Instapaper API returned unexpected response format for sync. Expected a list, got {type(returned_items)}.")
-            return
-
         deleted_count = 0
         
-        for item in returned_items:
-            # Check if the item is a dictionary as expected
-            if isinstance(item, dict):
-                # The API returns a 'delete' object for removed bookmarks
-                if item.get('type') == 'delete':
-                    deleted_bookmark_id = item.get('bookmark_id')
-                    if deleted_bookmark_id in bookmarks_to_sync:
-                        del bookmarks_to_sync[deleted_bookmark_id]
-                        logging.info(f"Found deleted bookmark. Removing from local state. Bookmark ID: {deleted_bookmark_id}")
-                        deleted_count += 1
+        # NEW LOGIC: Access 'delete_ids' directly from the main JSON object.
+        deleted_ids = api_response.get('delete_ids', [])
+        logging.debug(f"Parsed 'delete_ids': {deleted_ids}")
+
+        for deleted_id in deleted_ids:
+            # Convert the integer ID to a string to match local dictionary keys
+            deleted_id_str = str(deleted_id)
+            if deleted_id_str in bookmarks_to_sync:
+                del bookmarks_to_sync[deleted_id_str]
+                logging.info(f"Found deleted bookmark. Removing from local state. Bookmark ID: {deleted_id_str}")
+                deleted_count += 1
             else:
-                logging.warning(f"Unexpected item type in sync response: {type(item)}. Skipping.")
-        
-        # --- END FIXED LOGIC ---
+                logging.debug(f"Bookmark ID {deleted_id_str} from Instapaper delete list not found in local state. Skipping.")
         
         logging.info(f"Sync complete. {deleted_count} bookmarks removed from local state.")
 
@@ -828,11 +824,9 @@ def apply_retention_policy(instapaper_ini_config, instapaper_config, app_creds, 
                 response = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data=payload)
                 response.raise_for_status()
                 
-                # --- NEW LOGIC: Relying on successful HTTP status for confirmation ---
                 del bookmarks_to_sync[bookmark_id]
                 logging.info(f"Successfully deleted bookmark {bookmark_id} from Instapaper and local state.")
                 deleted_count += 1
-                # --- END NEW LOGIC ---
             
             except requests.exceptions.RequestException as e:
                 logging.error(f"Failed to delete bookmark {bookmark_id}: {e}. Will not remove from local state.")
@@ -853,6 +847,96 @@ def get_config_files(path):
     else:
         logging.error("Invalid path provided. Please specify a .ini file or a directory containing .ini files.")
         sys.exit(1)
+
+def login_and_update(config_name, site_config, login_credentials):
+    """
+    Performs a login using Selenium to get authentication cookies.
+    """
+    driver = None
+    try:
+        # Check if login_credentials or site_config is missing
+        if not login_credentials or not site_config:
+            logging.error(f"Missing login credentials or site configuration for {config_name}. Skipping login.")
+            return None
+
+        username = login_credentials.get('username')
+        password = login_credentials.get('password')
+        site_url = site_config.get('site_url')
+        username_selector = site_config.get('username_selector')
+        password_selector = site_config.get('password_selector')
+        login_button_selector = site_config.get('login_button_selector')
+        cookies_to_store_names = site_config.get('cookies_to_store', [])
+
+        # Validate that all required selectors are present
+        if not all([username, password, site_url, username_selector, password_selector, login_button_selector, cookies_to_store_names]):
+            logging.error(f"Incomplete login configuration for {config_name}. Skipping login.")
+            return None
+
+        logging.info(f"Starting Selenium for {config_name} to perform login...")
+        
+        driver = webdriver.Chrome(service=service, options=options)
+        driver.get(site_url)
+
+        wait = WebDriverWait(driver, 30)
+        
+        # Enter username
+        username_field = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, username_selector)))
+        username_field.send_keys(username)
+
+        # Enter password
+        password_field = driver.find_element(By.CSS_SELECTOR, password_selector)
+        password_field.send_keys(password)
+
+        # Click login button
+        login_button = driver.find_element(By.CSS_SELECTOR, login_button_selector)
+        login_button.click()
+        
+        logging.info("Login form submitted. Waiting for page to load...")
+
+        # Wait until we see a sign of a successful login, e.g., URL change or a specific element
+        # This is a generic approach; a more robust solution would be site-specific
+        try:
+            wait.until(EC.url_changes(site_url))
+            logging.info(f"Login successful for {config_name} (URL changed).")
+        except TimeoutException:
+            logging.warning(f"Login URL did not change for {config_name}. Checking for post-login element...")
+            if 'post_login_selector' in site_config:
+                try:
+                    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, site_config['post_login_selector'])))
+                    logging.info(f"Login successful for {config_name} (found post-login element).")
+                except TimeoutException:
+                    logging.error(f"Login failed for {config_name}. Post-login element not found.")
+                    return None
+            else:
+                logging.error(f"Login failed for {config_name}. Neither URL change nor post-login selector succeeded.")
+                return None
+        
+        if ENABLE_SCREENSHOTS:
+            screenshot_path = os.path.join(log_dir, f"login_success_{config_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.png")
+            driver.save_screenshot(screenshot_path)
+            logging.info(f"Screenshot saved to {screenshot_path}.")
+        
+        # Get all cookies
+        cookies = driver.get_cookies()
+        
+        # Filter for cookies we want to store and return them
+        filtered_cookies = [c for c in cookies if c['name'] in cookies_to_store_names]
+        if not filtered_cookies:
+            logging.error(f"No required cookies found after login for {config_name}. Check 'cookies_to_store' configuration.")
+            return None
+        
+        return filtered_cookies
+
+    except WebDriverException as e:
+        logging.error(f"Selenium WebDriver error during login for {config_name}: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"An unexpected error occurred during login for {config_name}: {e}")
+        return None
+    finally:
+        if driver:
+            driver.quit()
+            logging.info("Selenium driver quit.")
 
 def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds, all_cookie_state):
     """The main service loop that processes configs continuously."""
@@ -1145,10 +1229,13 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
             config.read(config_file)
             state_to_sync_purge = load_state(config_file)
 
+            if 'CONFIG_REFERENCES' not in config:
+                continue
+
+            instapaper_id = config['CONFIG_REFERENCES'].get('instapaper_id')
             if instapaper_id and state_to_sync_purge.get('force_sync_and_purge', False):
                 logging.info(f"Force sync and purge flag detected for {os.path.basename(config_file)}. Running sync and retention policy.")
 
-                instapaper_id = config['CONFIG_REFERENCES'].get('instapaper_id')
                 instapaper_config_from_json = all_configs.get(instapaper_id)
                 instapaper_ini_config = config['INSTAPAPER_CONFIG'] if 'INSTAPAPER_CONFIG' in config else {}
 
