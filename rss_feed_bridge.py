@@ -301,6 +301,11 @@ def update_miniflux_feed_with_cookies(miniflux_config_json, cookies, config_name
         logging.debug(f"Miniflux config missing for {config_name}. Skipping.")
         return
 
+    # NEW: Check if the cookies list is empty before proceeding
+    if not cookies:
+        logging.warning(f"No cookies were provided for {config_name}. Skipping Miniflux cookie update.")
+        return
+
     miniflux_url = miniflux_config_json.get('miniflux_url')
     api_key = miniflux_config_json.get('api_key')
 
@@ -411,8 +416,29 @@ def get_article_html_with_cookies(url, cookies):
     try:
         response = session.get(url, timeout=30)
         response.raise_for_status()
+        
+        # --- NEW: Check for common paywall indicators ---
+        # The log shows a Substact feed, so we'll check for its common paywall classes.
+        # This is a good general practice for similar paywalled sites.
+        paywall_indicators = [
+            'class="paywall"',
+            'id="paywall"',
+            'class="gated-content"',
+            'id="gated-content"',
+            '<h2>Sign in to continue reading</h2>',
+            '<h2>Subscribe to continue reading</h2>',
+            '<h2>Log in or subscribe to read more</h2>',
+            '<div class="post-access-notice"',
+            'data-testid="paywall-overlay"'
+        ]
+        
+        response_text = response.text
+        if any(indicator in response_text for indicator in paywall_indicators):
+            logging.warning(f"Fetched content from {url} appears to be a paywall or login page. Skipping content retrieval.")
+            return None
+            
         logging.debug(f"Successfully fetched article content from {url}.")
-        return response.text
+        return response_text
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching article content with cookies from {url}: {e}")
         if 'response' in locals():
@@ -521,41 +547,43 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
             'title': title,
         }
         
-        # --- NEW SANITIZATION LOGIC ---
+        # --- CORRECTED SANITIZATION LOGIC ---
         sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
+        processed_content = raw_html_content
         
-        sanitizing_regexes = []
-        
-        ini_custom_criteria = instapaper_ini_config.get('custom_sanitizing_criteria')
-        site_custom_criteria = site_config.get('sanitizing_criteria') if site_config else None
-        
-        if not sanitize_content_flag:
-            logging.debug("Content sanitization is explicitly DISABLED.")
-            if ini_custom_criteria or site_custom_criteria:
-                logging.warning("Custom sanitization criteria specified, but 'sanitize_content' is false. Skipping sanitization.")
-        else:
-            if ini_custom_criteria:
-                logging.info("Using custom sanitizing criteria from INI file. This overrides any site configuration.")
-                sanitizing_regexes = [s.strip() for s in ini_custom_criteria.split(',') if s.strip()]
-            elif site_custom_criteria:
-                logging.info("Using custom sanitizing criteria from site configuration.")
-                sanitizing_regexes = [s.strip() for s in site_custom_criteria if s.strip()]
-            else:
-                logging.info("Using default sanitizing criteria: removing img tags.")
-                # Default to removing all img tags
-                sanitizing_regexes = [r'<img[^>]+>']
+        if raw_html_content:
+            if sanitize_content_flag:
+                logging.debug("Content sanitization is explicitly ENABLED.")
+                sanitizing_regexes = []
+                
+                ini_custom_criteria = instapaper_ini_config.get('custom_sanitizing_criteria')
+                site_custom_criteria = site_config.get('sanitizing_criteria') if site_config else None
 
-            if raw_html_content:
+                if ini_custom_criteria:
+                    logging.info("Using custom sanitizing criteria from INI file. This overrides any site configuration.")
+                    sanitizing_regexes = [s.strip() for s in ini_custom_criteria.split(',') if s.strip()]
+                elif site_custom_criteria:
+                    logging.info("Using custom sanitizing criteria from site configuration.")
+                    sanitizing_regexes = [s.strip() for s in site_custom_criteria if s.strip()]
+                else:
+                    logging.info("Using default sanitizing criteria: removing img tags.")
+                    # Default to removing all img tags
+                    sanitizing_regexes = [r'<img[^>]+>']
+
                 processed_content = sanitize_html_content(raw_html_content, sanitizing_regexes)
-                
-                # Extract only the HTML body content after sanitization
-                body_match = re.search(r'<body.*?>(.*?)</body>', processed_content, re.DOTALL | re.I)
-                payload['content'] = body_match.group(1) if body_match else processed_content
-                logging.debug(f"Payload includes sanitized HTML content (truncated): {payload['content'][:100]}...")
             else:
-                logging.debug("Payload does not include HTML content. Instapaper will attempt to resolve the URL.")
-                
-        # --- END NEW SANITIZATION LOGIC ---
+                logging.debug("Content sanitization is explicitly DISABLED. Including raw HTML content.")
+
+            # Add the (potentially sanitized) content to the payload
+            # This logic is now outside the sanitization check, so it always runs if content exists.
+            body_match = re.search(r'<body.*?>(.*?)</body>', processed_content, re.DOTALL | re.I)
+            payload['content'] = body_match.group(1) if body_match else processed_content
+            logging.debug(f"Payload includes HTML content (truncated): {payload['content'][:100]}...")
+            
+        else:
+            logging.debug("Payload does not include HTML content. Instapaper will attempt to resolve the URL.")
+            
+        # --- END CORRECTED SANITIZATION LOGIC ---
         
         # Explicitly set resolve_final_url to '0' if the config is false
         if not resolve_final_url:
@@ -565,16 +593,15 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         add_default_tag_flag = instapaper_ini_config.getboolean('add_default_tag', fallback=True)
         add_categories_as_tags_flag = instapaper_ini_config.getboolean('add_categories_as_tags', fallback=False)
         tags_string = instapaper_ini_config.get('tags', '')
-        folder_id = instapaper_ini_config.get('folder_id')
 
         user_defined_tags = []
         if tags_string:
-            user_defined_tags = sorted([tag.strip() for tag in tags_string.split(',') if tag.strip()])
+            user_defined_tags = [tag.strip() for tag in tags_string.split(',') if tag.strip()]
 
         category_tags = []
         if add_categories_as_tags_flag and categories_from_feed:
             logging.debug(f"Adding categories as tags: {categories_from_feed}")
-            category_tags = sorted(list(set(categories_from_feed)))
+            category_tags = list(set(categories_from_feed))
 
         default_tags = []
         if add_default_tag_flag:
@@ -592,6 +619,7 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         # --- END NEW LOGIC ---
 
         # Conditionally add folder ID
+        folder_id = instapaper_ini_config.get('folder_id')
         if folder_id:
             payload['folder_id'] = folder_id
 
@@ -703,7 +731,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
             if hasattr(entry, 'published_parsed'):
                 entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.published_parsed), tz=timezone.utc)
             elif hasattr(entry, 'updated_parsed'):
-                entry_timestamp_dt = datetime.fromtimestamp(time.mktime(entry.updated_parsed), tz=timezone.utc)
+                entry_timestamp_dt = datetime.fromtimestamp(time.mk.time(entry.updated_parsed), tz=timezone.utc)
 
             logging.debug(f"Processing entry '{entry.title}'. Timestamp: {entry_timestamp_dt}")
 
@@ -727,7 +755,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                 raw_html_content = None
                 
                 if is_paywalled and cookies:
-                    logging.info(f"Article is paywalled. Attempting to fetch full HTML body with cookies from {url}.")
+                    logging.info(f"Article is paywalled. Attempting to fetch full HTML body with cookies.")
                     raw_html_content = get_article_html_with_cookies(url, cookies)
                 else:
                     logging.info("Article is not paywalled. Sending URL-only request to Instapaper.")
@@ -1105,13 +1133,19 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                         cookies = login_and_update(config_name, site_config, login_credentials)
 
                         if cookies:
+                            # If a login was successful, update Miniflux immediately
+                            if miniflux_config_from_json and miniflux_ini_config and miniflux_ini_config.get('feed_ids'):
+                                logging.info(f"Login successful. Immediately updating Miniflux feeds with new cookies.")
+                                update_miniflux_feed_with_cookies(miniflux_config_from_json, cookies, config_name, miniflux_ini_config.get('feed_ids'))
+                                # Update last refresh time after a successful Miniflux update
+                                state['last_miniflux_refresh_time'] = current_time
+
                             all_cookie_state[cookie_key] = {
                                 'cookies': cookies,
                                 'last_refresh': current_time.isoformat()
                             }
                             save_cookies_to_json(os.path.dirname(config_file), all_cookie_state)
                             # Update state timestamps after a successful login
-                            state['last_miniflux_refresh_time'] = current_time
                             state['last_rss_poll_time'] = current_time
                         else:
                             logging.warning(f"Login failed for {config_name}. Cannot update state with new cookies.")
@@ -1157,12 +1191,25 @@ def run_service(config_path, all_configs, all_site_configs, instapaper_app_creds
                 if state['last_rss_timestamp'] == datetime.fromtimestamp(0, tz=timezone.utc):
                     rss_poll_due = True
                     logging.info("First run detected for this INI's state file. All entries from RSS feed will be processed.")
+                
+                # *** NEW LOGIC ADDED HERE ***
+                # Check if Miniflux refresh is older than the last cookie update, and force a refresh if so.
+                is_cookie_newer = False
+                if login_credentials and site_config:
+                    cached_cookies_data = all_cookie_state.get(cookie_key, {})
+                    if cached_cookies_data.get('last_refresh'):
+                        cookie_last_refresh_time = datetime.fromisoformat(cached_cookies_data['last_refresh'])
+                        if cookie_last_refresh_time > state['last_miniflux_refresh_time']:
+                            is_cookie_newer = True
 
                 # Miniflux Update Logic
-                if miniflux_config_from_json and miniflux_refresh_due:
+                if miniflux_config_from_json and (miniflux_refresh_due or is_cookie_newer):
                     feed_ids_str = miniflux_ini_config.get('feed_ids')
                     if feed_ids_str:
-                        logging.info(f"Updating Miniflux feed(s) with most recent cookies for {config_name}.")
+                        if is_cookie_newer:
+                            logging.info(f"Forcing Miniflux update for {config_name} because a cookie update is newer than the last Miniflux refresh.")
+                        else:
+                            logging.info(f"Updating Miniflux feed(s) with most recent cookies for {config_name}.")
                         update_miniflux_feed_with_cookies(miniflux_config_from_json, cookies, config_name, feed_ids_str)
                         state['last_miniflux_refresh_time'] = current_time
                         save_state(config_file, state)
