@@ -3,4 +3,4 @@ selenium
 webdriver-manager
 feedparser
 requests_oauthlib
-BeautifulSoup
+beautifulsoup4
