@@ -20,6 +20,7 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from requests_oauthlib import OAuth1Session
 from oauthlib.oauth1 import Client as OAuth1Client
 from urllib.parse import urlencode
+from bs4 import BeautifulSoup
 
 try:
     import feedparser
@@ -504,23 +505,39 @@ def create_instapaper_folder(oauth_session, folder_name):
             logging.debug(f"Instapaper API Response Text: {response.text}")
         return None
 
-def sanitize_html_content(raw_html_content, sanitizing_regexes):
+def sanitize_html_content(html_content, sanitizing_criteria):
     """
-    Sanitizes HTML content by applying a list of regular expressions.
-    Returns the sanitized content.
+    Sanitizes HTML content by removing elements based on a list of CSS selectors.
+
+    Args:
+        html_content (str): The raw HTML content to sanitize.
+        sanitizing_criteria (list): A list of CSS selectors for elements to remove.
+
+    Returns:
+        str: The sanitized HTML content.
     """
-    if not raw_html_content:
-        return ""
-    
-    sanitized_content = raw_html_content
-    for pattern in sanitizing_regexes:
-        try:
-            # Use re.DOTALL to match across newlines
-            sanitized_content = re.sub(pattern, '', sanitized_content, flags=re.DOTALL | re.I)
-        except re.error as e:
-            logging.error(f"Invalid regex pattern for sanitization: '{pattern}'. Error: {e}")
-            
-    return sanitized_content
+    selectors = sanitizing_criteria if sanitizing_criteria else ['img']
+
+    if not html_content or not selectors:
+        return html_content
+
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        removed_count = 0
+        for selector in selectors:
+            elements_to_remove = soup.select(selector)
+            if elements_to_remove:
+                for element in elements_to_remove:
+                    logging.debug(f"Removing element with selector '{selector}': {element.prettify()[:100]}...")
+                    element.decompose()
+                    removed_count += 1
+        
+        logging.info(f"Sanitization complete. Removed {removed_count} elements based on criteria: {selectors}")
+        return str(soup)
+    except Exception as e:
+        logging.error(f"Failed to sanitize HTML content: {e}")
+        return html_content
 
 def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_content, categories_from_feed, instapaper_ini_config, site_config, resolve_final_url=True):
     """
@@ -548,36 +565,38 @@ def publish_to_instapaper(instapaper_config, app_creds, url, title, raw_html_con
         }
         
         # --- CORRECTED SANITIZATION LOGIC ---
-        sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=False)
+        sanitize_content_flag = instapaper_ini_config.getboolean('sanitize_content', fallback=True)
         processed_content = raw_html_content
         
         if raw_html_content:
             if sanitize_content_flag:
                 logging.debug("Content sanitization is explicitly ENABLED.")
-                sanitizing_regexes = []
+                sanitizing_criteria = []
                 
                 ini_custom_criteria = instapaper_ini_config.get('custom_sanitizing_criteria')
                 site_custom_criteria = site_config.get('sanitizing_criteria') if site_config else None
 
                 if ini_custom_criteria:
                     logging.info("Using custom sanitizing criteria from INI file. This overrides any site configuration.")
-                    sanitizing_regexes = [s.strip() for s in ini_custom_criteria.split(',') if s.strip()]
+                    if isinstance(ini_custom_criteria, str):
+                        sanitizing_criteria = [s.strip() for s in ini_custom_criteria.split(',') if s.strip()]
+                    else:
+                        sanitizing_criteria = ini_custom_criteria
+                    
                 elif site_custom_criteria:
                     logging.info("Using custom sanitizing criteria from site configuration.")
-                    sanitizing_regexes = [s.strip() for s in site_custom_criteria if s.strip()]
+                    sanitizing_criteria = [s.strip() for s in site_custom_criteria if s.strip()]
                 else:
                     logging.info("Using default sanitizing criteria: removing img tags.")
                     # Default to removing all img tags
-                    sanitizing_regexes = [r'<img[^>]+>']
+                    sanitizing_criteria = ['img'] # Changed to a valid CSS selector
 
-                processed_content = sanitize_html_content(raw_html_content, sanitizing_regexes)
+                processed_content = sanitize_html_content(raw_html_content, sanitizing_criteria)
             else:
                 logging.debug("Content sanitization is explicitly DISABLED. Including raw HTML content.")
 
             # Add the (potentially sanitized) content to the payload
-            # This logic is now outside the sanitization check, so it always runs if content exists.
-            body_match = re.search(r'<body.*?>(.*?)</body>', processed_content, re.DOTALL | re.I)
-            payload['content'] = body_match.group(1) if body_match else processed_content
+            payload['content'] = processed_content
             logging.debug(f"Payload includes HTML content (truncated): {payload['content'][:100]}...")
             
         else:
