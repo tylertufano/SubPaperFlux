@@ -25,4 +25,4 @@ jobs:
       with:
        context:
        push: true
-       tags: tylertufano/python-script-scheduler:latest
+       tags: tylertufano/SubPaperFlux:latest
