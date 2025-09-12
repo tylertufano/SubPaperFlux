@@ -1,0 +1,16 @@
+# Reduce build context size
+.git
+.github
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+selenium_logs
+.pytest_cache
+dist
+build
+node_modules
+*.swp
+*.swo
+*.DS_Store

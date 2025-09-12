@@ -1,0 +1,14 @@
+{
+  "my_site": {
+    "site_url": "https://example.com/login",
+    "username_selector": "#username",
+    "password_selector": "#password",
+    "login_button_selector": "button[type='submit']",
+    "post_login_selector": "nav .user-avatar",
+    "cookies_to_store": [
+      "sessionid",
+      "csrftoken"
+    ]
+  }
+}
+

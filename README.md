@@ -1,72 +1,136 @@
-# python-script-scheduler
+# SubPaperFlux
 
-### Template 1: For a Selenium-based login (e.g., Democracy Docket)
+SubPaperFlux continuously bridges RSS feeds and Instapaper, with optional paywall-aware fetching and Miniflux cookie updates. It can log in to sites via headless Chrome to capture authentication cookies, push those cookies to Miniflux feeds, poll RSS for new entries, and publish them to Instapaper. It maintains lightweight state per INI file so it can run as a long‑lived service.
 
-This template is for websites that require a browser to perform the login action, typically involving navigating through a web form.
+This repo contains the main service script `subpaperflux.py`, a Dockerfile for a slim runtime, and example configuration formats.
 
-```ini
-[SITE_CONFIG]
-site_name = Democracy Docket
-login_type = selenium
-login_url = https://member.democracydocket.com/_hcms/mem/login
-email_field_id = hs-login-widget-email
-password_field_id = hs-login-widget-password
-login_button_selector = input[type='submit'][value='Login']
-success_text_class = gb-module-blog-header-1-description
-expected_success_text = Welcome to the members-only section of our website, a home for pro-democracy readers to find the news, ideas and resources needed to fight back.
-required_cookies = hs-membership-csrf
+**Key Features**
+- Headless logins: Uses Selenium + Chrome to authenticate and capture cookies.
+- Miniflux integration: Updates specified Miniflux feeds with fresh cookies.
+- RSS polling: Fetches and filters feed entries using flexible schedules and lookbacks.
+- Instapaper publishing: Sends URLs or full HTML (for paywalled content) to Instapaper, with folder and tag support.
+- Stateful operation: Tracks last poll time, last processed entry, and local bookmark cache for sync/purge.
+- Retention and purge: Optional retention to delete old Instapaper bookmarks.
 
-[LOGIN_CREDENTIALS]
-email = your_democracy_docket_email@example.com
-password = your_dd_password
+**How It Works**
+- You provide an INI file per feed with references to JSON config blocks.
+- On a schedule, the service optionally logs in (headless), updates Miniflux cookies, polls the RSS feed, then publishes new items to Instapaper.
+- State is stored per INI as a `.ctrl` file next to your INI; cookies are cached in `cookie_state.json`.
 
-[MINIFLUX_API]
-miniflux_url = http://your_miniflux_instance:8080
-api_key = your_miniflux_api_key
-feed_ids = 1, 2, 3
-```
+Requirements
+- Python 3.11+ (Docker image uses Python 3.12 slim).
+- Google Chrome available (the Docker image installs `google-chrome-stable`).
+- Instapaper app credentials (consumer key/secret) and account tokens.
 
-### Template 2: For an API-based login (e.g., Substack)
+Configuration Overview
+- Put all configuration files in one directory and point the service to either a single `.ini` in that directory or the whole directory.
+- The service expects these files:
+  - `credentials.json`: IDs and secrets for logins, Instapaper, and Miniflux.
+  - `site_configs.json`: Site‑specific login selectors and cookie names.
+  - `instapaper_app_creds.json`: Instapaper app consumer key/secret.
+  - `cookie_state.json`: Automatically managed cache of cookies (created/updated by the service).
+  - `your_feed.ini`: One or more INI files describing each feed.
+  - `your_feed.ctrl`: Automatically managed state file per INI (created/updated by the service).
 
-This template is for websites where login can be accomplished by sending a request directly to a login API endpoint.
+JSON Files
+- `instapaper_app_creds.json`
+  - consumer_key: Your Instapaper application consumer key.
+  - consumer_secret: Your Instapaper application consumer secret.
 
-```ini
-[SITE_CONFIG]
-site_name = Substack
-login_type = api
-login_url = https://substack.com/api/v1/login
+- `credentials.json` (dictionary keyed by your IDs)
+  - For a login identity (referenced by `login_id`):
+    - username: Site login username/email.
+    - password: Site login password.
+  - For Instapaper credentials (referenced by `instapaper_id`):
+    - oauth_token: Instapaper OAuth token.
+    - oauth_token_secret: Instapaper OAuth token secret.
+  - For Miniflux (referenced by `miniflux_id`):
+    - miniflux_url: Base URL of your Miniflux instance.
+    - api_key: Personal Miniflux API token.
 
-[LOGIN_CREDENTIALS]
-email = your_substack_email@example.com
-password = your_substack_password
+  Example structure:
+  {
+    "my_login": { "username": "user@example.com", "password": "secret" },
+    "my_instapaper": { "oauth_token": "...", "oauth_token_secret": "..." },
+    "my_miniflux": { "miniflux_url": "http://miniflux:8080", "api_key": "..." }
+  }
 
-[MINIFLUX_API]
-miniflux_url = http://your_miniflux_instance:8080
-api_key = your_miniflux_api_key
-feed_ids = 4, 5
-```
+- `site_configs.json` (dictionary keyed by your `site_config_id`)
+  - site_url: Login page URL.
+  - username_selector: CSS selector for the username input.
+  - password_selector: CSS selector for the password input.
+  - login_button_selector: CSS selector for the submit button.
+  - cookies_to_store: Array of cookie names to capture and reuse.
+  - post_login_selector: Optional CSS selector expected after login (for success check).
 
-### Explanation of Sections:
+INI Files
+- Each feed is defined by an INI with the sections below:
 
-  * **`[SITE_CONFIG]`**:
+  [CONFIG_REFERENCES]
+  login_id = my_login                  ; optional unless paywalled/auth RSS
+  site_config_id = my_site             ; optional unless paywalled/auth RSS
+  instapaper_id = my_instapaper        ; required for publishing
+  miniflux_id = my_miniflux            ; optional, used for cookie updates
 
-      * `site_name`: A user-friendly name for the website. Used in log messages.
-      * `login_type`: Must be either `selenium` or `api`.
-      * `login_url`: The URL for the login page (for `selenium`) or the API endpoint (for `api`).
-      * `email_field_id`: (Selenium only) The HTML `id` attribute of the email input field.
-      * `password_field_id`: (Selenium only) The HTML `id` attribute of the password input field.
-      * `login_button_selector`: (Selenium only) The CSS selector for the login button.
-      * `success_text_class`: (Selenium only) The HTML `class` attribute of an element that confirms successful login.
-      * `expected_success_text`: (Selenium only) The exact text content of the success element to verify the login.
-      * `required_cookies`: (Selenium only, optional) A comma-separated list of cookie names to wait for before proceeding.
+  [RSS_FEED_CONFIG]
+  feed_url = https://example.com/feed.xml
+  poll_frequency = 1h                  ; default 1h
+  initial_lookback_period = 24h        ; only on first run
+  is_paywalled = false                 ; if true, script can fetch HTML with cookies
+  rss_requires_auth = false            ; if true, fetch feed with cookies
 
-  * **`[LOGIN_CREDENTIALS]`**:
+  [INSTAPAPER_CONFIG]
+  folder = My Articles                 ; optional folder name
+  resolve_final_url = true             ; follow redirects before publishing
+  retention = 30d                      ; optional; delete items older than this
 
-      * `email`: The email address for the account.
-      * `password`: The password for the account.
+  [MINIFLUX_CONFIG]
+  feed_ids = 1,2,3                     ; target feeds to receive cookies
+  refresh_frequency = 6h               ; how often to push cookies
 
-  * **`[MINIFLUX_API]`**:
+Notes
+- You can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI to migrate credentials. If the INI references `instapaper_id` and the tokens are missing, the script will attempt to exchange email/password for OAuth tokens, persist them in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
+- Per‑INI state is stored in `your_feed.ctrl`. You can set flags there:
+  - force_run: Set to `true` to force a login/poll cycle on next loop.
+  - force_sync_and_purge: Set to `true` to trigger Instapaper sync + retention purge.
 
-      * `miniflux_url`: The base URL of your Miniflux instance.
-      * `api_key`: Your personal API key from Miniflux.
-      * `feed_ids`: A comma-separated list of integer feed IDs to update with the new cookies.
+Environment Variables
+- DEBUG_LOGGING: `1` or `true` for verbose logs and ChromeDriver logging.
+- ENABLE_SCREENSHOTS: `1` or `true` to save a screenshot after successful logins.
+
+Running Locally
+- Install dependencies: `pip install -r requirements.txt`
+- Run against a single INI: `python subpaperflux.py /path/to/config/myfeed.ini`
+- Or a directory of INIs: `python subpaperflux.py /path/to/config`
+
+Running with Docker
+- Build: `docker build -t subpaperflux .`
+- Run: `docker run --rm -e DEBUG_LOGGING=1 -v /absolute/path/to/config:/config subpaperflux`
+  - The container runs `python ./subpaperflux.py /config` by default.
+  - Ensure `credentials.json`, `site_configs.json`, and `instapaper_app_creds.json` exist under `/config`.
+
+Operational Details
+- Headless browser: Uses Chrome with `--headless=new`; no X server required.
+- WebDriver: `webdriver-manager` auto‑downloads a compatible ChromeDriver at runtime.
+- Cookies: Captured cookies are filtered by `cookies_to_store` and cached in `cookie_state.json` with timestamps.
+- State: The `.ctrl` file tracks last poll times and a local bookmark cache for sync/purge.
+- Error handling: Network and parsing errors are logged; the service continues polling.
+
+Security & Tips
+- Treat `credentials.json` and `instapaper_app_creds.json` as secrets. Do not commit them.
+- Use a dedicated Instapaper app key/secret for this service.
+- For private feeds and paywalled content, confirm the site’s terms of service allow automated access.
+- Pin package versions in `requirements.txt` for reproducibility in long‑running setups.
+
+Templates
+- Copy these templates, place them in your config directory, rename (remove `.example`), and edit values:
+  - `templates/subpaperflux.example.ini` → `yourfeed.ini`
+  - `templates/credentials.example.json` → `credentials.json`
+  - `templates/site_configs.example.json` → `site_configs.json`
+  - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
+
+Quickstart
+- mkdir `config/`; copy and rename templates above into `config/`.
+- Edit IDs in `yourfeed.ini` to match keys in your JSON files.
+- Run locally: `python subpaperflux.py ./config/yourfeed.ini`
+- Or Docker: `docker run --rm -v "$PWD/config":/config subpaperflux`

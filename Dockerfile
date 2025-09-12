@@ -1,51 +1,43 @@
-# Use the official Python 3 slim image, which is based on Debian.
-FROM python:3-slim
+# Pin to a slim Python image for smaller size and reproducibility
+FROM python:3.12-slim
 
-# Set environment variables for non-interactive installations.
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables for non-interactive installs and smaller pip footprint
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
-# Install necessary system packages for Google Chrome.
-# `ca-certificates`, `gnupg`, `wget`, `curl`, `unzip` are general utilities.
-# `libglib2.0-0`, `libnss3`, `libxss1`, `libxtst6`, `libdbus-1-3`, `libatk-bridge2.0-0` are core dependencies for headless Chrome.
-# `fontconfig`, `fonts-liberation` are for font rendering.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# Install only the minimal runtime dependencies for headless Google Chrome
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
-    wget \
     curl \
-    unzip \
     libglib2.0-0 \
     libnss3 \
     libxss1 \
     libxtst6 \
     libdbus-1-3 \
     libatk-bridge2.0-0 \
-    fontconfig \
     fonts-liberation \
-    xvfb && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome's official repository and key.
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
-    sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+# Add Google Chrome's official repository and key
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 
-# Update and install Google Chrome Stable.
-RUN apt-get update && apt-get install -y google-chrome-stable && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set display port to avoid crash
-ENV DISPLAY=:99
+# Install Google Chrome Stable and clean apt metadata in the same layer
+RUN apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the requirements file and install Python dependencies.
+# Install only Python dependencies first for better layer caching
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN python -m pip install -r requirements.txt
 
-# Copy the rest of the application code into the container.
+# Copy the rest of the application code into the container
 COPY . .
 
-# Set the entrypoint to run the script directly
+# Entrypoint runs the service; Chrome runs headless so Xvfb is not required
 CMD ["python", "./subpaperflux.py", "/config"]
