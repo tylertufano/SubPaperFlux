@@ -49,11 +49,13 @@ JSON Files
     - api_key: Personal Miniflux API token.
 
   Example structure:
+  ```json
   {
     "my_login": { "username": "user@example.com", "password": "secret" },
     "my_instapaper": { "oauth_token": "...", "oauth_token_secret": "..." },
     "my_miniflux": { "miniflux_url": "http://miniflux:8080", "api_key": "..." }
   }
+  ```
 
 - `site_configs.json` (dictionary keyed by your `site_config_id`)
   - site_url: Login page URL.
@@ -66,6 +68,7 @@ JSON Files
 INI Files
 - Each feed is defined by an INI with the sections below:
 
+  ```ini
   [CONFIG_REFERENCES]
   login_id = my_login                  ; optional unless paywalled/auth RSS
   site_config_id = my_site             ; optional unless paywalled/auth RSS
@@ -87,6 +90,7 @@ INI Files
   [MINIFLUX_CONFIG]
   feed_ids = 1,2,3                     ; target feeds to receive cookies
   refresh_frequency = 6h               ; how often to push cookies
+  ```
 
 Notes
 - You can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI to migrate credentials. If the INI references `instapaper_id` and the tokens are missing, the script will attempt to exchange email/password for OAuth tokens, persist them in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
