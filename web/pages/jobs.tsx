@@ -2,12 +2,17 @@ import useSWR from 'swr'
 import Nav from '../components/Nav'
 import { sdk } from '../lib/sdk'
 import Alert from '../components/Alert'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export default function Jobs() {
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
   const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => sdk.listJobs({ page: p, status: s }))
+  const [now, setNow] = useState<number>(Date.now() / 1000)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now() / 1000), 1000)
+    return () => clearInterval(id)
+  }, [])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
@@ -37,6 +42,7 @@ export default function Jobs() {
           </select>
           <button className="btn" onClick={() => mutate()}>Filter</button>
           <button className="btn" onClick={clearFilters}>Clear</button>
+          <button className="btn" onClick={() => { setStatus('failed,dead'); setPage(1); mutate() }}>Failed/Dead</button>
           <div className="grow" />
           <button
             className="btn"
@@ -86,8 +92,8 @@ export default function Jobs() {
                         <td className="td">{j.attempts}</td>
                         <td className="td">
                           {j.last_error || ''}
-                          {(j.status === 'queued' && j.available_at && j.available_at > (Date.now()/1000)) && (
-                            <span className="ml-2 text-gray-600">retry in {Math.max(0, Math.floor(j.available_at - (Date.now()/1000)))}s</span>
+                          {(j.status === 'queued' && j.available_at && j.available_at > now) && (
+                            <span className="ml-2 text-gray-600">retry in {Math.max(0, Math.floor(j.available_at - now))}s</span>
                           )}
                         </td>
                         <td className="td flex gap-2">
