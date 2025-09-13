@@ -26,7 +26,7 @@ def list_site_configs(current_user=Depends(get_current_user), session=Depends(ge
 
 @router.post("/", response_model=SiteConfigSchema, status_code=status.HTTP_201_CREATED, dependencies=[Depends(csrf_protect)])
 def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
-    model = SiteConfigModel(**body.model_dump())
+    model = SiteConfigModel(**body.model_dump(mode="json"))
     # Only admins may create global configs (owner_user_id None)
     if model.owner_user_id is None and not can_manage_global_site_configs(current_user):
         model.owner_user_id = current_user["sub"]
@@ -56,7 +56,7 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     if model.owner_user_id and model.owner_user_id != current_user["sub"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    for k, v in body.model_dump(exclude_unset=True).items():
+    for k, v in body.model_dump(exclude_unset=True, mode="json").items():
         setattr(model, k, v)
     session.add(model)
     session.commit()

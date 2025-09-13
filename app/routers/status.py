@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 
+from ..auth.oidc import get_current_user
 from ..db import get_session, is_postgres
 from .integrations import test_instapaper, test_miniflux
+from ..auth.oidc import get_current_user
 
 from ..schemas import StatusResponse
 

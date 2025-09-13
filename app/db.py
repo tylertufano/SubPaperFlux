@@ -1,37 +1,52 @@
 import os
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Iterator, Optional
 
 from sqlmodel import SQLModel, Session, create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.pool import StaticPool
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+_engine: Optional[Engine] = None
+_engine_url: Optional[str] = None
 
-# SQLite needs check_same_thread=False for multi-threaded FastAPI dev server
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
+def get_engine():
+    """Return a SQLModel engine, creating it if needed."""
+    global _engine, _engine_url
+    database_url = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+    if _engine is None or database_url != _engine_url:
+        connect_args = {}
+        engine_kwargs = {"echo": False}
+        if database_url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
+            if database_url == "sqlite://":
+                engine_kwargs["poolclass"] = StaticPool
+        _engine = create_engine(database_url, connect_args=connect_args, **engine_kwargs)
+        _engine_url = database_url
+    return _engine
 
 
 def init_db() -> None:
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(get_engine())
 
 
 @contextmanager
 def get_session_ctx() -> Iterator[Session]:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         yield session
 
 
 def get_session() -> Iterator[Session]:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         yield session
 
 
 def is_postgres() -> bool:
     try:
-        name = engine.url.get_backend_name()  # type: ignore[attr-defined]
+        name = get_engine().url.get_backend_name()  # type: ignore[attr-defined]
     except Exception:
         # Fallback parse
-        name = (DATABASE_URL.split(":", 1)[0] if ":" in DATABASE_URL else "")
+        database_url = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+        name = (database_url.split(":", 1)[0] if ":" in database_url else "")
     return name.startswith("postgres")

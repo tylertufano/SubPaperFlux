@@ -1,64 +1,111 @@
 import { getSession } from 'next-auth/react'
+import {
+  Configuration,
+  CredentialsApi,
+  SiteConfigsApi,
+  V1Api,
+} from '../../sdk/ts/src'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
-async function authHeaders() {
+async function getConfig(): Promise<Configuration> {
   const session = await getSession()
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`
-  headers['X-CSRF-Token'] = CSRF
-  return headers
-}
-
-async function get(path: string, params?: Record<string, any>) {
-  const url = new URL(`${API_BASE}${path}`)
-  if (params) Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, String(v)))
-  const h = await authHeaders()
-  const res = await fetch(url.toString(), { headers: h })
-  if (!res.ok) throw new Error(`${res.status} ${path}`)
-  return res.json()
-}
-
-async function post(path: string, body?: any) {
-  const h = await authHeaders()
-  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers: h, body: body ? JSON.stringify(body) : undefined })
-  if (!res.ok) throw new Error(`${res.status} ${path}`)
-  return res.json()
-}
-
-async function del(path: string) {
-  const h = await authHeaders()
-  const res = await fetch(`${API_BASE}${path}`, { method: 'DELETE', headers: h })
-  if (!res.ok && res.status !== 204) throw new Error(`${res.status} ${path}`)
-  return true
+  return new Configuration({
+    basePath: API_BASE,
+    accessToken: session?.accessToken as any,
+  })
 }
 
 export const sdk = {
   // Bookmarks
-  listBookmarks: (params: { page?: number; search?: string; feed_id?: string; since?: string; until?: string; fuzzy?: boolean }) => get('/v1/bookmarks', params),
-  bulkDeleteBookmarks: (ids: string[], deleteRemote = true) => post('/v1/bookmarks/bulk-delete', { ids, delete_remote: deleteRemote }),
-  exportBookmarks: (fmt: 'json' | 'csv', params: any) => get('/v1/bookmarks/export', { format: fmt, ...params }),
+  listBookmarks: async (params: {
+    page?: number
+    size?: number
+    search?: string
+    fuzzy?: boolean
+    feed_id?: string
+    since?: string
+    until?: string
+  }) => {
+    const api = new V1Api(await getConfig())
+    return api.listBookmarksV1BookmarksGet(params)
+  },
+  bulkDeleteBookmarks: async (ids: string[], deleteRemote = true) => {
+    const api = new V1Api(await getConfig())
+    return api.bulkDeleteBookmarksV1BookmarksBulkDeletePost({
+      requestBody: { ids, delete_remote: deleteRemote },
+      xCsrfToken: CSRF,
+    })
+  },
+  exportBookmarks: async (fmt: 'json' | 'csv', params: any) => {
+    const api = new V1Api(await getConfig())
+    return api.exportBookmarksV1BookmarksExportGet({ format: fmt, ...params })
+  },
 
   // Feeds
-  listFeeds: () => get('/v1/feeds'),
+  listFeeds: async () => {
+    const api = new V1Api(await getConfig())
+    return api.listFeedsV1FeedsGet()
+  },
 
   // Jobs
-  listJobs: (params: { page?: number; status?: string }) => get('/v1/jobs', params),
-  retryJob: (id: string) => post(`/v1/jobs/${id}/retry`),
-  validateJob: (type: string, payload: any) => post('/v1/jobs/validate', { type, payload }),
+  listJobs: async (params: { page?: number; status?: string }) => {
+    const api = new V1Api(await getConfig())
+    return api.listJobsV1JobsGet(params)
+  },
+  retryJob: async (id: string) => {
+    const api = new V1Api(await getConfig())
+    return api.retryJobV1JobsJobIdRetryPost({ jobId: id, xCsrfToken: CSRF })
+  },
+  validateJob: async (type: string, payload: any) => {
+    const api = new V1Api(await getConfig())
+    return api.validateJobPayloadV1JobsValidatePost({ requestBody: { type, payload } })
+  },
 
   // Credentials
-  listCredentials: () => get('/v1/credentials'),
-  createCredential: (kind: string, data: any, global = false) => post('/credentials', { kind, data, owner_user_id: global ? null : undefined }),
-  deleteCredential: (id: string) => del(`/credentials/${id}`),
-  testInstapaper: (credId: string) => post('/v1/integrations/instapaper/test', { credential_id: credId }),
-  testMiniflux: (credId: string) => post('/v1/integrations/miniflux/test', { credential_id: credId }),
+  listCredentials: async (params: { page?: number; include_global?: boolean } = {}) => {
+    const api = new V1Api(await getConfig())
+    return api.listCredentialsV1V1CredentialsGet(params)
+  },
+  createCredential: async (kind: string, data: any, global = false) => {
+    const api = new CredentialsApi(await getConfig())
+    return api.createCredentialCredentialsPost({
+      credential: { kind, data, owner_user_id: global ? null : undefined },
+      xCsrfToken: CSRF,
+    })
+  },
+  deleteCredential: async (id: string) => {
+    const api = new CredentialsApi(await getConfig())
+    return api.deleteCredentialCredentialsCredIdDelete({ credId: id, xCsrfToken: CSRF })
+  },
+  testInstapaper: async (credId: string) => {
+    const api = new V1Api(await getConfig())
+    return api.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody: { credential_id: credId } })
+  },
+  testMiniflux: async (credId: string) => {
+    const api = new V1Api(await getConfig())
+    return api.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody: { credential_id: credId } })
+  },
 
   // Site configs
-  listSiteConfigs: () => get('/v1/site-configs'),
-  createSiteConfig: (body: any, global = false) => post('/site-configs', { ...body, owner_user_id: global ? null : undefined }),
-  deleteSiteConfig: (id: string) => del(`/site-configs/${id}`),
-  testSiteConfig: (id: string) => post(`/v1/site-configs/${id}/test`),
+  listSiteConfigs: async (params: { page?: number; include_global?: boolean } = {}) => {
+    const api = new V1Api(await getConfig())
+    return api.listSiteConfigsV1V1SiteConfigsGet(params)
+  },
+  createSiteConfig: async (body: any, global = false) => {
+    const api = new SiteConfigsApi(await getConfig())
+    return api.createSiteConfigSiteConfigsPost({
+      siteConfig: { ...body, owner_user_id: global ? null : undefined },
+      xCsrfToken: CSRF,
+    })
+  },
+  deleteSiteConfig: async (id: string) => {
+    const api = new SiteConfigsApi(await getConfig())
+    return api.deleteSiteConfigSiteConfigsConfigIdDelete({ configId: id, xCsrfToken: CSRF })
+  },
+  testSiteConfig: async (id: string) => {
+    const api = new V1Api(await getConfig())
+    return api.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: id })
+  },
 }
-

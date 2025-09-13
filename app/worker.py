@@ -8,7 +8,7 @@ from typing import Optional
 from sqlmodel import select
 import time
 
-from .db import engine
+from .db import get_engine
 from .models import Job
 from .jobs import get_handler  # import registry
 from .observability.logging import bind_job_id
@@ -32,7 +32,7 @@ def _backoff_base(job_type: str) -> float:
 def session_ctx():
     from sqlmodel import Session
 
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         yield session
 
 
@@ -98,7 +98,7 @@ def mark_failed(job: Job, error: str) -> None:
                 db_job.available_at = time.time() + delay
                 db_job.status = "queued"
             else:
-                db_job.status = "dead"
+                db_job.status = "failed"
                 db_job.available_at = None
             session.add(db_job)
             session.commit()

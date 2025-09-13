@@ -8,7 +8,8 @@ from ..jobs.util_subpaperflux import (
     get_instapaper_oauth_session_for_id,
     get_miniflux_config,
 )
-from subpaperflux import INSTAPAPER_FOLDERS_LIST_URL
+# Avoid importing heavy modules at startup
+INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 
 
 router = APIRouter(prefix="/v1/integrations", tags=["v1"])
