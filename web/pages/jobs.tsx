@@ -66,12 +66,12 @@ export default function Jobs() {
               <table className="table">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="th">ID</th>
-                    <th className="th">Type</th>
-                    <th className="th">Status</th>
-                    <th className="th">Attempts</th>
-                    <th className="th">Last Error</th>
-                    <th className="th">Actions</th>
+                    <th className="th" scope="col">ID</th>
+                    <th className="th" scope="col">Type</th>
+                    <th className="th" scope="col">Status</th>
+                    <th className="th" scope="col">Attempts</th>
+                    <th className="th" scope="col">Last Error</th>
+                    <th className="th" scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>

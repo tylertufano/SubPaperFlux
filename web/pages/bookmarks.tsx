@@ -133,10 +133,10 @@ export default function Bookmarks() {
               <table className="table">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="th"><input type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
-                    <th className="th">Title</th>
-                    <th className="th">URL</th>
-                    <th className="th">Published</th>
+                    <th className="th" scope="col"><input aria-label="Select all" type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
+                    <th className="th" scope="col">Title</th>
+                    <th className="th" scope="col">URL</th>
+                    <th className="th" scope="col">Published</th>
                   </tr>
                 </thead>
                 <tbody>

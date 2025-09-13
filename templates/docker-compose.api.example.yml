@@ -25,6 +25,8 @@ services:
       LOG_LEVEL: INFO
       RL_INSTAPAPER_INTERVAL: "0.2"
       RL_MINIFLUX_INTERVAL: "0.2"
+      TEST_RATE_LIMIT_COUNT: "5"
+      TEST_RATE_LIMIT_WINDOW_SEC: "10"
     depends_on:
       - db
     ports:
@@ -32,6 +34,21 @@ services:
     volumes:
       - .:/app:rw
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m app.worker
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@db:5432/app
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      LOG_LEVEL: INFO
+      WORKER_MAX_ATTEMPTS: "3"
+      WORKER_BACKOFF_BASE: "2"
+      RL_INSTAPAPER_INTERVAL: "0.2"
+      RL_MINIFLUX_INTERVAL: "0.2"
+    depends_on:
+      - db
+
 volumes:
   pgdata: {}
-

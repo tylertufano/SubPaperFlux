@@ -1,0 +1,103 @@
+# Production docker-compose template for SubPaperFlux
+# Services:
+#  - Postgres (db)
+#  - API (FastAPI + Uvicorn)
+#  - Worker (background jobs)
+#  - Web (Next.js UI)
+#
+# Usage:
+#  1) Copy to docker-compose.yml and adjust environment values/secrets
+#  2) Set CREDENTIALS_ENC_KEY (base64-urlsafe 32 bytes)
+#  3) docker compose up -d --build
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: subpaperflux/api:latest
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      # DB
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
+      # Secrets
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      # Auth (adjust to your IdP)
+      OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-subpaperflux}
+      # Rate limits for test endpoints
+      TEST_RATE_LIMIT_COUNT: ${TEST_RATE_LIMIT_COUNT:-5}
+      TEST_RATE_LIMIT_WINDOW_SEC: ${TEST_RATE_LIMIT_WINDOW_SEC:-10}
+      # Observability
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-prod}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: subpaperflux/worker:latest
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Worker tuning
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
+      WORKER_BACKOFF_BASE: ${WORKER_BACKOFF_BASE:-2}
+      # Selenium/Chrome rate limits
+      RL_INSTAPAPER_INTERVAL: ${RL_INSTAPAPER_INTERVAL:-0.2}
+      RL_MINIFLUX_INTERVAL: ${RL_MINIFLUX_INTERVAL:-0.2}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: node:20-alpine
+    working_dir: /app/web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://api:8000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-replace_me}
+    command: ["sh", "-lc", "npm ci && npm run build && npm run start"]
+    volumes:
+      - .:/app:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  pgdata: {}
+

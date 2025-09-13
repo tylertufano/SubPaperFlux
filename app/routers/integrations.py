@@ -7,6 +7,7 @@ from ..jobs.util_subpaperflux import (
     get_miniflux_config,
 )
 from ..observability.metrics import INTEGRATION_TEST_COUNTER
+from ..security.ratelimit_dep import rate_limiter_dep
 # Avoid importing heavy modules at startup; use constant URL
 INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/v1/integrations", tags=["v1"])
 
 
 @router.post("/instapaper/test", response_model=dict, summary="Test Instapaper creds")
-def test_instapaper(body: dict, current_user=Depends(get_current_user)):
+def test_instapaper(body: dict, current_user=Depends(get_current_user), _rl=Depends(rate_limiter_dep("instapaper_test"))):
     cred_id = body.get("credential_id")
     if not cred_id:
         return {"ok": False, "error": "credential_id is required"}
@@ -37,7 +38,7 @@ def test_instapaper(body: dict, current_user=Depends(get_current_user)):
 
 
 @router.post("/miniflux/test", response_model=dict, summary="Test Miniflux creds")
-def test_miniflux(body: dict, current_user=Depends(get_current_user)):
+def test_miniflux(body: dict, current_user=Depends(get_current_user), _rl=Depends(rate_limiter_dep("miniflux_test"))):
     cred_id = body.get("credential_id")
     if not cred_id:
         return {"ok": False, "error": "credential_id is required"}

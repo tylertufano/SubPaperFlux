@@ -63,7 +63,10 @@ export default function SiteConfigs() {
             <table className="table">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="th">Name</th><th className="th">URL</th><th className="th">Scope</th><th className="th">Actions</th>
+                  <th className="th" scope="col">Name</th>
+                  <th className="th" scope="col">URL</th>
+                  <th className="th" scope="col">Scope</th>
+                  <th className="th" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>

@@ -83,10 +83,10 @@ export default function Credentials() {
             <table className="table">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="th">ID</th>
-                  <th className="th">Kind</th>
-                  <th className="th">Scope</th>
-                  <th className="th">Actions</th>
+                  <th className="th" scope="col">ID</th>
+                  <th className="th" scope="col">Kind</th>
+                  <th className="th" scope="col">Scope</th>
+                  <th className="th" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>

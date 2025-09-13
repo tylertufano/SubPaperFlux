@@ -8,9 +8,9 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
-COPY requirements.txt ./
+COPY requirements.txt requirements.api.txt ./
 RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-compile -r requirements.txt
+    && /opt/venv/bin/pip install --no-compile -r requirements.txt -r requirements.api.txt
 
 # --- Stage: runtime (install Chrome + minimal libs, copy venv + app) ---
 FROM python:3.12-slim AS runtime
@@ -52,5 +52,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy application source
 COPY . .
 
-# Entrypoint runs the service; Chrome runs headless so Xvfb is not required
-CMD ["python", "./subpaperflux.py", "/config"]
+# Default to running the API; Chrome runs headless so Xvfb is not required.
+# For worker, override the command in docker-compose to `python -m app.worker`.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

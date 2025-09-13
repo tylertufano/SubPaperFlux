@@ -11,6 +11,11 @@ selenium_logs
 dist
 build
 node_modules
+web/node_modules
+web/.next
+sdk/ts/node_modules
+sdk/ts/dist
+openapi.json
 *.swp
 *.swo
 *.DS_Store
