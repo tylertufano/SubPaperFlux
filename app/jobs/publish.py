@@ -5,9 +5,10 @@ from .util_subpaperflux import publish_url
 from ..db import get_session_ctx
 from ..models import Bookmark
 from datetime import datetime
+from typing import Dict, Any
 
 
-def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> None:
+def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     # Expected payload: {"config_dir": str, "instapaper_id": str, "url": str, "title": str | None, "folder": str | None, "tags": [str]}
     config_dir = payload.get("config_dir")
     instapaper_id = payload.get("instapaper_id")
@@ -19,8 +20,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
         raise ValueError("config_dir, instapaper_id, and url are required")
     logging.info("[job:%s] Publish to Instapaper user=%s url=%s title=%s", job_id, owner_user_id, url, title)
     res = publish_url(config_dir, instapaper_id, url, title=title, folder=folder, tags=tags, owner_user_id=owner_user_id)
-    # Persist bookmark metadata
-    if res:
+    if res and not res.get("deduped"):
         with get_session_ctx() as session:
             published_at = payload.get("published_at")
             if isinstance(published_at, str):
@@ -39,6 +39,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
             )
             session.add(bm)
             session.commit()
+    return res
 
 
 register_handler("publish", handle_publish)

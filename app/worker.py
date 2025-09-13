@@ -1,12 +1,10 @@
 import time
 import logging
-import logging
 import os
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from sqlmodel import select
-import time
 
 from .db import get_engine
 from .models import Job
@@ -56,7 +54,7 @@ def fetch_next_job() -> Optional[Job]:
     return None
 
 
-def process_job(job: Job) -> None:
+def process_job(job: Job) -> Dict[str, Any]:
     bind_job_id(job.id)
     logging.info("Processing job", extra={"event": "job_start", "job_id": job.id, "type": job.type})
     handler = get_handler(job.type)
@@ -64,21 +62,24 @@ def process_job(job: Job) -> None:
         raise RuntimeError(f"No handler registered for job type: {job.type}")
     start = time.time()
     try:
-        handler(job_id=job.id, owner_user_id=job.owner_user_id, payload=job.payload or {})
+        res = handler(job_id=job.id, owner_user_id=job.owner_user_id, payload=job.payload or {})
         JOB_COUNTER.labels(job.type or "unknown", "done").inc()
         JOB_DURATION.observe(time.time() - start)
+        return res or {}
     except Exception:
         JOB_COUNTER.labels(job.type or "unknown", "failed").inc()
         JOB_DURATION.observe(time.time() - start)
         raise
 
 
-def mark_done(job: Job) -> None:
+def mark_done(job: Job, details: Dict[str, Any] | None = None) -> None:
     with session_ctx() as session:
         db_job = session.get(Job, job.id)
         if db_job:
             db_job.status = "done"
             db_job.last_error = None
+            if details is not None:
+                db_job.details = details
             session.add(db_job)
             session.commit()
     logging.info("Job done", extra={"event": "job_done", "job_id": job.id, "type": job.type})
@@ -115,8 +116,8 @@ def run_forever():
                 time.sleep(POLL_INTERVAL)
                 continue
             try:
-                process_job(job)
-                mark_done(job)
+                details = process_job(job)
+                mark_done(job, details)
             except Exception as e:  # noqa: BLE001
                 logging.exception("Job %s failed: %s", job.id, e)
                 mark_failed(job, str(e))

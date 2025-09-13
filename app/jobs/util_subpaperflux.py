@@ -92,7 +92,7 @@ def _get_db_credential_by_kind(kind: str, owner_user_id: Optional[str]) -> Optio
     return None
 
 
-def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credential_id: str, owner_user_id: Optional[str]) -> List[Dict[str, Any]]:
+def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credential_id: str, owner_user_id: Optional[str]) -> Dict[str, Any]:
     spf = _import_spf()
 
     creds = _load_json(os.path.join(config_dir, "credentials.json"))
@@ -142,24 +142,7 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
             session.add(new)
         session.commit()
     logging.info("Saved cookies to DB for key=%s", cookie_key)
-    return cookies
-
-
-def push_miniflux_cookies(config_dir: str, miniflux_id: str, feed_ids: List[int], cookie_key: str, owner_user_id: Optional[str]) -> None:
-    spf = _import_spf()
-    creds = _load_json(os.path.join(config_dir, "credentials.json"))
-    miniflux_cfg = _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
-
-    with get_session_ctx() as session:
-        stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
-        rec = session.exec(stmt).first()
-        blob = rec.cookies if rec else None
-        if isinstance(blob, dict) and is_encrypted(blob):
-            try:
-                blob = decrypt_dict(blob)
-            except Exception:
-                blob = None
-        cookies = (blob or {}).get("cookies", []) if isinstance(blob, dict) else []
+    return {"cookie_key": cookie_key, "cookies_saved": len(cookies)}
 
 def get_cookies_from_db(cookie_key: str) -> List[Dict[str, Any]]:
     with get_session_ctx() as session:
@@ -190,7 +173,7 @@ def poll_rss_and_publish(
     cookie_key: Optional[str] = None,
     site_config_id: Optional[str] = None,
     owner_user_id: Optional[str] = None,
-) -> int:
+) -> Dict[str, int]:
     spf = _import_spf()
     from datetime import datetime, timezone, timedelta
 
@@ -305,7 +288,7 @@ def poll_rss_and_publish(
             except Exception:
                 # Best-effort persistence; continue
                 pass
-    return published
+    return {"published": published, "total": len(new_entries), "skipped": len(new_entries) - published}
 
 
 def get_instapaper_oauth_session(owner_user_id: Optional[str]):
@@ -358,7 +341,7 @@ def get_miniflux_config(miniflux_cred_id: str, owner_user_id: Optional[str]) -> 
     return decrypt_dict(rec.data or {})
 
 
-def push_miniflux_cookies(config_dir: str, miniflux_id: str, feed_ids: List[int], cookie_key: str, owner_user_id: Optional[str]) -> None:
+def push_miniflux_cookies(config_dir: str, miniflux_id: str, feed_ids: List[int], cookie_key: str, owner_user_id: Optional[str]) -> Dict[str, Any]:
     spf = _import_spf()
     creds = _load_json(os.path.join(config_dir, "credentials.json"))
     miniflux_cfg = _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
@@ -368,10 +351,10 @@ def push_miniflux_cookies(config_dir: str, miniflux_id: str, feed_ids: List[int]
         raise RuntimeError("No cookies found for provided cookie_key")
 
     ids_str = ",".join(str(i) for i in feed_ids)
-    # Rate-limit Miniflux updates
     from ..util.ratelimit import limiter as _limiter
     _limiter.wait("miniflux")
     spf.update_miniflux_feed_with_cookies(miniflux_cfg, cookies, config_name=cookie_key, feed_ids_str=ids_str)
+    return {"feed_ids": feed_ids, "cookie_key": cookie_key}
 
 
 def publish_url(config_dir: str, instapaper_id: str, url: str, title: Optional[str] = None, folder: Optional[str] = None, tags: Optional[List[str]] = None, owner_user_id: Optional[str] = None) -> Dict[str, Any]:
@@ -410,7 +393,7 @@ def publish_url(config_dir: str, instapaper_id: str, url: str, title: Optional[s
             )
             exists = session.exec(stmt).first()
             if exists:
-                return {"bookmark_id": exists.instapaper_bookmark_id, "title": title, "content_location": None}
+                return {"bookmark_id": exists.instapaper_bookmark_id, "title": title, "content_location": None, "deduped": True}
 
     result = spf.publish_to_instapaper(
         instapaper_cfg,
@@ -425,4 +408,5 @@ def publish_url(config_dir: str, instapaper_id: str, url: str, title: Optional[s
     )
     if not result:
         raise RuntimeError("Instapaper publish failed")
+    result["deduped"] = False
     return result

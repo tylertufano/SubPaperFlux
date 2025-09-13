@@ -55,6 +55,7 @@ def list_jobs(
             available_at=r.available_at,
             owner_user_id=r.owner_user_id,
             payload=r.payload or {},
+            details=r.details or {},
         )
         for r in rows
     ]
@@ -77,6 +78,7 @@ def get_job(job_id: str, current_user=Depends(get_current_user), session=Depends
         available_at=job.available_at,
         owner_user_id=job.owner_user_id,
         payload=job.payload or {},
+        details=job.details or {},
     )
 
 
@@ -114,4 +116,27 @@ def retry_job(job_id: str, current_user=Depends(get_current_user), session=Depen
         available_at=job.available_at,
         owner_user_id=job.owner_user_id,
         payload=job.payload or {},
+        details=job.details or {},
     )
+
+
+@router.post("/retry-all", response_model=dict, summary="Retry all jobs", description="Requeue all failed/dead jobs optionally filtered by type.")
+def retry_all_jobs(body: dict, current_user=Depends(get_current_user), session=Depends(get_session)):
+    statuses = body.get("status") or ["failed", "dead"]
+    if isinstance(statuses, str):
+        statuses = [statuses]
+    job_type = body.get("type")
+    stmt = select(Job).where(Job.owner_user_id == current_user["sub"], Job.status.in_(statuses))
+    if job_type:
+        stmt = stmt.where(Job.type == job_type)
+    rows = session.exec(stmt).all()
+    now = time.time()
+    for j in rows:
+        j.status = "queued"
+        j.attempts = 0
+        j.last_error = None
+        j.dead_at = None
+        j.available_at = now
+        session.add(j)
+    session.commit()
+    return {"requeued": len(rows)}

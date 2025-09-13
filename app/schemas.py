@@ -77,6 +77,8 @@ class JobOut(BaseModel):
     available_at: Optional[float] = None
     owner_user_id: Optional[str] = None
     payload: dict
+    details: Optional[dict] = None
+    details: Optional[dict] = None
 
 
 class JobsPage(BaseModel):

@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone, timedelta
+from typing import Dict, Any
 
 from sqlmodel import select
 
@@ -20,7 +21,7 @@ def _get_instapaper_oauth(owner_user_id: str | None):
     return get_instapaper_oauth_session(owner_user_id)
 
 
-def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -> None:
+def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     # Expected payload: {"older_than": "30d"}
     older_than = payload.get("older_than", "30d")
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=_seconds_from_spec(older_than))
@@ -69,6 +70,7 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
                 logging.warning("[job:%s] Failed to delete bookmark %s: %s", job_id, b.instapaper_bookmark_id, e)
 
     logging.info("[job:%s] Retention purge deleted %d bookmarks", job_id, deleted)
+    return {"deleted_count": deleted}
 
 
 register_handler("retention", handle_retention)

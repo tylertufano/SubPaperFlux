@@ -54,6 +54,7 @@ class Job(SQLModel, table=True):
     last_error: Optional[str] = None
     available_at: Optional[float] = Field(default=None, index=True)
     dead_at: Optional[float] = Field(default=None, index=True)
+    details: Dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
 class Cookie(SQLModel, table=True):
