@@ -19,6 +19,7 @@ export default function Bookmarks() {
   const { data, error, isLoading, mutate } = useSWR([`/v1/bookmarks`, page, search, feedId, since, until, fuzzy],
     ([, p, q, f, s, u, z]) => sdk.listBookmarks({ page: p, search: q, feed_id: f || undefined, since: addZ(s), until: addZ(u), fuzzy: z || undefined }))
   const { data: feeds } = useSWR([`/v1/feeds`], () => sdk.listFeeds())
+  const feedItems = Array.isArray(feeds) ? feeds : feeds?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
 
@@ -90,9 +91,9 @@ export default function Bookmarks() {
           <input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" />
           <select className="input" value={feedId} onChange={(e) => setFeedId(e.target.value)}>
             <option value="">All Feeds</option>
-            {(feeds?.items ?? feeds ?? []).map((f: any) => (
-              <option key={f.id} value={f.id}>{f.url}</option>
-            ))}
+              {feedItems.map((f: any) => (
+                <option key={f.id} value={f.id}>{f.url}</option>
+              ))}
           </select>
           <input className="input" type="datetime-local" value={since} onChange={(e) => setSince(e.target.value)} title="Since" />
           <input className="input" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} title="Until" />
@@ -141,8 +142,8 @@ export default function Bookmarks() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
-              <span className="text-gray-700">Page {page} / {data.total_pages}</span>
-              <button className="btn" disabled={!data.has_next} onClick={() => setPage(page + 1)}>Next</button>
+              <span className="text-gray-700">Page {page} / {data.totalPages}</span>
+              <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>Next</button>
             </div>
           </>
         )}

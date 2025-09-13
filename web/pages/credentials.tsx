@@ -2,7 +2,6 @@ import useSWR from 'swr'
 import Nav from '../components/Nav'
 import { sdk } from '../lib/sdk'
 import { useState } from 'react'
-import useSWR from 'swr'
 import Alert from '../components/Alert'
 import { parseJsonSafe, validateCredential } from '../lib/validate'
 
@@ -95,7 +94,7 @@ export default function Credentials() {
                   <tr key={c.id} className="odd:bg-white even:bg-gray-50">
                     <td className="td">{c.id}</td>
                     <td className="td">{c.kind}</td>
-                    <td className="td">{c.owner_user_id ? 'User' : 'Global'}</td>
+                  <td className="td">{c.ownerUserId ? 'User' : 'Global'}</td>
                     <td className="td flex gap-2">
                       {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                         <button className="btn" onClick={() => testCred(c)}>Test</button>

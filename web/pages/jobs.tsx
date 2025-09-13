@@ -114,8 +114,8 @@ export default function Jobs() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
-              <span className="text-gray-700">Page {page} / {data.total_pages}</span>
-              <button className="btn" disabled={!data.has_next} onClick={() => setPage(page + 1)}>Next</button>
+              <span className="text-gray-700">Page {page} / {data.totalPages}</span>
+              <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>Next</button>
             </div>
           </>
         )}

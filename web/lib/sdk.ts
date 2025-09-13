@@ -46,7 +46,7 @@ export const sdk = {
   // Feeds
   listFeeds: async () => {
     const api = new V1Api(await getConfig())
-    return api.listFeedsV1FeedsGet()
+    return api.listFeedsV1V1FeedsGet()
   },
 
   // Jobs
@@ -56,7 +56,7 @@ export const sdk = {
   },
   retryJob: async (id: string) => {
     const api = new V1Api(await getConfig())
-    return api.retryJobV1JobsJobIdRetryPost({ jobId: id, xCsrfToken: CSRF })
+    return api.retryJobV1JobsJobIdRetryPost({ jobId: id }, { headers: { 'X-CSRF-Token': CSRF } })
   },
   getJob: async (id: string) => {
     const api = new V1Api(await getConfig())
@@ -79,7 +79,7 @@ export const sdk = {
   createCredential: async (kind: string, data: any, global = false) => {
     const api = new CredentialsApi(await getConfig())
     return api.createCredentialCredentialsPost({
-      credential: { kind, data, owner_user_id: global ? null : undefined },
+      credential: { kind, data, ownerUserId: global ? null : undefined },
       xCsrfToken: CSRF,
     })
   },

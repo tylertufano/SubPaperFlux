@@ -1,23 +1,28 @@
 import NextAuth from 'next-auth'
-import type { NextAuthOptions } from 'next-auth'
-import { Issuer } from 'openid-client'
-import { OAuthConfig } from 'next-auth/providers/oauth'
+import type { NextAuthConfig } from 'next-auth'
+import type { OIDCConfig } from 'next-auth/providers'
 
-async function oidcProvider(): Promise<OAuthConfig<any>> {
+async function oidcProvider(): Promise<OIDCConfig<any>> {
   const wellKnown = process.env.OIDC_ISSUER!
-  const issuer = await Issuer.discover(wellKnown)
+  let name = 'OIDC'
+  try {
+    const res = await fetch(wellKnown)
+    if (res.ok) {
+      const meta = await res.json()
+      name = meta.issuer || name
+    }
+  } catch {}
   return {
     id: 'oidc',
-    name: issuer.metadata.issuer || 'OIDC',
-    type: 'oauth',
-    version: '2.0',
+    name,
+    type: 'oidc',
     wellKnown,
     clientId: process.env.OIDC_CLIENT_ID,
     clientSecret: process.env.OIDC_CLIENT_SECRET,
     idToken: true,
     checks: ['pkce', 'state'],
     authorization: { params: { scope: 'openid profile email' } },
-    profile(profile) {
+    profile(profile: any) {
       return {
         id: profile.sub,
         name: profile.name || profile.preferred_username || profile.sub,
@@ -27,7 +32,7 @@ async function oidcProvider(): Promise<OAuthConfig<any>> {
   }
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [await oidcProvider()],
   callbacks: {
     async jwt({ token, account }) {
