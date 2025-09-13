@@ -118,6 +118,17 @@ def _verify_jwt(token: str, cfg: OIDCConfig) -> Dict[str, Any]:
 
 
 def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+    # Dev/test bypass: enable with DEV_NO_AUTH=1 (NOT for production)
+    if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
+        dev_groups = os.getenv("DEV_USER_GROUPS", "").split(",") if os.getenv("DEV_USER_GROUPS") else []
+        return {
+            "sub": os.getenv("DEV_USER_SUB", "dev-user"),
+            "email": os.getenv("DEV_USER_EMAIL", "dev@example.com"),
+            "name": os.getenv("DEV_USER_NAME", "Developer"),
+            "groups": [g.strip() for g in dev_groups if g.strip()],
+            "claims": {"dev_no_auth": True},
+        }
+
     token = creds.credentials
     cfg = get_oidc_config()
     if not token:
@@ -131,4 +142,3 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) ->
         "groups": payload.get("groups") or payload.get("roles") or [],
         "claims": payload,
     }
-
