@@ -23,6 +23,16 @@ export default function Bookmarks() {
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
 
+  function clearFilters() {
+    setSearch('')
+    setFeedId('')
+    setSince('')
+    setUntil('')
+    setFuzzy(false)
+    setPage(1)
+    mutate()
+  }
+
   useEffect(() => {
     const raw = localStorage.getItem('bookmarkViews')
     if (raw) setViews(JSON.parse(raw))
@@ -87,7 +97,7 @@ export default function Bookmarks() {
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">Bookmarks</h2>
         </div>
-        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
+        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-7 gap-2 items-center">
           <input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" />
           <select className="input" value={feedId} onChange={(e) => setFeedId(e.target.value)}>
             <option value="">All Feeds</option>
@@ -99,6 +109,7 @@ export default function Bookmarks() {
           <input className="input" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} title="Until" />
           <label className="inline-flex items-center gap-2 text-gray-700"><input type="checkbox" checked={fuzzy} onChange={(e) => setFuzzy(e.target.checked)} /> Fuzzy</label>
           <button className="btn" onClick={() => { setPage(1); mutate() }}>Search</button>
+          <button className="btn" onClick={clearFilters}>Clear</button>
           <select className="input md:col-span-2" onChange={(e) => { const v = views.find(x => x.name === e.target.value); if (v) applyView(v) }} defaultValue="">
             <option value="" disabled>Saved Views</option>
             {views.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}

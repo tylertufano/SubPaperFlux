@@ -12,6 +12,12 @@ export default function Jobs() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
 
+  function clearFilters() {
+    setStatus('')
+    setPage(1)
+    mutate()
+  }
+
   return (
     <div>
       <Nav />
@@ -30,6 +36,7 @@ export default function Jobs() {
             <option value="dead">Dead</option>
           </select>
           <button className="btn" onClick={() => mutate()}>Filter</button>
+          <button className="btn" onClick={clearFilters}>Clear</button>
           <div className="grow" />
           <button
             className="btn"
