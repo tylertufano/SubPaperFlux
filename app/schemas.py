@@ -78,8 +78,6 @@ class JobOut(BaseModel):
     owner_user_id: Optional[str] = None
     payload: dict
     details: dict = Field(default_factory=dict)
-    details: Optional[dict] = None
-    details: Optional[dict] = None
 
 
 class JobsPage(BaseModel):

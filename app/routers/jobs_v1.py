@@ -18,7 +18,7 @@ router = APIRouter(prefix="/v1/jobs", tags=["v1"])
 def list_jobs(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    status: Optional[str] = Query(None, description="Filter by status (comma-separated for multiple)"),
     type: Optional[str] = Query(None, alias="job_type", description="Filter by job type"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),
@@ -28,7 +28,11 @@ def list_jobs(
     user_id = current_user["sub"]
     stmt = select(Job).where(Job.owner_user_id == user_id)
     if status:
-        stmt = stmt.where(Job.status == status)
+        statuses = [s.strip() for s in status.split(',') if s.strip()]
+        if len(statuses) == 1:
+            stmt = stmt.where(Job.status == statuses[0])
+        else:
+            stmt = stmt.where(Job.status.in_(statuses))
     if type:
         stmt = stmt.where(Job.type == type)
     # Total
