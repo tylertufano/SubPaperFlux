@@ -139,6 +139,10 @@ export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
     size?: number;
 }
 
+export interface RetryAllJobsV1JobsRetryAllPostRequest {
+    requestBody: { [key: string]: any; };
+}
+
 export interface RetryJobV1JobsJobIdRetryPostRequest {
     jobId: string;
 }
@@ -1041,6 +1045,55 @@ export class V1Api extends runtime.BaseAPI {
      */
     async postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
         const response = await this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Requeue all failed/dead jobs optionally filtered by type.
+     * Retry all jobs
+     */
+    async retryAllJobsV1JobsRetryAllPostRaw(requestParameters: RetryAllJobsV1JobsRetryAllPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+        if (requestParameters['requestBody'] == null) {
+            throw new runtime.RequiredError(
+                'requestBody',
+                'Required parameter "requestBody" was null or undefined when calling retryAllJobsV1JobsRetryAllPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/jobs/retry-all`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['requestBody'],
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse<any>(response);
+    }
+
+    /**
+     * Requeue all failed/dead jobs optionally filtered by type.
+     * Retry all jobs
+     */
+    async retryAllJobsV1JobsRetryAllPost(requestParameters: RetryAllJobsV1JobsRetryAllPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
+        const response = await this.retryAllJobsV1JobsRetryAllPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

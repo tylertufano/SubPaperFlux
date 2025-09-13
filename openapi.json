@@ -2142,6 +2142,57 @@
         }
       }
     },
+    "/v1/jobs/retry-all": {
+      "post": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Retry all jobs",
+        "description": "Requeue all failed/dead jobs optionally filtered by type.",
+        "operationId": "retry_all_jobs_v1_jobs_retry_all_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Retry All Jobs V1 Jobs Retry All Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/bookmarks/": {
       "get": {
         "tags": [
@@ -3514,6 +3565,18 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Payload"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
           }
         },
         "type": "object",

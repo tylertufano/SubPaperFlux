@@ -1,10 +1,10 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './AdminApi';
-export * from './BookmarksApi';
-export * from './CredentialsApi';
-export * from './FeedsApi';
-export * from './JobsApi';
-export * from './SiteConfigsApi';
-export * from './StatusApi';
-export * from './V1Api';
+export { AdminApi } from './AdminApi';
+export { BookmarksApi } from './BookmarksApi';
+export { CredentialsApi } from './CredentialsApi';
+export { FeedsApi } from './FeedsApi';
+export { JobsApi } from './JobsApi';
+export { SiteConfigsApi } from './SiteConfigsApi';
+export { StatusApi } from './StatusApi';
+export { V1Api } from './V1Api';

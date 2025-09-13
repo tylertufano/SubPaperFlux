@@ -68,11 +68,11 @@ export interface JobOut {
      */
     payload: { [key: string]: any; };
     /**
-     *
+     * 
      * @type {{ [key: string]: any; }}
      * @memberof JobOut
      */
-    details?: { [key: string]: any; };
+    details?: { [key: string]: any; } | null;
 }
 
 /**
@@ -131,3 +131,4 @@ export function JobOutToJSONTyped(value?: JobOut | null, ignoreDiscriminator: bo
         'details': value['details'],
     };
 }
+
