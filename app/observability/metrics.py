@@ -31,6 +31,12 @@ JOB_DURATION = Histogram(
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60),
 )
 
+INTEGRATION_TEST_COUNTER = Counter(
+    "integration_tests_total",
+    "Integration tests invoked",
+    ["service", "status"],
+)
+
 
 async def metrics_endpoint(_: Request) -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
@@ -49,4 +55,3 @@ async def request_metrics_middleware(request: Request, call_next: Callable):
     REQUEST_COUNTER.labels(request.method, path, str(response.status_code)).inc()
     REQUEST_LATENCY.observe(elapsed)
     return response
-

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import requests
 from fastapi import APIRouter, Depends
 
@@ -8,7 +6,8 @@ from ..jobs.util_subpaperflux import (
     get_instapaper_oauth_session_for_id,
     get_miniflux_config,
 )
-# Avoid importing heavy modules at startup
+from ..observability.metrics import INTEGRATION_TEST_COUNTER
+# Avoid importing heavy modules at startup; use constant URL
 INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 
 
@@ -27,10 +26,13 @@ def test_instapaper(body: dict, current_user=Depends(get_current_user)):
         # POST folders/list is low-impact and verifies auth
         resp = sess.post(INSTAPAPER_FOLDERS_LIST_URL, timeout=10)
         ok = resp.ok
+        INTEGRATION_TEST_COUNTER.labels("instapaper", str(resp.status_code)).inc()
         return {"ok": ok, "status": resp.status_code}
     except requests.exceptions.HTTPError as he:  # noqa: F841
+        INTEGRATION_TEST_COUNTER.labels("instapaper", str(getattr(he.response, "status_code", 500))).inc()
         return {"ok": False, "status": getattr(he.response, "status_code", 500)}
     except requests.exceptions.RequestException as e:
+        INTEGRATION_TEST_COUNTER.labels("instapaper", "error").inc()
         return {"ok": False, "error": str(e)}
 
 
@@ -46,9 +48,11 @@ def test_miniflux(body: dict, current_user=Depends(get_current_user)):
         return {"ok": False, "error": "missing url or api_key"}
     try:
         resp = requests.get(f"{url}/v1/feeds?limit=1", headers={"X-Auth-Token": api_key}, timeout=10)
+        INTEGRATION_TEST_COUNTER.labels("miniflux", str(resp.status_code)).inc()
         return {"ok": resp.ok, "status": resp.status_code}
     except requests.exceptions.HTTPError as he:  # noqa: F841
+        INTEGRATION_TEST_COUNTER.labels("miniflux", str(getattr(he.response, "status_code", 500))).inc()
         return {"ok": False, "status": getattr(he.response, "status_code", 500)}
     except requests.exceptions.RequestException as e:
+        INTEGRATION_TEST_COUNTER.labels("miniflux", "error").inc()
         return {"ok": False, "error": str(e)}
-

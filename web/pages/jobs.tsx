@@ -74,9 +74,22 @@ export default function Jobs() {
                       <tr key={j.id} className="odd:bg-white even:bg-gray-50">
                         <td className="td">{j.id}</td>
                         <td className="td">{j.type}</td>
-                        <td className="td">{j.status}</td>
+                        <td className="td">
+                          {j.status}
+                          {j.type === 'publish' && (j.details?.deduped === true) && (
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">deduped</span>
+                          )}
+                          {j.type === 'rss_poll' && (j.details?.published != null) && (
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">{j.details.published}/{j.details.total}</span>
+                          )}
+                        </td>
                         <td className="td">{j.attempts}</td>
-                        <td className="td">{j.last_error || ''}</td>
+                        <td className="td">
+                          {j.last_error || ''}
+                          {(j.status === 'queued' && j.available_at && j.available_at > (Date.now()/1000)) && (
+                            <span className="ml-2 text-gray-600">retry in {Math.max(0, Math.floor(j.available_at - (Date.now()/1000)))}s</span>
+                          )}
+                        </td>
                         <td className="td flex gap-2">
                           <button
                             className="btn"
