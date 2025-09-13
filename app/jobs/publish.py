@@ -1,0 +1,44 @@
+import logging
+
+from ..jobs import register_handler
+from .util_subpaperflux import publish_url
+from ..db import get_session_ctx
+from ..models import Bookmark
+from datetime import datetime
+
+
+def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> None:
+    # Expected payload: {"config_dir": str, "instapaper_id": str, "url": str, "title": str | None, "folder": str | None, "tags": [str]}
+    config_dir = payload.get("config_dir")
+    instapaper_id = payload.get("instapaper_id")
+    url = payload.get("url")
+    title = payload.get("title")
+    folder = payload.get("folder")
+    tags = payload.get("tags")
+    if not all([config_dir, instapaper_id, url]):
+        raise ValueError("config_dir, instapaper_id, and url are required")
+    logging.info("[job:%s] Publish to Instapaper user=%s url=%s title=%s", job_id, owner_user_id, url, title)
+    res = publish_url(config_dir, instapaper_id, url, title=title, folder=folder, tags=tags, owner_user_id=owner_user_id)
+    # Persist bookmark metadata
+    if res:
+        with get_session_ctx() as session:
+            published_at = payload.get("published_at")
+            if isinstance(published_at, str):
+                try:
+                    published_at = datetime.fromisoformat(published_at)
+                except Exception:
+                    published_at = None
+            bm = Bookmark(
+                owner_user_id=owner_user_id,
+                instapaper_bookmark_id=str(res.get("bookmark_id")),
+                url=url,
+                title=res.get("title") or title,
+                content_location=res.get("content_location"),
+                feed_id=payload.get("feed_id"),
+                published_at=published_at,
+            )
+            session.add(bm)
+            session.commit()
+
+
+register_handler("publish", handle_publish)

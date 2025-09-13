@@ -138,3 +138,42 @@ Quickstart
 - Edit IDs in `yourfeed.ini` to match keys in your JSON files.
 - Run locally: `python subpaperflux.py ./config/yourfeed.ini`
 - Or Docker: `docker run --rm -v "$PWD/config":/config subpaperflux`
+
+API (OIDC + DB) — Optional Preview
+- Install API deps: `pip install -r requirements.api.txt`
+- Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
+- Set DB URL (defaults to SQLite): `DATABASE_URL=sqlite:///./dev.db`
+- Set encryption key for secrets (32-byte base64 urlsafe):
+  - `export CREDENTIALS_ENC_KEY=$(python - <<'PY'
+import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())
+PY
+  )`
+- Run API: `uvicorn app.main:app --reload --port 8000`
+- Run worker (job processor): `python -m app.worker`
+- Endpoints: `/status`, `/site-configs`, `/credentials`, `/feeds`, `/jobs` (Bearer token required except `/status`)
+ - Bookmarks: `/bookmarks` (list with filters/pagination, delete with optional Instapaper removal)
+
+Credentials (DB-backed)
+- Store user secrets in the DB via `/credentials` with `kind` and `data`:
+  - `site_login`: `{ "username": "...", "password": "..." }`
+  - `miniflux`: `{ "miniflux_url": "...", "api_key": "..." }`
+  - `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }`
+  - `instapaper_app` (global or user): `{ "consumer_key": "...", "consumer_secret": "..." }`
+- Handlers prefer DB credentials by `id` (or by `kind` for `instapaper_app`), and fall back to file templates if not found.
+- API responses mask sensitive values (e.g., tokens, passwords). Stored values are encrypted at rest using AES‑GCM with `CREDENTIALS_ENC_KEY`.
+
+Job Types (preview)
+- `login`: payload `{ "config_dir": "./config", "site_config_id": "<DB_SITE_ID>", "credential_id": "<DB_CRED_ID>" }`
+- `miniflux_refresh`: payload `{ "config_dir": "./config", "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "cookie_key": "<loginId-siteId>" }` (or provide `site_config_id` + `credential_id` to derive cookie_key)
+- `rss_poll`: payload `{ "config_dir": "./config", "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_url": "https://.../feed.xml", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "cookie_key": "<loginId-siteId>", "site_config_id": "<DB_SITE_ID>" }`
+- `publish`: payload `{ "config_dir": "./config", "instapaper_id": "<DB_INSTAPAPER_ID>", "url": "https://...", "title": "Optional", "folder": "Optional" }`
+- `retention`: payload `{ "older_than": "30d" }`
+
+Notes: Handlers dispatch real work using the existing subpaperflux functions. Publish persists bookmark metadata (including published timestamps when available); retention deletes old bookmarks in Instapaper and removes them from the DB. Jobs retry up to `WORKER_MAX_ATTEMPTS` with last error tracked on the job.
+
+Database Migrations (Alembic)
+- Install API deps (includes Alembic): `pip install -r requirements.api.txt`
+- Set DB URL: `export DATABASE_URL=sqlite:///./dev.db` (or your Postgres URL)
+- Upgrade to latest: `alembic upgrade head`
+- Create a new migration (after model changes): `alembic revision --autogenerate -m "your message"`
+- Downgrade (if needed): `alembic downgrade -1`

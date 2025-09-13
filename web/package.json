@@ -1,0 +1,24 @@
+{
+  "name": "subpaperflux-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "next-auth": "5.0.0-beta.20",
+    "swr": "2.2.5"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4",
+    "@types/node": "20.14.10",
+    "@types/react": "18.2.48",
+    "@types/react-dom": "18.2.18"
+  }
+}
+

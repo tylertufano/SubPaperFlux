@@ -1,0 +1,37 @@
+# Docker Compose for API + Postgres (dev)
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@db:5432/app
+      OIDC_ISSUER: http://localhost/oidc
+      OIDC_CLIENT_ID: subpaperflux
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      LOG_LEVEL: INFO
+      RL_INSTAPAPER_INTERVAL: "0.2"
+      RL_MINIFLUX_INTERVAL: "0.2"
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app:rw
+
+volumes:
+  pgdata: {}
+

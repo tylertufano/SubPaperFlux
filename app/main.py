@@ -1,0 +1,91 @@
+from fastapi import FastAPI
+
+from .auth.oidc import oidc_startup_event
+from .db import init_db
+from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
+from .routers.jobs_v1 import router as jobs_v1_router
+from .routers.site_configs_v1 import router as site_configs_v1_router
+from .routers.credentials_v1 import router as credentials_v1_router
+from .routers.feeds_v1 import router as feeds_v1_router
+from .routers.integrations import router as integrations_router
+from .errors import register_error_handlers
+from fastapi.middleware.cors import CORSMiddleware
+from .observability.logging import setup_logging, bind_request_id
+from .observability.metrics import metrics_endpoint, request_metrics_middleware
+from .observability.sentry import init_sentry
+
+
+def create_app() -> FastAPI:
+    tags_metadata = [
+        {"name": "status", "description": "Service and database health"},
+        {"name": "site-configs", "description": "Site configuration CRUD"},
+        {"name": "credentials", "description": "User and global credentials"},
+        {"name": "feeds", "description": "Feed definitions"},
+        {"name": "bookmarks", "description": "Bookmarks listing and management"},
+        {"name": "jobs", "description": "Background jobs queue"},
+        {"name": "admin", "description": "Administrative operations"},
+        {"name": "v1", "description": "Versioned API endpoints"},
+    ]
+    app = FastAPI(title="SubPaperFlux API", version="0.1.0", openapi_tags=tags_metadata)
+
+    # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
+    app.add_event_handler("startup", oidc_startup_event)
+    app.add_event_handler("startup", init_db)
+    register_error_handlers(app)
+    setup_logging()
+    init_sentry(app)
+
+    # Basic CORS defaults (adjust in deployment)
+    # CORS from environment configuration
+    import os
+    origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
+    allow_origins = [o.strip() for o in origins.split(",") if o.strip()]
+    allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "1") in ("1", "true", "TRUE")
+    allow_methods = os.getenv("CORS_ALLOW_METHODS", "*")
+    allow_headers = os.getenv("CORS_ALLOW_HEADERS", "*")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allow_origins,
+        allow_credentials=allow_credentials,
+        allow_methods=allow_methods.split(",") if "," in allow_methods else [allow_methods],
+        allow_headers=allow_headers.split(",") if "," in allow_headers else [allow_headers],
+    )
+    # Metrics middleware
+    app.middleware("http")(request_metrics_middleware)
+    # Request ID binder
+    @app.middleware("http")
+    async def add_request_id(request, call_next):
+        rid = request.headers.get("X-Request-Id")
+        bind_request_id(rid)
+        response = await call_next(request)
+        if rid:
+            response.headers["X-Request-Id"] = rid
+        return response
+
+    # Routers
+    app.include_router(status.router)
+    app.include_router(site_configs.router, prefix="/site-configs", tags=["site-configs"])
+    app.include_router(credentials.router, prefix="/credentials", tags=["credentials"])
+    app.include_router(feeds.router, prefix="/feeds", tags=["feeds"])
+    app.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
+    app.include_router(bookmarks.router)
+    app.include_router(admin.router)
+    # Prometheus metrics
+    app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
+
+    # Versioned routers (v1): reuse existing for backward compatibility now
+    # v1: enhanced list endpoints with pagination/search
+    app.include_router(site_configs_v1_router)
+    app.include_router(credentials_v1_router)
+    app.include_router(feeds_v1_router)
+    app.include_router(jobs.router, prefix="/v1/jobs", tags=["v1"])  # enqueue
+    app.include_router(jobs_v1_router)  # list + detail under /v1/jobs
+    app.include_router(bookmarks.router, prefix="/v1", tags=["v1"])  # /v1/bookmarks, etc.
+    app.include_router(status.router, prefix="/v1", tags=["v1"])  # v1 status
+    app.include_router(admin.router, prefix="/v1", tags=["v1"])  # v1 admin
+    app.include_router(integrations_router)
+
+    return app
+
+
+app = create_app()
