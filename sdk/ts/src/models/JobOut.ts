@@ -67,6 +67,12 @@ export interface JobOut {
      * @memberof JobOut
      */
     payload: { [key: string]: any; };
+    /**
+     *
+     * @type {{ [key: string]: any; }}
+     * @memberof JobOut
+     */
+    details?: { [key: string]: any; };
 }
 
 /**
@@ -99,6 +105,7 @@ export function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Jo
         'availableAt': json['available_at'] == null ? undefined : json['available_at'],
         'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
         'payload': json['payload'],
+        'details': json['details'] == null ? undefined : json['details'],
     };
 }
 
@@ -121,6 +128,6 @@ export function JobOutToJSONTyped(value?: JobOut | null, ignoreDiscriminator: bo
         'available_at': value['availableAt'],
         'owner_user_id': value['ownerUserId'],
         'payload': value['payload'],
+        'details': value['details'],
     };
 }
-

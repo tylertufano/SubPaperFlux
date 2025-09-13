@@ -2,13 +2,15 @@ import useSWR from 'swr'
 import Nav from '../components/Nav'
 import { sdk } from '../lib/sdk'
 import Alert from '../components/Alert'
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 export default function Jobs() {
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
   const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => sdk.listJobs({ page: p, status: s }))
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
 
   return (
     <div>
@@ -17,7 +19,7 @@ export default function Jobs() {
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">Jobs</h2>
         </div>
-        <div className="card p-4 mb-4 flex items-center gap-2">
+        <div className="card p-4 mb-4 flex items-center gap-2 flex-wrap">
           <label className="text-gray-700">Status: </label>
           <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
@@ -28,6 +30,19 @@ export default function Jobs() {
             <option value="dead">Dead</option>
           </select>
           <button className="btn" onClick={() => mutate()}>Filter</button>
+          <div className="grow" />
+          <button
+            className="btn"
+            onClick={async () => {
+              try {
+                await sdk.retryAllJobs({ status: ['failed', 'dead'] })
+                setBanner({ kind: 'success', message: 'Requeued all failed/dead jobs' })
+                mutate()
+              } catch (e: any) {
+                setBanner({ kind: 'error', message: e.message || String(e) })
+              }
+            }}
+          >Retry All Failed/Dead</button>
         </div>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {isLoading && <p className="text-gray-600">Loading...</p>}
@@ -48,18 +63,51 @@ export default function Jobs() {
                 </thead>
                 <tbody>
                   {data.items.map((j: any) => (
-                    <tr key={j.id} className="odd:bg-white even:bg-gray-50">
-                      <td className="td">{j.id}</td>
-                      <td className="td">{j.type}</td>
-                      <td className="td">{j.status}</td>
-                      <td className="td">{j.attempts}</td>
-                      <td className="td">{j.last_error || ''}</td>
-                      <td className="td">
-                        {(j.status === 'failed' || j.status === 'dead') && (
-                          <button className="btn" onClick={async () => { try { await sdk.retryJob(j.id); setBanner({ kind: 'success', message: 'Job requeued' }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>Retry</button>
-                        )}
-                      </td>
-                    </tr>
+                    <React.Fragment key={j.id}>
+                      <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                        <td className="td">{j.id}</td>
+                        <td className="td">{j.type}</td>
+                        <td className="td">{j.status}</td>
+                        <td className="td">{j.attempts}</td>
+                        <td className="td">{j.last_error || ''}</td>
+                        <td className="td flex gap-2">
+                          <button
+                            className="btn"
+                            onClick={async () => {
+                              const next = { ...expanded, [j.id]: !expanded[j.id] }
+                              setExpanded(next)
+                              if (!detailsCache[j.id]) {
+                                try {
+                                  const full = await sdk.getJob(j.id)
+                                  setDetailsCache({ ...detailsCache, [j.id]: full })
+                                } catch (e) {
+                                  // ignore errors here; banner not necessary for details
+                                }
+                              }
+                            }}
+                          >Details</button>
+                          {(j.status === 'failed' || j.status === 'dead') && (
+                            <button className="btn" onClick={async () => { try { await sdk.retryJob(j.id); setBanner({ kind: 'success', message: 'Job requeued' }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>Retry</button>
+                          )}
+                        </td>
+                      </tr>
+                      {expanded[j.id] && (
+                        <tr key={`${j.id}-details`} className="bg-gray-50">
+                          <td className="td" colSpan={6}>
+                            <div className="p-3">
+                              <h4 className="font-semibold mb-2">Details</h4>
+                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+{JSON.stringify(detailsCache[j.id]?.details ?? j.details ?? {}, null, 2)}
+                              </pre>
+                              <h4 className="font-semibold my-2">Payload</h4>
+                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+{JSON.stringify(detailsCache[j.id]?.payload ?? j.payload ?? {}, null, 2)}
+                              </pre>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

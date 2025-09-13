@@ -58,6 +58,34 @@ export const sdk = {
     const api = new V1Api(await getConfig())
     return api.retryJobV1JobsJobIdRetryPost({ jobId: id, xCsrfToken: CSRF })
   },
+  getJob: async (id: string) => {
+    const api = new V1Api(await getConfig())
+    // Generated SDK may lack this helper; fall back to manual fetch if missing
+    const cfg = await getConfig()
+    const token = (await (cfg as any).accessToken?.('HTTPBearer', [])) || undefined
+    const res = await fetch(`${API_BASE}/v1/jobs/${encodeURIComponent(id)}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    })
+    if (!res.ok) throw new Error(`Failed to fetch job ${id}`)
+    return res.json()
+  },
+  retryAllJobs: async (body: { status?: string | string[]; type?: string } = {}) => {
+    const cfg = await getConfig()
+    const token = (await (cfg as any).accessToken?.('HTTPBearer', [])) || undefined
+    const res = await fetch(`${API_BASE}/v1/jobs/retry-all`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': CSRF,
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new Error(`Retry-all failed: ${res.status}`)
+    return res.json()
+  },
   validateJob: async (type: string, payload: any) => {
     const api = new V1Api(await getConfig())
     return api.validateJobPayloadV1JobsValidatePost({ requestBody: { type, payload } })
