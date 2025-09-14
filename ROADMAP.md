@@ -1,236 +1,277 @@
 # UI Roadmap
 
-Below is a pragmatic, phased roadmap and feature set for a robust, delightful UI. It layers value quickly, keeps complexity manageable, and aligns with the API you’ve built.
+This roadmap now includes live status checkboxes and a reusable TODO reference. Use it to track progress and drive future prompts.
+
+Status legend: [x] done, [ ] todo
 
 ## Phase 0 — Foundations
 
-- Auth (OIDC): Secure login via provider; session handling; token refresh.
-- Design System: Pick a UI kit (e.g., MUI or Tailwind + Headless) for consistency and velocity.
-- Routing/Layout: App shell with nav, breadcrumbs, responsive breakpoints.
-- SDK Integration: Use generated TypeScript SDK + typed models for API calls.
-- Error + Empty States: Friendly messages, retry actions, contact link.
-- State & Caching: SWR/React Query for caching, retries, optimistic updates.
-- Accessibility: Semantic markup, focus states, ARIA, color contrast checks.
-- i18n-Ready: Wrap text for translation; locale switch scaffold.
+- [x] Auth (OIDC): Secure login via provider; session handling; token refresh.
+  - Evidence: `web/pages/api/auth/[...nextauth].ts:1`
+- [x] Design System: Tailwind CSS + Headless patterns.
+  - Evidence: `web/tailwind.config.js:1`, `web/styles/globals.css:1`
+- [x] Routing/Layout: App shell with nav, breadcrumbs, responsive breakpoints.
+  - Evidence: `web/components/Nav.tsx:1`, Next.js pages in `web/pages`
+- [ ] SDK Integration: Use generated TypeScript SDK + typed models for API calls.
+  - [x] Centralized auth + JSON client in `web/lib/sdk.ts:1`
+  - [x] Generated SDK present in `sdk/ts`
+  - [ ] Pages use generated SDK types; remove legacy `web/lib/api.ts` usage (`web/pages/admin.tsx:2`)
+- [ ] Error + Empty States: Friendly messages, retry actions, contact link.
+  - [x] Alerts component exists: `web/components/Alert.tsx:1`
+  - [ ] Purposeful empty states across pages
+- [x] State & Caching: SWR for caching/retries/refresh.
+  - Evidence: `web/package.json:15`, `web/pages/*:1`
+- [ ] Accessibility: Semantic markup, focus states, ARIA, color contrast checks.
+  - [ ] Add ARIA and contrast audits
+- [ ] i18n-Ready: Wrap text for translation; locale switch scaffold.
+  - [x] Minimal provider: `web/lib/i18n.tsx:29`
+  - [ ] Expand string catalog beyond Nav/Home
 
 ## Phase 1 — Core UX (MVP)
 
-- Dashboard: At-a-glance cards for bookmarks count, jobs status, last sync, health checks.
-- Bookmarks: Paginated list with search, fuzzy toggle (PG), filters (feed, date range), sorting, bulk delete.
-- Jobs: List with status filters; retry action; detail flyout with payload, attempts, errors.
-- Credentials: List masked creds; create/update/delete forms; test actions inline (Instapaper/Miniflux).
-- Site Configs: List global + mine; create/update/delete; test login “dry run”.
-- Feeds: List + create/update; link to related site configs/credentials.
-- Admin: PG prep (extensions/indexes), enable RLS; health/status panels.
+- [ ] Dashboard
+  - [ ] Health, counts, quick links (Home is placeholder: `web/pages/index.tsx:1`)
+- [ ] Bookmarks
+  - [x] Pagination, search, filters, fuzzy toggle: `web/pages/bookmarks.tsx:1`
+  - [x] Bulk delete and export (JSON/CSV)
+  - [ ] Sorting
+- [x] Jobs
+  - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
+  - [x] Backoff timer and dedupe badges
+  - [x] Retry and Retry All failed/dead
+- [ ] Credentials
+  - [x] List, create, delete
+  - [x] Test Instapaper/Miniflux
+  - [ ] Update forms
+- [ ] Site Configs
+  - [x] List, create, delete
+  - [x] Test login
+  - [ ] Update forms
+- [ ] Feeds
+  - [ ] List page and CRUD (used for selection only)
+- [ ] Admin
+  - [x] PG prep (pg_trgm/indexes) and enable RLS: `web/pages/admin.tsx:12`
+  - [ ] Health/status panels and system info
 
 ## Phase 1.5 — Harden and Accelerate
 
 ### Integrate the generated TypeScript SDK
 
-- Run:
+- [x] Export OpenAPI and generate SDK
 
 ```sh
 make openapi-export API_BASE=http://localhost:8000
 make sdk-ts
 ```
 
-- Replace `web/lib/api.ts` with SDK client usage and typed models on pages.
-- Centralize auth injection (Bearer token) via the SDK configuration.
+- [ ] Replace `web/lib/api.ts` calls with generated SDK client and types
+- [x] Centralize auth injection (Bearer token) via configuration
 
 ### Add CRUD forms (Credentials + Site Configs)
 
-- Simple modals/forms for create/update/delete; use CSRF header if you deploy cookie-mode auth.
-- Reuse masking rules from API; never echo secrets in UI logs.
+- [x] Create/delete forms
+- [ ] Update forms
+- [x] CSRF header for cookie-mode auth
+- [x] Never echo secrets in UI logs
 
 ### Add fuzzy search toggle for bookmarks
 
-- Use the `fuzzy=true` param to leverage Postgres trigram similarity sorting.
+- [x] Use the `fuzzy=true` param to leverage Postgres trigram similarity sorting
 
 ### Add basic i18n
 
-- Start with core UI strings; prepare for future localization.
+- [x] Provider + locale switch
+- [ ] Extract core strings and page text
 
 ### Testing
 
-- Add component tests for filters/pagination and form validations.
-- Add a minimal E2E flow: login → create credential → test → list bookmarks → bulk delete dry-run (as applicable).
+- [ ] Component tests for filters/pagination and form validations
+- [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run)
 
-### Queue/Idempotency UX prep
+### Queue/Idempotency UX
 
-- Show dedupe feedback in the UI when publish is skipped due to idempotency.
-- Surface job backoff timers and `last_error` messages in the Jobs table.
-- Add manual “dead-letter” queue view and “Retry All failed”.
+- [x] Show dedupe feedback when publish is skipped
+- [x] Surface job backoff timers and `last_error`
+- [x] Retry All failed/dead
+- [ ] Dead-letter queue view
 
 ## Phase 2 — Power Features
 
-- Saved Views: Persist filters/sorts/search as named views per user.
-- Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort.
-- Bulk Actions: Multi-select publish/delete/export; progress modals.
-- Tags & Folders: Tagging UX for Instapaper; default folder picker; tag autosuggest.
-- Preview Pane: Inline article preview (sanitized HTML) before publishing.
-- Jobs Streaming: Live updates via WebSocket/SSE; pill notifications on status changes.
-- Activity Log: Per-user audit trail: who/what/when; filterable.
+- [x] Saved Views (Bookmarks)
+- [ ] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort
+- [ ] Bulk Actions
+  - [x] Delete/export
+  - [ ] Publish; progress modals
+- [ ] Tags & Folders
+- [ ] Preview Pane (sanitized HTML)
+- [ ] Jobs Streaming (WebSocket/SSE)
+- [ ] Activity Log
 
-## Optional / Recommended (Consider in Future Phases)
-
-These are remaining optional/recommended items, plus targeted updates to Docker and templates to reflect the new API/DB/UI framework.
+## Optional / Recommended
 
 ### Accessibility (a11y)
 
-- Expand ARIA labeling beyond table headers (e.g., form inputs with `aria-describedby`, error regions with `role=alert`).
-- Keyboard navigation patterns (focus traps for modals, access keys).
-- Color contrast audits and dark mode.
+- [ ] Expand ARIA labeling (inputs, alerts)
+- [ ] Keyboard navigation patterns (focus traps)
+- [ ] Color contrast audits and dark mode
 
 ### Internationalization (i18n)
 
-- Expand string catalog beyond Nav/Home (pages, buttons, alerts).
-- Locale detection and formatting (dates, numbers).
+- [ ] Expand string catalog beyond Nav/Home
+- [ ] Locale detection and formatting (dates, numbers)
 
 ### Observability
 
-- Add per-endpoint histograms (standardized path labels) and job durations by type bucket.
-- Sentry client for UI and better grouping.
+- [ ] Per-endpoint histograms and job durations (UI surfacing)
+- [ ] Sentry client for UI and better grouping
 
 ### Security
 
-- DB RLS: Enforce by setting a session variable (e.g., `app.user_id`) on each DB connection. Policies exist; enforcement at the DB layer requires that session setting.
-- CSRF: UI already sends `X-CSRF-Token`; consider per-session token.
+- [ ] DB RLS: Set `app.user_id` per DB session (middleware)
+- [x] CSRF: UI sends `X-CSRF-Token`
 
 ### API Polish
 
-- Optional uniform responses for integration tests (convert errors to `application/problem+json` to match global handlers while keeping `ok/status`).
-- SSE/WebSockets for jobs to remove polling.
+- [ ] Uniform error responses (`application/problem+json`)
+- [ ] SSE/WebSockets for jobs to remove polling
 
 ## Phase 3 — Onboarding & Guidance
 
-- Setup Wizard: Steps for app creds, user tokens, site config, feed setup, test buttons each step.
-- Inline Tips: Contextual helper bubbles/tooltips; links to docs/examples.
-- Templates Gallery: Predefined site-config templates; one-click import.
+- [ ] Setup Wizard
+- [ ] Inline Tips
+- [ ] Templates Gallery
 
 ## Phase 4 — Multi-User & Sharing
 
-- RBAC UI: Role badges; guard admin-only controls; visible scope (Global vs Mine).
-- Global Assets: Browse + “Copy to my workspace” for global configs.
-- Org Views: Admin dashboards for system usage; user management (read-only if delegated to IdP).
+- [ ] RBAC UI
+- [ ] Global Assets (copy to my workspace)
+- [ ] Org Views / user management (if not delegated to IdP)
 
 ## Phase 5 — Observability & Ops
 
-- Metrics View: Prometheus charts in UI (jobs throughput, API latency, error rates).
-- Health Console: Integration checks with last run status; rate-limit insights.
+- [ ] Metrics View (Prometheus in UI)
+- [ ] Health Console (integration checks, rate-limit insights)
 
 ### Admin & System
 
-- PG Prep: Buttons for `pg_trgm`/indexes; result details.
-- RLS: Enable/disable with warnings; doc links.
-- System View: OpenAPI doc link, metrics endpoint, version.
+- [x] PG Prep: Buttons for `pg_trgm`/indexes; result details
+- [ ] RLS: Enable/disable with warnings; doc links
+- [ ] System View: OpenAPI doc link, metrics endpoint, version
 
 ## UX Details
 
-- Consistency: Standard pagination (`page`/`size`), sorting, search input patterns.
-- Keyboard Shortcuts: `/` to focus search; `j/k` navigate lists; `?` shows help.
-- Empty States: Show templates/onboarding actions instead of blank tables.
-- Confirmation: Dangerous actions gated (bulk delete, global changes).
-- Responsive: Card layouts on mobile; hide advanced filters behind Drawer.
+- [ ] Consistency: Standard pagination (`page`/`size`), sorting, search input patterns
+- [ ] Keyboard Shortcuts: `/` focus search; `j/k` navigate; `?` help
+- [ ] Empty States: Templates/onboarding actions instead of blank tables
+- [x] Confirmation: Dangerous actions gated (bulk delete)
+- [ ] Responsive: Card layouts on mobile; advanced filters in Drawer
 
 ## Security & Privacy
 
-- Token Handling: Use access token only; never store secrets client-side.
-- CSRF: If cookie-mode auth to API, include `X-CSRF-Token` automatically.
-- CORS: Narrow origins to UI domain; preflight caching.
-- PII: Mask secrets at API; UI never logs sensitive fields.
+- [x] Token Handling: Use access token only; never store secrets client-side
+- [x] CSRF: If cookie-mode auth to API, include `X-CSRF-Token`
+- [x] CORS: Configurable allowlist in API
+- [x] PII: Mask secrets at API; UI never logs sensitive fields
 
 ## Performance & Robustness
 
-- Retry Policies: Network failure retry with exponential backoff in SDK.
-- Backpressure: Disable/enqueue bulk buttons if rate limits hit; show wait times.
-- Optimistic UX: For deletes and retries; reconcile on server response.
+- [ ] Retry Policies: Network retry with exponential backoff in SDK
+- [ ] Backpressure: Disable/enqueue bulk buttons if rate limits hit; show wait times
+- [ ] Optimistic UX: Deletes/retries optimistic with reconciliation
 
 ## Testing & Quality
 
-- Unit: Component tests for filters, pagination, modals.
-- Integration: Mock SDK to simulate API; test flows (create creds → test → publish).
-- E2E: Cypress/Playwright for login, CRUD, job retry, bulk delete.
-- Accessibility: Axe audits in CI; color contrast testing.
+- [ ] Unit: Component tests for filters, pagination, modals
+- [ ] Integration: Mock SDK to simulate API; test flows
+- [ ] E2E: Playwright/Cypress for login, CRUD, job retry, bulk delete
+- [ ] Accessibility: Axe audits in CI; color contrast testing
 
 ## CI/CD & Ops
 
-- Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis.
-- Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags for experimental features.
-- Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback.
+- [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis
+- [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags
+- [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback
 
 ## Data Migrations & Compatibility
 
-- API Compatibility: Use `/v1` endpoints only; track deprecations.
-- SDK Versioning: Lock SDK version per UI release; changelog and upgrade notes.
+- [ ] API Compatibility: Use `/v1` endpoints only; track deprecations
+- [ ] SDK Versioning: Lock SDK version per UI release; changelog/upgrade notes
 
 ## Rollout Plan
 
-- Milestones: Phase 1 (2–3 sprints), Phases 2–3 (2–4 sprints), subsequent phases in parallel tracks (UI/BE/Ops).
-- Feedback Loops: In-app feedback link; analytics (anonymized) to prioritize features.
+- Milestones: Phase 1 (2–3 sprints), Phases 2–3 (2–4 sprints), subsequent phases in parallel tracks (UI/BE/Ops)
+- Feedback Loops: In-app feedback link; anonymized analytics to prioritize features
 
 ---
 
 ## Continued Enhancements: User Management
-
-Here’s a compact plan to track “User Management” as its own phase (or parallel stream), with scope, design, and dependencies.
 
 - Goals: Native users, roles, and admin controls alongside OIDC support.
 - Strategy: Keep OIDC as primary; add first‑class users/roles for finer control and auditability.
 
 ### Scope
 
-- Users Table: `users(id, sub, email, name, status, created_at, last_login_at)`.
-- Roles & RBAC: System roles (`admin`, `site-config-admin`, `global-creds-admin`, `user`) + per‑resource ownership by `owner_user_id`.
-- Group Mapping: Map OIDC groups → internal roles; allow per‑user overrides in DB.
-- Admin UI: List users, assign roles, suspend/reactivate, view login history.
-- Audit Log: Track admin changes (roles, global resources, retention runs).
-- API Keys: Optional personal access tokens for automation (scoped, expiring).
-- Quotas/Policies: Per‑user caps (feeds, credentials, job rate) to protect system.
-- RLS Enforcement: Set `app.user_id` per DB session to enforce Postgres Row‑Level Security.
+- [ ] Users table and admin UI
+- [ ] Roles & RBAC with per‑resource ownership
+- [ ] OIDC group→role mapping with per-user overrides
+- [ ] Audit log for admin actions
+- [ ] API tokens (optional)
+- [ ] Quotas/policies per user
+- [ ] RLS enforcement: set `app.user_id` per DB session
 
 ### Integrations
 
-- OIDC‑Only Mode: Keep today’s SSO‑only flow; auto‑provision users on first login.
-- SCIM/Sync (Optional): Import users/roles from IdP; nightly role reconciliation.
+- [ ] OIDC‑only mode auto-provision
+- [ ] SCIM/Sync (optional)
 
 ### Data Model Additions
 
-- `users`: `id` (uuid), `sub` (OIDC), `email`, `name`, `status`, `created_at`, `updated_at`.
-- `roles`: `id`, `name`; `user_roles`: `user_id`, `role_id`.
-- `audit_log`: `id`, `actor_user_id`, `action`, `entity_type`/`entity_id`, `metadata` JSON, `timestamp`.
-- `api_tokens` (optional): `id`, `user_id`, `hash`, `scopes`, `expires_at`, `last_used_at`.
+- [ ] `users`, `roles`, `user_roles`, `audit_log`, `api_tokens`
 
 ### API Endpoints
 
-- Admin: `/v1/admin/users` (list/filter), `/v1/admin/users/{id}` (get/update roles/status), `/v1/admin/audit` (list).
-- Tokens (optional): `/v1/me/tokens` CRUD with revocation; scoped to user.
+- [ ] `/v1/admin/users`, `/v1/admin/audit`, `/v1/me/tokens`
 
 ### UI
 
-- Users: Table with search/filter; role badges; actions (assign roles, suspend).
-- Audit: Filter by actor/date/action; drill into metadata.
-- Tokens: Developer page to create/revoke tokens; copy‑once UI.
+- [ ] Users table, role badges, suspend/reactivate
+- [ ] Audit filters and details
+- [ ] Token management UI
 
-### Security
+### Security & Observability
 
-- Least Privilege: Restrict admin flows to admins; sensitive actions double-confirm.
-- Secrets: Existing encryption stays; ensure only owners/admins can access (UI/API).
-- RLS: Enforce DB policies by setting `app.user_id` per request/connection (backend work).
+- [ ] Least privilege enforcement and confirmations
+- [ ] Metrics: `user_logins_total`, `admin_actions_total`, `api_tokens_issued_total`
 
-### Observability
+### Dependencies & Rollout
 
-- Metrics: `user_logins_total`, `admin_actions_total`, `api_tokens_issued_total`.
-- Alerts: Excessive failed logins (if you track), unusual admin changes.
+- [ ] DB migrations and session var middleware
+- [ ] Rollout: Phase A (users/roles), B (audit/metrics), C (tokens/SCIM)
 
-### Dependencies & Pre‑Reqs
+---
 
-- DB Migrations: Add users/roles/audit tables; indices for email/sub.
-- Session Var: Middleware to set `app.user_id` in DB for RLS, using current user `sub`.
-- OIDC Mapping: Configurable group→role map; dev defaults for quick start.
+## Open TODO Reference
 
-### Rollout Plan
+Use these IDs in future prompts to request specific work. We will keep this list updated as items are completed.
 
-- Phase A: Users + roles + OIDC mapping + admin list/assign.
-- Phase B: Audit log + UI + metrics.
-- Phase C (Optional): API tokens + SCIM import + quotas.
+- UI-001: Replace `web/pages/admin.tsx` usage of `web/lib/api.ts` with generated SDK client
+- UI-002: Adopt generated SDK (`sdk/ts`) across pages; remove manual `web/lib/sdk.ts` or wrap generated client
+- UI-003: Implement Dashboard with counts/health panels
+- UI-004: Add sorting to Bookmarks table
+- UI-005: Build Feeds page (list/create/update/delete) and link relations
+- UI-006: Add update forms for Credentials and Site Configs
+- UI-007: Add purposeful empty states across tables and pages
+- UI-008: Add dead-letter queue view under Jobs
+- UI-009: Jobs streaming via WebSocket/SSE + pill notifications
+- UI-010: Advanced Search (field-specific + regex) for Bookmarks
+- UI-011: Add Sentry to UI (Next.js integration)
+- UI-012: Add middleware to set `app.user_id` session var for RLS enforcement in Postgres
+- UI-013: Expand i18n string catalog and wrap page text
+- UI-014: Add component tests and minimal E2E (Playwright)
+- UI-015: Admin health/status panels and System view (OpenAPI/metrics/version)
+- UI-016: Keyboard shortcuts (`/`, `j/k`, `?`)
+- UI-017: Preview pane for article content
+- UI-018: Tags & folders management for Instapaper
+- UI-019: Retry/backoff policy in client with exponential backoff
+- UI-020: Backpressure UI for bulk actions (rate limit feedback)
 
