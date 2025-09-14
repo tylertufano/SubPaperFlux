@@ -51,6 +51,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
     healthcheck:
@@ -76,6 +78,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   web:
     image: tylertufano/subpaperflux-web:latest
@@ -91,6 +95,18 @@ services:
       - "3000:3000"
     depends_on:
       api:
+        condition: service_healthy
+
+  migrate:
+    image: tylertufano/subpaperflux:latest
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
         condition: service_healthy
 
 volumes:
