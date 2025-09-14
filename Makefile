@@ -33,9 +33,9 @@ openapi-export:
 	fi
 
 sdk-ts:
-	OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
-	OUT_DIR=$${OUT_DIR:-./sdk/ts}; \
-	bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR
+       OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
+       OUT_DIR=$${OUT_DIR:-./web/sdk}; \
+       bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR
 
 # ---- API helpers ----
 # Required: API_BASE, TOKEN
