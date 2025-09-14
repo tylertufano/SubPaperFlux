@@ -79,6 +79,7 @@ make sdk-ts
 - [x] Migrate pages from thin fetch wrapper to generated client + types (UI-079)
 - [x] Remove temporary fetch-only fallback once migration completes (UI-081)
 - [ ] Optional: publish `@subpaperflux/sdk` to npm and consume from package (UI-082)
+ - [ ] Optional: add separate CI job matrix to validate SDK modes (regen vs copy) and artifact reuse (UI-083)
 
 ### Add CRUD forms (Credentials + Site Configs)
 
@@ -204,6 +205,7 @@ make sdk-ts
 - [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
 - [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
 - [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback (UI-011)
+ - [ ] CI job matrix: validate both SDK generation modes (regen from OpenAPI vs copy vendored) (UI-083)
 
 ## Data Migrations & Compatibility
 
@@ -345,3 +347,4 @@ Use these IDs in future prompts to request specific work. We will keep this list
   - UI-080: Docker/CI step to generate SDK or include vendored SDK
   - UI-081: Remove temporary fetch-only fallback
   - UI-082: Optionally publish `@subpaperflux/sdk` and adopt
+  - UI-083: CI job matrix to validate SDK modes (regen vs copy) and artifact reuse
