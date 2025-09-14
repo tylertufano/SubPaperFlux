@@ -17,7 +17,7 @@ def postgres_prepare(current_user=Depends(get_current_user), session=Depends(get
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = prepare_postgres_search(session)
-    return {"ok": True, "details": details}
+    return {"ok": bool(details.get("ok", True)), "details": details}
 
 
 @router.post("/postgres/enable-rls", response_model=dict)
@@ -27,4 +27,4 @@ def postgres_enable_rls(current_user=Depends(get_current_user), session=Depends(
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = enable_rls(session)
-    return {"ok": True, "details": details}
+    return {"ok": bool(details.get("ok", True)), "details": details}
