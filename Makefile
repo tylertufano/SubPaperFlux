@@ -29,7 +29,7 @@ openapi-export:
 	@if [ -n "$(API_BASE)" ]; then \
 	  curl -sS "$(API_BASE)/openapi.json" -o openapi.json; \
 	else \
-	  python scripts/export_openapi.py; \
+	  python -m scripts.export_openapi; \
 	fi
 
 sdk-ts:
