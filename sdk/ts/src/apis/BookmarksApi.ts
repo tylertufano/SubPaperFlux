@@ -99,7 +99,21 @@ export interface HeadBookmarksBookmarksHeadRequest {
     until?: string | null;
 }
 
+export interface HeadBookmarksBookmarksHead0Request {
+    search?: string | null;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
 export interface HeadBookmarksV1BookmarksHeadRequest {
+    search?: string | null;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
+export interface HeadBookmarksV1BookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
     since?: string | null;
@@ -116,7 +130,27 @@ export interface ListBookmarksBookmarksGetRequest {
     until?: string | null;
 }
 
+export interface ListBookmarksBookmarksGet0Request {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    fuzzy?: boolean;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
 export interface ListBookmarksV1BookmarksGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    fuzzy?: boolean;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
+export interface ListBookmarksV1BookmarksGet0Request {
     page?: number;
     size?: number;
     search?: string | null;
@@ -729,6 +763,63 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
+    async headBookmarksBookmarksHead_1Raw(requestParameters: HeadBookmarksBookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'HEAD',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Head Bookmarks
+     */
+    async headBookmarksBookmarksHead_1(requestParameters: HeadBookmarksBookmarksHead0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.headBookmarksBookmarksHead_1Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Head Bookmarks
+     */
     async headBookmarksV1BookmarksHeadRaw(requestParameters: HeadBookmarksV1BookmarksHeadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         const queryParameters: any = {};
 
@@ -780,6 +871,63 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     async headBookmarksV1BookmarksHead(requestParameters: HeadBookmarksV1BookmarksHeadRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.headBookmarksV1BookmarksHeadRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Head Bookmarks
+     */
+    async headBookmarksV1BookmarksHead_2Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'HEAD',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Head Bookmarks
+     */
+    async headBookmarksV1BookmarksHead_2(requestParameters: HeadBookmarksV1BookmarksHead0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -851,6 +999,71 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
+    async listBookmarksBookmarksGet_3Raw(requestParameters: ListBookmarksBookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['fuzzy'] != null) {
+            queryParameters['fuzzy'] = requestParameters['fuzzy'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BookmarksPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List Bookmarks
+     */
+    async listBookmarksBookmarksGet_3(requestParameters: ListBookmarksBookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksBookmarksGet_3Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List Bookmarks
+     */
     async listBookmarksV1BookmarksGetRaw(requestParameters: ListBookmarksV1BookmarksGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
         const queryParameters: any = {};
 
@@ -910,6 +1123,71 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     async listBookmarksV1BookmarksGet(requestParameters: ListBookmarksV1BookmarksGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
         const response = await this.listBookmarksV1BookmarksGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List Bookmarks
+     */
+    async listBookmarksV1BookmarksGet_4Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['fuzzy'] != null) {
+            queryParameters['fuzzy'] = requestParameters['fuzzy'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BookmarksPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List Bookmarks
+     */
+    async listBookmarksV1BookmarksGet_4(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

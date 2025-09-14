@@ -96,12 +96,29 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
     until?: string | null;
 }
 
+export interface HeadBookmarksV1BookmarksHead0Request {
+    search?: string | null;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
     instapaperCredId?: string | null;
     minifluxCredId?: string | null;
 }
 
 export interface ListBookmarksV1BookmarksGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    fuzzy?: boolean;
+    feedId?: string | null;
+    since?: string | null;
+    until?: string | null;
+}
+
+export interface ListBookmarksV1BookmarksGet0Request {
     page?: number;
     size?: number;
     search?: string | null;
@@ -118,12 +135,33 @@ export interface ListCredentialsV1V1CredentialsGetRequest {
     size?: number;
 }
 
+export interface ListCredentialsV1V1CredentialsGet0Request {
+    includeGlobal?: boolean;
+    kind?: string | null;
+    page?: number;
+    size?: number;
+}
+
 export interface ListFeedsV1V1FeedsGetRequest {
     page?: number;
     size?: number;
 }
 
+export interface ListFeedsV1V1FeedsGet0Request {
+    page?: number;
+    size?: number;
+}
+
 export interface ListJobsV1JobsGetRequest {
+    status?: string | null;
+    jobType?: string | null;
+    page?: number;
+    size?: number;
+    orderBy?: string;
+    orderDir?: string;
+}
+
+export interface ListJobsV1JobsGet0Request {
     status?: string | null;
     jobType?: string | null;
     page?: number;
@@ -651,6 +689,63 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Head Bookmarks
+     */
+    async headBookmarksV1BookmarksHead_1Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'HEAD',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Head Bookmarks
+     */
+    async headBookmarksV1BookmarksHead_1(requestParameters: HeadBookmarksV1BookmarksHead0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Integrations Status
      */
     async integrationsStatusV1StatusIntegrationsGetRaw(requestParameters: IntegrationsStatusV1StatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
@@ -761,6 +856,71 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List Bookmarks
+     */
+    async listBookmarksV1BookmarksGet_2Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['fuzzy'] != null) {
+            queryParameters['fuzzy'] = requestParameters['fuzzy'];
+        }
+
+        if (requestParameters['feedId'] != null) {
+            queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = requestParameters['since'];
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = requestParameters['until'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BookmarksPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List Bookmarks
+     */
+    async listBookmarksV1BookmarksGet_2(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List credentials
      */
     async listCredentialsV1V1CredentialsGetRaw(requestParameters: ListCredentialsV1V1CredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
@@ -814,6 +974,59 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List credentials
+     */
+    async listCredentialsV1V1CredentialsGet_3Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['includeGlobal'] != null) {
+            queryParameters['include_global'] = requestParameters['includeGlobal'];
+        }
+
+        if (requestParameters['kind'] != null) {
+            queryParameters['kind'] = requestParameters['kind'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/credentials`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List credentials
+     */
+    async listCredentialsV1V1CredentialsGet_3(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
+        const response = await this.listCredentialsV1V1CredentialsGet_3Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List feeds
      */
     async listFeedsV1V1FeedsGetRaw(requestParameters: ListFeedsV1V1FeedsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
@@ -855,6 +1068,51 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listFeedsV1V1FeedsGet(requestParameters: ListFeedsV1V1FeedsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
         const response = await this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List feeds
+     */
+    async listFeedsV1V1FeedsGet_4Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/feeds`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FeedsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List feeds
+     */
+    async listFeedsV1V1FeedsGet_4(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
+        const response = await this.listFeedsV1V1FeedsGet_4Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -918,6 +1176,69 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listJobsV1JobsGet(requestParameters: ListJobsV1JobsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
         const response = await this.listJobsV1JobsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List jobs with filters, pagination, and sorting.
+     * List jobs
+     */
+    async listJobsV1JobsGet_5Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['jobType'] != null) {
+            queryParameters['job_type'] = requestParameters['jobType'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['order_by'] = requestParameters['orderBy'];
+        }
+
+        if (requestParameters['orderDir'] != null) {
+            queryParameters['order_dir'] = requestParameters['orderDir'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/jobs`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List jobs with filters, pagination, and sorting.
+     * List jobs
+     */
+    async listJobsV1JobsGet_5(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
+        const response = await this.listJobsV1JobsGet_5Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

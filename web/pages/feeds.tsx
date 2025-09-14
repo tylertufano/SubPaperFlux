@@ -3,7 +3,6 @@ import Nav from '../components/Nav'
 import { v1, feeds as feedsApi } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
-import { getSession } from 'next-auth/react'
 
 export default function Feeds() {
   const { data, error, isLoading, mutate } = useSWR(['/v1/feeds'], () => v1.listFeedsV1V1FeedsGet({}))
@@ -16,9 +15,6 @@ export default function Feeds() {
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editRow, setEditRow] = useState<any | null>(null)
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
-  const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: 'URL is required' }); return }
@@ -69,24 +65,17 @@ export default function Feeds() {
 
   async function saveEdit(id: string) {
     try {
-      const session = await getSession()
-      const res = await fetch(`${API_BASE}/feeds/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': CSRF,
-          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
-        },
-        body: JSON.stringify({
+      await feedsApi.updateFeedFeedsFeedIdPut({
+        feedId: id,
+        feed: {
           url: editRow.url,
-          poll_frequency: editRow.pollFrequency,
-          initial_lookback_period: editRow.initialLookbackPeriod || null,
-          is_paywalled: !!editRow.isPaywalled,
-          rss_requires_auth: !!editRow.rssRequiresAuth,
-          site_config_id: editRow.siteConfigId || null,
-        }),
+          pollFrequency: editRow.pollFrequency,
+          initialLookbackPeriod: editRow.initialLookbackPeriod || undefined,
+          isPaywalled: !!editRow.isPaywalled,
+          rssRequiresAuth: !!editRow.rssRequiresAuth,
+          siteConfigId: editRow.siteConfigId || undefined,
+        } as any,
       })
-      if (!res.ok) throw new Error(`PUT failed: ${res.status}`)
       setBanner({ kind: 'success', message: 'Feed updated' })
       setEditingId(null)
       setEditRow(null)
