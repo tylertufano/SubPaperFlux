@@ -19,6 +19,8 @@ def upgrade() -> None:
     bind = op.get_bind()
     dialect = bind.dialect.name if bind is not None else ''
     if dialect == 'postgresql':
+        # Ensure alembic_version can store longer revision IDs
+        op.execute("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128);")
         # Convert TEXT/unknown to TIMESTAMPTZ using safe cast
         op.execute(
             """
@@ -39,4 +41,5 @@ def downgrade() -> None:
     if dialect == 'postgresql':
         # Revert to text
         op.execute("ALTER TABLE bookmark ALTER COLUMN published_at TYPE text;")
-
+        # Optionally shrink alembic_version column back to 32
+        op.execute("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(32);")
