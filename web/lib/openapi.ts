@@ -28,7 +28,7 @@ async function resolveApiBase(): Promise<string> {
   const w: any = window as any
   if (typeof w.__SPF_API_BASE === 'string') return w.__SPF_API_BASE
   try {
-    const res = await fetch('/api/config')
+    const res = await fetch('/ui-config')
     if (res.ok) {
       const data = await res.json()
       if (typeof data.apiBase === 'string') return data.apiBase

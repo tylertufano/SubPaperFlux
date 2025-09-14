@@ -153,6 +153,15 @@ PY
 - Endpoints: `/status`, `/site-configs`, `/credentials`, `/feeds`, `/jobs` (Bearer token required except `/status`)
  - Bookmarks: `/bookmarks` (list with filters/pagination, delete with optional Instapaper removal)
 
+Frontend (Next.js) API Base Resolution
+- The web UI discovers the API base at runtime so you can deploy without rebuilds and support different domains/subpaths.
+- Resolution order (client): `NEXT_PUBLIC_API_BASE` (build-time) → `window.__SPF_API_BASE` → `GET /ui-config` (runtime) → relative base `''` (same-origin proxy).
+- Resolution order (server): `API_BASE` (runtime env) → `NEXT_PUBLIC_API_BASE` → `''`.
+- To proxy the API under the same domain with a subpath (recommended): set `API_BASE=/api` on the web container and configure your reverse proxy to route `/api/*` to the backend.
+- For a separate domain: set `API_BASE=https://api.example.com` on the web container. Optionally set `NEXT_PUBLIC_API_BASE` at build time (not required).
+- The UI warns in the console if loaded over HTTPS while the configured base is `http://` (mixed content).
+- The endpoint `/ui-config` serves `{ apiBase }` from server env; ensure your proxy does not intercept it.
+
 Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
   - `site_login`: `{ "username": "...", "password": "..." }`
