@@ -1,17 +1,28 @@
 import NextAuth from 'next-auth'
 import type { NextAuthConfig } from 'next-auth'
-import OIDC from 'next-auth/providers/oidc'
 
 const wellKnown = process.env.OIDC_ISSUER!
 
 export const authOptions: NextAuthConfig = {
   providers: [
-    OIDC({
+    {
+      id: 'oidc',
+      name: 'OIDC',
+      type: 'oidc',
       wellKnown,
       clientId: process.env.OIDC_CLIENT_ID,
       clientSecret: process.env.OIDC_CLIENT_SECRET,
+      idToken: true,
+      checks: ['pkce', 'state'],
       authorization: { params: { scope: 'openid profile email' } },
-    }),
+      profile(profile: any) {
+        return {
+          id: profile.sub,
+          name: profile.name || profile.preferred_username || profile.sub,
+          email: profile.email,
+        }
+      },
+    } as any,
   ],
   callbacks: {
     async jwt({ token, account }) {
