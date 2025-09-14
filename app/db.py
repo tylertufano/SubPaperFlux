@@ -28,7 +28,13 @@ def get_engine():
 
 
 def init_db() -> None:
-    SQLModel.metadata.create_all(get_engine())
+    """Optionally create all tables in dev environments.
+
+    In production, rely on Alembic migrations. Enable this dev helper by setting
+    SQLMODEL_CREATE_ALL=1 (or 'true').
+    """
+    if os.getenv("SQLMODEL_CREATE_ALL", "0") in ("1", "true", "TRUE"):
+        SQLModel.metadata.create_all(get_engine())
 
 
 @contextmanager
