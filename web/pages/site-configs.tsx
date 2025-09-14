@@ -1,12 +1,12 @@
 import useSWR from 'swr'
 import Nav from '../components/Nav'
-import { sdk } from '../lib/sdk'
+import { v1, siteConfigs as site } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
 import { validateSiteConfig } from '../lib/validate'
 
 export default function SiteConfigs() {
-  const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], () => sdk.listSiteConfigs())
+  const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], () => v1.listSiteConfigsV1V1SiteConfigsGet({}))
   const [form, setForm] = useState({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
@@ -19,7 +19,7 @@ export default function SiteConfigs() {
     try {
       const err = validateSiteConfig(body)
       if (err) { setBanner({ kind: 'error', message: err }); return }
-      await sdk.createSiteConfig(body, scopeGlobal)
+      await site.createSiteConfigSiteConfigsPost({ siteConfig: { ...body, ownerUserId: scopeGlobal ? null : undefined } })
       setForm({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
       setScopeGlobal(false)
       setBanner({ kind: 'success', message: 'Site config created' })
@@ -32,7 +32,7 @@ export default function SiteConfigs() {
   async function del(id: string) {
     if (!confirm('Delete site config?')) return
     try {
-      await sdk.deleteSiteConfig(id)
+      await site.deleteSiteConfigSiteConfigsConfigIdDelete({ configId: id })
       setBanner({ kind: 'success', message: 'Site config deleted' })
       mutate()
     } catch (e: any) {
@@ -76,7 +76,7 @@ export default function SiteConfigs() {
                     <td className="td">{sc.site_url}</td>
                     <td className="td">{sc.owner_user_id ? 'User' : 'Global'}</td>
                     <td className="td flex gap-2">
-                      <button className="btn" onClick={async () => { try { const r = await sdk.testSiteConfig(sc.id); setBanner({ kind: r.ok ? 'success' : 'error', message: `Test: ${JSON.stringify(r)}` }) } catch (e: any) { setBanner({ kind: 'error', message: e.message || String(e) }) } }}>Test Login</button>
+                      <button className="btn" onClick={async () => { try { const r = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id }); setBanner({ kind: r.ok ? 'success' : 'error', message: `Test: ${JSON.stringify(r)}` }) } catch (e: any) { setBanner({ kind: 'error', message: e.message || String(e) }) } }}>Test Login</button>
                       <button className="btn" onClick={() => del(sc.id)}>Delete</button>
                     </td>
                   </tr>

@@ -1,13 +1,13 @@
 import useSWR from 'swr'
 import Nav from '../components/Nav'
-import { sdk } from '../lib/sdk'
+import { v1 } from '../lib/openapi'
 import Alert from '../components/Alert'
 import React, { useState, useEffect } from 'react'
 
 export default function Jobs() {
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
-  const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => sdk.listJobs({ page: p, status: s }))
+  const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s }))
   const [now, setNow] = useState<number>(Date.now() / 1000)
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now() / 1000), 1000)
@@ -48,7 +48,7 @@ export default function Jobs() {
             className="btn"
             onClick={async () => {
               try {
-                await sdk.retryAllJobs({ status: ['failed', 'dead'] })
+                await v1.retryAllJobsV1JobsRetryAllPost({ requestBody: { status: ['failed', 'dead'] } })
                 setBanner({ kind: 'success', message: 'Requeued all failed/dead jobs' })
                 mutate()
               } catch (e: any) {
@@ -104,7 +104,7 @@ export default function Jobs() {
                               setExpanded(next)
                               if (!detailsCache[j.id]) {
                                 try {
-                                  const full = await sdk.getJob(j.id)
+                                  const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
                                   setDetailsCache({ ...detailsCache, [j.id]: full })
                                 } catch (e) {
                                   // ignore errors here; banner not necessary for details
@@ -113,7 +113,7 @@ export default function Jobs() {
                             }}
                           >Details</button>
                           {(j.status === 'failed' || j.status === 'dead') && (
-                            <button className="btn" onClick={async () => { try { await sdk.retryJob(j.id); setBanner({ kind: 'success', message: 'Job requeued' }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>Retry</button>
+                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: 'Job requeued' }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>Retry</button>
                           )}
                         </td>
                       </tr>

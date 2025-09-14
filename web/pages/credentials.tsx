@@ -1,12 +1,12 @@
 import useSWR from 'swr'
 import Nav from '../components/Nav'
-import { sdk } from '../lib/sdk'
+import { v1, creds } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
 import { parseJsonSafe, validateCredential } from '../lib/validate'
 
 export default function Credentials() {
-  const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => sdk.listCredentials())
+  const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
   const [kind, setKind] = useState('site_login')
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
@@ -15,10 +15,10 @@ export default function Credentials() {
   async function testCred(c: any) {
     try {
       if (c.kind === 'instapaper') {
-        const res = await sdk.testInstapaper(c.id)
+        const res = await v1.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody: { credential_id: c.id } })
         setBanner({ kind: res.ok ? 'success' : 'error', message: `Instapaper: ${JSON.stringify(res)}` })
       } else if (c.kind === 'miniflux') {
-        const res = await sdk.testMiniflux(c.id)
+        const res = await v1.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody: { credential_id: c.id } })
         setBanner({ kind: res.ok ? 'success' : 'error', message: `Miniflux: ${JSON.stringify(res)}` })
       }
     } catch (e: any) {
@@ -32,7 +32,7 @@ export default function Credentials() {
     const err = validateCredential(kind, parsed.data)
     if (err) { setBanner({ kind: 'error', message: err }); return }
     try {
-      await sdk.createCredential(kind, parsed.data, scopeGlobal)
+      await creds.createCredentialCredentialsPost({ credential: { kind, data: parsed.data, ownerUserId: scopeGlobal ? null : undefined } })
       setJsonData('')
       setBanner({ kind: 'success', message: 'Credential created' })
       mutate()
@@ -44,7 +44,7 @@ export default function Credentials() {
   async function deleteCred(id: string) {
     if (!confirm('Delete credential?')) return
     try {
-      await sdk.deleteCredential(id)
+      await creds.deleteCredentialCredentialsCredIdDelete({ credId: id })
       setBanner({ kind: 'success', message: 'Credential deleted' })
       mutate()
     } catch (e: any) {

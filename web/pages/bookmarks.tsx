@@ -1,6 +1,6 @@
 import useSWR from 'swr'
 import Nav from '../components/Nav'
-import { sdk } from '../lib/sdk'
+import { v1 } from '../lib/openapi'
 import { useEffect, useState } from 'react'
 import Alert from '../components/Alert'
 
@@ -17,8 +17,8 @@ export default function Bookmarks() {
   const [fuzzy, setFuzzy] = useState(false)
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
   const { data, error, isLoading, mutate } = useSWR([`/v1/bookmarks`, page, search, feedId, since, until, fuzzy],
-    ([, p, q, f, s, u, z]) => sdk.listBookmarks({ page: p, search: q, feed_id: f || undefined, since: addZ(s), until: addZ(u), fuzzy: z || undefined }))
-  const { data: feeds } = useSWR([`/v1/feeds`], () => sdk.listFeeds())
+    ([, p, q, f, s, u, z]) => v1.listBookmarksV1BookmarksGet({ page: p, search: q, feedId: f || undefined, since: addZ(s), until: addZ(u), fuzzy: z || undefined }))
+  const { data: feeds } = useSWR([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
   const feedItems = Array.isArray(feeds) ? feeds : feeds?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
@@ -69,7 +69,7 @@ export default function Bookmarks() {
     if (!ids.length) return
     if (!confirm(`Delete ${ids.length} bookmarks? This also deletes in Instapaper.`)) return
     try {
-      await sdk.bulkDeleteBookmarks(ids, true)
+      await v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody: { ids, delete_remote: true } })
       setBanner({ kind: 'success', message: `Deleted ${ids.length} bookmarks.` })
       setSelected({})
       mutate()

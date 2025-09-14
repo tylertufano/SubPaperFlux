@@ -6,71 +6,71 @@ Status legend: [x] done, [ ] todo
 
 ## Phase 0 — Foundations
 
-- [x] Auth (OIDC): Secure login via provider; session handling; token refresh.
+- [x] Auth (OIDC): Secure login via provider; session handling; token refresh. (UI-022)
   - Evidence: `web/pages/api/auth/[...nextauth].ts:1`
-- [x] Design System: Tailwind CSS + Headless patterns.
+- [x] Design System: Tailwind CSS + Headless patterns. (UI-023)
   - Evidence: `web/tailwind.config.js:1`, `web/styles/globals.css:1`
-- [x] Routing/Layout: App shell with nav, breadcrumbs, responsive breakpoints.
+- [x] Routing/Layout: App shell with nav, breadcrumbs, responsive breakpoints. (UI-024)
   - Evidence: `web/components/Nav.tsx:1`, Next.js pages in `web/pages`
-- [ ] SDK Integration: Use generated TypeScript SDK + typed models for API calls.
-  - [x] Centralized auth + JSON client in `web/lib/sdk.ts:1`
+- [x] SDK Integration: Use generated TypeScript SDK + typed models for API calls (UI-002).
+  - [x] Centralized wrapper around generated SDK in `web/lib/openapi.ts`
   - [x] Generated SDK present in `sdk/ts`
-  - [ ] Pages use generated SDK types; remove legacy `web/lib/api.ts` usage (`web/pages/admin.tsx:2`)
-- [ ] Error + Empty States: Friendly messages, retry actions, contact link.
+  - [x] Pages migrated to generated SDK; removed legacy helpers (`web/lib/api.ts`, `web/lib/sdk.ts`) (UI-002)
+- [ ] Error + Empty States: Friendly messages, retry actions, contact link (UI-007).
   - [x] Alerts component exists: `web/components/Alert.tsx:1`
-  - [ ] Purposeful empty states across pages
-- [x] State & Caching: SWR for caching/retries/refresh.
+  - [ ] Purposeful empty states across pages (UI-007)
+- [x] State & Caching: SWR for caching/retries/refresh. (UI-025)
   - Evidence: `web/package.json:15`, `web/pages/*:1`
-- [ ] Accessibility: Semantic markup, focus states, ARIA, color contrast checks.
-  - [ ] Add ARIA and contrast audits
-- [ ] i18n-Ready: Wrap text for translation; locale switch scaffold.
+- [ ] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
+  - [ ] Add ARIA and contrast audits (UI-030, UI-032)
+- [ ] i18n-Ready: Wrap text for translation; locale switch scaffold (UI-013).
   - [x] Minimal provider: `web/lib/i18n.tsx:29`
-  - [ ] Expand string catalog beyond Nav/Home
+  - [ ] Expand string catalog beyond Nav/Home (UI-013)
 
 ## Phase 1 — Core UX (MVP)
 
-- [ ] Dashboard
-  - [ ] Health, counts, quick links (Home is placeholder: `web/pages/index.tsx:1`)
-- [ ] Bookmarks
+- [ ] Dashboard (UI-003)
+  - [ ] Health, counts, quick links (Home is placeholder: `web/pages/index.tsx:1`) (UI-003)
+- [ ] Bookmarks (UI-021)
   - [x] Pagination, search, filters, fuzzy toggle: `web/pages/bookmarks.tsx:1`
   - [x] Bulk delete and export (JSON/CSV)
-  - [ ] Sorting
+  - [ ] Sorting (UI-004)
 - [x] Jobs
   - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
   - [x] Backoff timer and dedupe badges
   - [x] Retry and Retry All failed/dead
-- [ ] Credentials
+- [ ] Credentials (UI-056)
   - [x] List, create, delete
   - [x] Test Instapaper/Miniflux
-  - [ ] Update forms
-- [ ] Site Configs
+  - [ ] Update forms (UI-006)
+- [ ] Site Configs (UI-057)
   - [x] List, create, delete
   - [x] Test login
-  - [ ] Update forms
-- [ ] Feeds
-  - [ ] List page and CRUD (used for selection only)
-- [ ] Admin
+  - [ ] Update forms (UI-006)
+- [ ] Feeds (UI-005)
+  - [ ] List page and CRUD (used for selection only) (UI-005)
+- [ ] Admin (UI-015)
   - [x] PG prep (pg_trgm/indexes) and enable RLS: `web/pages/admin.tsx:12`
-  - [ ] Health/status panels and system info
+  - [ ] Health/status panels and system info (UI-015)
 
 ## Phase 1.5 — Harden and Accelerate
 
 ### Integrate the generated TypeScript SDK
 
-- [x] Export OpenAPI and generate SDK
+- [x] Export OpenAPI and generate SDK (UI-002)
 
 ```sh
 make openapi-export API_BASE=http://localhost:8000
 make sdk-ts
 ```
 
-- [ ] Replace `web/lib/api.ts` calls with generated SDK client and types
+- [x] Replace `web/lib/api.ts` calls with generated SDK client and types (UI-001)
 - [x] Centralize auth injection (Bearer token) via configuration
 
 ### Add CRUD forms (Credentials + Site Configs)
 
 - [x] Create/delete forms
-- [ ] Update forms
+- [ ] Update forms (UI-006)
 - [x] CSRF header for cookie-mode auth
 - [x] Never echo secrets in UI logs
 
@@ -81,90 +81,90 @@ make sdk-ts
 ### Add basic i18n
 
 - [x] Provider + locale switch
-- [ ] Extract core strings and page text
+- [ ] Extract core strings and page text (UI-013)
 
 ### Testing
 
-- [ ] Component tests for filters/pagination and form validations
-- [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run)
+- [ ] Component tests for filters/pagination and form validations (UI-014)
+- [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
 
 ### Queue/Idempotency UX
 
 - [x] Show dedupe feedback when publish is skipped
 - [x] Surface job backoff timers and `last_error`
 - [x] Retry All failed/dead
-- [ ] Dead-letter queue view
+- [ ] Dead-letter queue view (UI-008)
 
 ## Phase 2 — Power Features
 
 - [x] Saved Views (Bookmarks)
-- [ ] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort
-- [ ] Bulk Actions
+ - [ ] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
+- [ ] Bulk Actions (UI-027)
   - [x] Delete/export
-  - [ ] Publish; progress modals
-- [ ] Tags & Folders
-- [ ] Preview Pane (sanitized HTML)
-- [ ] Jobs Streaming (WebSocket/SSE)
-- [ ] Activity Log
+  - [ ] Publish; progress modals (UI-028)
+ - [ ] Tags & Folders (UI-018)
+ - [ ] Preview Pane (sanitized HTML) (UI-017)
+ - [ ] Jobs Streaming (WebSocket/SSE) (UI-009)
+- [ ] Activity Log (UI-029)
 
 ## Optional / Recommended
 
 ### Accessibility (a11y)
 
-- [ ] Expand ARIA labeling (inputs, alerts)
-- [ ] Keyboard navigation patterns (focus traps)
-- [ ] Color contrast audits and dark mode
+- [ ] Expand ARIA labeling (inputs, alerts) (UI-030)
+- [ ] Keyboard navigation patterns (focus traps) (UI-031)
+- [ ] Color contrast audits and dark mode (UI-032)
 
 ### Internationalization (i18n)
 
-- [ ] Expand string catalog beyond Nav/Home
-- [ ] Locale detection and formatting (dates, numbers)
+- [ ] Expand string catalog beyond Nav/Home (UI-033)
+- [ ] Locale detection and formatting (dates, numbers) (UI-034)
 
 ### Observability
 
-- [ ] Per-endpoint histograms and job durations (UI surfacing)
-- [ ] Sentry client for UI and better grouping
+ - [ ] Per-endpoint histograms and job durations (UI surfacing) (UI-045)
+ - [ ] Sentry client for UI and better grouping (UI-011)
 
 ### Security
 
-- [ ] DB RLS: Set `app.user_id` per DB session (middleware)
+ - [ ] DB RLS: Set `app.user_id` per DB session (middleware) (UI-012)
 - [x] CSRF: UI sends `X-CSRF-Token`
 
 ### API Polish
 
-- [ ] Uniform error responses (`application/problem+json`)
-- [ ] SSE/WebSockets for jobs to remove polling
+- [ ] Uniform error responses (`application/problem+json`) (UI-036)
+- [ ] SSE/WebSockets for jobs to remove polling (UI-009)
 
 ## Phase 3 — Onboarding & Guidance
 
-- [ ] Setup Wizard
-- [ ] Inline Tips
-- [ ] Templates Gallery
+- [ ] Setup Wizard (UI-037)
+- [ ] Inline Tips (UI-038)
+- [ ] Templates Gallery (UI-039)
 
 ## Phase 4 — Multi-User & Sharing
 
-- [ ] RBAC UI
-- [ ] Global Assets (copy to my workspace)
-- [ ] Org Views / user management (if not delegated to IdP)
+- [ ] RBAC UI (UI-040)
+- [ ] Global Assets (copy to my workspace) (UI-041)
+- [ ] Org Views / user management (if not delegated to IdP) (UI-042)
 
 ## Phase 5 — Observability & Ops
 
-- [ ] Metrics View (Prometheus in UI)
-- [ ] Health Console (integration checks, rate-limit insights)
+- [ ] Metrics View (Prometheus in UI) (UI-043)
+- [ ] Health Console (integration checks, rate-limit insights) (UI-044)
 
 ### Admin & System
 
 - [x] PG Prep: Buttons for `pg_trgm`/indexes; result details
-- [ ] RLS: Enable/disable with warnings; doc links
-- [ ] System View: OpenAPI doc link, metrics endpoint, version
+ - [ ] RLS: Enable/disable with warnings; doc links (UI-046)
+  - [ ] System View: OpenAPI doc link, metrics endpoint, version (UI-015)
 
 ## UX Details
 
-- [ ] Consistency: Standard pagination (`page`/`size`), sorting, search input patterns
-- [ ] Keyboard Shortcuts: `/` focus search; `j/k` navigate; `?` help
-- [ ] Empty States: Templates/onboarding actions instead of blank tables
+- [ ] Consistency: Standard pagination (`page`/`size`), sorting, search input patterns (UI-047)
+ - [ ] Keyboard Shortcuts: `/` focus search; `j/k` navigate; `?` help (UI-016)
+ - [ ] Empty States: Templates/onboarding actions instead of blank tables (UI-007)
 - [x] Confirmation: Dangerous actions gated (bulk delete)
-- [ ] Responsive: Card layouts on mobile; advanced filters in Drawer
+- [ ] Responsive: Card layouts on mobile; advanced filters in Drawer (UI-048)
 
 ## Security & Privacy
 
@@ -175,27 +175,27 @@ make sdk-ts
 
 ## Performance & Robustness
 
-- [ ] Retry Policies: Network retry with exponential backoff in SDK
-- [ ] Backpressure: Disable/enqueue bulk buttons if rate limits hit; show wait times
-- [ ] Optimistic UX: Deletes/retries optimistic with reconciliation
+ - [ ] Retry Policies: Network retry with exponential backoff in SDK (UI-019)
+ - [ ] Backpressure: Disable/enqueue bulk buttons if rate limits hit; show wait times (UI-020)
+- [ ] Optimistic UX: Deletes/retries optimistic with reconciliation (UI-049)
 
 ## Testing & Quality
 
-- [ ] Unit: Component tests for filters, pagination, modals
-- [ ] Integration: Mock SDK to simulate API; test flows
-- [ ] E2E: Playwright/Cypress for login, CRUD, job retry, bulk delete
-- [ ] Accessibility: Axe audits in CI; color contrast testing
+- [ ] Unit: Component tests for filters, pagination, modals (UI-014)
+- [ ] Integration: Mock SDK to simulate API; test flows (UI-050)
+ - [ ] E2E: Playwright/Cypress for login, CRUD, job retry, bulk delete (UI-014)
+- [ ] Accessibility: Axe audits in CI; color contrast testing (UI-051)
 
 ## CI/CD & Ops
 
-- [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis
-- [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags
-- [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback
+- [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
+- [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
+- [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback (UI-011)
 
 ## Data Migrations & Compatibility
 
-- [ ] API Compatibility: Use `/v1` endpoints only; track deprecations
-- [ ] SDK Versioning: Lock SDK version per UI release; changelog/upgrade notes
+- [ ] API Compatibility: Use `/v1` endpoints only; track deprecations (UI-054)
+- [ ] SDK Versioning: Lock SDK version per UI release; changelog/upgrade notes (UI-055)
 
 ## Rollout Plan
 
@@ -211,42 +211,42 @@ make sdk-ts
 
 ### Scope
 
-- [ ] Users table and admin UI
-- [ ] Roles & RBAC with per‑resource ownership
-- [ ] OIDC group→role mapping with per-user overrides
-- [ ] Audit log for admin actions
-- [ ] API tokens (optional)
-- [ ] Quotas/policies per user
-- [ ] RLS enforcement: set `app.user_id` per DB session
+ - [ ] Users table and admin UI (UI-060)
+ - [ ] Roles & RBAC with per‑resource ownership (UI-061)
+ - [ ] OIDC group→role mapping with per-user overrides (UI-062)
+ - [ ] Audit log for admin actions (UI-063)
+ - [ ] API tokens (optional) (UI-064)
+ - [ ] Quotas/policies per user (UI-065)
+ - [ ] RLS enforcement: set `app.user_id` per DB session (UI-012)
 
 ### Integrations
 
-- [ ] OIDC‑only mode auto-provision
-- [ ] SCIM/Sync (optional)
+ - [ ] OIDC‑only mode auto-provision (UI-066)
+ - [ ] SCIM/Sync (optional) (UI-067)
 
 ### Data Model Additions
 
-- [ ] `users`, `roles`, `user_roles`, `audit_log`, `api_tokens`
+ - [ ] `users`, `roles`, `user_roles`, `audit_log`, `api_tokens` (UI-068)
 
 ### API Endpoints
 
-- [ ] `/v1/admin/users`, `/v1/admin/audit`, `/v1/me/tokens`
+ - [ ] `/v1/admin/users`, `/v1/admin/audit`, `/v1/me/tokens` (UI-069)
 
 ### UI
 
-- [ ] Users table, role badges, suspend/reactivate
-- [ ] Audit filters and details
-- [ ] Token management UI
+ - [ ] Users table, role badges, suspend/reactivate (UI-070)
+ - [ ] Audit filters and details (UI-071)
+ - [ ] Token management UI (UI-072)
 
 ### Security & Observability
 
-- [ ] Least privilege enforcement and confirmations
-- [ ] Metrics: `user_logins_total`, `admin_actions_total`, `api_tokens_issued_total`
+ - [ ] Least privilege enforcement and confirmations (UI-073)
+ - [ ] Metrics: `user_logins_total`, `admin_actions_total`, `api_tokens_issued_total` (UI-074)
 
 ### Dependencies & Rollout
 
-- [ ] DB migrations and session var middleware
-- [ ] Rollout: Phase A (users/roles), B (audit/metrics), C (tokens/SCIM)
+ - [ ] DB migrations and session var middleware (UI-075)
+ - [ ] Rollout: Phase A (users/roles), B (audit/metrics), C (tokens/SCIM) (UI-076)
 
 ---
 
@@ -274,4 +274,55 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-018: Tags & folders management for Instapaper
 - UI-019: Retry/backoff policy in client with exponential backoff
 - UI-020: Backpressure UI for bulk actions (rate limit feedback)
-
+ - UI-022: OIDC authentication foundations
+ - UI-023: Design system foundations (Tailwind + Headless)
+ - UI-024: Routing/layout foundations (App shell + nav)
+ - UI-025: State & caching foundations (SWR)
+ - UI-021: Bookmarks module polish and remaining tasks
+ - UI-027: Bulk actions meta (grouped execution UX)
+ - UI-028: Publish action with progress modals
+ - UI-029: Activity log (per-user audit trail)
+ - UI-030: Accessibility ARIA labeling expansion
+ - UI-031: Keyboard navigation patterns (focus traps, shortcuts)
+ - UI-032: Color contrast audits and dark mode
+ - UI-033: i18n string catalog expansion beyond Nav/Home
+ - UI-034: Locale detection and formatting (dates, numbers)
+ - UI-036: Uniform error responses (problem+json)
+ - UI-037: Setup wizard (guided onboarding)
+ - UI-038: Inline tips and contextual helpers
+ - UI-039: Templates gallery (site-config presets)
+ - UI-040: RBAC UI
+ - UI-041: Global assets copy flow
+ - UI-042: Org views and user management
+ - UI-043: Metrics view (Prometheus charts in UI)
+ - UI-044: Health console (integration checks, rate-limit insights)
+ - UI-045: Per-endpoint histograms and job durations (UI surfacing)
+ - UI-046: Admin RLS enable/disable with warnings
+ - UI-047: UX consistency patterns
+ - UI-048: Responsive layout improvements (drawers, mobile)
+ - UI-049: Optimistic UX for deletes/retries
+ - UI-050: Integration tests with mocked SDK
+ - UI-051: Accessibility audits in CI (Axe, contrast)
+ - UI-052: CI builds (lint, type-check, unit/E2E smoke, bundle analysis)
+ - UI-053: Environment configs and feature flags (Dev/Stage/Prod)
+ - UI-054: API compatibility policy (`/v1` only) and deprecation tracking
+ - UI-055: SDK versioning policy and release notes
+ - UI-056: Credentials module polish
+ - UI-057: Site Configs module polish
+ - UI-060: Users table and admin UI
+ - UI-061: Roles & RBAC data model
+ - UI-062: OIDC group-to-role mapping
+ - UI-063: Admin audit log
+ - UI-064: Personal API tokens
+ - UI-065: User quotas and policies
+ - UI-066: OIDC-only auto-provision
+ - UI-067: SCIM import/sync
+ - UI-068: User management data model migrations
+ - UI-069: Admin endpoints (/v1/admin/users, /v1/admin/audit, /v1/me/tokens)
+ - UI-070: Users UI (role badges, suspend/reactivate)
+ - UI-071: Audit UI (filters, drilldown)
+ - UI-072: Token management UI
+ - UI-073: Least-privilege enforcement with confirmations
+ - UI-074: User management metrics
+ - UI-075: Session var middleware + DB migrations
+ - UI-076: User management rollout plan
