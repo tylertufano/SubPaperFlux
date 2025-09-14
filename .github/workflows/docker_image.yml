@@ -28,6 +28,23 @@ jobs:
        username: ${{ secrets.DOCKERHUB_USERNAME }}
        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    # Generate vendored SDK from OpenAPI, then validate the Next.js web build before Docker
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install API dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.api.txt -r requirements.txt
+
+    - name: Generate OpenAPI and vendored SDK
+      shell: bash
+      run: |
+        make openapi-export
+        make sdk-ts-web
+
     # Validate the Next.js web build before building/pushing Docker images
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -59,11 +76,7 @@ jobs:
         images: tylertufano/subpaperflux-web
         flavor: |
          ${{ !contains(github.ref, '-beta') && 'latest=true' || 'latest=false' }}
-    - name: Vendor SDK into web (OpenAPI -> web/sdk)
-      shell: bash
-      run: |
-        make openapi-export API_BASE=${API_BASE:-http://localhost:8000}
-        make sdk-vendor-web
+    # SDK already generated above into web/sdk
 
 
     - name: Build and Push Docker image
