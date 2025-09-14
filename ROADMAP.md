@@ -71,6 +71,15 @@ make sdk-ts
 - [x] Replace `web/lib/api.ts` calls with generated SDK client and types (UI-001)
 - [x] Centralize auth injection (Bearer token) via configuration
 
+### Generated SDK (vendored in web)
+
+- [x] Vendor generated client under `web/sdk` and update imports (UI-078)
+- [x] Wrap generated client in `web/lib/openapi.ts` for auth/CSRF and future retries (UI-079)
+- [x] Update Docker/CI to include `web/sdk` in context (UI-080)
+- [x] Migrate pages from thin fetch wrapper to generated client + types (UI-079)
+- [x] Remove temporary fetch-only fallback once migration completes (UI-081)
+- [ ] Optional: publish `@subpaperflux/sdk` to npm and consume from package (UI-082)
+
 ### Add CRUD forms (Credentials + Site Configs)
 
 - [x] Create/delete forms
@@ -331,3 +340,8 @@ Use these IDs in future prompts to request specific work. We will keep this list
  - UI-074: User management metrics
  - UI-075: Session var middleware + DB migrations
  - UI-076: User management rollout plan
+  - UI-078: Vendor generated SDK under `web/sdk` and update imports
+  - UI-079: Wrap generated client in `web/lib/openapi.ts`; migrate pages
+  - UI-080: Docker/CI step to generate SDK or include vendored SDK
+  - UI-081: Remove temporary fetch-only fallback
+  - UI-082: Optionally publish `@subpaperflux/sdk` and adopt

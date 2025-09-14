@@ -28,6 +28,22 @@ jobs:
        username: ${{ secrets.DOCKERHUB_USERNAME }}
        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    # Validate the Next.js web build before building/pushing Docker images
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install web dependencies
+      working-directory: web
+      run: npm ci
+
+    - name: Build web (Next.js)
+      working-directory: web
+      run: npm run build
+
     - name: Extract Docker metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -43,6 +59,11 @@ jobs:
         images: tylertufano/subpaperflux-web
         flavor: |
          ${{ !contains(github.ref, '-beta') && 'latest=true' || 'latest=false' }}
+    - name: Vendor SDK into web (OpenAPI -> web/sdk)
+      shell: bash
+      run: |
+        make openapi-export API_BASE=${API_BASE:-http://localhost:8000}
+        make sdk-vendor-web
 
 
     - name: Build and Push Docker image

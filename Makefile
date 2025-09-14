@@ -2,7 +2,7 @@ SHELL := /bin/sh
 
 export DATABASE_URL ?= sqlite:///./dev.db
 
-.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts
+.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts sdk-ts-web sdk-vendor-web
 
 api:
 	uvicorn app.main:app --reload --port 8000
@@ -36,6 +36,19 @@ sdk-ts:
 	OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
 	OUT_DIR=$${OUT_DIR:-./sdk/ts}; \
 	bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR
+
+# Generate SDK directly into web/sdk (vendored)
+sdk-ts-web:
+	OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
+	OUT_DIR=$${OUT_DIR:-./web/sdk}; \
+	bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR; \
+	bash scripts/vendor_sdk_web.sh postprocess
+
+# Copy existing generated SDK (sdk/ts) into web/sdk and postprocess for Next build
+sdk-vendor-web:
+	rm -rf web/sdk && mkdir -p web; \
+	cp -R sdk/ts web/sdk; \
+	bash scripts/vendor_sdk_web.sh postprocess
 
 # ---- API helpers ----
 # Required: API_BASE, TOKEN

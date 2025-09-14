@@ -1,29 +1,64 @@
+import { Configuration } from '../sdk/src/runtime'
+import { V1Api } from '../sdk/src/apis/V1Api'
+import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
+import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
+import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import { getSession } from 'next-auth/react'
-import { Configuration } from '../../sdk/ts/src/runtime'
-import { V1Api } from '../../sdk/ts/src/apis/V1Api'
-import { CredentialsApi } from '../../sdk/ts/src/apis/CredentialsApi'
-import { SiteConfigsApi } from '../../sdk/ts/src/apis/SiteConfigsApi'
-import { AdminApi } from '../../sdk/ts/src/apis/AdminApi'
-import { FeedsApi } from '../../sdk/ts/src/apis/FeedsApi'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
 const config = new Configuration({
   basePath: API_BASE,
-  // Provide access token dynamically from NextAuth session on each request
   accessToken: async () => {
     const session = await getSession()
     return (session?.accessToken as string) || ''
   },
-  // Send CSRF header when cookie-mode auth is used; harmless otherwise
-  headers: {
-    'X-CSRF-Token': CSRF,
-  },
+  headers: { 'X-CSRF-Token': CSRF },
 })
 
-export const v1 = new V1Api(config)
-export const creds = new CredentialsApi(config)
-export const siteConfigs = new SiteConfigsApi(config)
-export const admin = new AdminApi(config)
-export const feeds = new FeedsApi(config)
+const v1Client = new V1Api(config)
+const credClient = new CredentialsApi(config)
+const siteClient = new SiteConfigsApi(config)
+const feedsClient = new FeedsApi(config)
+
+export const v1 = {
+  listBookmarksV1BookmarksGet: (p: any = {}) => v1Client.listBookmarksV1BookmarksGet(p),
+  bulkDeleteBookmarksV1BookmarksBulkDeletePost: ({ requestBody }: { requestBody: any }) => v1Client.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
+  countBookmarksV1BookmarksCountGet: (p: any = {}) => v1Client.countBookmarksV1BookmarksCountGet(p),
+
+  listFeedsV1V1FeedsGet: (p: any = {}) => v1Client.listFeedsV1V1FeedsGet(p),
+  listCredentialsV1V1CredentialsGet: (p: any = {}) => v1Client.listCredentialsV1V1CredentialsGet(p),
+  listSiteConfigsV1V1SiteConfigsGet: (p: any = {}) => v1Client.listSiteConfigsV1V1SiteConfigsGet(p),
+
+  listJobsV1JobsGet: (p: any = {}) => v1Client.listJobsV1JobsGet(p),
+  getJobV1JobsJobIdGet: ({ jobId }: { jobId: string }) => v1Client.getJobV1JobsJobIdGet({ jobId }),
+  retryJobV1JobsJobIdRetryPost: ({ jobId }: { jobId: string }) => v1Client.retryJobV1JobsJobIdRetryPost({ jobId }),
+  retryAllJobsV1JobsRetryAllPost: ({ requestBody }: { requestBody: any }) => v1Client.retryAllJobsV1JobsRetryAllPost({ requestBody }),
+
+  testInstapaperV1IntegrationsInstapaperTestPost: ({ requestBody }: { requestBody: any }) => v1Client.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody }),
+  testMinifluxV1IntegrationsMinifluxTestPost: ({ requestBody }: { requestBody: any }) => v1Client.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody }),
+  testSiteConfigV1SiteConfigsConfigIdTestPost: ({ configId }: { configId: string }) => v1Client.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId }),
+
+  getStatusV1StatusGet: () => v1Client.getStatusV1StatusGet(),
+  dbStatusV1StatusDbGet: () => v1Client.dbStatusV1StatusDbGet(),
+
+  postgresPrepareV1AdminPostgresPreparePost: () => v1Client.postgresPrepareV1AdminPostgresPreparePost(),
+  postgresEnableRlsV1AdminPostgresEnableRlsPost: () => v1Client.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
+}
+
+export const creds = {
+  createCredentialCredentialsPost: ({ credential }: { credential: any }) => credClient.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
+  deleteCredentialCredentialsCredIdDelete: ({ credId }: { credId: string }) => credClient.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
+}
+
+export const siteConfigs = {
+  createSiteConfigSiteConfigsPost: ({ siteConfig }: { siteConfig: any }) => siteClient.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
+  deleteSiteConfigSiteConfigsConfigIdDelete: ({ configId }: { configId: string }) => siteClient.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
+}
+
+export const feeds = {
+  createFeedFeedsPost: ({ feed }: { feed: any }) => feedsClient.createFeedFeedsPost({ feed }),
+  deleteFeedFeedsFeedIdDelete: ({ feedId }: { feedId: string }) => feedsClient.deleteFeedFeedsFeedIdDelete({ feedId }),
+  updateFeedFeedsFeedIdPut: ({ feedId, feed }: { feedId: string; feed: any }) => feedsClient.updateFeedFeedsFeedIdPut({ feedId, feed }),
+}
