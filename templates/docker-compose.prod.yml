@@ -86,8 +86,13 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://api:8000}
+      # Runtime API base (optional). Prefer same-origin proxy with subpath, e.g. "/api".
+      # If set, the web app discovers this at runtime via /ui-config.
+      API_BASE: ${API_BASE:-/api}
+      # Build-time public API base (optional). Leave empty when using API_BASE/runtime discovery.
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace_me}
       OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-replace_me}
