@@ -12,6 +12,7 @@ from ..schemas import FeedsPage, FeedOut
 router = APIRouter(prefix="/v1/feeds", tags=["v1"])
 
 
+@router.get("", response_model=FeedsPage, summary="List feeds")
 @router.get("/", response_model=FeedsPage, summary="List feeds")
 def list_feeds_v1(
     current_user=Depends(get_current_user),
@@ -39,4 +40,3 @@ def list_feeds_v1(
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return FeedsPage(items=items, total=total, page=page, size=size, has_next=has_next, total_pages=total_pages)
-

@@ -14,6 +14,7 @@ from ..schemas import JobsPage, JobOut
 router = APIRouter(prefix="/v1/jobs", tags=["v1"])
 
 
+@router.get("", response_model=JobsPage, summary="List jobs", description="List jobs with filters, pagination, and sorting.")
 @router.get("/", response_model=JobsPage, summary="List jobs", description="List jobs with filters, pagination, and sorting.")
 def list_jobs(
     current_user=Depends(get_current_user),

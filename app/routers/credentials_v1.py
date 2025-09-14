@@ -13,6 +13,7 @@ from .credentials import _mask_credential
 router = APIRouter(prefix="/v1/credentials", tags=["v1"])
 
 
+@router.get("", response_model=CredentialsPage, summary="List credentials")
 @router.get("/", response_model=CredentialsPage, summary="List credentials")
 def list_credentials_v1(
     current_user=Depends(get_current_user),
@@ -39,4 +40,3 @@ def list_credentials_v1(
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return CredentialsPage(items=items, total=total, page=page, size=size, has_next=has_next, total_pages=total_pages)
-

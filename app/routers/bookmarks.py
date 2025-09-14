@@ -29,6 +29,7 @@ def _apply_filters(stmt, user_id: str, feed_id: Optional[str], since: Optional[s
     return stmt
 
 
+@router.get("", response_model=BookmarksPage)
 @router.get("/", response_model=BookmarksPage)
 def list_bookmarks(
     current_user=Depends(get_current_user),
@@ -163,6 +164,7 @@ def count_bookmarks(
         return {"total": int(total), "total_pages": total_pages}
 
 
+@router.head("")
 @router.head("/")
 def head_bookmarks(
     current_user=Depends(get_current_user),

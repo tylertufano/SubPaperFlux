@@ -11,6 +11,7 @@ from ..models import Feed as FeedModel
 router = APIRouter()
 
 
+@router.get("", response_model=List[FeedSchema])
 @router.get("/", response_model=List[FeedSchema])
 def list_feeds(current_user=Depends(get_current_user), session=Depends(get_session)):
     user_id = current_user["sub"]
