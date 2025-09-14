@@ -95,6 +95,8 @@ jobs:
       with:
        context: ./web
        file: ./web/Dockerfile
+       build-args: |
+        NEXT_PUBLIC_API_BASE=${{ vars.NEXT_PUBLIC_API_BASE || env.NEXT_PUBLIC_API_BASE || secrets.NEXT_PUBLIC_API_BASE }}
        push: true
        platforms: linux/amd64
        tags: ${{ steps.meta_web.outputs.tags }}

@@ -5,7 +5,17 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import { getSession } from 'next-auth/react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
+
+// Warn at runtime if we are on HTTPS but API base is insecure HTTP
+if (typeof window !== 'undefined') {
+  try {
+    if (window.location.protocol === 'https:' && API_BASE && API_BASE.startsWith('http://')) {
+      // eslint-disable-next-line no-console
+      console.warn('[SubPaperFlux] Insecure NEXT_PUBLIC_API_BASE over HTTPS page:', API_BASE)
+    }
+  } catch {}
+}
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
 const config = new Configuration({

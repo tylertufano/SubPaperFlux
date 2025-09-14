@@ -11,6 +11,9 @@ RUN npm ci
 FROM node:20-alpine AS build
 WORKDIR /app
 ENV NODE_ENV=production
+# Allow overriding API base at build time for Next.js static env inlining
+ARG NEXT_PUBLIC_API_BASE
+ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p public \
@@ -21,6 +24,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Optionally expose at runtime too (not required for Next public envs, but harmless)
+ARG NEXT_PUBLIC_API_BASE
+ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 
 # Copy only what we need to run `next start`
 COPY --from=build /app/.next ./.next
