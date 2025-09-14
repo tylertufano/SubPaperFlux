@@ -5,70 +5,98 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import { getSession } from 'next-auth/react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
+const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
+const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
 // Warn at runtime if we are on HTTPS but API base is insecure HTTP
 if (typeof window !== 'undefined') {
   try {
-    if (window.location.protocol === 'https:' && API_BASE && API_BASE.startsWith('http://')) {
+    if (window.location.protocol === 'https:' && BUILD_API_BASE && BUILD_API_BASE.startsWith('http://')) {
       // eslint-disable-next-line no-console
-      console.warn('[SubPaperFlux] Insecure NEXT_PUBLIC_API_BASE over HTTPS page:', API_BASE)
+      console.warn('[SubPaperFlux] Insecure NEXT_PUBLIC_API_BASE over HTTPS page:', BUILD_API_BASE)
     }
   } catch {}
 }
-const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 
-const config = new Configuration({
-  basePath: API_BASE,
-  accessToken: async () => {
-    const session = await getSession()
-    return (session?.accessToken as string) || ''
-  },
-  headers: { 'X-CSRF-Token': CSRF },
-})
+let clientsPromise: Promise<{ v1: V1Api; creds: CredentialsApi; sites: SiteConfigsApi; feeds: FeedsApi }> | null = null
 
-const v1Client = new V1Api(config)
-const credClient = new CredentialsApi(config)
-const siteClient = new SiteConfigsApi(config)
-const feedsClient = new FeedsApi(config)
+async function resolveApiBase(): Promise<string> {
+  if (typeof window === 'undefined') {
+    return process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || ''
+  }
+  if (BUILD_API_BASE) return BUILD_API_BASE
+  const w: any = window as any
+  if (typeof w.__SPF_API_BASE === 'string') return w.__SPF_API_BASE
+  try {
+    const res = await fetch('/api/config')
+    if (res.ok) {
+      const data = await res.json()
+      if (typeof data.apiBase === 'string') return data.apiBase
+    }
+  } catch {}
+  return ''
+}
+
+async function getClients() {
+  if (!clientsPromise) {
+    clientsPromise = (async () => {
+      const basePath = await resolveApiBase()
+      const cfg = new Configuration({
+        basePath,
+        accessToken: async () => {
+          const session = await getSession()
+          return (session?.accessToken as string) || ''
+        },
+        headers: { 'X-CSRF-Token': CSRF },
+      })
+      return {
+        v1: new V1Api(cfg),
+        creds: new CredentialsApi(cfg),
+        sites: new SiteConfigsApi(cfg),
+        feeds: new FeedsApi(cfg),
+      }
+    })()
+  }
+  return clientsPromise
+}
 
 export const v1 = {
-  listBookmarksV1BookmarksGet: (p: any = {}) => v1Client.listBookmarksV1BookmarksGet(p),
-  bulkDeleteBookmarksV1BookmarksBulkDeletePost: ({ requestBody }: { requestBody: any }) => v1Client.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
-  countBookmarksV1BookmarksCountGet: (p: any = {}) => v1Client.countBookmarksV1BookmarksCountGet(p),
+  listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).v1.listBookmarksV1BookmarksGet(p),
+  bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
+  countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).v1.countBookmarksV1BookmarksCountGet(p),
 
-  listFeedsV1V1FeedsGet: (p: any = {}) => v1Client.listFeedsV1V1FeedsGet(p),
-  listCredentialsV1V1CredentialsGet: (p: any = {}) => v1Client.listCredentialsV1V1CredentialsGet(p),
-  listSiteConfigsV1V1SiteConfigsGet: (p: any = {}) => v1Client.listSiteConfigsV1V1SiteConfigsGet(p),
+  listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
+  listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
+  listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
 
-  listJobsV1JobsGet: (p: any = {}) => v1Client.listJobsV1JobsGet(p),
-  getJobV1JobsJobIdGet: ({ jobId }: { jobId: string }) => v1Client.getJobV1JobsJobIdGet({ jobId }),
-  retryJobV1JobsJobIdRetryPost: ({ jobId }: { jobId: string }) => v1Client.retryJobV1JobsJobIdRetryPost({ jobId }),
-  retryAllJobsV1JobsRetryAllPost: ({ requestBody }: { requestBody: any }) => v1Client.retryAllJobsV1JobsRetryAllPost({ requestBody }),
+  listJobsV1JobsGet: async (p: any = {}) => (await getClients()).v1.listJobsV1JobsGet(p),
+  getJobV1JobsJobIdGet: async ({ jobId }: { jobId: string }) => (await getClients()).v1.getJobV1JobsJobIdGet({ jobId }),
+  retryJobV1JobsJobIdRetryPost: async ({ jobId }: { jobId: string }) => (await getClients()).v1.retryJobV1JobsJobIdRetryPost({ jobId }),
+  retryAllJobsV1JobsRetryAllPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.retryAllJobsV1JobsRetryAllPost({ requestBody }),
 
-  testInstapaperV1IntegrationsInstapaperTestPost: ({ requestBody }: { requestBody: any }) => v1Client.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody }),
-  testMinifluxV1IntegrationsMinifluxTestPost: ({ requestBody }: { requestBody: any }) => v1Client.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody }),
-  testSiteConfigV1SiteConfigsConfigIdTestPost: ({ configId }: { configId: string }) => v1Client.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId }),
+  testInstapaperV1IntegrationsInstapaperTestPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody }),
+  testMinifluxV1IntegrationsMinifluxTestPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody }),
+  testSiteConfigV1SiteConfigsConfigIdTestPost: async ({ configId }: { configId: string }) => (await getClients()).v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId }),
 
-  getStatusV1StatusGet: () => v1Client.getStatusV1StatusGet(),
-  dbStatusV1StatusDbGet: () => v1Client.dbStatusV1StatusDbGet(),
+  getStatusV1StatusGet: async () => (await getClients()).v1.getStatusV1StatusGet(),
+  dbStatusV1StatusDbGet: async () => (await getClients()).v1.dbStatusV1StatusDbGet(),
 
-  postgresPrepareV1AdminPostgresPreparePost: () => v1Client.postgresPrepareV1AdminPostgresPreparePost(),
-  postgresEnableRlsV1AdminPostgresEnableRlsPost: () => v1Client.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
+  postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).v1.postgresPrepareV1AdminPostgresPreparePost(),
+  postgresEnableRlsV1AdminPostgresEnableRlsPost: async () => (await getClients()).v1.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
 }
 
 export const creds = {
-  createCredentialCredentialsPost: ({ credential }: { credential: any }) => credClient.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
-  deleteCredentialCredentialsCredIdDelete: ({ credId }: { credId: string }) => credClient.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
+  createCredentialCredentialsPost: async ({ credential }: { credential: any }) => (await getClients()).creds.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
+  deleteCredentialCredentialsCredIdDelete: async ({ credId }: { credId: string }) => (await getClients()).creds.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
 }
 
 export const siteConfigs = {
-  createSiteConfigSiteConfigsPost: ({ siteConfig }: { siteConfig: any }) => siteClient.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
-  deleteSiteConfigSiteConfigsConfigIdDelete: ({ configId }: { configId: string }) => siteClient.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
+  createSiteConfigSiteConfigsPost: async ({ siteConfig }: { siteConfig: any }) => (await getClients()).sites.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
+  deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) => (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
 }
 
 export const feeds = {
-  createFeedFeedsPost: ({ feed }: { feed: any }) => feedsClient.createFeedFeedsPost({ feed }),
-  deleteFeedFeedsFeedIdDelete: ({ feedId }: { feedId: string }) => feedsClient.deleteFeedFeedsFeedIdDelete({ feedId }),
-  updateFeedFeedsFeedIdPut: ({ feedId, feed }: { feedId: string; feed: any }) => feedsClient.updateFeedFeedsFeedIdPut({ feedId, feed }),
+  createFeedFeedsPost: async ({ feed }: { feed: any }) => (await getClients()).feeds.createFeedFeedsPost({ feed }),
+  deleteFeedFeedsFeedIdDelete: async ({ feedId }: { feedId: string }) => (await getClients()).feeds.deleteFeedFeedsFeedIdDelete({ feedId }),
+  updateFeedFeedsFeedIdPut: async ({ feedId, feed }: { feedId: string; feed: any }) => (await getClients()).feeds.updateFeedFeedsFeedIdPut({ feedId, feed }),
 }
