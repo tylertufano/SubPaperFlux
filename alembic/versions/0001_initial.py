@@ -39,8 +39,8 @@ def upgrade() -> None:
         sa.Column('url', sa.String(), nullable=False),
         sa.Column('poll_frequency', sa.String(), nullable=False),
         sa.Column('initial_lookback_period', sa.String(), nullable=True),
-        sa.Column('is_paywalled', sa.Boolean(), nullable=False, server_default=sa.text('0')),
-        sa.Column('rss_requires_auth', sa.Boolean(), nullable=False, server_default=sa.text('0')),
+        sa.Column('is_paywalled', sa.Boolean(), nullable=False, server_default=sa.text('false')),
+        sa.Column('rss_requires_auth', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('site_config_id', sa.String(), nullable=True),
         sa.Column('owner_user_id', sa.String(), nullable=True),
     )
@@ -84,4 +84,3 @@ def downgrade() -> None:
 
     op.drop_index('ix_siteconfig_owner_user_id', table_name='siteconfig')
     op.drop_table('siteconfig')
-
