@@ -37,3 +37,21 @@ def delete_feed(feed_id: str, current_user=Depends(get_current_user), session=De
     session.delete(model)
     session.commit()
     return None
+
+
+@router.put("/{feed_id}", response_model=FeedSchema)
+def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
+    model = session.get(FeedModel, feed_id)
+    if not model or model.owner_user_id != current_user["sub"]:
+        return None
+    # Update allowed fields
+    model.url = body.url
+    model.poll_frequency = body.poll_frequency
+    model.initial_lookback_period = body.initial_lookback_period
+    model.is_paywalled = body.is_paywalled
+    model.rss_requires_auth = body.rss_requires_auth
+    model.site_config_id = body.site_config_id
+    session.add(model)
+    session.commit()
+    session.refresh(model)
+    return model

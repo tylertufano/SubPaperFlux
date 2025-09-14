@@ -4,6 +4,7 @@ import { V1Api } from '../../sdk/ts/src/apis/V1Api'
 import { CredentialsApi } from '../../sdk/ts/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../../sdk/ts/src/apis/SiteConfigsApi'
 import { AdminApi } from '../../sdk/ts/src/apis/AdminApi'
+import { FeedsApi } from '../../sdk/ts/src/apis/FeedsApi'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
@@ -25,4 +26,4 @@ export const v1 = new V1Api(config)
 export const creds = new CredentialsApi(config)
 export const siteConfigs = new SiteConfigsApi(config)
 export const admin = new AdminApi(config)
-
+export const feeds = new FeedsApi(config)

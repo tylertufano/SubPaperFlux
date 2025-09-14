@@ -29,7 +29,7 @@ Status legend: [x] done, [ ] todo
 
 ## Phase 1 — Core UX (MVP)
 
-- [ ] Dashboard (UI-003)
+- [x] Dashboard (UI-003)
   - [ ] Health, counts, quick links (Home is placeholder: `web/pages/index.tsx:1`) (UI-003)
 - [ ] Bookmarks (UI-021)
   - [x] Pagination, search, filters, fuzzy toggle: `web/pages/bookmarks.tsx:1`
@@ -49,9 +49,13 @@ Status legend: [x] done, [ ] todo
   - [ ] Update forms (UI-006)
 - [ ] Feeds (UI-005)
   - [ ] List page and CRUD (used for selection only) (UI-005)
+    - [x] List
+    - [x] Create
+    - [x] Delete
+    - [x] Update (UI-077)
 - [ ] Admin (UI-015)
   - [x] PG prep (pg_trgm/indexes) and enable RLS: `web/pages/admin.tsx:12`
-  - [ ] Health/status panels and system info (UI-015)
+  - [x] Health/status panels and system info (UI-015)
 
 ## Phase 1.5 — Harden and Accelerate
 
@@ -309,6 +313,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
  - UI-055: SDK versioning policy and release notes
  - UI-056: Credentials module polish
  - UI-057: Site Configs module polish
+  - UI-077: Add PUT /feeds/{id} endpoint (backend), regenerate SDK and wire UI update form
  - UI-060: Users table and admin UI
  - UI-061: Roles & RBAC data model
  - UI-062: OIDC group-to-role mapping

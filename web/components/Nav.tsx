@@ -15,6 +15,7 @@ export default function Nav() {
         <Link href="/" className="font-semibold">SubPaperFlux</Link>
         <Link href="/bookmarks" className={linkClass('/bookmarks')}>{t('nav_bookmarks')}</Link>
         <Link href="/jobs" className={linkClass('/jobs')}>{t('nav_jobs')}</Link>
+        <Link href="/feeds" className={linkClass('/feeds')}>Feeds</Link>
         <Link href="/credentials" className={linkClass('/credentials')}>{t('nav_credentials')}</Link>
         <Link href="/site-configs" className={linkClass('/site-configs')}>{t('nav_site_configs')}</Link>
         <Link href="/admin" className={linkClass('/admin')}>{t('nav_admin')}</Link>
