@@ -78,8 +78,7 @@ services:
         condition: service_healthy
 
   web:
-    image: node:20-alpine
-    working_dir: /app/web
+    image: tylertufano/subpaperflux-web:latest
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -88,9 +87,6 @@ services:
       OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-replace_me}
-    command: ["sh", "-lc", "npm ci && npm run build && npm run start"]
-    volumes:
-      - .:/app:ro
     ports:
       - "3000:3000"
     depends_on:

@@ -36,6 +36,14 @@ jobs:
         flavor: |
          ${{ !contains(github.ref, '-beta') && 'latest=true' || 'latest=false' }}
 
+    - name: Extract Docker metadata (web)
+      id: meta_web
+      uses: docker/metadata-action@v5
+      with:
+        images: tylertufano/subpaperflux-web
+        flavor: |
+         ${{ !contains(github.ref, '-beta') && 'latest=true' || 'latest=false' }}
+
 
     - name: Build and Push Docker image
       uses: docker/build-push-action@v5
@@ -45,5 +53,17 @@ jobs:
        platforms: linux/amd64
        tags: ${{ steps.meta.outputs.tags }}
        labels: ${{ steps.meta.outputs.labels }}
+       cache-from: type=gha
+       cache-to: type=gha,mode=max
+
+    - name: Build and Push Web Docker image
+      uses: docker/build-push-action@v5
+      with:
+       context: ./web
+       file: ./web/Dockerfile
+       push: true
+       platforms: linux/amd64
+       tags: ${{ steps.meta_web.outputs.tags }}
+       labels: ${{ steps.meta_web.outputs.labels }}
        cache-from: type=gha
        cache-to: type=gha,mode=max
