@@ -72,7 +72,7 @@ export interface JobOut {
      * @type {{ [key: string]: any; }}
      * @memberof JobOut
      */
-    details?: { [key: string]: any; } | null;
+    details?: { [key: string]: any; };
 }
 
 /**
