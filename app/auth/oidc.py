@@ -10,12 +10,17 @@ from jose import jwt
 from jose.utils import base64url_decode
 
 
-security = HTTPBearer(auto_error=True)
+security = HTTPBearer(auto_error=False)
 
 
 class OIDCConfig:
     def __init__(self):
-        self.issuer: str = os.getenv("OIDC_ISSUER", "")
+        # Accept either the issuer base (e.g., https://idp/realms/xyz)
+        # or the full discovery URL (e.g., https://idp/realms/xyz/.well-known/openid-configuration)
+        issuer = os.getenv("OIDC_ISSUER", "")
+        if issuer.endswith("/.well-known/openid-configuration"):
+            issuer = issuer[: -len("/.well-known/openid-configuration")]
+        self.issuer: str = issuer
         self.audience: Optional[str] = os.getenv("OIDC_AUDIENCE")
         self.client_id: Optional[str] = os.getenv("OIDC_CLIENT_ID")
         # If not provided, will be discovered via issuer
@@ -117,7 +122,7 @@ def _verify_jwt(token: str, cfg: OIDCConfig) -> Dict[str, Any]:
     return payload
 
 
-def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
     # Dev/test bypass: enable with DEV_NO_AUTH=1 (NOT for production)
     if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
         dev_groups = os.getenv("DEV_USER_GROUPS", "").split(",") if os.getenv("DEV_USER_GROUPS") else []
@@ -129,7 +134,7 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) ->
             "claims": {"dev_no_auth": True},
         }
 
-    token = creds.credentials
+    token = creds.credentials if creds else None
     cfg = get_oidc_config()
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
