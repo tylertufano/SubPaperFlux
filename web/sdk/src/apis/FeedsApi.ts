@@ -33,6 +33,11 @@ export interface DeleteFeedFeedsFeedIdDeleteRequest {
     feedId: string;
 }
 
+export interface UpdateFeedFeedsFeedIdPutRequest {
+    feedId: string;
+    feed: Feed;
+}
+
 /**
  * 
  */
@@ -163,6 +168,98 @@ export class FeedsApi extends runtime.BaseAPI {
      */
     async listFeedsFeedsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Feed>> {
         const response = await this.listFeedsFeedsGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List Feeds
+     */
+    async listFeedsFeedsGet_1Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Feed>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/feeds`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FeedFromJSON));
+    }
+
+    /**
+     * List Feeds
+     */
+    async listFeedsFeedsGet_1(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Feed>> {
+        const response = await this.listFeedsFeedsGet_1Raw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update Feed
+     */
+    async updateFeedFeedsFeedIdPutRaw(requestParameters: UpdateFeedFeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Feed>> {
+        if (requestParameters['feedId'] == null) {
+            throw new runtime.RequiredError(
+                'feedId',
+                'Required parameter "feedId" was null or undefined when calling updateFeedFeedsFeedIdPut().'
+            );
+        }
+
+        if (requestParameters['feed'] == null) {
+            throw new runtime.RequiredError(
+                'feed',
+                'Required parameter "feed" was null or undefined when calling updateFeedFeedsFeedIdPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/feeds/{feed_id}`;
+        urlPath = urlPath.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters['feedId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FeedToJSON(requestParameters['feed']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FeedFromJSON(jsonValue));
+    }
+
+    /**
+     * Update Feed
+     */
+    async updateFeedFeedsFeedIdPut(requestParameters: UpdateFeedFeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Feed> {
+        const response = await this.updateFeedFeedsFeedIdPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

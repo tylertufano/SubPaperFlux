@@ -14,7 +14,7 @@ Status legend: [x] done, [ ] todo
   - Evidence: `web/components/Nav.tsx:1`, Next.js pages in `web/pages`
 - [x] SDK Integration: Use generated TypeScript SDK + typed models for API calls (UI-002).
   - [x] Centralized wrapper around generated SDK in `web/lib/openapi.ts`
-  - [x] Generated SDK present in `sdk/ts`
+  - [x] Generated SDK present in `web/sdk`
   - [x] Pages migrated to generated SDK; removed legacy helpers (`web/lib/api.ts`, `web/lib/sdk.ts`) (UI-002)
 - [ ] Error + Empty States: Friendly messages, retry actions, contact link (UI-007).
   - [x] Alerts component exists: `web/components/Alert.tsx:1`
@@ -259,7 +259,7 @@ make sdk-ts
 Use these IDs in future prompts to request specific work. We will keep this list updated as items are completed.
 
 - UI-001: Replace `web/pages/admin.tsx` usage of `web/lib/api.ts` with generated SDK client
-- UI-002: Adopt generated SDK (`sdk/ts`) across pages; remove manual `web/lib/sdk.ts` or wrap generated client
+- UI-002: Adopt generated SDK (`web/sdk`) across pages; remove manual `web/lib/sdk.ts` or wrap generated client
 - UI-003: Implement Dashboard with counts/health panels
 - UI-004: Add sorting to Bookmarks table
 - UI-005: Build Feeds page (list/create/update/delete) and link relations

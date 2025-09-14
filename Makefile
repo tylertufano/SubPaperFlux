@@ -34,7 +34,7 @@ openapi-export:
 
 sdk-ts:
 	OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
-	OUT_DIR=$${OUT_DIR:-./sdk/ts}; \
+       OUT_DIR=$${OUT_DIR:-./web/sdk}; \
 	bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR
 
 # ---- API helpers ----

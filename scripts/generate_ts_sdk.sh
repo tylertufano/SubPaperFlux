@@ -6,10 +6,10 @@ set -euo pipefail
 #   scripts/generate_ts_sdk.sh [OPENAPI_SPEC] [OUT_DIR]
 # Defaults:
 #   OPENAPI_SPEC: ./openapi.json
-#   OUT_DIR: ./sdk/ts
+#   OUT_DIR: ./web/sdk
 
 OPENAPI_SPEC=${1:-./openapi.json}
-OUT_DIR=${2:-./sdk/ts}
+OUT_DIR=${2:-./web/sdk}
 GENERATOR_IMAGE=${GENERATOR_IMAGE:-openapitools/openapi-generator-cli:v6.6.0}
 GENERATOR=${GENERATOR:-typescript-fetch}
 
