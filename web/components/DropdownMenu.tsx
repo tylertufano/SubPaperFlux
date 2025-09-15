@@ -18,7 +18,9 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
   const menuRef = React.useRef<HTMLDivElement | null>(null)
   const menuId = React.useId()
   const isActive = (href: string) => currentPath === href
-  const linkClass = (href: string) => (isActive(href) ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900')
+  const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
+  const linkClass = (href: string) =>
+    `${baseLinkStyles} ${isActive(href) ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
 
   React.useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -65,6 +67,7 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-current={isActive(baseHref) ? 'page' : undefined}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
@@ -99,13 +102,20 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
       >
         {items.map((it, idx) => (
           it.href ? (
-            <Link key={it.href + idx} href={it.href} className="block px-3 py-2 text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none" role="menuitem" tabIndex={-1}>
+            <Link
+              key={it.href + idx}
+              href={it.href}
+              className="block px-3 py-2 text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+              role="menuitem"
+              tabIndex={-1}
+              aria-current={isActive(it.href) ? 'page' : undefined}
+            >
               {it.label}
             </Link>
           ) : (
             <button
               key={(it.label || 'item') + idx}
-              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               role="menuitem"
               tabIndex={-1}
               onClick={() => { try { it.onClick && it.onClick() } finally { setOpen(false) } }}

@@ -50,14 +50,19 @@ export default function Jobs() {
       <Nav />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-xl font-semibold">{t('jobs_title')}</h2>
+          <h2 id="jobs-heading" className="text-xl font-semibold">{t('jobs_title')}</h2>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/jobs-dead" className="btn">{t('nav_jobs_dead')}</Link>
           </div>
         </div>
-        <div className="card p-4 mb-4 flex items-center gap-2 flex-wrap">
-          <label className="text-gray-700">{t('status_label')}: </label>
-          <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <form
+          className="card p-4 mb-4 flex items-center gap-2 flex-wrap"
+          role="search"
+          aria-labelledby="jobs-heading"
+          onSubmit={(e) => { e.preventDefault(); mutate() }}
+        >
+          <label className="text-gray-700" htmlFor="jobs-status-filter">{t('status_label')}:</label>
+          <select id="jobs-status-filter" className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('jobs_filter_all')}</option>
             <option value="queued">{t('jobs_status_queued')}</option>
             <option value="in_progress">{t('jobs_status_in_progress')}</option>
@@ -65,11 +70,12 @@ export default function Jobs() {
             <option value="failed">{t('jobs_status_failed')}</option>
             <option value="dead">{t('jobs_status_dead')}</option>
           </select>
-          <button className="btn" onClick={() => mutate()}>{t('btn_search')}</button>
-          <button className="btn" onClick={clearFilters}>{t('btn_clear')}</button>
-          <button className="btn" onClick={() => { setStatus('failed,dead'); setPage(1); mutate() }}>{t('nav_jobs_dead')}</button>
+          <button type="submit" className="btn">{t('btn_search')}</button>
+          <button type="button" className="btn" onClick={clearFilters}>{t('btn_clear')}</button>
+          <button type="button" className="btn" onClick={() => { setStatus('failed,dead'); setPage(1); mutate() }}>{t('nav_jobs_dead')}</button>
           <div className="grow" />
           <button
+            type="button"
             className="btn"
             onClick={async () => {
               try {
@@ -81,7 +87,7 @@ export default function Jobs() {
               }
             }}
           >{t('btn_retry_all_failed_dead')}</button>
-        </div>
+        </form>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
@@ -98,7 +104,7 @@ export default function Jobs() {
                   />
                 </div>
               ) : (
-              <table className="table" aria-label={t('jobs_table_label')}>
+              <table className="table" role="table" aria-label={t('jobs_table_label')}>
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="th" scope="col">{t('id_label')}</th>
@@ -133,7 +139,10 @@ export default function Jobs() {
                         </td>
                         <td className="td flex gap-2">
                           <button
+                            type="button"
                             className="btn"
+                            aria-expanded={Boolean(expanded[j.id])}
+                            aria-controls={expanded[j.id] ? `job-row-details-${j.id}` : undefined}
                             onClick={async () => {
                               const next = { ...expanded, [j.id]: !expanded[j.id] }
                               setExpanded(next)
@@ -148,12 +157,12 @@ export default function Jobs() {
                             }}
                           >{t('jobs_details')}</button>
                           {(j.status === 'failed' || j.status === 'dead') && (
-                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
+                            <button type="button" className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
                           )}
                         </td>
                       </tr>
                       {expanded[j.id] && (
-                        <tr key={`${j.id}-details`} className="bg-gray-50">
+                        <tr key={`${j.id}-details`} id={`job-row-details-${j.id}`} className="bg-gray-50">
                           <td className="td" colSpan={6}>
                             <div className="p-3">
                               <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>

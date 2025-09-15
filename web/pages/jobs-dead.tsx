@@ -22,11 +22,12 @@ export default function JobsDead() {
       <Nav />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-xl font-semibold">{t('nav_jobs_dead')}</h2>
+          <h2 id="jobs-dead-heading" className="text-xl font-semibold">{t('nav_jobs_dead')}</h2>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/jobs" className="btn">{t('jobs_back_to_all')}</Link>
           </div>
           <button
+            type="button"
             className="btn"
             onClick={async () => {
               try {
@@ -53,7 +54,7 @@ export default function JobsDead() {
                   />
                 </div>
               ) : (
-              <table className="table" aria-label={t('jobs_dead_table_label')}>
+              <table className="table" role="table" aria-label={t('jobs_dead_table_label')}>
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="th" scope="col">{t('id_label')}</th>
@@ -75,7 +76,10 @@ export default function JobsDead() {
                         <td className="td">{j.last_error || ''}</td>
                         <td className="td flex gap-2">
                           <button
+                            type="button"
                             className="btn"
+                            aria-expanded={Boolean(expanded[j.id])}
+                            aria-controls={expanded[j.id] ? `dead-job-details-${j.id}` : undefined}
                             onClick={async () => {
                               const next = { ...expanded, [j.id]: !expanded[j.id] }
                               setExpanded(next)
@@ -87,11 +91,11 @@ export default function JobsDead() {
                               }
                             }}
                           >{t('jobs_details')}</button>
-                          <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('jobs_dead_retry_success') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
+                          <button type="button" className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('jobs_dead_retry_success') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
                         </td>
                       </tr>
                       {expanded[j.id] && (
-                        <tr key={`${j.id}-details`} className="bg-gray-50">
+                        <tr key={`${j.id}-details`} id={`dead-job-details-${j.id}`} className="bg-gray-50">
                           <td className="td" colSpan={6}>
                             <div className="p-3">
                               <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>

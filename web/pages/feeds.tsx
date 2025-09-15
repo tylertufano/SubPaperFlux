@@ -92,18 +92,56 @@ export default function Feeds() {
     <div>
       <Nav />
       <main className="container py-6">
-        <h2 className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
+        <h2 id="feeds-heading" className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
-        <div id="create-feed" className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
-          <h3 className="font-semibold md:col-span-3">{t('feeds_create_heading')}</h3>
-          <input className="input md:col-span-2" placeholder={t('feeds_field_url_placeholder')} value={url} onChange={e => setUrl(e.target.value)} />
-          <input className="input" placeholder={t('feeds_field_poll_placeholder')} value={poll} onChange={e => setPoll(e.target.value)} />
-          <input className="input" placeholder={t('feeds_field_lookback_placeholder')} value={lookback} onChange={e => setLookback(e.target.value)} />
-          <input className="input" placeholder={t('feeds_field_site_config_placeholder')} value={siteConfigId} onChange={e => setSiteConfigId(e.target.value)} />
+        <form
+          id="create-feed"
+          className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2"
+          role="form"
+          aria-labelledby="create-feed-heading"
+          onSubmit={(e) => { e.preventDefault(); createFeed() }}
+        >
+          <h3 id="create-feed-heading" className="font-semibold md:col-span-3">{t('feeds_create_heading')}</h3>
+          <label className="sr-only" htmlFor="create-feed-url">{t('feeds_field_url_placeholder')}</label>
+          <input
+            id="create-feed-url"
+            className="input md:col-span-2"
+            placeholder={t('feeds_field_url_placeholder')}
+            aria-label={t('feeds_field_url_placeholder')}
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+          />
+          <label className="sr-only" htmlFor="create-feed-poll">{t('feeds_field_poll_placeholder')}</label>
+          <input
+            id="create-feed-poll"
+            className="input"
+            placeholder={t('feeds_field_poll_placeholder')}
+            aria-label={t('feeds_field_poll_placeholder')}
+            value={poll}
+            onChange={e => setPoll(e.target.value)}
+          />
+          <label className="sr-only" htmlFor="create-feed-lookback">{t('feeds_field_lookback_placeholder')}</label>
+          <input
+            id="create-feed-lookback"
+            className="input"
+            placeholder={t('feeds_field_lookback_placeholder')}
+            aria-label={t('feeds_field_lookback_placeholder')}
+            value={lookback}
+            onChange={e => setLookback(e.target.value)}
+          />
+          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_config_placeholder')}</label>
+          <input
+            id="create-feed-site-config"
+            className="input"
+            placeholder={t('feeds_field_site_config_placeholder')}
+            aria-label={t('feeds_field_site_config_placeholder')}
+            value={siteConfigId}
+            onChange={e => setSiteConfigId(e.target.value)}
+          />
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
-          <button className="btn" onClick={createFeed}>{t('btn_create')}</button>
-        </div>
+          <button type="submit" className="btn">{t('btn_create')}</button>
+        </form>
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
@@ -116,7 +154,7 @@ export default function Feeds() {
                 />
               </div>
             ) : (
-            <table className="table" aria-label={t('feeds_table_label')}>
+            <table className="table" role="table" aria-label={t('feeds_table_label')}>
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th">{t('url_label')}</th>
@@ -133,15 +171,15 @@ export default function Feeds() {
                   <tr key={f.id} className="odd:bg-white even:bg-gray-50">
                     {editingId === f.id ? (
                       <>
-                        <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} /></td>
-                        <td className="td"><input type="checkbox" checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
-                        <td className="td"><input type="checkbox" checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.siteConfigId} onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })} placeholder={t('feeds_field_site_config_placeholder')} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} aria-label={t('feeds_field_url_placeholder')} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} aria-label={t('feeds_field_poll_placeholder')} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} /></td>
+                        <td className="td"><input type="checkbox" aria-label={t('feeds_field_paywalled_label')} checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
+                        <td className="td"><input type="checkbox" aria-label={t('feeds_field_rss_auth_label')} checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.siteConfigId} onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })} placeholder={t('feeds_field_site_config_placeholder')} aria-label={t('feeds_field_site_config_placeholder')} /></td>
                         <td className="td flex gap-2">
-                          <button className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
-                          <button className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
+                          <button type="button" className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
+                          <button type="button" className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
                         </td>
                       </>
                     ) : (
@@ -153,8 +191,8 @@ export default function Feeds() {
                         <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">{f.site_config_id || f.siteConfigId || ''}</td>
                         <td className="td flex gap-2">
-                          <button className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
-                          <button className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
+                          <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
+                          <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
                         </td>
                       </>
                     )}

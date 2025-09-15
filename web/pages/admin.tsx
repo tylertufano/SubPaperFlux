@@ -49,6 +49,8 @@ export default function Admin() {
             )}
             <div className="flex gap-2 flex-wrap">
               <button
+                type="button"
+                className="btn"
                 disabled={!isPg}
                 title={!isPg ? t('admin_actions_requires_postgres') : ''}
                 onClick={async () => {
@@ -60,6 +62,8 @@ export default function Admin() {
                 {t('admin_actions_prepare_postgres')}
               </button>
               <button
+                type="button"
+                className="btn"
                 disabled={!isPg}
                 title={!isPg ? t('admin_actions_requires_postgres') : ''}
                 onClick={async () => {
@@ -100,7 +104,7 @@ export default function Admin() {
             <ul className="text-sm text-gray-800 space-y-1">
               <li>{t('admin_overall_label')}: {rls.ok ? t('status_ok') : t('status_check')}</li>
             </ul>
-            <table className="table mt-2">
+            <table className="table mt-2" role="table" aria-label={t('admin_rls_table_label')}>
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th">{t('admin_rls_table_col')}</th>

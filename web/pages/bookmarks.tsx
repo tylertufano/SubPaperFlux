@@ -182,12 +182,16 @@ export default function Bookmarks() {
       <Nav />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-xl font-semibold">{t('bookmarks_title')}</h2>
+          <h2 id="bookmarks-heading" className="text-xl font-semibold">{t('bookmarks_title')}</h2>
         </div>
         <form
           className="card p-4 mb-4 space-y-4"
           onSubmit={(e: FormEvent) => { e.preventDefault(); setPage(1); mutate() }}
+          role="search"
+          aria-labelledby="bookmarks-heading"
+          aria-describedby="bookmarks-filter-description"
         >
+          <p id="bookmarks-filter-description" className="sr-only">{t('bookmarks_filters_description')}</p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <label className="flex flex-col gap-1" htmlFor="bookmark-keyword">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_keyword_label')}</span>
@@ -327,13 +331,49 @@ export default function Bookmarks() {
                   />
                 </div>
               ) : (
-              <table className="table" aria-label={t('bookmarks_table_label')}>
+              <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="th" scope="col"><input aria-label={t('bookmarks_select_all')} type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
-                    <th className="th" scope="col"><button onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">{t('title_label')} {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
-                    <th className="th" scope="col"><button onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">{t('url_label')} {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
-                    <th className="th" scope="col"><button onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">{t('published_label')} {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
+                    <th
+                      className="th"
+                      scope="col"
+                      aria-sort={sortBy === 'title' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                        className="rounded focus-visible:underline hover:underline"
+                      >
+                        {t('title_label')} {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}
+                      </button>
+                    </th>
+                    <th
+                      className="th"
+                      scope="col"
+                      aria-sort={sortBy === 'url' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                        className="rounded focus-visible:underline hover:underline"
+                      >
+                        {t('url_label')} {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}
+                      </button>
+                    </th>
+                    <th
+                      className="th"
+                      scope="col"
+                      aria-sort={sortBy === 'published_at' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                        className="rounded focus-visible:underline hover:underline"
+                      >
+                        {t('published_label')} {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

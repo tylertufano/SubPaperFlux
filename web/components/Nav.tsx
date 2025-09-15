@@ -9,13 +9,18 @@ export default function Nav() {
   const { data: session, status } = useSession()
   const { t, locale, setLocale } = useI18n()
   const { pathname } = useRouter()
+  const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
-    pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'
+    `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
   return (
-    <nav className="bg-white border-b border-gray-200">
+    <nav className="bg-white border-b border-gray-200" role="navigation" aria-label={t('nav_main_label')}>
       <div className="container py-3 flex items-center gap-4">
-        <Link href="/" className="font-semibold">SubPaperFlux</Link>
-        <Link href="/bookmarks" className={linkClass('/bookmarks')}>{t('nav_bookmarks')}</Link>
+        <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
+          SubPaperFlux
+        </Link>
+        <Link href="/bookmarks" className={linkClass('/bookmarks')} aria-current={pathname === '/bookmarks' ? 'page' : undefined}>
+          {t('nav_bookmarks')}
+        </Link>
         <DropdownMenu
           label={t('nav_jobs')}
           baseHref="/jobs"
@@ -52,7 +57,9 @@ export default function Nav() {
             { href: '/site-configs#create-site-config', label: t('nav_site_configs_create') },
           ]}
         />
-        <Link href="/admin" className={linkClass('/admin')}>{t('nav_admin')}</Link>
+        <Link href="/admin" className={linkClass('/admin')} aria-current={pathname === '/admin' ? 'page' : undefined}>
+          {t('nav_admin')}
+        </Link>
         <div className="ml-auto flex items-center gap-2">
           {status === 'authenticated' ? (
             <DropdownMenu
