@@ -94,7 +94,7 @@ export default function Feeds() {
       <main className="container py-6">
         <h2 className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
-        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div id="create-feed" className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
           <h3 className="font-semibold md:col-span-3">Create Feed</h3>
           <input className="input md:col-span-2" placeholder="Feed URL" value={url} onChange={e => setUrl(e.target.value)} />
           <input className="input" placeholder="Poll frequency (e.g., 1h)" value={poll} onChange={e => setPoll(e.target.value)} />
