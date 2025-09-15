@@ -34,20 +34,47 @@ export default function Nav() {
             { href: '/feeds#create-feed', label: t('nav_feeds_create') },
           ]}
         />
-        <Link href="/credentials" className={linkClass('/credentials')}>{t('nav_credentials')}</Link>
-        <Link href="/site-configs" className={linkClass('/site-configs')}>{t('nav_site_configs')}</Link>
+        <DropdownMenu
+          label={t('nav_credentials')}
+          baseHref="/credentials"
+          currentPath={pathname}
+          items={[
+            { href: '/credentials', label: t('credentials_title') },
+            { href: '/credentials#create-credential', label: 'Create Credential' },
+          ]}
+        />
+        <DropdownMenu
+          label={t('nav_site_configs')}
+          baseHref="/site-configs"
+          currentPath={pathname}
+          items={[
+            { href: '/site-configs', label: t('site_configs_title') },
+            { href: '/site-configs#create-site-config', label: 'Create Site Config' },
+          ]}
+        />
         <Link href="/admin" className={linkClass('/admin')}>{t('nav_admin')}</Link>
         <div className="ml-auto flex items-center gap-2">
-          <select className="input" value={locale} onChange={(e) => setLocale(e.target.value)}>
-            <option value="en">EN</option>
-          </select>
           {status === 'authenticated' ? (
-            <>
-              <span className="text-gray-600">{session?.user?.name}</span>
-              <button className="btn" onClick={() => signOut()}>{t('btn_sign_out')}</button>
-            </>
+            <DropdownMenu
+              label={String(session?.user?.name || 'Account')}
+              baseHref={pathname}
+              currentPath={pathname}
+              items={[
+                { href: '/me', label: t('nav_profile') },
+                { href: '/me/tokens', label: t('nav_tokens') },
+                { href: '/admin/users', label: t('nav_users') },
+                { href: '/admin/audit', label: t('nav_audit') },
+                { href: '/admin', label: t('nav_admin') },
+                { label: t('btn_sign_out'), onClick: () => signOut() },
+              ]}
+            />
           ) : (
-            <button className="btn" onClick={() => signIn('oidc')}>{t('btn_sign_in')}</button>
+            <DropdownMenu
+              label={t('btn_sign_in')}
+              baseHref={pathname}
+              currentPath={pathname}
+              items={[{ label: t('btn_sign_in'), onClick: () => signIn('oidc') }]}
+            />
           )}
         </div>
       </div>

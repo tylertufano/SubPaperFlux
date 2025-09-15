@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import React from 'react'
 
-type Item = { href: string; label: string }
+type Item = { href?: string; label: string; onClick?: () => void }
 
 type Props = {
   label: string
@@ -95,13 +95,24 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
           if (e.key === 'Escape') { e.preventDefault(); setOpen(false); triggerRef.current?.focus() }
         }}
       >
-        {items.map((it) => (
-          <Link key={it.href} href={it.href} className="block px-3 py-2 text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none" role="menuitem" tabIndex={-1}>
-            {it.label}
-          </Link>
+        {items.map((it, idx) => (
+          it.href ? (
+            <Link key={it.href + idx} href={it.href} className="block px-3 py-2 text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none" role="menuitem" tabIndex={-1}>
+              {it.label}
+            </Link>
+          ) : (
+            <button
+              key={(it.label || 'item') + idx}
+              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+              role="menuitem"
+              tabIndex={-1}
+              onClick={() => { try { it.onClick && it.onClick() } finally { setOpen(false) } }}
+            >
+              {it.label}
+            </button>
+          )
         ))}
       </div>
     </div>
   )
 }
-

@@ -34,11 +34,11 @@ export default function Jobs() {
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">{t('jobs_title')}</h2>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/jobs-dead" className="btn">Dead-letter Queue</Link>
+            <Link href="/jobs-dead" className="btn">{t('nav_jobs_dead')}</Link>
           </div>
         </div>
         <div className="card p-4 mb-4 flex items-center gap-2 flex-wrap">
-          <label className="text-gray-700">Status: </label>
+          <label className="text-gray-700">{t('status_label')}: </label>
           <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
             <option value="queued">Queued</option>
@@ -47,25 +47,25 @@ export default function Jobs() {
             <option value="failed">Failed</option>
             <option value="dead">Dead</option>
           </select>
-          <button className="btn" onClick={() => mutate()}>Filter</button>
-          <button className="btn" onClick={clearFilters}>Clear</button>
-          <button className="btn" onClick={() => { setStatus('failed,dead'); setPage(1); mutate() }}>Failed/Dead</button>
+          <button className="btn" onClick={() => mutate()}>{t('btn_search')}</button>
+          <button className="btn" onClick={clearFilters}>{t('btn_clear')}</button>
+          <button className="btn" onClick={() => { setStatus('failed,dead'); setPage(1); mutate() }}>{t('nav_jobs_dead')}</button>
           <div className="grow" />
           <button
             className="btn"
             onClick={async () => {
               try {
                 await v1.retryAllJobsV1JobsRetryAllPost({ requestBody: { status: ['failed', 'dead'] } })
-                setBanner({ kind: 'success', message: 'Requeued all failed/dead jobs' })
+                setBanner({ kind: 'success', message: t('btn_retry_all_failed_dead') })
                 mutate()
               } catch (e: any) {
                 setBanner({ kind: 'error', message: e.message || String(e) })
               }
             }}
-          >Retry All Failed/Dead</button>
+          >{t('btn_retry_all_failed_dead')}</button>
         </div>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
-        {isLoading && <p className="text-gray-600">Loading...</p>}
+        {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
           <>
@@ -83,12 +83,12 @@ export default function Jobs() {
               <table className="table" aria-label="Jobs">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="th" scope="col">ID</th>
-                    <th className="th" scope="col">Type</th>
-                    <th className="th" scope="col">Status</th>
-                    <th className="th" scope="col">Attempts</th>
-                    <th className="th" scope="col">Last Error</th>
-                    <th className="th" scope="col">Actions</th>
+                    <th className="th" scope="col">{t('id_label')}</th>
+                    <th className="th" scope="col">{t('type_label')}</th>
+                    <th className="th" scope="col">{t('status_label')}</th>
+                    <th className="th" scope="col">{t('attempts_label')}</th>
+                    <th className="th" scope="col">{t('last_error_label')}</th>
+                    <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -130,7 +130,7 @@ export default function Jobs() {
                             }}
                           >Details</button>
                           {(j.status === 'failed' || j.status === 'dead') && (
-                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: 'Job requeued' }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>Retry</button>
+                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>{t('btn_retry')}</button>
                           )}
                         </td>
                       </tr>

@@ -53,7 +53,7 @@ export default function SiteConfigs() {
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {isLoading && <p className="text-gray-600">Loading...</p>}
         {error && <Alert kind="error" message={String(error)} />}
-        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div id="create-site-config" className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
           <h3 className="font-semibold md:col-span-2">
             Create Site Config
             <span className="ml-2 text-gray-500 cursor-help" title="Provide CSS selectors for the login form and any cookies to persist.">?</span>

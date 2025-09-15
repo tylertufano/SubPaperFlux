@@ -104,7 +104,7 @@ export default function Credentials() {
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {data && (
           <>
-          <div className="card p-4 mb-4 flex flex-col gap-2">
+          <div id="create-credential" className="card p-4 mb-4 flex flex-col gap-2">
             <h3 className="font-semibold">Create Credential</h3>
             <div className="flex items-center gap-2 flex-wrap">
               <label>Kind <span className="ml-1 text-gray-500 cursor-help" title="Choose credential type. Fields vary by type.">?</span>:</label>

@@ -2,7 +2,7 @@
 
 This roadmap now includes live status checkboxes and a reusable TODO reference. Use it to track progress and drive future prompts.
 
-Status legend: [x] done, [ ] todo
+Status legend: [x] done, [~] in progress, [ ] todo
 
 ## Phase 0 — Foundations
 
@@ -21,11 +21,11 @@ Status legend: [x] done, [ ] todo
   - [x] Purposeful empty states across pages (UI-007)
 - [x] State & Caching: SWR for caching/retries/refresh. (UI-025)
   - Evidence: `web/package.json:15`, `web/pages/*:1`
-- [ ] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
-  - [ ] Add ARIA and contrast audits (UI-030, UI-032)
-- [ ] i18n-Ready: Wrap text for translation; locale switch scaffold (UI-013).
+- [~] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
+  - [~] Add ARIA and contrast audits (UI-030, UI-032)
+- [~] i18n-Ready: Wrap text for translation; locale switch scaffold (UI-013).
   - [x] Minimal provider: `web/lib/i18n.tsx:29`
-  - [ ] Expand string catalog beyond Nav/Home (UI-013)
+  - [~] Expand string catalog beyond Nav/Home (UI-013)
 
 ## Phase 1 — Core UX (MVP)
 
@@ -134,13 +134,13 @@ make sdk-ts
 
 ### Accessibility (a11y)
 
-- [ ] Expand ARIA labeling (inputs, alerts) (UI-030)
-- [ ] Keyboard navigation patterns (focus traps) (UI-031)
+- [~] Expand ARIA labeling (inputs, alerts) (UI-030)
+- [~] Keyboard navigation patterns (focus traps) (UI-031)
 - [ ] Color contrast audits and dark mode (UI-032)
 
 ### Internationalization (i18n)
 
-- [ ] Expand string catalog beyond Nav/Home (UI-033)
+- [~] Expand string catalog beyond Nav/Home (UI-033)
 - [ ] Locale detection and formatting (dates, numbers) (UI-034)
 
 ### Observability
@@ -259,9 +259,17 @@ make sdk-ts
 
 ### UI
 
- - [ ] Users table, role badges, suspend/reactivate (UI-070)
- - [ ] Audit filters and details (UI-071)
- - [ ] Token management UI (UI-072)
+- [~] Users table, role badges, suspend/reactivate (UI-070)
+  - [x] Placeholder page scaffolded: `web/pages/admin/users.tsx:1`
+- [~] Audit filters and details (UI-071)
+  - [x] Placeholder page scaffolded: `web/pages/admin/audit.tsx:1`
+- [~] Token management UI (UI-072)
+  - [x] Placeholder page scaffolded: `web/pages/me/tokens.tsx:1`
+
+### Profile
+
+- [~] Profile page (locale + preferences) (future)
+  - [x] Placeholder page scaffolded: `web/pages/me.tsx:1`
 
 ### Security & Observability
 
