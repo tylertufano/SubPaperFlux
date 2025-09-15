@@ -41,6 +41,8 @@ def list_bookmarks(
     feed_id: Optional[str] = None,
     since: Optional[str] = None,
     until: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, pattern="^(title|url|published_at)$"),
+    sort_dir: Optional[str] = Query(None, pattern="^(asc|desc)$"),
 ):
     user_id = current_user["sub"]
     # parse since/until to ISO strings; with TIMESTAMPTZ in PG the comparison will work; on SQLite it treats as text
@@ -52,7 +54,23 @@ def list_bookmarks(
     total = session.exec(count_stmt).one()
 
     # Order, paginate
-    stmt = base.order_by(Bookmark.published_at.desc(), Bookmark.id.desc()).offset((page - 1) * size).limit(size)
+    def apply_sort(stmt_):
+        if sort_by:
+            dir_desc = (sort_dir or "desc").lower() == "desc"
+            col = {
+                "title": Bookmark.title,
+                "url": Bookmark.url,
+                "published_at": Bookmark.published_at,
+            }[sort_by]
+            if dir_desc:
+                stmt_ = stmt_.order_by(col.desc(), Bookmark.id.desc())
+            else:
+                stmt_ = stmt_.order_by(col.asc(), Bookmark.id.asc())
+        else:
+            stmt_ = stmt_.order_by(Bookmark.published_at.desc(), Bookmark.id.desc())
+        return stmt_
+
+    stmt = apply_sort(base).offset((page - 1) * size).limit(size)
     rows = session.exec(stmt).all()
     # Optional search: push to SQL for Postgres (ILIKE), otherwise Python filter
     if search:
@@ -61,13 +79,13 @@ def list_bookmarks(
             ilike = f"%{search}%"
             filt = or_(Bookmark.title.ilike(ilike), Bookmark.url.ilike(ilike))
             stmt_search = base.where(filt)
-            if fuzzy:
+            if fuzzy and not sort_by:
                 # Order by similarity if fuzzy requested
                 sim_title = func.similarity(func.lower(Bookmark.title), func.lower(literal(search)))
                 sim_url = func.similarity(func.lower(Bookmark.url), func.lower(literal(search)))
                 stmt_search = stmt_search.order_by(func.greatest(sim_title, sim_url).desc())
             else:
-                stmt_search = stmt_search.order_by(Bookmark.published_at.desc(), Bookmark.id.desc())
+                stmt_search = apply_sort(stmt_search)
             count_stmt = select(func.count()).select_from(Bookmark)
             count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until).where(filt)
             total = session.exec(count_stmt).one()

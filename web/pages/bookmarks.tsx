@@ -15,9 +15,11 @@ export default function Bookmarks() {
   const [since, setSince] = useState('')
   const [until, setUntil] = useState('')
   const [fuzzy, setFuzzy] = useState(false)
+  const [sortBy, setSortBy] = useState<'title' | 'url' | 'published_at'>('published_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
-  const { data, error, isLoading, mutate } = useSWR([`/v1/bookmarks`, page, search, feedId, since, until, fuzzy],
-    ([, p, q, f, s, u, z]) => v1.listBookmarksV1BookmarksGet({ page: p, search: q, feedId: f || undefined, since: addZ(s), until: addZ(u), fuzzy: z || undefined }))
+  const { data, error, isLoading, mutate } = useSWR([`/v1/bookmarks`, page, search, feedId, since, until, fuzzy, sortBy, sortDir],
+    ([, p, q, f, s, u, z, sb, sd]) => v1.listBookmarksV1BookmarksGet({ page: p, search: q, feedId: f || undefined, since: addZ(s), until: addZ(u), fuzzy: z || undefined, sortBy: sb, sortDir: sd }))
   const { data: feeds } = useSWR([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
   const feedItems = Array.isArray(feeds) ? feeds : feeds?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
@@ -97,7 +99,7 @@ export default function Bookmarks() {
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">Bookmarks</h2>
         </div>
-        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-7 gap-2 items-center">
+        <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-8 gap-2 items-center">
           <input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" />
           <select className="input" value={feedId} onChange={(e) => setFeedId(e.target.value)}>
             <option value="">All Feeds</option>
@@ -108,6 +110,15 @@ export default function Bookmarks() {
           <input className="input" type="datetime-local" value={since} onChange={(e) => setSince(e.target.value)} title="Since" />
           <input className="input" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} title="Until" />
           <label className="inline-flex items-center gap-2 text-gray-700"><input type="checkbox" checked={fuzzy} onChange={(e) => setFuzzy(e.target.checked)} /> Fuzzy</label>
+          <select className="input" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+            <option value="published_at">Sort: Published</option>
+            <option value="title">Sort: Title</option>
+            <option value="url">Sort: URL</option>
+          </select>
+          <select className="input" value={sortDir} onChange={(e) => setSortDir(e.target.value as any)}>
+            <option value="desc">Desc</option>
+            <option value="asc">Asc</option>
+          </select>
           <button className="btn" onClick={() => { setPage(1); mutate() }}>Search</button>
           <button className="btn" onClick={clearFilters}>Clear</button>
           <select className="input md:col-span-2" onChange={(e) => { const v = views.find(x => x.name === e.target.value); if (v) applyView(v) }} defaultValue="">
@@ -134,9 +145,9 @@ export default function Bookmarks() {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="th" scope="col"><input aria-label="Select all" type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
-                    <th className="th" scope="col">Title</th>
-                    <th className="th" scope="col">URL</th>
-                    <th className="th" scope="col">Published</th>
+                    <th className="th" scope="col"><button onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">Title {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
+                    <th className="th" scope="col"><button onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">URL {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
+                    <th className="th" scope="col"><button onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">Published {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
                   </tr>
                 </thead>
                 <tbody>
