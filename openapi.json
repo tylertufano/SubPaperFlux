@@ -989,6 +989,86 @@
             }
           },
           {
+            "name": "title_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Query"
+            }
+          },
+          {
+            "name": "url_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url Query"
+            }
+          },
+          {
+            "name": "regex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex"
+            }
+          },
+          {
+            "name": "regex_target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "both",
+              "enum": [
+                "title",
+                "url",
+                "both"
+              ],
+              "title": "Regex Target"
+            }
+          },
+          {
+            "name": "regex_flags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[imxs]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex Flags"
+            }
+          },
+          {
             "name": "fuzzy",
             "in": "query",
             "required": false,
@@ -1054,7 +1134,12 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(title|url|published_at)$"
+                  "enum": [
+                    "title",
+                    "url",
+                    "published_at",
+                    "relevance"
+                  ]
                 },
                 {
                   "type": "null"
@@ -1071,13 +1156,96 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(asc|desc)$"
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
                 },
                 {
                   "type": "null"
                 }
               ],
               "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "title_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Query"
+            }
+          },
+          {
+            "name": "url_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url Query"
+            }
+          },
+          {
+            "name": "regex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex"
+            }
+          },
+          {
+            "name": "regex_target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "both",
+              "enum": [
+                "title",
+                "url",
+                "both"
+              ],
+              "title": "Regex Target"
+            }
+          },
+          {
+            "name": "regex_flags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[imxs]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex Flags"
             }
           }
         ],
@@ -1178,6 +1346,128 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "url",
+                    "published_at",
+                    "relevance"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "title_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Query"
+            }
+          },
+          {
+            "name": "url_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url Query"
+            }
+          },
+          {
+            "name": "regex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex"
+            }
+          },
+          {
+            "name": "regex_target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "both",
+              "enum": [
+                "title",
+                "url",
+                "both"
+              ],
+              "title": "Regex Target"
+            }
+          },
+          {
+            "name": "regex_flags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[imxs]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex Flags"
             }
           }
         ],
@@ -1314,37 +1604,83 @@
             }
           },
           {
-            "name": "sort_by",
+            "name": "title_query",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "pattern": "^(title|url|published_at)$"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Sort By"
+              "title": "Title Query"
             }
           },
           {
-            "name": "sort_dir",
+            "name": "url_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url Query"
+            }
+          },
+          {
+            "name": "regex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex"
+            }
+          },
+          {
+            "name": "regex_target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "both",
+              "enum": [
+                "title",
+                "url",
+                "both"
+              ],
+              "title": "Regex Target"
+            }
+          },
+          {
+            "name": "regex_flags",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^(asc|desc)$"
+                  "pattern": "^[imxs]*$"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Sort Dir"
+              "title": "Regex Flags"
             }
           }
         ],
@@ -1445,6 +1781,128 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "title",
+                    "url",
+                    "published_at",
+                    "relevance"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "title_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title Query"
+            }
+          },
+          {
+            "name": "url_query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Url Query"
+            }
+          },
+          {
+            "name": "regex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex"
+            }
+          },
+          {
+            "name": "regex_target",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "both",
+              "enum": [
+                "title",
+                "url",
+                "both"
+              ],
+              "title": "Regex Target"
+            }
+          },
+          {
+            "name": "regex_flags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[imxs]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Regex Flags"
             }
           }
         ],

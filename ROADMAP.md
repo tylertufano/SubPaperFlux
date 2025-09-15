@@ -121,7 +121,7 @@ make sdk-ts
 ## Phase 2 — Power Features
 
 - [x] Saved Views (Bookmarks)
- - [ ] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
+- [x] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [ ] Publish; progress modals (UI-028)
@@ -296,7 +296,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-007: Add purposeful empty states across tables and pages
 - UI-008: Add dead-letter queue view under Jobs
 - UI-009: Jobs streaming via WebSocket/SSE + pill notifications
-- UI-010: Advanced Search (field-specific + regex) for Bookmarks
+- UI-010: Advanced Search (field-specific + regex) for Bookmarks — delivered with dedicated field filters, regex targeting, and relevance sort UI.
 - UI-011: Add Sentry to UI (Next.js integration)
 - UI-012: Add middleware to set `app.user_id` session var for RLS enforcement in Postgres
 - UI-013: Expand i18n string catalog and wrap page text

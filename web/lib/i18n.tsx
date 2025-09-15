@@ -26,6 +26,43 @@ const catalog: Catalog = {
     bookmarks_search: 'Search',
     bookmarks_saved_views: 'Saved Views',
     bookmarks_save_as: 'Save as...',
+    bookmarks_save_view: 'Save View',
+    bookmarks_saved_views_placeholder: 'Apply a saved view',
+    bookmarks_saved_views_empty: 'No saved views yet',
+    bookmarks_keyword_label: 'Keyword',
+    bookmarks_keyword_placeholder: 'Search titles or URLs',
+    bookmarks_feed_label: 'Feed',
+    bookmarks_feed_all: 'All feeds',
+    bookmarks_since_label: 'Since',
+    bookmarks_until_label: 'Until',
+    bookmarks_advanced: 'Advanced search',
+    bookmarks_title_contains: 'Title contains',
+    bookmarks_title_placeholder: 'Match words in the title',
+    bookmarks_url_contains: 'URL contains',
+    bookmarks_url_placeholder: 'Match words in the URL',
+    bookmarks_regex_label: 'Regex pattern',
+    bookmarks_regex_placeholder: '/pattern/ or (?i)pattern',
+    bookmarks_regex_target: 'Apply to',
+    bookmarks_regex_target_both: 'Title & URL',
+    bookmarks_regex_target_title: 'Title only',
+    bookmarks_regex_target_url: 'URL only',
+    bookmarks_regex_case_insensitive: 'Case-insensitive',
+    bookmarks_regex_help: 'Regex is available on Postgres deployments. Use /pattern/i for case-insensitive matches.',
+    bookmarks_sort_label: 'Sort by',
+    bookmarks_sort_published: 'Published',
+    bookmarks_sort_title: 'Title',
+    bookmarks_sort_url: 'URL',
+    bookmarks_sort_relevance: 'Relevance',
+    bookmarks_sort_direction: 'Direction',
+    bookmarks_sort_desc: 'Descending',
+    bookmarks_sort_asc: 'Ascending',
+    bookmarks_confirm_delete: 'Delete {count} bookmarks? This also deletes in Instapaper.',
+    bookmarks_deleted_success: 'Deleted {count} bookmarks.',
+    bookmarks_delete_failed: 'Delete failed: {reason}',
+    bookmarks_table_label: 'Bookmarks list',
+    bookmarks_select_all: 'Select all bookmarks',
+    bookmarks_select_row: 'Select bookmark {value}',
+    bookmarks_select_row_unknown: 'without title',
     jobs_title: 'Jobs',
     credentials_title: 'Credentials',
     site_configs_title: 'Site Configs',
@@ -68,10 +105,13 @@ const catalog: Catalog = {
     empty_credentials_desc: 'Create site, Instapaper, or Miniflux credentials above.',
     empty_site_configs_title: 'No site configs yet',
     empty_site_configs_desc: 'Create a site config above to automate site logins.',
+    pagination_prev: 'Prev',
+    pagination_next: 'Next',
+    pagination_status: 'Page {page} / {total}',
   },
 }
 
-type I18nCtx = { locale: string; setLocale: (l: string) => void; t: (k: string) => string }
+type I18nCtx = { locale: string; setLocale: (l: string) => void; t: (k: string, vars?: Record<string, string | number>) => string }
 const Ctx = createContext<I18nCtx>({ locale: 'en', setLocale: () => {}, t: (k) => k })
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
@@ -82,7 +122,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, [])
   const t = useMemo(() => {
     const messages = catalog[locale] || catalog.en
-    return (k: string) => messages[k] ?? k
+    return (k: string, vars?: Record<string, string | number>) => {
+      const template = messages[k] ?? k
+      if (!vars) return template
+      return template.replace(/\{(\w+)\}/g, (_, key) => (key in vars ? String(vars[key]) : ''))
+    }
   }, [locale])
   const setL = (l: string) => { setLocale(l); if (typeof window !== 'undefined') localStorage.setItem('locale', l) }
   return <Ctx.Provider value={{ locale, setLocale: setL, t }}>{children}</Ctx.Provider>
