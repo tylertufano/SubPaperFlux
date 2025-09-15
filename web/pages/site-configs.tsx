@@ -51,7 +51,10 @@ export default function SiteConfigs() {
         {isLoading && <p className="text-gray-600">Loading...</p>}
         {error && <Alert kind="error" message={String(error)} />}
         <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-          <h3 className="font-semibold md:col-span-2">Create Site Config</h3>
+          <h3 className="font-semibold md:col-span-2">
+            Create Site Config
+            <span className="ml-2 text-gray-500 cursor-help" title="Provide CSS selectors for the login form and any cookies to persist.">?</span>
+          </h3>
           <div>
             <input className="input" placeholder="Name" value={form.name} onChange={e => { const v=e.target.value; setForm({ ...form, name: v }); setCreateErrors(prev=>({ ...prev, name: v.trim()? '' : 'Name is required' })) }} />
             {createErrors.name && <div className="text-sm text-red-600">{createErrors.name}</div>}
@@ -74,7 +77,22 @@ export default function SiteConfigs() {
           </div>
           <input className="input md:col-span-2" placeholder="Cookies to store (comma-separated)" value={form.cookies_to_store} onChange={e => setForm({ ...form, cookies_to_store: e.target.value })} />
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={scopeGlobal} onChange={e => setScopeGlobal(e.target.checked)} /> Global (admin)</label>
-          <button className="btn" onClick={create}>Create</button>
+          <button
+            className="btn"
+            disabled={
+              !(
+                (form.name || '').trim() &&
+                (form.site_url || '').startsWith('http') &&
+                (form.username_selector || '').trim() &&
+                (form.password_selector || '').trim() &&
+                (form.login_button_selector || '').trim()
+              )
+            }
+            title="Fill required fields"
+            onClick={create}
+          >
+            Create
+          </button>
         </div>
         {data && (
           <div className="card p-0 overflow-hidden">
@@ -129,7 +147,19 @@ export default function SiteConfigs() {
               </div>
               <input className="input md:col-span-2" placeholder="Cookies to store (comma-separated)" value={editing.cookies_to_store} onChange={e => setEditing({ ...editing, cookies_to_store: e.target.value })} />
               <div className="md:col-span-2 flex gap-2">
-                <button className="btn" onClick={async () => {
+                <button
+                  className="btn"
+                  disabled={
+                    !(
+                      (editing.name || '').trim() &&
+                      (editing.site_url || '').startsWith('http') &&
+                      (editing.username_selector || '').trim() &&
+                      (editing.password_selector || '').trim() &&
+                      (editing.login_button_selector || '').trim()
+                    )
+                  }
+                  title="Fill required fields"
+                  onClick={async () => {
                   const body: any = { ...editing, cookies_to_store: String(editing.cookies_to_store || '').split(',').map((s: string) => s.trim()).filter(Boolean) }
                   const err = validateSiteConfig(body)
                   if (err) { setBanner({ kind: 'error', message: err }); return }
