@@ -1,3 +1,5 @@
+import { useI18n } from '../lib/i18n'
+
 type Props = {
   kind?: 'info' | 'success' | 'warning' | 'error'
   message: string
@@ -5,6 +7,7 @@ type Props = {
 }
 
 export default function Alert({ kind = 'info', message, onClose }: Props) {
+  const { t } = useI18n()
   const color = kind === 'success' ? 'green' : kind === 'warning' ? 'yellow' : kind === 'error' ? 'red' : 'blue'
   return (
     <div
@@ -13,7 +16,7 @@ export default function Alert({ kind = 'info', message, onClose }: Props) {
       aria-live={kind === 'error' ? 'assertive' : 'polite'}
     >
       <div>{message}</div>
-      {onClose && <button className={`text-${color}-800`} aria-label="Dismiss" onClick={onClose}>×</button>}
+      {onClose && <button className={`text-${color}-800`} aria-label={t('alert_dismiss')} onClick={onClose}>×</button>}
     </div>
   )
 }

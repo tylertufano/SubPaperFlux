@@ -2,6 +2,7 @@ import useSWR from 'swr'
 import Nav from '../components/Nav'
 import { v1 } from '../lib/openapi'
 import Link from 'next/link'
+import { useI18n } from '../lib/i18n'
 
 function StatCard({ title, value, href }: { title: string; value: string | number; href?: string }) {
   const content = (
@@ -14,6 +15,7 @@ function StatCard({ title, value, href }: { title: string; value: string | numbe
 }
 
 export default function Home() {
+  const { t } = useI18n()
   // Bookmarks total (server-side count endpoint)
   const { data: bmCount } = useSWR(['/v1/bookmarks/count'], () => v1.countBookmarksV1BookmarksCountGet({}))
 
@@ -49,52 +51,52 @@ export default function Home() {
       <Nav />
       <main className="container py-6">
         <div className="mb-4">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-gray-700">At-a-glance usage and system health.</p>
+          <h1 className="text-2xl font-semibold">{t('dashboard_title')}</h1>
+          <p className="text-gray-700">{t('dashboard_description')}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <StatCard title="Bookmarks" value={totalBookmarks} href="/bookmarks" />
-          <StatCard title="Jobs (total)" value={totalJobs} href="/jobs" />
-          <StatCard title="Feeds" value={totalFeeds} href="/feeds" />
-          <StatCard title="Credentials" value={totalCreds} href="/credentials" />
+          <StatCard title={t('bookmarks_title')} value={totalBookmarks} href="/bookmarks" />
+          <StatCard title={t('dashboard_jobs_total')} value={totalJobs} href="/jobs" />
+          <StatCard title={t('feeds_title')} value={totalFeeds} href="/feeds" />
+          <StatCard title={t('credentials_title')} value={totalCreds} href="/credentials" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="card p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Jobs Status</h3>
-              <Link href="/jobs" className="text-blue-600 hover:underline text-sm">View all</Link>
+              <h3 className="font-semibold">{t('dashboard_jobs_status_heading')}</h3>
+              <Link href="/jobs" className="text-blue-600 hover:underline text-sm">{t('dashboard_view_all')}</Link>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <StatCard title="Queued" value={queuedJobs} />
-              <StatCard title="In Progress" value={inProgJobs} />
-              <StatCard title="Failed" value={failedJobs} />
-              <StatCard title="Dead" value={deadJobs} />
+              <StatCard title={t('jobs_status_queued')} value={queuedJobs} />
+              <StatCard title={t('jobs_status_in_progress')} value={inProgJobs} />
+              <StatCard title={t('jobs_status_failed')} value={failedJobs} />
+              <StatCard title={t('jobs_status_dead')} value={deadJobs} />
             </div>
           </div>
 
           <div className="card p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Database Health</h3>
-              <Link href="/admin" className="text-blue-600 hover:underline text-sm">Admin</Link>
+              <h3 className="font-semibold">{t('dashboard_database_health_heading')}</h3>
+              <Link href="/admin" className="text-blue-600 hover:underline text-sm">{t('nav_admin')}</Link>
             </div>
             <ul className="text-sm text-gray-800 space-y-1">
-              <li><span className={dbOk ? 'text-green-700' : 'text-red-700'}>•</span> Status: {dbOk ? 'ok' : 'check admin'}</li>
-              <li><span className={pgTrgm ? 'text-green-700' : 'text-red-700'}>•</span> pg_trgm enabled</li>
+              <li><span className={dbOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('status_label')}: {dbOk ? t('status_ok') : t('dashboard_db_status_check')}</li>
+              <li><span className={pgTrgm ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_pgtrgm')}</li>
               {idxOk !== undefined && (
-                <li><span className={idxOk ? 'text-green-700' : 'text-red-700'}>•</span> Recommended indexes</li>
+                <li><span className={idxOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_indexes')}</li>
               )}
             </ul>
           </div>
 
           <div className="card p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Service</h3>
+              <h3 className="font-semibold">{t('dashboard_service_heading')}</h3>
             </div>
             <ul className="text-sm text-gray-800 space-y-1">
-              <li>API: {status?.status || '—'}</li>
-              <li>Version: {status?.version || '—'}</li>
+              <li>{t('dashboard_service_api')}: {status?.status || '—'}</li>
+              <li>{t('dashboard_service_version')}: {status?.version || '—'}</li>
             </ul>
           </div>
         </div>
