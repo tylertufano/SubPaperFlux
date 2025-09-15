@@ -1,12 +1,15 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
 import time
-from sqlmodel import select, desc
+from sqlmodel import select, desc, Session
 from ..jobs.validation import validate_job
 
 from ..auth.oidc import get_current_user
-from ..db import get_session
+from ..db import get_session, get_engine
 from ..models import Job
 from ..schemas import JobsPage, JobOut
 
@@ -67,6 +70,38 @@ def list_jobs(
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return JobsPage(items=items, total=int(total), page=page, size=size, has_next=has_next, total_pages=total_pages)
+
+
+@router.get("/stream", summary="Stream jobs", description="Server-sent events stream of jobs list.")
+async def stream_jobs(
+    current_user=Depends(get_current_user),
+    status: Optional[str] = Query(None, description="Filter by status (comma-separated for multiple)"),
+    type: Optional[str] = Query(None, alias="job_type", description="Filter by job type"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=200),
+    order_by: str = Query("created", description="Sort key: attempts|available_at|id"),
+    order_dir: str = Query("desc", description="asc|desc"),
+):
+    async def event_generator():
+        while True:
+            def fetch():
+                with Session(get_engine()) as session:
+                    return list_jobs(
+                        current_user=current_user,
+                        session=session,
+                        status=status,
+                        type=type,
+                        page=page,
+                        size=size,
+                        order_by=order_by,
+                        order_dir=order_dir,
+                    )
+
+            page_data = await asyncio.to_thread(fetch)
+            yield f"data: {page_data.json()}\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.get("/{job_id}", response_model=JobOut, summary="Get job", description="Get a single job by id.")
