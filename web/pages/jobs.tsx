@@ -17,6 +17,24 @@ export default function Jobs() {
     const id = setInterval(() => setNow(Date.now() / 1000), 1000)
     return () => clearInterval(id)
   }, [])
+  useEffect(() => {
+    const params = new URLSearchParams({ page: String(page), size: "20" })
+    if (status) params.set('status', status)
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || ''
+    const url = `${apiBase}/v1/jobs/stream?${params.toString()}`
+    const es = new EventSource(url)
+    es.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data)
+        mutate(d, false)
+      } catch (err) {
+        // ignore malformed events
+      }
+    }
+    return () => {
+      es.close()
+    }
+  }, [page, status, mutate])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})

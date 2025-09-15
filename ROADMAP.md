@@ -127,7 +127,7 @@ make sdk-ts
   - [ ] Publish; progress modals (UI-028)
  - [ ] Tags & Folders (UI-018)
  - [ ] Preview Pane (sanitized HTML) (UI-017)
- - [ ] Jobs Streaming (WebSocket/SSE) (UI-009)
+ - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
 - [ ] Activity Log (UI-029)
 
 ## Optional / Recommended
@@ -156,7 +156,7 @@ make sdk-ts
 ### API Polish
 
 - [ ] Uniform error responses (`application/problem+json`) (UI-036)
-- [ ] SSE/WebSockets for jobs to remove polling (UI-009)
+ - [x] SSE/WebSockets for jobs to remove polling (UI-009)
 
 ## Phase 3 — Onboarding & Guidance
 
