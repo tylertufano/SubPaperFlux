@@ -1,5 +1,6 @@
 import { Configuration, Middleware, ResponseError, FetchError } from '../sdk/src/runtime'
 import { V1Api } from '../sdk/src/apis/V1Api'
+import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
@@ -18,7 +19,7 @@ if (typeof window !== 'undefined') {
   } catch {}
 }
 
-let clientsPromise: Promise<{ v1: V1Api; creds: CredentialsApi; sites: SiteConfigsApi; feeds: FeedsApi }> | null = null
+let clientsPromise: Promise<{ v1: V1Api; bookmarks: BookmarksApi; creds: CredentialsApi; sites: SiteConfigsApi; feeds: FeedsApi }> | null = null
 
 async function resolveApiBase(): Promise<string> {
   if (typeof window === 'undefined') {
@@ -90,6 +91,7 @@ async function getClients() {
       })
       return {
         v1: new V1Api(cfg),
+        bookmarks: new BookmarksApi(cfg),
         creds: new CredentialsApi(cfg),
         sites: new SiteConfigsApi(cfg),
         feeds: new FeedsApi(cfg),
@@ -100,9 +102,9 @@ async function getClients() {
 }
 
 export const v1 = {
-  listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).v1.listBookmarksV1BookmarksGet(p),
-  bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
-  countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).v1.countBookmarksV1BookmarksCountGet(p),
+  listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).bookmarks.listBookmarksBookmarksGet(p),
+  bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).bookmarks.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
+  countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).bookmarks.countBookmarksV1BookmarksCountGet(p),
 
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),

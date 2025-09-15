@@ -97,6 +97,13 @@ export interface HeadBookmarksBookmarksHeadRequest {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: HeadBookmarksBookmarksHeadSortByEnum;
+    sortDir?: HeadBookmarksBookmarksHeadSortDirEnum;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: HeadBookmarksBookmarksHeadRegexTargetEnum;
+    regexFlags?: string | null;
 }
 
 export interface HeadBookmarksBookmarksHead0Request {
@@ -104,6 +111,13 @@ export interface HeadBookmarksBookmarksHead0Request {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: HeadBookmarksBookmarksHead0SortByEnum;
+    sortDir?: HeadBookmarksBookmarksHead0SortDirEnum;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: HeadBookmarksBookmarksHead0RegexTargetEnum;
+    regexFlags?: string | null;
 }
 
 export interface HeadBookmarksV1BookmarksHeadRequest {
@@ -124,10 +138,22 @@ export interface ListBookmarksBookmarksGetRequest {
     page?: number;
     size?: number;
     search?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: ListBookmarksBookmarksGetRegexTargetEnum;
+    regexFlags?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: ListBookmarksBookmarksGetSortByEnum;
+    sortDir?: ListBookmarksBookmarksGetSortDirEnum;
+    titleQuery2?: string | null;
+    urlQuery2?: string | null;
+    regex2?: string | null;
+    regexTarget2?: ListBookmarksBookmarksGetRegexTargetEnum;
+    regexFlags2?: string | null;
 }
 
 export interface ListBookmarksBookmarksGet0Request {
@@ -138,6 +164,11 @@ export interface ListBookmarksBookmarksGet0Request {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: ListBookmarksBookmarksGet0RegexTargetEnum;
+    regexFlags?: string | null;
 }
 
 export interface ListBookmarksV1BookmarksGetRequest {
@@ -148,6 +179,8 @@ export interface ListBookmarksV1BookmarksGetRequest {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: string | null;
+    sortDir?: string | null;
 }
 
 export interface ListBookmarksV1BookmarksGet0Request {
@@ -158,6 +191,8 @@ export interface ListBookmarksV1BookmarksGet0Request {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: string | null;
+    sortDir?: string | null;
 }
 
 /**
@@ -725,6 +760,34 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -780,6 +843,34 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['until'] != null) {
             queryParameters['until'] = requestParameters['until'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -949,6 +1040,26 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['search'] = requestParameters['search'];
         }
 
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         if (requestParameters['fuzzy'] != null) {
             queryParameters['fuzzy'] = requestParameters['fuzzy'];
         }
@@ -963,6 +1074,34 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['until'] != null) {
             queryParameters['until'] = requestParameters['until'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
+        if (requestParameters['titleQuery2'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery2'];
+        }
+
+        if (requestParameters['urlQuery2'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery2'];
+        }
+
+        if (requestParameters['regex2'] != null) {
+            queryParameters['regex'] = requestParameters['regex2'];
+        }
+
+        if (requestParameters['regexTarget2'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget2'];
+        }
+
+        if (requestParameters['regexFlags2'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags2'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1030,6 +1169,26 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -1093,6 +1252,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['until'] != null) {
             queryParameters['until'] = requestParameters['until'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1160,6 +1327,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -1192,3 +1367,94 @@ export class BookmarksApi extends runtime.BaseAPI {
     }
 
 }
+
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHeadSortByEnum = {
+    Title: 'title',
+    Url: 'url',
+    PublishedAt: 'published_at',
+    Relevance: 'relevance'
+} as const;
+export type HeadBookmarksBookmarksHeadSortByEnum = typeof HeadBookmarksBookmarksHeadSortByEnum[keyof typeof HeadBookmarksBookmarksHeadSortByEnum];
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHeadSortDirEnum = {
+    Asc: 'asc',
+    Desc: 'desc'
+} as const;
+export type HeadBookmarksBookmarksHeadSortDirEnum = typeof HeadBookmarksBookmarksHeadSortDirEnum[keyof typeof HeadBookmarksBookmarksHeadSortDirEnum];
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHeadRegexTargetEnum = {
+    Title: 'title',
+    Url: 'url',
+    Both: 'both'
+} as const;
+export type HeadBookmarksBookmarksHeadRegexTargetEnum = typeof HeadBookmarksBookmarksHeadRegexTargetEnum[keyof typeof HeadBookmarksBookmarksHeadRegexTargetEnum];
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHead0SortByEnum = {
+    Title: 'title',
+    Url: 'url',
+    PublishedAt: 'published_at',
+    Relevance: 'relevance'
+} as const;
+export type HeadBookmarksBookmarksHead0SortByEnum = typeof HeadBookmarksBookmarksHead0SortByEnum[keyof typeof HeadBookmarksBookmarksHead0SortByEnum];
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHead0SortDirEnum = {
+    Asc: 'asc',
+    Desc: 'desc'
+} as const;
+export type HeadBookmarksBookmarksHead0SortDirEnum = typeof HeadBookmarksBookmarksHead0SortDirEnum[keyof typeof HeadBookmarksBookmarksHead0SortDirEnum];
+/**
+ * @export
+ */
+export const HeadBookmarksBookmarksHead0RegexTargetEnum = {
+    Title: 'title',
+    Url: 'url',
+    Both: 'both'
+} as const;
+export type HeadBookmarksBookmarksHead0RegexTargetEnum = typeof HeadBookmarksBookmarksHead0RegexTargetEnum[keyof typeof HeadBookmarksBookmarksHead0RegexTargetEnum];
+/**
+ * @export
+ */
+export const ListBookmarksBookmarksGetRegexTargetEnum = {
+    Title: 'title',
+    Url: 'url',
+    Both: 'both'
+} as const;
+export type ListBookmarksBookmarksGetRegexTargetEnum = typeof ListBookmarksBookmarksGetRegexTargetEnum[keyof typeof ListBookmarksBookmarksGetRegexTargetEnum];
+/**
+ * @export
+ */
+export const ListBookmarksBookmarksGetSortByEnum = {
+    Title: 'title',
+    Url: 'url',
+    PublishedAt: 'published_at',
+    Relevance: 'relevance'
+} as const;
+export type ListBookmarksBookmarksGetSortByEnum = typeof ListBookmarksBookmarksGetSortByEnum[keyof typeof ListBookmarksBookmarksGetSortByEnum];
+/**
+ * @export
+ */
+export const ListBookmarksBookmarksGetSortDirEnum = {
+    Asc: 'asc',
+    Desc: 'desc'
+} as const;
+export type ListBookmarksBookmarksGetSortDirEnum = typeof ListBookmarksBookmarksGetSortDirEnum[keyof typeof ListBookmarksBookmarksGetSortDirEnum];
+/**
+ * @export
+ */
+export const ListBookmarksBookmarksGet0RegexTargetEnum = {
+    Title: 'title',
+    Url: 'url',
+    Both: 'both'
+} as const;
+export type ListBookmarksBookmarksGet0RegexTargetEnum = typeof ListBookmarksBookmarksGet0RegexTargetEnum[keyof typeof ListBookmarksBookmarksGet0RegexTargetEnum];
