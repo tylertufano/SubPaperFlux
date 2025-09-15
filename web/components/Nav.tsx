@@ -40,7 +40,7 @@ export default function Nav() {
           currentPath={pathname}
           items={[
             { href: '/credentials', label: t('credentials_title') },
-            { href: '/credentials#create-credential', label: 'Create Credential' },
+            { href: '/credentials#create-credential', label: t('nav_credentials_create') },
           ]}
         />
         <DropdownMenu
@@ -49,14 +49,14 @@ export default function Nav() {
           currentPath={pathname}
           items={[
             { href: '/site-configs', label: t('site_configs_title') },
-            { href: '/site-configs#create-site-config', label: 'Create Site Config' },
+            { href: '/site-configs#create-site-config', label: t('nav_site_configs_create') },
           ]}
         />
         <Link href="/admin" className={linkClass('/admin')}>{t('nav_admin')}</Link>
         <div className="ml-auto flex items-center gap-2">
           {status === 'authenticated' ? (
             <DropdownMenu
-              label={String(session?.user?.name || 'Account')}
+              label={session?.user?.name ? String(session.user.name) : t('nav_account_fallback')}
               baseHref={pathname}
               currentPath={pathname}
               items={[

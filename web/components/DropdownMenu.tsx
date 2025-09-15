@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import React from 'react'
+import { useI18n } from '../lib/i18n'
 
 type Item = { href?: string; label: string; onClick?: () => void }
 
@@ -11,6 +12,7 @@ type Props = {
 }
 
 export default function DropdownMenu({ label, baseHref, items, currentPath = '' }: Props) {
+  const { t } = useI18n()
   const [open, setOpen] = React.useState(false)
   const triggerRef = React.useRef<HTMLAnchorElement | null>(null)
   const menuRef = React.useRef<HTMLDivElement | null>(null)
@@ -86,7 +88,7 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
         ref={menuRef}
         className={(open ? 'block ' : 'hidden ') + 'absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow z-20 min-w-[180px]'}
         role="menu"
-        aria-label={`${label} submenu`}
+        aria-label={t('dropdown_submenu_label', { label })}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') { e.preventDefault(); focusNext(false) }
           if (e.key === 'ArrowUp') { e.preventDefault(); focusNext(true) }

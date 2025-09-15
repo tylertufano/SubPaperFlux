@@ -20,7 +20,7 @@ export default function Feeds() {
   const [editRow, setEditRow] = useState<any | null>(null)
 
   async function createFeed() {
-    if (!url.trim()) { setBanner({ kind: 'error', message: 'URL is required' }); return }
+    if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
     try {
       await feedsApi.createFeedFeedsPost({ feed: {
         url,
@@ -31,7 +31,7 @@ export default function Feeds() {
         siteConfigId: siteConfigId || undefined,
       } as any })
       setUrl(''); setLookback(''); setSiteConfigId(''); setPaywalled(false); setRssAuth(false)
-      setBanner({ kind: 'success', message: 'Feed created' })
+      setBanner({ kind: 'success', message: t('feeds_create_success') })
       mutate()
     } catch (e: any) {
       setBanner({ kind: 'error', message: e?.message || String(e) })
@@ -39,10 +39,10 @@ export default function Feeds() {
   }
 
   async function deleteFeed(id: string) {
-    if (!confirm('Delete feed?')) return
+    if (!confirm(t('feeds_confirm_delete'))) return
     try {
       await feedsApi.deleteFeedFeedsFeedIdDelete({ feedId: id })
-      setBanner({ kind: 'success', message: 'Feed deleted' })
+      setBanner({ kind: 'success', message: t('feeds_delete_success') })
       mutate()
     } catch (e: any) {
       setBanner({ kind: 'error', message: e?.message || String(e) })
@@ -79,7 +79,7 @@ export default function Feeds() {
           siteConfigId: editRow.siteConfigId || undefined,
         } as any,
       })
-      setBanner({ kind: 'success', message: 'Feed updated' })
+      setBanner({ kind: 'success', message: t('feeds_update_success') })
       setEditingId(null)
       setEditRow(null)
       mutate()
@@ -95,16 +95,16 @@ export default function Feeds() {
         <h2 className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         <div id="create-feed" className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
-          <h3 className="font-semibold md:col-span-3">Create Feed</h3>
-          <input className="input md:col-span-2" placeholder="Feed URL" value={url} onChange={e => setUrl(e.target.value)} />
-          <input className="input" placeholder="Poll frequency (e.g., 1h)" value={poll} onChange={e => setPoll(e.target.value)} />
-          <input className="input" placeholder="Initial lookback (e.g., 7d)" value={lookback} onChange={e => setLookback(e.target.value)} />
-          <input className="input" placeholder="Site Config ID (optional)" value={siteConfigId} onChange={e => setSiteConfigId(e.target.value)} />
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> Paywalled</label>
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> RSS requires auth</label>
-          <button className="btn" onClick={createFeed}>Create</button>
+          <h3 className="font-semibold md:col-span-3">{t('feeds_create_heading')}</h3>
+          <input className="input md:col-span-2" placeholder={t('feeds_field_url_placeholder')} value={url} onChange={e => setUrl(e.target.value)} />
+          <input className="input" placeholder={t('feeds_field_poll_placeholder')} value={poll} onChange={e => setPoll(e.target.value)} />
+          <input className="input" placeholder={t('feeds_field_lookback_placeholder')} value={lookback} onChange={e => setLookback(e.target.value)} />
+          <input className="input" placeholder={t('feeds_field_site_config_placeholder')} value={siteConfigId} onChange={e => setSiteConfigId(e.target.value)} />
+          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
+          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
+          <button className="btn" onClick={createFeed}>{t('btn_create')}</button>
         </div>
-        {isLoading && <p className="text-gray-600">Loading...</p>}
+        {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
           <div className="card p-0 overflow-hidden">
@@ -116,16 +116,16 @@ export default function Feeds() {
                 />
               </div>
             ) : (
-            <table className="table" aria-label="Feeds">
+            <table className="table" aria-label={t('feeds_table_label')}>
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="th">URL</th>
-                  <th className="th">Poll</th>
-                  <th className="th">Lookback</th>
-                  <th className="th">Paywalled</th>
-                  <th className="th">RSS Auth</th>
-                  <th className="th">Site Config</th>
-                  <th className="th">Actions</th>
+                  <th className="th">{t('url_label')}</th>
+                  <th className="th">{t('poll_label')}</th>
+                  <th className="th">{t('lookback_label')}</th>
+                  <th className="th">{t('paywalled_label')}</th>
+                  <th className="th">{t('rss_auth_label')}</th>
+                  <th className="th">{t('site_config_label')}</th>
+                  <th className="th">{t('actions_label')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -133,15 +133,15 @@ export default function Feeds() {
                   <tr key={f.id} className="odd:bg-white even:bg-gray-50">
                     {editingId === f.id ? (
                       <>
-                        <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} /></td>
                         <td className="td"><input type="checkbox" checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
                         <td className="td"><input type="checkbox" checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.siteConfigId} onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })} /></td>
+                        <td className="td"><input className="input w-full" value={editRow.siteConfigId} onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })} placeholder={t('feeds_field_site_config_placeholder')} /></td>
                         <td className="td flex gap-2">
-                          <button className="btn" onClick={() => saveEdit(f.id)}>Save</button>
-                          <button className="btn" onClick={cancelEdit}>Cancel</button>
+                          <button className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
+                          <button className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
                         </td>
                       </>
                     ) : (
@@ -149,12 +149,12 @@ export default function Feeds() {
                         <td className="td">{f.url}</td>
                         <td className="td">{f.poll_frequency || f.pollFrequency}</td>
                         <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || ''}</td>
-                        <td className="td">{String(f.is_paywalled ?? f.isPaywalled)}</td>
-                        <td className="td">{String(f.rss_requires_auth ?? f.rssRequiresAuth)}</td>
+                        <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
+                        <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">{f.site_config_id || f.siteConfigId || ''}</td>
                         <td className="td flex gap-2">
-                          <button className="btn" onClick={() => startEdit(f)}>Edit</button>
-                          <button className="btn" onClick={() => deleteFeed(f.id)}>Delete</button>
+                          <button className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
+                          <button className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
                         </td>
                       </>
                     )}

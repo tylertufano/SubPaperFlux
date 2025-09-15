@@ -58,12 +58,12 @@ export default function Jobs() {
         <div className="card p-4 mb-4 flex items-center gap-2 flex-wrap">
           <label className="text-gray-700">{t('status_label')}: </label>
           <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="queued">Queued</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
-            <option value="failed">Failed</option>
-            <option value="dead">Dead</option>
+            <option value="">{t('jobs_filter_all')}</option>
+            <option value="queued">{t('jobs_status_queued')}</option>
+            <option value="in_progress">{t('jobs_status_in_progress')}</option>
+            <option value="done">{t('jobs_status_done')}</option>
+            <option value="failed">{t('jobs_status_failed')}</option>
+            <option value="dead">{t('jobs_status_dead')}</option>
           </select>
           <button className="btn" onClick={() => mutate()}>{t('btn_search')}</button>
           <button className="btn" onClick={clearFilters}>{t('btn_clear')}</button>
@@ -98,7 +98,7 @@ export default function Jobs() {
                   />
                 </div>
               ) : (
-              <table className="table" aria-label="Jobs">
+              <table className="table" aria-label={t('jobs_table_label')}>
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="th" scope="col">{t('id_label')}</th>
@@ -118,7 +118,7 @@ export default function Jobs() {
                         <td className="td">
                           {j.status}
                           {j.type === 'publish' && (j.details?.deduped === true) && (
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">deduped</span>
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">{t('jobs_badge_deduped')}</span>
                           )}
                           {j.type === 'rss_poll' && (j.details?.published != null) && (
                             <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">{j.details.published}/{j.details.total}</span>
@@ -128,7 +128,7 @@ export default function Jobs() {
                         <td className="td">
                           {j.last_error || ''}
                           {(j.status === 'queued' && j.available_at && j.available_at > now) && (
-                            <span className="ml-2 text-gray-600">retry in {Math.max(0, Math.floor(j.available_at - now))}s</span>
+                            <span className="ml-2 text-gray-600">{t('jobs_retry_in', { seconds: Math.max(0, Math.floor(j.available_at - now)) })}</span>
                           )}
                         </td>
                         <td className="td flex gap-2">
@@ -146,9 +146,9 @@ export default function Jobs() {
                                 }
                               }
                             }}
-                          >Details</button>
+                          >{t('jobs_details')}</button>
                           {(j.status === 'failed' || j.status === 'dead') && (
-                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: `Retry failed: ${e.message || e}` }) } }}>{t('btn_retry')}</button>
+                            <button className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
                           )}
                         </td>
                       </tr>
@@ -156,11 +156,11 @@ export default function Jobs() {
                         <tr key={`${j.id}-details`} className="bg-gray-50">
                           <td className="td" colSpan={6}>
                             <div className="p-3">
-                              <h4 className="font-semibold mb-2">Details</h4>
+                              <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
                               <pre className="text-sm bg-white p-3 rounded border overflow-auto">
 {JSON.stringify(detailsCache[j.id]?.details ?? j.details ?? {}, null, 2)}
                               </pre>
-                              <h4 className="font-semibold my-2">Payload</h4>
+                              <h4 className="font-semibold my-2">{t('jobs_payload_heading')}</h4>
                               <pre className="text-sm bg-white p-3 rounded border overflow-auto">
 {JSON.stringify(detailsCache[j.id]?.payload ?? j.payload ?? {}, null, 2)}
                               </pre>
@@ -175,9 +175,9 @@ export default function Jobs() {
               )}
             </div>
             <div className="mt-3 flex items-center gap-2">
-              <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>
-              <span className="text-gray-700">Page {page} / {data.totalPages}</span>
-              <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>Next</button>
+              <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
+              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages ?? 1 })}</span>
+              <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>{t('pagination_next')}</button>
             </div>
           </>
         )}

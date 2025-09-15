@@ -217,7 +217,10 @@ export default function Bookmarks() {
               <input id="bookmark-until" className="input" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} />
             </label>
           </div>
-          <details className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3" defaultOpen={Boolean(titleQuery || urlQuery || regexPattern)}>
+          <details
+            className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3"
+            {...({ defaultOpen: Boolean(titleQuery || urlQuery || regexPattern) } as any)}
+          >
             <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-200">{t('bookmarks_advanced')}</summary>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
               <label className="flex flex-col gap-1" htmlFor="bookmark-title-query">
@@ -348,7 +351,7 @@ export default function Bookmarks() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages })}</span>
+              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages ?? 1 })}</span>
               <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>{t('pagination_next')}</button>
             </div>
           </>
