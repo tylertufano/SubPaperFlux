@@ -3,9 +3,12 @@ import Nav from '../components/Nav'
 import { v1, creds } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
+import EmptyState from '../components/EmptyState'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
+import { useI18n } from '../lib/i18n'
 
 export default function Credentials() {
+  const { t } = useI18n()
   const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
   const [kind, setKind] = useState('site_login')
   const [scopeGlobal, setScopeGlobal] = useState(false)
@@ -95,7 +98,7 @@ export default function Credentials() {
     <div>
       <Nav />
       <main className="container py-6">
-        <h2 className="text-xl font-semibold mb-3">Credentials</h2>
+        <h2 className="text-xl font-semibold mb-3">{t('credentials_title')}</h2>
         {isLoading && <p className="text-gray-600">Loading...</p>}
         {error && <p className="text-red-600">{String(error)}</p>}
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
@@ -180,7 +183,15 @@ export default function Credentials() {
             </div>
           </div>
           <div className="card p-0 overflow-hidden">
-            <table className="table">
+            {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
+              <div className="p-4">
+                <EmptyState
+                  title={t('empty_credentials_title')}
+                  description={t('empty_credentials_desc')}
+                />
+              </div>
+            ) : (
+            <table className="table" aria-label="Credentials">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th" scope="col">ID</th>
@@ -206,6 +217,7 @@ export default function Credentials() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
           {editing && (
             <div className="card p-4 mt-3">

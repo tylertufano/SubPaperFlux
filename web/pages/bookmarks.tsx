@@ -3,10 +3,13 @@ import Nav from '../components/Nav'
 import { v1 } from '../lib/openapi'
 import { useEffect, useState } from 'react'
 import Alert from '../components/Alert'
+import { useI18n } from '../lib/i18n'
+import EmptyState from '../components/EmptyState'
 
 type SavedView = { name: string; search?: string; feed_id?: string; since?: string; until?: string; fuzzy?: boolean }
 
 export default function Bookmarks() {
+  const { t } = useI18n()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [views, setViews] = useState<SavedView[]>([])
@@ -97,10 +100,10 @@ export default function Bookmarks() {
       <Nav />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-xl font-semibold">Bookmarks</h2>
+          <h2 className="text-xl font-semibold">{t('bookmarks_title')}</h2>
         </div>
         <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-8 gap-2 items-center">
-          <input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search" />
+          <input className="input" aria-label={t('bookmarks_search')} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('bookmarks_search')} />
           <select className="input" value={feedId} onChange={(e) => setFeedId(e.target.value)}>
             <option value="">All Feeds</option>
               {feedItems.map((f: any) => (
@@ -121,12 +124,12 @@ export default function Bookmarks() {
           </select>
           <button className="btn" onClick={() => { setPage(1); mutate() }}>Search</button>
           <button className="btn" onClick={clearFilters}>Clear</button>
-          <select className="input md:col-span-2" onChange={(e) => { const v = views.find(x => x.name === e.target.value); if (v) applyView(v) }} defaultValue="">
-            <option value="" disabled>Saved Views</option>
-            {views.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+          <select className="input md:col-span-2" aria-label={t('bookmarks_saved_views')} onChange={(e) => { const v = views.find(x => x.name === e.target.value); if (v) applyView(v) }} defaultValue="">
+            <option value="" disabled>{t('bookmarks_saved_views')}</option>
+          {views.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
           </select>
           <div className="flex items-center gap-2">
-            <input className="input" placeholder="Save as..." value={newViewName} onChange={e => setNewViewName(e.target.value)} />
+            <input className="input" placeholder={t('bookmarks_save_as')} value={newViewName} onChange={e => setNewViewName(e.target.value)} />
             <button className="btn" onClick={saveView}>Save View</button>
           </div>
         </div>
@@ -141,10 +144,20 @@ export default function Bookmarks() {
                 <button className="btn" disabled={!data.items?.length} onClick={() => exportSelected('json')}>Export JSON</button>
                 <button className="btn" disabled={!data.items?.length} onClick={() => exportSelected('csv')}>Export CSV</button>
               </div>
-              <table className="table">
+              {(!data.items || data.items.length === 0) ? (
+                <div className="p-4">
+                  <EmptyState
+                    title={t('empty_bookmarks_title')}
+                    description={t('empty_bookmarks_desc')}
+                    actionLabel={t('btn_clear_filters')}
+                    onAction={clearFilters}
+                  />
+                </div>
+              ) : (
+              <table className="table" aria-label="Bookmarks">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="th" scope="col"><input aria-label="Select all" type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
+                    <th className="th" scope="col"><input aria-label="Select all bookmarks" type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
                     <th className="th" scope="col"><button onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">Title {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
                     <th className="th" scope="col"><button onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">URL {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
                     <th className="th" scope="col"><button onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }} className="hover:underline">Published {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}</button></th>
@@ -153,7 +166,7 @@ export default function Bookmarks() {
                 <tbody>
                   {data.items.map((b: any) => (
                     <tr key={b.id} className="odd:bg-white even:bg-gray-50">
-                      <td className="td"><input type="checkbox" checked={selected[b.id] || false} onChange={(e) => toggleOne(b.id, e.target.checked)} /></td>
+                      <td className="td"><input aria-label={`Select bookmark ${b.title || b.url}`} type="checkbox" checked={selected[b.id] || false} onChange={(e) => toggleOne(b.id, e.target.checked)} /></td>
                       <td className="td">{b.title}</td>
                       <td className="td"><a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">{b.url}</a></td>
                       <td className="td">{b.published_at || ''}</td>
@@ -161,6 +174,7 @@ export default function Bookmarks() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</button>

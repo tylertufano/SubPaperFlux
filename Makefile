@@ -2,7 +2,7 @@ SHELL := /bin/sh
 
 export DATABASE_URL ?= sqlite:///./dev.db
 
-.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts sdk-ts-web sdk-vendor-web
+.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts sdk-ts-web sdk-vendor-web venv web-install dev-api dev-web dev
 
 api:
 	uvicorn app.main:app --reload --port 8000
@@ -11,7 +11,11 @@ worker:
 	python -m app.worker
 
 db-up:
-	alembic upgrade head
+	@if [ -x .venv/bin/alembic ]; then \
+	  .venv/bin/alembic upgrade head; \
+	else \
+	  alembic upgrade head; \
+	fi
 
 db-down:
 	alembic downgrade -1
@@ -86,3 +90,41 @@ bookmarks-export:
 	  echo "GET $$URL"; \
 	  curl -sS -H "Authorization: Bearer $(TOKEN)" "$$URL"; \
 	fi
+
+# ---- Local Dev Convenience ----
+
+venv:
+	@if [ ! -d .venv ]; then \
+	  python3 -m venv .venv; \
+	fi; \
+	. .venv/bin/activate; \
+	.venv/bin/python -m pip install -r requirements.api.txt -r requirements.txt
+
+web-install:
+	cd web && npm install
+
+dev-api: venv
+	DATABASE_URL=$${DATABASE_URL:-sqlite:///./dev.db} .venv/bin/alembic upgrade head
+	DATABASE_URL=$${DATABASE_URL:-sqlite:///./dev.db} .venv/bin/uvicorn app.main:app --port 8000
+
+dev-web: web-install
+	cd web && \
+	  NEXT_PUBLIC_API_BASE=$${NEXT_PUBLIC_API_BASE:-http://localhost:8000} \
+	  NEXTAUTH_SECRET=$${NEXTAUTH_SECRET:-devsecret} \
+	  OIDC_ISSUER=$${OIDC_ISSUER:-http://localhost/oidc} \
+	  OIDC_CLIENT_ID=$${OIDC_CLIENT_ID:-local} \
+	  OIDC_CLIENT_SECRET=$${OIDC_CLIENT_SECRET:-local} \
+	  npm run dev
+
+# Run API (background) and Web (foreground) together with sane defaults
+dev: venv web-install
+	bash -c 'set -euo pipefail; trap "kill 0" EXIT; \
+	  DATABASE_URL=$${DATABASE_URL:-sqlite:///./dev.db} .venv/bin/alembic upgrade head; \
+	  DATABASE_URL=$${DATABASE_URL:-sqlite:///./dev.db} .venv/bin/uvicorn app.main:app --port 8000 & \
+	  cd web && \
+	    NEXT_PUBLIC_API_BASE=$${NEXT_PUBLIC_API_BASE:-http://localhost:8000} \
+	    NEXTAUTH_SECRET=$${NEXTAUTH_SECRET:-devsecret} \
+	    OIDC_ISSUER=$${OIDC_ISSUER:-http://localhost/oidc} \
+	    OIDC_CLIENT_ID=$${OIDC_CLIENT_ID:-local} \
+	    OIDC_CLIENT_SECRET=$${OIDC_CLIENT_SECRET:-local} \
+	    npm run dev'

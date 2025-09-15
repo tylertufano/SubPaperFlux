@@ -162,6 +162,30 @@ Frontend (Next.js) API Base Resolution
 - The UI warns in the console if loaded over HTTPS while the configured base is `http://` (mixed content).
 - The endpoint `/ui-config` serves `{ apiBase }` from server env; ensure your proxy does not intercept it.
 
+Local Environment Examples
+- API env example: `api.env.example`
+  - Copy to `.env` or export manually:
+    - `cp api.env.example .env`
+    - `source .env`
+  - Or run one-off: `DATABASE_URL=sqlite:///./dev.db uvicorn app.main:app --port 8000`
+- Web env example: `web/.env.local.example`
+  - Copy to `web/.env.local` and start dev server:
+    - `cp web/.env.local.example web/.env.local`
+    - `cd web && npm install && npm run dev`
+  - Update OIDC values to match your IdP for real authentication.
+
+Local Dev via Make
+- One command (API + Web):
+  - `make dev`
+  - Does: create venv, install deps, apply Alembic migrations to SQLite `dev.db`, start API on :8000 (background), start Next.js on :3000 (foreground) pointing to the API.
+- Run separately (two terminals):
+  - API: `make dev-api`
+  - Web: `make dev-web`
+- Defaults and env vars:
+  - Uses SQLite by default: `DATABASE_URL=sqlite:///./dev.db`
+  - Override for Postgres: `DATABASE_URL=postgresql://user:pass@localhost:5432/subpaperflux`
+  - Web uses placeholders for OIDC; set real `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `NEXTAUTH_SECRET` for actual sign-in.
+
 Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
   - `site_login`: `{ "username": "...", "password": "..." }`

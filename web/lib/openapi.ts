@@ -1,4 +1,4 @@
-import { Configuration } from '../sdk/src/runtime'
+import { Configuration, Middleware, ResponseError, FetchError } from '../sdk/src/runtime'
 import { V1Api } from '../sdk/src/apis/V1Api'
 import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
@@ -41,6 +41,44 @@ async function getClients() {
   if (!clientsPromise) {
     clientsPromise = (async () => {
       const basePath = await resolveApiBase()
+      const retry: Middleware = {
+        post: async ({ response, url, init }) => {
+          // Pass through successful responses
+          if (response.status < 500 && response.status !== 429) return undefined
+          // Retry on 429/503/504 and 5xx
+          const shouldRetry = response.status === 429 || response.status === 503 || response.status === 504 || (response.status >= 500)
+          if (!shouldRetry) return undefined
+          const max = 2
+          for (let attempt = 1; attempt <= max; attempt++) {
+            const retryAfter = response.headers.get('retry-after')
+            const base = retryAfter ? (parseInt(retryAfter, 10) * 1000 || 0) : 300
+            const delay = base * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100)
+            await new Promise(r => setTimeout(r, delay))
+            try {
+              const next = await fetch(url, init)
+              if (next.ok) return next
+              if (attempt === max) return next
+            } catch {
+              if (attempt === max) return response
+            }
+          }
+          return undefined
+        },
+        onError: async ({ url, init }) => {
+          const max = 2
+          for (let attempt = 1; attempt <= max; attempt++) {
+            const delay = 300 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 100)
+            await new Promise(r => setTimeout(r, delay))
+            try {
+              const next = await fetch(url, init)
+              if (next.ok) return next
+            } catch {
+              // continue
+            }
+          }
+          return undefined
+        }
+      }
       const cfg = new Configuration({
         basePath,
         accessToken: async () => {
@@ -48,6 +86,7 @@ async function getClients() {
           return (session?.accessToken as string) || ''
         },
         headers: { 'X-CSRF-Token': CSRF },
+        middleware: [retry],
       })
       return {
         v1: new V1Api(cfg),

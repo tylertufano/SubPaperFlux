@@ -18,7 +18,7 @@ Status legend: [x] done, [ ] todo
   - [x] Pages migrated to generated SDK; removed legacy helpers (`web/lib/api.ts`, `web/lib/sdk.ts`) (UI-002)
 - [ ] Error + Empty States: Friendly messages, retry actions, contact link (UI-007).
   - [x] Alerts component exists: `web/components/Alert.tsx:1`
-  - [ ] Purposeful empty states across pages (UI-007)
+  - [x] Purposeful empty states across pages (UI-007)
 - [x] State & Caching: SWR for caching/retries/refresh. (UI-025)
   - Evidence: `web/package.json:15`, `web/pages/*:1`
 - [ ] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
@@ -116,7 +116,7 @@ make sdk-ts
 - [x] Show dedupe feedback when publish is skipped
 - [x] Surface job backoff timers and `last_error`
 - [x] Retry All failed/dead
-- [ ] Dead-letter queue view (UI-008)
+- [x] Dead-letter queue view (UI-008)
 
 ## Phase 2 — Power Features
 
@@ -198,7 +198,7 @@ make sdk-ts
 
 ## Performance & Robustness
 
- - [ ] Retry Policies: Network retry with exponential backoff in SDK (UI-019)
+ - [x] Retry Policies: Network retry with exponential backoff in SDK (UI-019)
  - [ ] Backpressure: Disable/enqueue bulk buttons if rate limits hit; show wait times (UI-020)
 - [ ] Optimistic UX: Deletes/retries optimistic with reconciliation (UI-049)
 

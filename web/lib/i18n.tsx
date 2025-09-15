@@ -20,6 +20,18 @@ const catalog: Catalog = {
     jobs_title: 'Jobs',
     credentials_title: 'Credentials',
     site_configs_title: 'Site Configs',
+    feeds_title: 'Feeds',
+    btn_clear_filters: 'Clear Filters',
+    empty_bookmarks_title: 'No bookmarks found',
+    empty_bookmarks_desc: 'Try adjusting filters or disable fuzzy search.',
+    empty_jobs_title: 'No jobs match this filter',
+    empty_jobs_desc: 'Try a different status or clear filters to see all jobs.',
+    empty_feeds_title: 'No feeds yet',
+    empty_feeds_desc: 'Create your first feed using the form above.',
+    empty_credentials_title: 'No credentials yet',
+    empty_credentials_desc: 'Create site, Instapaper, or Miniflux credentials above.',
+    empty_site_configs_title: 'No site configs yet',
+    empty_site_configs_desc: 'Create a site config above to automate site logins.',
   },
 }
 
@@ -41,4 +53,3 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useI18n() { return useContext(Ctx) }
-

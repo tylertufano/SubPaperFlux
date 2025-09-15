@@ -3,9 +3,12 @@ import Nav from '../components/Nav'
 import { v1, siteConfigs as site } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
+import EmptyState from '../components/EmptyState'
 import { validateSiteConfig } from '../lib/validate'
+import { useI18n } from '../lib/i18n'
 
 export default function SiteConfigs() {
+  const { t } = useI18n()
   const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], () => v1.listSiteConfigsV1V1SiteConfigsGet({}))
   const [form, setForm] = useState({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
   const [createErrors, setCreateErrors] = useState<Record<string,string>>({})
@@ -46,7 +49,7 @@ export default function SiteConfigs() {
     <div>
       <Nav />
       <main className="container py-6">
-        <h2 className="text-xl font-semibold mb-3">Site Configs</h2>
+        <h2 className="text-xl font-semibold mb-3">{t('site_configs_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {isLoading && <p className="text-gray-600">Loading...</p>}
         {error && <Alert kind="error" message={String(error)} />}
@@ -96,7 +99,15 @@ export default function SiteConfigs() {
         </div>
         {data && (
           <div className="card p-0 overflow-hidden">
-            <table className="table">
+            {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
+              <div className="p-4">
+                <EmptyState
+                  title={t('empty_site_configs_title')}
+                  description={t('empty_site_configs_desc')}
+                />
+              </div>
+            ) : (
+            <table className="table" aria-label="Site Configs">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th" scope="col">Name</th>
@@ -120,6 +131,7 @@ export default function SiteConfigs() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
           )}
           {editing && (

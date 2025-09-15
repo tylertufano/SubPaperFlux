@@ -3,8 +3,11 @@ import Nav from '../components/Nav'
 import { v1, feeds as feedsApi } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
+import { useI18n } from '../lib/i18n'
+import EmptyState from '../components/EmptyState'
 
 export default function Feeds() {
+  const { t } = useI18n()
   const { data, error, isLoading, mutate } = useSWR(['/v1/feeds'], () => v1.listFeedsV1V1FeedsGet({}))
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
@@ -89,7 +92,7 @@ export default function Feeds() {
     <div>
       <Nav />
       <main className="container py-6">
-        <h2 className="text-xl font-semibold mb-3">Feeds</h2>
+        <h2 className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         <div className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2">
           <h3 className="font-semibold md:col-span-3">Create Feed</h3>
@@ -105,7 +108,15 @@ export default function Feeds() {
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
           <div className="card p-0 overflow-hidden">
-            <table className="table">
+            {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
+              <div className="p-4">
+                <EmptyState
+                  title={t('empty_feeds_title')}
+                  description={t('empty_feeds_desc')}
+                />
+              </div>
+            ) : (
+            <table className="table" aria-label="Feeds">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th">URL</th>
@@ -151,6 +162,7 @@ export default function Feeds() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         )}
       </main>

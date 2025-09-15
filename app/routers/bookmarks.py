@@ -12,7 +12,8 @@ from ..jobs.util_subpaperflux import get_instapaper_oauth_session
 from ..schemas import BookmarksPage, BookmarkOut
 from ..db import is_postgres
 from ..security.csrf import csrf_protect
-from subpaperflux import INSTAPAPER_BOOKMARKS_DELETE_URL
+# Inline constant to avoid importing subpaperflux (which initializes Selenium at import time)
+INSTAPAPER_BOOKMARKS_DELETE_URL = "https://www.instapaper.com/api/1.1/bookmarks/delete"
 
 
 router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
