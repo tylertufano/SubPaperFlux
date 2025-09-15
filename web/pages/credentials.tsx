@@ -104,7 +104,7 @@ export default function Credentials() {
           <div className="card p-4 mb-4 flex flex-col gap-2">
             <h3 className="font-semibold">Create Credential</h3>
             <div className="flex items-center gap-2 flex-wrap">
-              <label>Kind:</label>
+              <label>Kind <span className="ml-1 text-gray-500 cursor-help" title="Choose credential type. Fields vary by type.">?</span>:</label>
               <select className="input" value={kind} onChange={(e) => setKind(e.target.value)}>
                 <option value="site_login">site_login</option>
                 <option value="miniflux">miniflux</option>
@@ -162,7 +162,21 @@ export default function Credentials() {
               </div>
             )}
             <div>
-              <button className="btn" onClick={createCred}>Create</button>
+              <button
+                className="btn"
+                disabled={
+                  !(
+                    (kind === 'site_login' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
+                    (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
+                    (kind === 'instapaper' && !!(createObj.oauth_token?.trim() && createObj.oauth_token_secret?.trim())) ||
+                    (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
+                  )
+                }
+                title="Fill required fields"
+                onClick={createCred}
+              >
+                Create
+              </button>
             </div>
           </div>
           <div className="card p-0 overflow-hidden">
@@ -240,18 +254,22 @@ export default function Credentials() {
                 </div>
               )}
               <div className="mt-2 flex gap-2">
-                <button className="btn" onClick={saveEdit}>Save</button>
-                <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
-              </div>
-            </div>
-          )}
-          {editing && (
-            <div className="card p-4 mt-3">
-              <h3 className="font-semibold mb-2">Edit Credential {editing.id}</h3>
-              <div className="mb-2 text-sm text-gray-700">Kind: {editing.kind}</div>
-              <textarea className="input min-h-[140px]" value={editing.json} onChange={e => setEditing({ ...editing, json: e.target.value })} />
-              <div className="mt-2 flex gap-2">
-                <button className="btn" onClick={saveEdit}>Save</button>
+                <button
+                  className="btn"
+                  disabled={
+                    !editing ||
+                    !(
+                      (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
+                      (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
+                      (editing.kind === 'instapaper') ||
+                      (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
+                    )
+                  }
+                  title="Fill required fields"
+                  onClick={saveEdit}
+                >
+                  Save
+                </button>
                 <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
               </div>
             </div>
