@@ -116,6 +116,8 @@ export interface ListBookmarksV1BookmarksGetRequest {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: string | null;
+    sortDir?: string | null;
 }
 
 export interface ListBookmarksV1BookmarksGet0Request {
@@ -126,6 +128,8 @@ export interface ListBookmarksV1BookmarksGet0Request {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: string | null;
+    sortDir?: string | null;
 }
 
 export interface ListCredentialsV1V1CredentialsGetRequest {
@@ -183,6 +187,15 @@ export interface RetryAllJobsV1JobsRetryAllPostRequest {
 
 export interface RetryJobV1JobsJobIdRetryPostRequest {
     jobId: string;
+}
+
+export interface StreamJobsV1JobsStreamGetRequest {
+    status?: string | null;
+    jobType?: string | null;
+    page?: number;
+    size?: number;
+    orderBy?: string;
+    orderDir?: string;
 }
 
 export interface TestInstapaperV1IntegrationsInstapaperTestPostRequest {
@@ -824,6 +837,14 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -887,6 +908,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['until'] != null) {
             queryParameters['until'] = requestParameters['until'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1462,6 +1491,73 @@ export class V1Api extends runtime.BaseAPI {
      */
     async retryJobV1JobsJobIdRetryPost(requestParameters: RetryJobV1JobsJobIdRetryPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobOut> {
         const response = await this.retryJobV1JobsJobIdRetryPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Server-sent events stream of jobs list.
+     * Stream jobs
+     */
+    async streamJobsV1JobsStreamGetRaw(requestParameters: StreamJobsV1JobsStreamGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['jobType'] != null) {
+            queryParameters['job_type'] = requestParameters['jobType'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['order_by'] = requestParameters['orderBy'];
+        }
+
+        if (requestParameters['orderDir'] != null) {
+            queryParameters['order_dir'] = requestParameters['orderDir'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/jobs/stream`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Server-sent events stream of jobs list.
+     * Stream jobs
+     */
+    async streamJobsV1JobsStreamGet(requestParameters: StreamJobsV1JobsStreamGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.streamJobsV1JobsStreamGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
