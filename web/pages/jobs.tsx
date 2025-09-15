@@ -5,6 +5,7 @@ import Alert from '../components/Alert'
 import EmptyState from '../components/EmptyState'
 import React, { useState, useEffect } from 'react'
 import { useI18n } from '../lib/i18n'
+import Link from 'next/link'
 
 export default function Jobs() {
   const { t } = useI18n()
@@ -32,6 +33,9 @@ export default function Jobs() {
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">{t('jobs_title')}</h2>
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/jobs-dead" className="btn">Dead-letter Queue</Link>
+          </div>
         </div>
         <div className="card p-4 mb-4 flex items-center gap-2 flex-wrap">
           <label className="text-gray-700">Status: </label>

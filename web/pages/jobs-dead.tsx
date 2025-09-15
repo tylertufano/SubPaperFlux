@@ -4,6 +4,7 @@ import { v1 } from '../lib/openapi'
 import Alert from '../components/Alert'
 import EmptyState from '../components/EmptyState'
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 export default function JobsDead() {
   const [page, setPage] = useState(1)
@@ -20,7 +21,9 @@ export default function JobsDead() {
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
           <h2 className="text-xl font-semibold">Dead-letter Queue</h2>
-          <div className="ml-auto" />
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/jobs" className="btn">Back to Jobs</Link>
+          </div>
           <button
             className="btn"
             onClick={async () => {
@@ -118,4 +121,3 @@ export default function JobsDead() {
     </div>
   )
 }
-
