@@ -3,7 +3,7 @@ import Nav from '../components/Nav'
 import { v1, creds } from '../lib/openapi'
 import { useState } from 'react'
 import Alert from '../components/Alert'
-import { parseJsonSafe, validateCredential } from '../lib/validate'
+import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 
 export default function Credentials() {
   const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
@@ -11,6 +11,11 @@ export default function Credentials() {
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
+  const [editing, setEditing] = useState<{ id: string; kind: string; json: string } | null>(null)
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({})
+  const createObj = (() => { try { return JSON.parse(jsonData || '{}') } catch { return {} } })() as any
+  const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
 
   async function testCred(c: any) {
     try {
@@ -52,6 +57,40 @@ export default function Credentials() {
     }
   }
 
+  async function startEdit(id: string, kind: string) {
+    try {
+      const full = await creds.getCredentialCredentialsCredIdGet({ credId: id })
+      const body = full?.data ?? {}
+      setEditing({ id, kind, json: JSON.stringify(body, null, 2) })
+    } catch (e: any) {
+      setBanner({ kind: 'error', message: e?.message || String(e) })
+    }
+  }
+
+  async function saveEdit() {
+    if (!editing) return
+    const parsed = parseJsonSafe(editing.json)
+    if (!parsed.ok) { setBanner({ kind: 'error', message: parsed.error }); return }
+    // Prune masked/empty values so backend preserves existing secrets
+    const data: any = {}
+    for (const [k, v] of Object.entries(parsed.data || {})) {
+      if (typeof v === 'string') {
+        const trimmed = v.trim()
+        if (!trimmed) continue
+        if (/[\*•]/.test(trimmed)) continue
+      }
+      (data as any)[k] = v as any
+    }
+    try {
+      await creds.updateCredentialCredentialsCredIdPut({ credId: editing.id, credential: { kind: editing.kind, data } })
+      setEditing(null)
+      setBanner({ kind: 'success', message: 'Credential updated' })
+      mutate()
+    } catch (e: any) {
+      setBanner({ kind: 'error', message: e?.message || String(e) })
+    }
+  }
+
   return (
     <div>
       <Nav />
@@ -74,7 +113,54 @@ export default function Credentials() {
               </select>
               <label className="inline-flex items-center gap-2"><input type="checkbox" checked={scopeGlobal} onChange={e => setScopeGlobal(e.target.checked)} /> Global (admin)</label>
             </div>
-            <textarea className="input min-h-[120px]" value={jsonData} onChange={e => setJsonData(e.target.value)} placeholder="JSON data"></textarea>
+            {kind === 'site_login' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <input className="input" placeholder="Username" value={createObj.username || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: v, password: createObj.password || '' })); setCreateErrors(prev=>({ ...prev, username: v.trim()? '' : 'Username is required' })) }} />
+                  {createErrors.username && <div className="text-sm text-red-600">{createErrors.username}</div>}
+                </div>
+                <div>
+                  <input className="input" placeholder="Password" type="password" value={createObj.password || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: createObj.username || '', password: v })); setCreateErrors(prev=>({ ...prev, password: v.trim()? '' : 'Password is required' })) }} />
+                  {createErrors.password && <div className="text-sm text-red-600">{createErrors.password}</div>}
+                </div>
+              </div>
+            )}
+            {kind === 'miniflux' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <input className="input" placeholder="Miniflux URL" value={createObj.miniflux_url || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: v, api_key: createObj.api_key || '' })); setCreateErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : 'Valid URL required' })) }} />
+                  {createErrors.miniflux_url && <div className="text-sm text-red-600">{createErrors.miniflux_url}</div>}
+                </div>
+                <div>
+                  <input className="input" placeholder="API Key" value={createObj.api_key || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: createObj.miniflux_url || '', api_key: v })); setCreateErrors(prev=>({ ...prev, api_key: v.trim()? '' : 'API key is required' })) }} />
+                  {createErrors.api_key && <div className="text-sm text-red-600">{createErrors.api_key}</div>}
+                </div>
+              </div>
+            )}
+            {kind === 'instapaper' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <input className="input" placeholder="OAuth Token" value={createObj.oauth_token || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ oauth_token: v, oauth_token_secret: createObj.oauth_token_secret || '' })); setCreateErrors(prev=>({ ...prev, oauth_token: v.trim()? '' : 'Required' })) }} />
+                  {createErrors.oauth_token && <div className="text-sm text-red-600">{createErrors.oauth_token}</div>}
+                </div>
+                <div>
+                  <input className="input" placeholder="OAuth Token Secret" value={createObj.oauth_token_secret || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ oauth_token: createObj.oauth_token || '', oauth_token_secret: v })); setCreateErrors(prev=>({ ...prev, oauth_token_secret: v.trim()? '' : 'Required' })) }} />
+                  {createErrors.oauth_token_secret && <div className="text-sm text-red-600">{createErrors.oauth_token_secret}</div>}
+                </div>
+              </div>
+            )}
+            {kind === 'instapaper_app' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <input className="input" placeholder="Consumer Key" value={createObj.consumer_key || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: v, consumer_secret: createObj.consumer_secret || '' })); setCreateErrors(prev=>({ ...prev, consumer_key: v.trim()? '' : 'Required' })) }} />
+                  {createErrors.consumer_key && <div className="text-sm text-red-600">{createErrors.consumer_key}</div>}
+                </div>
+                <div>
+                  <input className="input" placeholder="Consumer Secret" value={createObj.consumer_secret || ''} onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: createObj.consumer_key || '', consumer_secret: v })); setCreateErrors(prev=>({ ...prev, consumer_secret: v.trim()? '' : 'Required' })) }} />
+                  {createErrors.consumer_secret && <div className="text-sm text-red-600">{createErrors.consumer_secret}</div>}
+                </div>
+              </div>
+            )}
             <div>
               <button className="btn" onClick={createCred}>Create</button>
             </div>
@@ -99,6 +185,7 @@ export default function Credentials() {
                       {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                         <button className="btn" onClick={() => testCred(c)}>Test</button>
                       )}
+                      <button className="btn" onClick={() => startEdit(c.id, c.kind)}>Edit</button>
                       <button className="btn" onClick={() => deleteCred(c.id)}>Delete</button>
                     </td>
                   </tr>
@@ -106,6 +193,69 @@ export default function Credentials() {
               </tbody>
             </table>
           </div>
+          {editing && (
+            <div className="card p-4 mt-3">
+              <h3 className="font-semibold mb-2">Edit Credential {editing.id}</h3>
+              <div className="mb-2 text-sm text-gray-700">Kind: {editing.kind}</div>
+              {editing.kind === 'site_login' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input className="input" placeholder={editingObj?.username || 'Username'} value={editingObj?.username ? (editingObj.username.includes('*') ? '' : editingObj.username) : ''} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), username: v }) }); setEditErrors(prev=>({ ...prev, username: v.trim()? '' : 'Username is required' })) }} />
+                    {editErrors.username && <div className="text-sm text-red-600">{editErrors.username}</div>}
+                  </div>
+                  <div>
+                    <input className="input" placeholder={(editingObj?.password && editingObj.password.includes('*')) ? '••••' : 'Password (leave blank to keep)'} type="password" value={(editingObj?.password && editingObj.password.includes('*')) ? '' : (editingObj?.password || '')} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), password: v }) }) }} />
+                  </div>
+                  </div>
+              )}
+              {editing.kind === 'miniflux' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input className="input" placeholder={editingObj?.miniflux_url || 'Miniflux URL'} value={editingObj?.miniflux_url || ''} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), miniflux_url: v }) }); setEditErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : 'Valid URL required' })) }} />
+                    {editErrors.miniflux_url && <div className="text-sm text-red-600">{editErrors.miniflux_url}</div>}
+                  </div>
+                  <div>
+                    <input className="input" placeholder={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '••••' : 'API Key (leave blank to keep)'} value={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '' : (editingObj?.api_key || '')} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), api_key: v }) }) }} />
+                  </div>
+                </div>
+              )}
+              {editing.kind === 'instapaper' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input className="input" placeholder={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '••••' : 'OAuth Token (leave blank to keep)'} value={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '' : (editingObj?.oauth_token || '')} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token: v }) }) }} />
+                  </div>
+                  <div>
+                    <input className="input" placeholder={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '••••' : 'OAuth Token Secret (leave blank to keep)'} value={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '' : (editingObj?.oauth_token_secret || '')} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token_secret: v }) }) }} />
+                  </div>
+                </div>
+              )}
+              {editing.kind === 'instapaper_app' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input className="input" placeholder={editingObj?.consumer_key || 'Consumer Key'} value={editingObj?.consumer_key || ''} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_key: v }) }) }} />
+                  </div>
+                  <div>
+                    <input className="input" placeholder={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '••••' : 'Consumer Secret (leave blank to keep)'} value={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '' : (editingObj?.consumer_secret || '')} onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_secret: v }) }) }} />
+                  </div>
+                </div>
+              )}
+              <div className="mt-2 flex gap-2">
+                <button className="btn" onClick={saveEdit}>Save</button>
+                <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
+          {editing && (
+            <div className="card p-4 mt-3">
+              <h3 className="font-semibold mb-2">Edit Credential {editing.id}</h3>
+              <div className="mb-2 text-sm text-gray-700">Kind: {editing.kind}</div>
+              <textarea className="input min-h-[140px]" value={editing.json} onChange={e => setEditing({ ...editing, json: e.target.value })} />
+              <div className="mt-2 flex gap-2">
+                <button className="btn" onClick={saveEdit}>Save</button>
+                <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
+              </div>
+            </div>
+          )}
           </>
         )}
       </main>

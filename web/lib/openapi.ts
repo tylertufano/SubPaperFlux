@@ -88,11 +88,14 @@ export const v1 = {
 export const creds = {
   createCredentialCredentialsPost: async ({ credential }: { credential: any }) => (await getClients()).creds.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
   deleteCredentialCredentialsCredIdDelete: async ({ credId }: { credId: string }) => (await getClients()).creds.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
+  getCredentialCredentialsCredIdGet: async ({ credId }: { credId: string }) => (await getClients()).creds.getCredentialCredentialsCredIdGet({ credId }),
+  updateCredentialCredentialsCredIdPut: async ({ credId, credential }: { credId: string; credential: any }) => (await getClients()).creds.updateCredentialCredentialsCredIdPut({ credId, credential, xCsrfToken: CSRF }),
 }
 
 export const siteConfigs = {
   createSiteConfigSiteConfigsPost: async ({ siteConfig }: { siteConfig: any }) => (await getClients()).sites.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
   deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) => (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
+  updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, siteConfig }: { configId: string; siteConfig: any }) => (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, siteConfig, xCsrfToken: CSRF }),
 }
 
 export const feeds = {

@@ -105,11 +105,17 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
     # Only owner can update; allow admin to update globals
     if model.owner_user_id not in (current_user["sub"], None):
         raise HTTPException(status_code=404, detail="Not found")
-    data = body.data or {}
-    if not is_encrypted(data):
-        data = encrypt_dict(data)
+    incoming = body.data or {}
+    if is_encrypted(incoming):
+        enc = incoming
+    else:
+        existing_plain = decrypt_dict(model.data or {})
+        merged_plain = dict(existing_plain)
+        for k, v in incoming.items():
+            merged_plain[k] = v
+        enc = encrypt_dict(merged_plain)
     model.kind = body.kind or model.kind
-    model.data = data
+    model.data = enc
     session.add(model)
     session.commit()
     session.refresh(model)
