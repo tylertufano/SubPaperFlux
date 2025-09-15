@@ -30,32 +30,37 @@ Status legend: [x] done, [ ] todo
 ## Phase 1 — Core UX (MVP)
 
 - [x] Dashboard (UI-003)
-  - [ ] Health, counts, quick links (Home is placeholder: `web/pages/index.tsx:1`) (UI-003)
-- [ ] Bookmarks (UI-021)
+  - [x] Counts and quick links on Home: `web/pages/index.tsx:1`
+- [x] Bookmarks (UI-021)
   - [x] Pagination, search, filters, fuzzy toggle: `web/pages/bookmarks.tsx:1`
   - [x] Bulk delete and export (JSON/CSV)
-  - [ ] Sorting (UI-004)
+  - [x] Sorting (UI-004)
+    - Evidence: `app/routers/bookmarks.py:1`, `web/pages/bookmarks.tsx:1`
 - [x] Jobs
   - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
   - [x] Backoff timer and dedupe badges
   - [x] Retry and Retry All failed/dead
-- [ ] Credentials (UI-056)
+- [x] Credentials (UI-056)
   - [x] List, create, delete
   - [x] Test Instapaper/Miniflux
-  - [ ] Update forms (UI-006)
-- [ ] Site Configs (UI-057)
+  - [x] Update forms with validation and tooltips; merge secrets safely (UI-006)
+    - Evidence: `app/routers/credentials.py:1`, `web/pages/credentials.tsx:1`
+- [x] Site Configs (UI-057)
   - [x] List, create, delete
   - [x] Test login
-  - [ ] Update forms (UI-006)
-- [ ] Feeds (UI-005)
-  - [ ] List page and CRUD (used for selection only) (UI-005)
+  - [x] Update forms with inline validation (UI-006)
+    - Evidence: `web/pages/site-configs.tsx:1`
+- [x] Feeds (UI-005)
+  - [x] List page and CRUD (used for selection only)
     - [x] List
     - [x] Create
     - [x] Delete
     - [x] Update (UI-077)
-- [ ] Admin (UI-015)
+- [x] Admin (UI-015)
   - [x] PG prep (pg_trgm/indexes) and enable RLS: `web/pages/admin.tsx:12`
   - [x] Health/status panels and system info (UI-015)
+  - [x] Granular results and privilege hints; disable actions if not Postgres (UI-085)
+    - Evidence: `app/db_admin.py:1`, `web/pages/admin.tsx:12`
 
 ## Phase 1.5 — Harden and Accelerate
 
@@ -81,10 +86,14 @@ make sdk-ts
 - [ ] Optional: publish `@subpaperflux/sdk` to npm and consume from package (UI-082)
  - [ ] Optional: add separate CI job matrix to validate SDK modes (regen vs copy) and artifact reuse (UI-083)
 
+### Runtime-configurable API Base
+
+- [x] Resolve API base at runtime via `/ui-config` and window override; warn on mixed content (UI-084)
+
 ### Add CRUD forms (Credentials + Site Configs)
 
 - [x] Create/delete forms
-- [ ] Update forms (UI-006)
+- [x] Update forms with validation, tooltips, and masked secrets (UI-006)
 - [x] CSRF header for cookie-mode auth
 - [x] Never echo secrets in UI logs
 
@@ -203,7 +212,8 @@ make sdk-ts
 ## CI/CD & Ops
 
 - [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
-- [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
+ - [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
+   - [x] Runtime API base resolution via `/ui-config` (UI-084)
 - [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback (UI-011)
  - [ ] CI job matrix: validate both SDK generation modes (regen from OpenAPI vs copy vendored) (UI-083)
 
@@ -345,6 +355,8 @@ Use these IDs in future prompts to request specific work. We will keep this list
   - UI-078: Vendor generated SDK under `web/sdk` and update imports
   - UI-079: Wrap generated client in `web/lib/openapi.ts`; migrate pages
   - UI-080: Docker/CI step to generate SDK or include vendored SDK
-  - UI-081: Remove temporary fetch-only fallback
-  - UI-082: Optionally publish `@subpaperflux/sdk` and adopt
-  - UI-083: CI job matrix to validate SDK modes (regen vs copy) and artifact reuse
+ - UI-081: Remove temporary fetch-only fallback
+ - UI-082: Optionally publish `@subpaperflux/sdk` and adopt
+ - UI-083: CI job matrix to validate SDK modes (regen vs copy) and artifact reuse
+ - UI-084: Runtime API base resolution via `/ui-config` and mixed-content warning
+ - UI-085: Admin privilege hints and Postgres-only safeguards
