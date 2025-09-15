@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 def _env(monkeypatch):
     # In-memory SQLite
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     # Crypto key for any encryption paths
     monkeypatch.setenv("CREDENTIALS_ENC_KEY", base64.urlsafe_b64encode(os.urandom(32)).decode())
 
@@ -41,3 +42,74 @@ def test_bookmarks_list_filters():
     r2 = client.get("/bookmarks?search=alp")
     assert r2.status_code == 200
     assert any(b["title"] == "Alpha" for b in r2.json()["items"])
+
+    r3 = client.get("/bookmarks?title_query=Alp")
+    assert r3.status_code == 200
+    assert all("Alp" in (b["title"] or "") for b in r3.json()["items"])
+
+    r4 = client.get("/bookmarks?url_query=https://b")
+    assert r4.status_code == 200
+    assert all(b["url"] == "https://b" for b in r4.json()["items"])
+
+    r5 = client.get("/bookmarks?regex=/Al.*/i")
+    assert r5.status_code == 200
+    assert any(b["title"] == "Alpha" for b in r5.json()["items"])
+
+    r6 = client.get("/bookmarks?regex=/https:\\/\\/b/&regex_target=url")
+    assert r6.status_code == 200
+    assert len(r6.json()["items"]) == 1 and r6.json()["items"][0]["title"] == "Beta"
+
+    bad = client.get("/bookmarks?regex=/[unclosed")
+    assert bad.status_code == 400
+
+
+def test_bulk_publish_enqueues_jobs():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark, Job
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        b1 = Bookmark(owner_user_id="u1", instapaper_bookmark_id="1", title="Alpha", url="https://a", published_at=datetime.fromisoformat("2024-01-01T00:00:00+00:00"))
+        b2 = Bookmark(owner_user_id="u1", instapaper_bookmark_id="2", title="No URL", url=None)
+        b3 = Bookmark(owner_user_id="u2", instapaper_bookmark_id="3", title="Other", url="https://c")
+        session.add(b1)
+        session.add(b2)
+        session.add(b3)
+        session.commit()
+
+        b1_id = b1.id
+        b2_id = b2.id
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-publish",
+        json={
+            "ids": [b1_id, b2_id, "missing"],
+            "config_dir": "./config",
+            "instapaper_id": "cred123",
+            "folder": "Archive",
+            "tags": ["news", "tech"],
+        },
+    )
+    assert resp.status_code == 202
+    data = resp.json()
+    assert data["requested"] == 3
+    assert data["enqueued"] == 1
+    assert data["missing"] == ["missing"]
+    assert data["skipped"] == [{"id": b2_id, "reason": "missing_url"}]
+    assert len(data["job_ids"]) == 1
+
+    job_id = data["job_ids"][0]
+
+    with next(get_session()) as session:
+        job = session.get(Job, job_id)
+        assert job is not None
+        assert job.type == "publish"
+        assert job.payload["url"] == "https://a"
+        assert job.payload["folder"] == "Archive"
+        assert job.payload["tags"] == ["news", "tech"]

@@ -102,6 +102,7 @@ async function getClients() {
 export const v1 = {
   listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).v1.listBookmarksV1BookmarksGet(p),
   bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
+  bulkPublishBookmarksV1BookmarksBulkPublishPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.bulkPublishBookmarksV1BookmarksBulkPublishPost({ requestBody, xCsrfToken: CSRF }),
   countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).v1.countBookmarksV1BookmarksCountGet(p),
 
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
