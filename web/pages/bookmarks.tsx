@@ -3,6 +3,7 @@ import { Alert, EmptyState, Nav } from '../components'
 import { v1 } from '../lib/openapi'
 import { FormEvent, useEffect, useState } from 'react'
 import { useI18n } from '../lib/i18n'
+import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 
 type RegexTarget = 'both' | 'title' | 'url'
 type SortOption = 'title' | 'url' | 'published_at' | 'relevance'
@@ -24,6 +25,8 @@ type SavedView = {
 
 export default function Bookmarks() {
   const { t } = useI18n()
+  const numberFormatter = useNumberFormatter()
+  const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState('')
   const [titleQuery, setTitleQuery] = useState('')
@@ -152,10 +155,11 @@ export default function Bookmarks() {
   async function bulkDelete() {
     const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k)
     if (!ids.length) return
-    if (!confirm(t('bookmarks_confirm_delete', { count: ids.length }))) return
+    const formattedCount = formatNumberValue(ids.length, numberFormatter, '0')
+    if (!confirm(t('bookmarks_confirm_delete', { count: formattedCount }))) return
     try {
       await v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody: { ids, delete_remote: true } })
-      setBanner({ kind: 'success', message: t('bookmarks_deleted_success', { count: ids.length }) })
+      setBanner({ kind: 'success', message: t('bookmarks_deleted_success', { count: formattedCount }) })
       setSelected({})
       mutate()
     } catch (e: any) {
@@ -388,7 +392,7 @@ export default function Bookmarks() {
                       <td className="td"><input aria-label={t('bookmarks_select_row', { value: b.title || b.url || t('bookmarks_select_row_unknown') })} type="checkbox" checked={selected[b.id] || false} onChange={(e) => toggleOne(b.id, e.target.checked)} /></td>
                       <td className="td">{b.title}</td>
                       <td className="td"><a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">{b.url}</a></td>
-                      <td className="td">{b.published_at || ''}</td>
+                      <td className="td">{formatDateTimeValue(b.published_at, dateTimeFormatter, b.published_at || '')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -397,7 +401,12 @@ export default function Bookmarks() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages ?? 1 })}</span>
+              <span className="text-gray-700">
+                {t('pagination_status', {
+                  page: numberFormatter.format(page),
+                  total: numberFormatter.format(data.totalPages ?? 1),
+                })}
+              </span>
               <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>{t('pagination_next')}</button>
             </div>
           </>
