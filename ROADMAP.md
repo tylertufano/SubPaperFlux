@@ -16,16 +16,21 @@ Status legend: [x] done, [~] in progress, [ ] todo
   - [x] Centralized wrapper around generated SDK in `web/lib/openapi.ts`
   - [x] Generated SDK present in `sdk/ts`
   - [x] Pages migrated to generated SDK; removed legacy helpers (`web/lib/api.ts`, `web/lib/sdk.ts`) (UI-002)
-- [ ] Error + Empty States: Friendly messages, retry actions, contact link (UI-007).
+- [x] Error + Empty States: Friendly messages, retry actions, contact link (UI-007).
+  - Evidence: `web/components/EmptyState.tsx:1`, `web/pages/bookmarks.tsx:315`, `web/pages/feeds.tsx:116`
   - [x] Alerts component exists: `web/components/Alert.tsx:1`
   - [x] Purposeful empty states across pages (UI-007)
 - [x] State & Caching: SWR for caching/retries/refresh. (UI-025)
   - Evidence: `web/package.json:15`, `web/pages/*:1`
-- [~] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
-  - [~] Add ARIA and contrast audits (UI-030, UI-032)
-- [~] i18n-Ready: Wrap text for translation; locale switch scaffold (UI-013).
+- [x] Accessibility: Semantic markup, focus states, ARIA, color contrast checks (UI-030).
+  - Evidence: `web/components/Nav.tsx:83`, `web/components/DropdownMenu.tsx:37`, `web/styles/globals.css:6`
+  - [x] Add ARIA and contrast audits (UI-030, UI-032)
+    - Evidence: `web/components/DropdownMenu.tsx:73`, `web/styles/globals.css:16`
+- [x] i18n-Ready: Wrap text for translation; locale switch scaffold (UI-013).
+  - Evidence: `web/lib/i18n.tsx:1`, `web/locales/en/common.json:1`
   - [x] Minimal provider: `web/lib/i18n.tsx:29`
-  - [~] Expand string catalog beyond Nav/Home (UI-013)
+  - [x] Expand string catalog beyond Nav/Home (UI-013)
+    - Evidence: `web/pages/bookmarks.tsx:24`, `web/locales/en/common.json:1`
 
 ## Phase 1 — Core UX (MVP)
 
@@ -134,13 +139,16 @@ make sdk-ts
 
 ### Accessibility (a11y)
 
-- [~] Expand ARIA labeling (inputs, alerts) (UI-030)
-- [~] Keyboard navigation patterns (focus traps) (UI-031)
+- [x] Expand ARIA labeling (inputs, alerts) (UI-030)
+  - Evidence: `web/pages/credentials.tsx:94`, `web/components/Alert.tsx:12`
+- [x] Keyboard navigation patterns (focus traps) (UI-031)
+  - Evidence: `web/components/DropdownMenu.tsx:43`
 - [ ] Color contrast audits and dark mode (UI-032)
 
 ### Internationalization (i18n)
 
-- [~] Expand string catalog beyond Nav/Home (UI-033)
+- [x] Expand string catalog beyond Nav/Home (UI-033)
+  - Evidence: `web/locales/en/common.json:1`, `web/pages/index.tsx:45`
 - [ ] Locale detection and formatting (dates, numbers) (UI-034)
 
 ### Observability
