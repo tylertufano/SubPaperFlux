@@ -38,6 +38,26 @@ type BulkProgressState = {
   errorMessage?: string | null
 }
 
+type TagModalState = {
+  bookmark: { id: string; label: string }
+  input: string
+  loading: boolean
+  saving: boolean
+  error: string | null
+}
+
+type FolderModalState = {
+  bookmark: { id: string; label: string }
+  loading: boolean
+  saving: boolean
+  error: string | null
+  selectedId: string
+  newName: string
+  instapaper: string
+  hasCurrent: boolean
+  currentName: string | null
+}
+
 export default function Bookmarks() {
   const { t } = useI18n()
   const numberFormatter = useNumberFormatter()
@@ -68,6 +88,8 @@ export default function Bookmarks() {
   const [folderEditName, setFolderEditName] = useState('')
   const [folderEditInstapaperId, setFolderEditInstapaperId] = useState('')
   const [folderActionBusy, setFolderActionBusy] = useState(false)
+  const [tagModal, setTagModal] = useState<TagModalState | null>(null)
+  const [folderModal, setFolderModal] = useState<FolderModalState | null>(null)
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
   const { data, error, isLoading, mutate } = useSWR([
     `/v1/bookmarks`,
@@ -116,6 +138,8 @@ export default function Bookmarks() {
   const publishController = useRef<AbortController | null>(null)
   const selectedCount = Object.values(selected).filter(Boolean).length
   const hasSelection = selectedCount > 0
+
+  const getBookmarkLabel = (bookmark: any) => bookmark?.title || bookmark?.url || t('bookmarks_select_row_unknown')
 
   const setProgressState = (
     updater: BulkProgressState | null | ((prev: BulkProgressState | null) => BulkProgressState | null),
@@ -356,6 +380,175 @@ export default function Bookmarks() {
       setBanner({ kind: 'error', message: t('bookmarks_folder_action_failed', { reason: err?.message || String(err) }) })
     } finally {
       setFolderActionBusy(false)
+    }
+  }
+
+  function openTagModal(bookmark: any) {
+    const label = getBookmarkLabel(bookmark)
+    setTagModal({ bookmark: { id: bookmark.id, label }, input: '', loading: true, saving: false, error: null })
+    ;(async () => {
+      try {
+        const tags = await v1.getBookmarkTagsBookmarksBookmarkIdTagsGet({ bookmarkId: bookmark.id })
+        const names = (Array.isArray(tags) ? tags : [])
+          .map((tag: any) => (tag?.name || '').trim())
+          .filter(Boolean)
+        setTagModal(prev => {
+          if (!prev || prev.bookmark.id !== bookmark.id) return prev
+          return { ...prev, input: names.join(', '), loading: false, error: null }
+        })
+      } catch (err: any) {
+        const reason = err?.message || String(err)
+        setTagModal(prev => {
+          if (!prev || prev.bookmark.id !== bookmark.id) return prev
+          return { ...prev, loading: false, error: t('bookmarks_assign_tags_error', { reason }) }
+        })
+      }
+    })()
+  }
+
+  function closeTagModal() {
+    setTagModal(prev => (prev && prev.saving ? prev : null))
+  }
+
+  async function submitTagModal(event: FormEvent) {
+    event.preventDefault()
+    if (!tagModal || tagModal.loading || tagModal.saving) return
+    const names = tagModal.input.split(',').map(name => name.trim()).filter(Boolean)
+    setTagModal(prev => (prev ? { ...prev, saving: true, error: null } : prev))
+    try {
+      await v1.updateBookmarkTagsBookmarksBookmarkIdTagsPut({
+        bookmarkId: tagModal.bookmark.id,
+        bookmarkTagsUpdate: { tags: names },
+      })
+      const message = names.length
+        ? t('bookmarks_assign_tags_success', {
+          name: tagModal.bookmark.label,
+          count: formatNumberValue(names.length, numberFormatter, '0'),
+        })
+        : t('bookmarks_assign_tags_cleared', { name: tagModal.bookmark.label })
+      setBanner({ kind: 'success', message })
+      mutateTags()
+      mutate()
+      setTagModal(null)
+    } catch (err: any) {
+      const reason = err?.message || String(err)
+      setTagModal(prev => (prev ? { ...prev, saving: false, error: t('bookmarks_assign_tags_error', { reason }) } : prev))
+    }
+  }
+
+  function openFolderModal(bookmark: any) {
+    const label = getBookmarkLabel(bookmark)
+    setFolderModal({
+      bookmark: { id: bookmark.id, label },
+      loading: true,
+      saving: false,
+      error: null,
+      selectedId: '',
+      newName: '',
+      instapaper: '',
+      hasCurrent: false,
+      currentName: null,
+    })
+    ;(async () => {
+      try {
+        const folder = await v1.getBookmarkFolderBookmarksBookmarkIdFolderGet({ bookmarkId: bookmark.id })
+        setFolderModal(prev => {
+          if (!prev || prev.bookmark.id !== bookmark.id) return prev
+          if (folder) {
+            return {
+              ...prev,
+              loading: false,
+              selectedId: folder.id || '',
+              newName: '',
+              instapaper: '',
+              hasCurrent: true,
+              currentName: folder.name || '',
+              error: null,
+            }
+          }
+          return {
+            ...prev,
+            loading: false,
+            selectedId: '',
+            newName: '',
+            instapaper: '',
+            hasCurrent: false,
+            currentName: null,
+            error: null,
+          }
+        })
+      } catch (err: any) {
+        const reason = err?.message || String(err)
+        setFolderModal(prev => {
+          if (!prev || prev.bookmark.id !== bookmark.id) return prev
+          return { ...prev, loading: false, error: t('bookmarks_move_folder_error', { reason }) }
+        })
+      }
+    })()
+  }
+
+  function closeFolderModal() {
+    setFolderModal(prev => (prev && prev.saving ? prev : null))
+  }
+
+  async function submitFolderModal(event: FormEvent) {
+    event.preventDefault()
+    if (!folderModal || folderModal.loading || folderModal.saving) return
+    const selectedId = folderModal.selectedId
+    const trimmedName = folderModal.newName.trim()
+    const trimmedInstapaper = folderModal.instapaper.trim()
+    if (!selectedId && !trimmedName) {
+      setFolderModal(prev => (prev ? { ...prev, error: t('bookmarks_folder_name_required') } : prev))
+      return
+    }
+    setFolderModal(prev => (prev ? { ...prev, saving: true, error: null } : prev))
+    try {
+      if (selectedId) {
+        await v1.updateBookmarkFolderBookmarksBookmarkIdFolderPut({
+          bookmarkId: folderModal.bookmark.id,
+          bookmarkFolderUpdate: { folder_id: selectedId },
+        })
+        const folder = folderItems.find((f: any) => f.id === selectedId)
+        setBanner({
+          kind: 'success',
+          message: t('bookmarks_move_folder_success_existing', {
+            name: folder?.name || t('bookmarks_folder_fallback'),
+          }),
+        })
+      } else {
+        await v1.updateBookmarkFolderBookmarksBookmarkIdFolderPut({
+          bookmarkId: folderModal.bookmark.id,
+          bookmarkFolderUpdate: {
+            folder_name: trimmedName,
+            instapaper_folder_id: trimmedInstapaper ? trimmedInstapaper : undefined,
+          },
+        })
+        setBanner({
+          kind: 'success',
+          message: t('bookmarks_move_folder_success_new', { name: trimmedName }),
+        })
+      }
+      mutateFolders()
+      mutate()
+      setFolderModal(null)
+    } catch (err: any) {
+      const reason = err?.message || String(err)
+      setFolderModal(prev => (prev ? { ...prev, saving: false, error: t('bookmarks_move_folder_error', { reason }) } : prev))
+    }
+  }
+
+  async function clearFolderAssignment() {
+    if (!folderModal || folderModal.loading || folderModal.saving) return
+    setFolderModal(prev => (prev ? { ...prev, saving: true, error: null } : prev))
+    try {
+      await v1.deleteBookmarkFolderBookmarksBookmarkIdFolderDelete({ bookmarkId: folderModal.bookmark.id })
+      setBanner({ kind: 'success', message: t('bookmarks_move_folder_remove_success') })
+      mutateFolders()
+      mutate()
+      setFolderModal(null)
+    } catch (err: any) {
+      const reason = err?.message || String(err)
+      setFolderModal(prev => (prev ? { ...prev, saving: false, error: t('bookmarks_move_folder_error', { reason }) } : prev))
     }
   }
 
@@ -948,11 +1141,11 @@ export default function Bookmarks() {
                         {t('url_label')} {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}
                       </button>
                     </th>
-                    <th
-                      className="th"
-                      scope="col"
-                      aria-sort={sortBy === 'published_at' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                    >
+                  <th
+                    className="th"
+                    scope="col"
+                    aria-sort={sortBy === 'published_at' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                  >
                       <button
                         type="button"
                         onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
@@ -961,6 +1154,7 @@ export default function Bookmarks() {
                         {t('published_label')} {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}
                       </button>
                     </th>
+                    <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -970,6 +1164,12 @@ export default function Bookmarks() {
                       <td className="td">{b.title}</td>
                       <td className="td"><a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">{b.url}</a></td>
                       <td className="td">{formatDateTimeValue(b.published_at, dateTimeFormatter, b.published_at || '')}</td>
+                      <td className="td">
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" className="btn text-sm" onClick={() => openTagModal(b)}>{t('btn_edit_tags')}</button>
+                          <button type="button" className="btn text-sm" onClick={() => openFolderModal(b)}>{t('btn_move_folder')}</button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1001,6 +1201,124 @@ export default function Bookmarks() {
           onCancel={progress.status === 'running' ? cancelPublish : undefined}
           onClose={closeProgress}
         />
+      )}
+      {tagModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div
+            className="card w-full max-w-lg p-4 space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bookmark-tag-modal-title"
+          >
+            <h2 id="bookmark-tag-modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t('bookmarks_assign_tags_title', { title: tagModal.bookmark.label })}
+            </h2>
+            {tagModal.loading ? (
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t('loading_text')}</p>
+            ) : (
+              <form className="space-y-3" onSubmit={submitTagModal}>
+                <label className="flex flex-col gap-1" htmlFor="bookmark-tag-modal-input">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_assign_tags_label')}</span>
+                  <input
+                    id="bookmark-tag-modal-input"
+                    className="input"
+                    value={tagModal.input}
+                    onChange={(e) => setTagModal(prev => (prev ? { ...prev, input: e.target.value, error: null } : prev))}
+                    placeholder={t('bookmarks_assign_tags_placeholder')}
+                    disabled={tagModal.saving}
+                  />
+                </label>
+                {tagModal.error && <p className="text-sm text-red-600 dark:text-red-400">{tagModal.error}</p>}
+                <div className="flex justify-end gap-2">
+                  <button type="button" className="btn text-sm" onClick={closeTagModal} disabled={tagModal.saving}>{t('btn_cancel')}</button>
+                  <button type="submit" className="btn text-sm" disabled={tagModal.saving}>{t('btn_save')}</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+      {folderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div
+            className="card w-full max-w-lg p-4 space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bookmark-folder-modal-title"
+          >
+            <h2 id="bookmark-folder-modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t('bookmarks_move_folder_title', { title: folderModal.bookmark.label })}
+            </h2>
+            {folderModal.hasCurrent && (
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                {t('bookmarks_move_folder_current', {
+                  name: folderModal.currentName && folderModal.currentName.trim()
+                    ? folderModal.currentName
+                    : t('bookmarks_folder_fallback'),
+                })}
+              </p>
+            )}
+            {folderModal.loading ? (
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t('loading_text')}</p>
+            ) : (
+              <form className="space-y-3" onSubmit={submitFolderModal}>
+                <label className="flex flex-col gap-1" htmlFor="bookmark-folder-modal-select">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_move_folder_select_label')}</span>
+                  <select
+                    id="bookmark-folder-modal-select"
+                    className="input"
+                    value={folderModal.selectedId}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setFolderModal(prev => (prev ? { ...prev, selectedId: value, newName: value ? '' : prev.newName, error: null } : prev))
+                    }}
+                    disabled={folderModal.saving}
+                  >
+                    <option value="">{t('bookmarks_move_folder_select_placeholder')}</option>
+                    {folderItems.map((folder: any) => (
+                      <option key={folder.id} value={folder.id}>{folder.name || t('bookmarks_folder_fallback')}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="bookmark-folder-modal-name">{t('bookmarks_move_folder_new_label')}</label>
+                  <input
+                    id="bookmark-folder-modal-name"
+                    className="input"
+                    value={folderModal.newName}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setFolderModal(prev => (prev ? { ...prev, newName: value, selectedId: value ? '' : prev.selectedId, error: null } : prev))
+                    }}
+                    placeholder={t('bookmarks_folders_create_placeholder')}
+                    disabled={folderModal.saving}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="bookmark-folder-modal-instapaper">{t('bookmarks_folder_instapaper_label')}</label>
+                  <input
+                    id="bookmark-folder-modal-instapaper"
+                    className="input"
+                    value={folderModal.instapaper}
+                    onChange={(e) => setFolderModal(prev => (prev ? { ...prev, instapaper: e.target.value, error: null } : prev))}
+                    placeholder={t('bookmarks_folder_instapaper_placeholder')}
+                    disabled={folderModal.saving}
+                  />
+                </div>
+                {folderModal.error && <p className="text-sm text-red-600 dark:text-red-400">{folderModal.error}</p>}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {folderModal.hasCurrent && (
+                    <button type="button" className="btn text-sm" onClick={clearFolderAssignment} disabled={folderModal.saving}>{t('bookmarks_move_folder_remove')}</button>
+                  )}
+                  <div className="flex gap-2 ml-auto">
+                    <button type="button" className="btn text-sm" onClick={closeFolderModal} disabled={folderModal.saving}>{t('btn_cancel')}</button>
+                    <button type="submit" className="btn text-sm" disabled={folderModal.saving}>{t('btn_save')}</button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
