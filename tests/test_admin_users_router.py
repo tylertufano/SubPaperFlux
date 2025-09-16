@@ -66,8 +66,13 @@ def test_admin_users_listing_and_role_management(admin_client):
     assert items["user-1"]["roles"] == ["editor"]
     assert items["user-1"]["groups"] == []
     assert items["user-1"]["is_admin"] is False
+    assert items["user-1"]["quota_credentials"] is None
+    assert items["user-1"]["quota_site_configs"] is None
+    assert items["user-1"]["quota_feeds"] is None
+    assert items["user-1"]["quota_api_tokens"] is None
     assert items["user-2"]["roles"] == []
     assert items["user-2"]["groups"] == ["managers"]
+    assert items["user-2"]["quota_credentials"] is None
 
     # Role filter should match user-1 initially
     resp_role = admin_client.get("/v1/admin/users", params={"role": "editor"})
@@ -102,7 +107,9 @@ def test_admin_users_listing_and_role_management(admin_client):
     # User detail should reflect updated roles
     resp_detail = admin_client.get("/v1/admin/users/user-1")
     assert resp_detail.status_code == 200
-    assert "editor" not in resp_detail.json()["roles"]
+    detail_payload = resp_detail.json()
+    assert "editor" not in detail_payload["roles"]
+    assert detail_payload["quota_credentials"] is None
 
     # Role filter should now yield zero results for the revoked role
     resp_role_after = admin_client.get("/v1/admin/users", params={"role": "editor"})
@@ -201,6 +208,52 @@ def test_admin_revoke_requires_confirmation(admin_client):
         params={"confirm": "true"},
     )
     assert resp_ok.status_code == 204
+
+
+def test_admin_user_quota_updates(admin_client):
+    from app.db import get_session
+    from app.models import User
+
+    with next(get_session()) as session:
+        session.add(User(id="quota-user", email="quota@example.com"))
+        session.commit()
+
+    resp = admin_client.patch(
+        "/v1/admin/users/quota-user",
+        json={
+            "quota_credentials": 5,
+            "quota_site_configs": 2,
+            "quota_feeds": 3,
+            "quota_api_tokens": 4,
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["quota_credentials"] == 5
+    assert payload["quota_site_configs"] == 2
+    assert payload["quota_feeds"] == 3
+    assert payload["quota_api_tokens"] == 4
+
+    with next(get_session()) as session:
+        user = session.get(User, "quota-user")
+        assert user.quota_credentials == 5
+        assert user.quota_site_configs == 2
+        assert user.quota_feeds == 3
+        assert user.quota_api_tokens == 4
+
+    resp_reset = admin_client.patch(
+        "/v1/admin/users/quota-user",
+        json={"quota_credentials": None, "quota_feeds": 1},
+    )
+    assert resp_reset.status_code == 200
+    reset_payload = resp_reset.json()
+    assert reset_payload["quota_credentials"] is None
+    assert reset_payload["quota_feeds"] == 1
+
+    with next(get_session()) as session:
+        user = session.get(User, "quota-user")
+        assert user.quota_credentials is None
+        assert user.quota_feeds == 1
 
 
 def test_require_admin_respects_session_user(monkeypatch):

@@ -187,6 +187,10 @@ export type AdminUser = {
   groups: string[]
   roles: string[]
   is_admin: boolean
+  quota_credentials?: number | null
+  quota_site_configs?: number | null
+  quota_feeds?: number | null
+  quota_api_tokens?: number | null
 }
 
 export type AdminUsersPage = {
@@ -209,6 +213,10 @@ type AdminUsersQuery = {
 type AdminUserUpdatePayload = {
   is_active?: boolean
   confirm?: boolean
+  quota_credentials?: number | null
+  quota_site_configs?: number | null
+  quota_feeds?: number | null
+  quota_api_tokens?: number | null
 }
 
 export type RoleGrantRequest = {

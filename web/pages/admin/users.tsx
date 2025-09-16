@@ -11,10 +11,36 @@ type FilterState = {
   role: string
 }
 
+const quotaFields = ['quota_credentials', 'quota_site_configs', 'quota_feeds', 'quota_api_tokens'] as const
+type QuotaField = (typeof quotaFields)[number]
+
+type QuotaFormState = Record<QuotaField, string>
+
+type AdminUserUpdateInput = Partial<Record<QuotaField, number | null>> & {
+  is_active?: boolean
+  confirm?: boolean
+}
+
+const quotaFieldLabelKeys: Record<QuotaField, string> = {
+  quota_credentials: 'admin_users_quota_label_credentials',
+  quota_site_configs: 'admin_users_quota_label_site_configs',
+  quota_feeds: 'admin_users_quota_label_feeds',
+  quota_api_tokens: 'admin_users_quota_label_api_tokens',
+}
+
 type FlashMessage = { kind: 'success' | 'error'; message: string }
 
 function createEmptyFilters(): FilterState {
   return { search: '', status: 'all', role: '' }
+}
+
+function createQuotaFormState(user: AdminUser | null): QuotaFormState {
+  return {
+    quota_credentials: user?.quota_credentials != null ? String(user.quota_credentials) : '',
+    quota_site_configs: user?.quota_site_configs != null ? String(user.quota_site_configs) : '',
+    quota_feeds: user?.quota_feeds != null ? String(user.quota_feeds) : '',
+    quota_api_tokens: user?.quota_api_tokens != null ? String(user.quota_api_tokens) : '',
+  }
 }
 
 function displayName(user: AdminUser): string {
@@ -39,6 +65,7 @@ export default function AdminUsers() {
   const [flash, setFlash] = useState<FlashMessage | null>(null)
   const [selected, setSelected] = useState<AdminUser | null>(null)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
+  const [quotaForm, setQuotaForm] = useState<QuotaFormState>(() => createQuotaFormState(null))
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -70,6 +97,10 @@ export default function AdminUsers() {
   useEffect(() => {
     setSelected(null)
   }, [page, filters])
+
+  useEffect(() => {
+    setQuotaForm(createQuotaFormState(selected))
+  }, [selected])
 
   const swrKey = useMemo(
     () =>
@@ -164,6 +195,60 @@ export default function AdminUsers() {
     } finally {
       setPendingUserId(null)
     }
+  }
+
+  const handleQuotaSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selected) {
+      return
+    }
+    const updates: AdminUserUpdateInput = {}
+    for (const field of quotaFields) {
+      const rawValue = quotaForm[field].trim()
+      const currentValue = selected[field] ?? null
+      if (rawValue === '') {
+        if (currentValue !== null) {
+          updates[field] = null
+        }
+        continue
+      }
+      const parsed = Number(rawValue)
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        setFlash({ kind: 'error', message: t('admin_users_quota_invalid_number') })
+        return
+      }
+      if (currentValue !== parsed) {
+        updates[field] = parsed
+      }
+    }
+    if (Object.keys(updates).length === 0) {
+      setFlash({ kind: 'error', message: t('admin_users_quota_no_changes') })
+      return
+    }
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      const updated = await v1.updateAdminUserV1AdminUsersUserIdPatch({
+        userId: selected.id,
+        adminUserUpdate: updates,
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_quota_success', { name: displayName(updated) }),
+      })
+      setSelected(updated)
+      setQuotaForm(createQuotaFormState(updated))
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleQuotaReset = () => {
+    setQuotaForm(createQuotaFormState(selected))
   }
 
   return (
@@ -507,6 +592,44 @@ export default function AdminUsers() {
                       </span>
                     ))}
                   </div>
+                </div>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_quota_heading')}</h4>
+                  <p className="mb-3 text-sm text-gray-500">{t('admin_users_quota_description')}</p>
+                  <form className="space-y-3" onSubmit={handleQuotaSubmit}>
+                    <div className="grid gap-3">
+                      {quotaFields.map((field) => (
+                        <label key={field} className="block text-sm font-medium text-gray-700" htmlFor={`quota-${field}`}>
+                          {t(quotaFieldLabelKeys[field])}
+                          <input
+                            id={`quota-${field}`}
+                            className="input mt-1 w-full"
+                            type="number"
+                            min={0}
+                            value={quotaForm[field]}
+                            placeholder={t('admin_users_quota_placeholder')}
+                            onChange={(event) =>
+                              setQuotaForm((prev) => ({ ...prev, [field]: event.target.value }))
+                            }
+                            disabled={pendingUserId === selected.id}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="submit" className="btn" disabled={pendingUserId === selected.id}>
+                        {t('admin_users_quota_save')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={handleQuotaReset}
+                        disabled={pendingUserId === selected.id}
+                      >
+                        {t('admin_users_quota_reset')}
+                      </button>
+                    </div>
+                  </form>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button

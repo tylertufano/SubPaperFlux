@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlmodel import SQLModel, Field, Column
 from datetime import datetime, timezone
 
@@ -20,6 +20,22 @@ class User(SQLModel, table=True):
     picture_url: Optional[str] = None
     is_active: bool = Field(default=True, index=True)
     claims: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    quota_credentials: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, nullable=True),
+    )
+    quota_site_configs: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, nullable=True),
+    )
+    quota_feeds: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, nullable=True),
+    )
+    quota_api_tokens: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, nullable=True),
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=Column(DateTime(timezone=True), nullable=False),

@@ -80,11 +80,35 @@ export interface AdminUserOut {
      */
     roles?: Array<string>;
     /**
-     * 
+     *
      * @type {boolean}
      * @memberof AdminUserOut
      */
     isAdmin?: boolean;
+    /**
+     *
+     * @type {number}
+     * @memberof AdminUserOut
+     */
+    quotaCredentials?: number | null;
+    /**
+     *
+     * @type {number}
+     * @memberof AdminUserOut
+     */
+    quotaSiteConfigs?: number | null;
+    /**
+     *
+     * @type {number}
+     * @memberof AdminUserOut
+     */
+    quotaFeeds?: number | null;
+    /**
+     *
+     * @type {number}
+     * @memberof AdminUserOut
+     */
+    quotaApiTokens?: number | null;
 }
 
 /**
@@ -119,6 +143,10 @@ export function AdminUserOutFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'groups': json['groups'] == null ? undefined : json['groups'],
         'roles': json['roles'] == null ? undefined : json['roles'],
         'isAdmin': json['is_admin'] == null ? undefined : json['is_admin'],
+        'quotaCredentials': json['quota_credentials'] == null ? undefined : json['quota_credentials'],
+        'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
+        'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
+        'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
     };
 }
 
@@ -144,6 +172,10 @@ export function AdminUserOutToJSONTyped(value?: AdminUserOut | null, ignoreDiscr
         'groups': value['groups'],
         'roles': value['roles'],
         'is_admin': value['isAdmin'],
+        'quota_credentials': value['quotaCredentials'],
+        'quota_site_configs': value['quotaSiteConfigs'],
+        'quota_feeds': value['quotaFeeds'],
+        'quota_api_tokens': value['quotaApiTokens'],
     };
 }
 

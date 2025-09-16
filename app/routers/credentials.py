@@ -1,4 +1,5 @@
 from typing import List
+from sqlalchemy import func
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlmodel import select
 
@@ -10,6 +11,7 @@ from ..db import get_session
 from ..models import Credential as CredentialModel
 from ..security.crypto import encrypt_dict, decrypt_dict, is_encrypted
 from ..security.csrf import csrf_protect
+from ..util.quotas import enforce_user_quota
 
 
 router = APIRouter()
@@ -67,6 +69,16 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
     owner = body.owner_user_id
     if owner is None and not can_manage_global_credentials(current_user):
         owner = current_user["sub"]
+    if owner is not None:
+        enforce_user_quota(
+            session,
+            owner,
+            quota_field="quota_credentials",
+            resource_name="Credential",
+            count_stmt=select(func.count()).select_from(CredentialModel).where(
+                CredentialModel.owner_user_id == owner
+            ),
+        )
     model = CredentialModel(kind=body.kind, data=data, owner_user_id=owner)
     session.add(model)
     record_audit_log(

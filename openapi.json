@@ -8034,6 +8034,54 @@
             "type": "boolean",
             "title": "Is Admin",
             "default": false
+          },
+          "quota_credentials": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Credentials"
+          },
+          "quota_site_configs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Site Configs"
+          },
+          "quota_feeds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Feeds"
+          },
+          "quota_api_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quota Api Tokens"
           }
         },
         "type": "object",

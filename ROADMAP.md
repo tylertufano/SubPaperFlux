@@ -276,7 +276,8 @@ make sdk-ts
  - [ ] Audit log for admin actions (UI-063)
  - [x] API tokens (optional) (UI-064)
    - Evidence: `web/pages/me/tokens.tsx:1`
- - [ ] Quotas/policies per user (UI-065)
+ - [x] Quotas/policies per user (UI-065)
+   - Evidence: `app/util/quotas.py:1`, `app/routers/credentials.py:1`, `app/routers/site_configs.py:1`, `app/routers/feeds.py:1`, `app/routers/me_tokens_v1.py:1`, `web/pages/admin/users.tsx:1`, `tests/test_user_quotas.py:1`
  - [ ] RLS enforcement: set `app.user_id` per DB session (UI-012)
 
 ### Integrations
@@ -386,7 +387,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
  - UI-062: OIDC group-to-role mapping
  - UI-063: Admin audit log
  - UI-064: Personal API tokens
- - UI-065: User quotas and policies
+ - UI-065: User quotas and policies — `app/models.py`, `app/util/quotas.py`, `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/feeds.py`, `app/routers/me_tokens_v1.py`, `web/pages/admin/users.tsx`, `tests/test_user_quotas.py`
  - UI-066: OIDC-only auto-provision
  - UI-067: SCIM import/sync
  - UI-068: User management data model migrations
