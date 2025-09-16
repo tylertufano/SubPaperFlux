@@ -1,9 +1,7 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1, creds } from '../lib/openapi'
 import { useState } from 'react'
-import Alert from '../components/Alert'
-import EmptyState from '../components/EmptyState'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 
@@ -265,8 +263,13 @@ export default function Credentials() {
             {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
               <div className="p-4">
                 <EmptyState
-                  title={t('empty_credentials_title')}
-                  description={t('empty_credentials_desc')}
+                  icon={<span>🔐</span>}
+                  message={(
+                    <div className="space-y-1">
+                      <p className="text-lg font-semibold text-gray-700">{t('empty_credentials_title')}</p>
+                      <p>{t('empty_credentials_desc')}</p>
+                    </div>
+                  )}
                 />
               </div>
             ) : (

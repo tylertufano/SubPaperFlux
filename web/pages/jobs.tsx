@@ -1,8 +1,6 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1 } from '../lib/openapi'
-import Alert from '../components/Alert'
-import EmptyState from '../components/EmptyState'
 import React, { useState, useEffect } from 'react'
 import { useI18n } from '../lib/i18n'
 import Link from 'next/link'
@@ -97,10 +95,18 @@ export default function Jobs() {
               {(!data.items || data.items.length === 0) ? (
                 <div className="p-4">
                   <EmptyState
-                    title={t('empty_jobs_title')}
-                    description={t('empty_jobs_desc')}
-                    actionLabel={t('btn_clear_filters')}
-                    onAction={clearFilters}
+                    icon={<span>🧾</span>}
+                    message={(
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold text-gray-700">{t('empty_jobs_title')}</p>
+                        <p>{t('empty_jobs_desc')}</p>
+                      </div>
+                    )}
+                    action={
+                      <button type="button" className="btn" onClick={clearFilters}>
+                        {t('btn_clear_filters')}
+                      </button>
+                    }
                   />
                 </div>
               ) : (
