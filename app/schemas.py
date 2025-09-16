@@ -137,3 +137,44 @@ class FeedsPage(BaseModel):
     size: int
     has_next: bool = False
     total_pages: int = 1
+
+
+class TagCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+
+
+class TagUpdate(BaseModel):
+    name: str = Field(..., min_length=1)
+
+
+class TagOut(BaseModel):
+    id: str
+    name: str
+    bookmark_count: int = 0
+
+
+class FolderCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    instapaper_folder_id: Optional[str] = None
+
+
+class FolderUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    instapaper_folder_id: Optional[str] = None
+
+
+class FolderOut(BaseModel):
+    id: str
+    name: str
+    instapaper_folder_id: Optional[str] = None
+    bookmark_count: int = 0
+
+
+class BookmarkTagsUpdate(BaseModel):
+    tags: List[str] = Field(default_factory=list)
+
+
+class BookmarkFolderUpdate(BaseModel):
+    folder_id: Optional[str] = None
+    folder_name: Optional[str] = Field(default=None, min_length=1)
+    instapaper_folder_id: Optional[str] = None

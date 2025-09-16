@@ -1,5 +1,6 @@
 import os
 import base64
+import os
 import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
@@ -61,3 +62,106 @@ def test_bookmarks_list_filters():
 
     bad = client.get("/bookmarks?regex=/[unclosed")
     assert bad.status_code == 400
+
+
+def test_bookmark_tags_and_folders_endpoints():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        bm = Bookmark(owner_user_id="u1", instapaper_bookmark_id="10", title="Gamma", url="https://gamma")
+        session.add(bm)
+        session.commit()
+        bookmark_id = bm.id
+
+    client = TestClient(app)
+
+    # Tag CRUD + bookmark association
+    resp = client.post("/bookmarks/tags", json={"name": "Work"})
+    assert resp.status_code == 201
+    tag_payload = resp.json()
+    assert tag_payload["name"] == "Work"
+    tag_id = tag_payload["id"]
+
+    resp = client.put(f"/bookmarks/tags/{tag_id}", json={"name": "Work+"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Work+"
+
+    resp = client.put(f"/bookmarks/{bookmark_id}/tags", json={"tags": ["Work+", "Personal"]})
+    assert resp.status_code == 200
+    returned_tags = resp.json()
+    assert [t["name"] for t in returned_tags] == ["Work+", "Personal"]
+    personal_id = next(t["id"] for t in returned_tags if t["name"] == "Personal")
+
+    resp = client.get(f"/bookmarks/{bookmark_id}/tags")
+    assert resp.status_code == 200
+    assert sorted(t["name"] for t in resp.json()) == ["Personal", "Work+"]
+
+    resp = client.delete(f"/bookmarks/tags/{personal_id}")
+    assert resp.status_code == 204
+
+    resp = client.get(f"/bookmarks/{bookmark_id}/tags")
+    assert resp.status_code == 200
+    assert [t["name"] for t in resp.json()] == ["Work+"]
+
+    # Folder CRUD + bookmark association
+    resp = client.post(
+        "/bookmarks/folders",
+        json={"name": "Read Later", "instapaper_folder_id": "123"},
+    )
+    assert resp.status_code == 201
+    folder_payload = resp.json()
+    assert folder_payload["name"] == "Read Later"
+    assert folder_payload["instapaper_folder_id"] == "123"
+    folder_id = folder_payload["id"]
+
+    resp = client.put(f"/bookmarks/folders/{folder_id}", json={"name": "Read Now"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Read Now"
+
+    resp = client.put(f"/bookmarks/{bookmark_id}/folder", json={"folder_id": folder_id})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Read Now"
+
+    resp = client.get(f"/bookmarks/{bookmark_id}/folder")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == folder_id
+
+    resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
+    assert resp.status_code == 204
+
+    resp = client.get(f"/bookmarks/{bookmark_id}/folder")
+    assert resp.status_code == 200
+    assert resp.json() is None
+
+    resp = client.put(
+        f"/bookmarks/{bookmark_id}/folder",
+        json={"folder_name": "Fresh", "instapaper_folder_id": "987"},
+    )
+    assert resp.status_code == 200
+    new_folder = resp.json()
+    assert new_folder["name"] == "Fresh"
+    assert new_folder["instapaper_folder_id"] == "987"
+    new_folder_id = new_folder["id"]
+
+    resp = client.get("/bookmarks/folders")
+    assert resp.status_code == 200
+    names = [f["name"] for f in resp.json()]
+    assert "Fresh" in names
+
+    resp = client.delete(f"/bookmarks/folders/{folder_id}")
+    assert resp.status_code == 204
+
+    resp = client.get("/bookmarks/folders")
+    assert resp.status_code == 200
+    assert all(f["id"] != folder_id for f in resp.json())
+
+    # Cleanup: ensure folder assignment can be removed again
+    resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
+    assert resp.status_code == 204

@@ -12,16 +12,34 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
-from sqlmodel import select, func
 from sqlalchemy import or_, literal
-
+from sqlalchemy.exc import IntegrityError
+from sqlmodel import delete, func, select
 from ..auth.oidc import get_current_user
 from ..db import get_session
-from ..models import Bookmark, Credential
+from ..db import is_postgres
+from ..models import (
+    Bookmark,
+    BookmarkFolderLink,
+    BookmarkTagLink,
+    Credential,
+    Folder,
+    Tag,
+)
 from ..jobs.publish import handle_publish
 from ..jobs.util_subpaperflux import get_instapaper_oauth_session
-from ..schemas import BookmarksPage, BookmarkOut
-from ..db import is_postgres
+from ..schemas import (
+    BookmarkFolderUpdate,
+    BookmarkOut,
+    BookmarkTagsUpdate,
+    BookmarksPage,
+    FolderCreate,
+    FolderOut,
+    FolderUpdate,
+    TagCreate,
+    TagOut,
+    TagUpdate,
+)
 from ..security.csrf import csrf_protect
 # Inline constant to avoid importing subpaperflux (which initializes Selenium at import time)
 INSTAPAPER_BOOKMARKS_DELETE_URL = "https://www.instapaper.com/api/1.1/bookmarks/delete"
@@ -259,6 +277,46 @@ def _apply_filters(stmt, user_id: str, feed_id: Optional[str], since: Optional[s
     return stmt
 
 
+def _get_bookmark_or_404(session, bookmark_id: str, user_id: str) -> Bookmark:
+    bookmark = session.get(Bookmark, bookmark_id)
+    if not bookmark or bookmark.owner_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    return bookmark
+
+
+def _tag_counts(session, user_id: str) -> dict[str, int]:
+    stmt = (
+        select(BookmarkTagLink.tag_id, func.count())
+        .join(Bookmark, Bookmark.id == BookmarkTagLink.bookmark_id)
+        .where(Bookmark.owner_user_id == user_id)
+        .group_by(BookmarkTagLink.tag_id)
+    )
+    return {tag_id: int(count or 0) for tag_id, count in session.exec(stmt).all()}
+
+
+def _folder_counts(session, user_id: str) -> dict[str, int]:
+    stmt = (
+        select(BookmarkFolderLink.folder_id, func.count())
+        .join(Bookmark, Bookmark.id == BookmarkFolderLink.bookmark_id)
+        .where(Bookmark.owner_user_id == user_id)
+        .group_by(BookmarkFolderLink.folder_id)
+    )
+    return {folder_id: int(count or 0) for folder_id, count in session.exec(stmt).all()}
+
+
+def _tag_to_out(tag: Tag, counts: dict[str, int]) -> TagOut:
+    return TagOut(id=tag.id, name=tag.name, bookmark_count=int(counts.get(tag.id, 0)))
+
+
+def _folder_to_out(folder: Folder, counts: dict[str, int]) -> FolderOut:
+    return FolderOut(
+        id=folder.id,
+        name=folder.name,
+        instapaper_folder_id=folder.instapaper_folder_id,
+        bookmark_count=int(counts.get(folder.id, 0)),
+    )
+
+
 @router.get("", response_model=BookmarksPage)
 @router.get("/", response_model=BookmarksPage)
 def list_bookmarks(
@@ -355,6 +413,353 @@ def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), se
                 # Swallow remote errors if DB delete is desired anyway
                 pass
     session.delete(bm)
+    session.commit()
+    return None
+
+
+@router.get("/tags", response_model=List[TagOut])
+def list_tags(current_user=Depends(get_current_user), session=Depends(get_session)):
+    user_id = current_user["sub"]
+    counts = _tag_counts(session, user_id)
+    stmt = select(Tag).where(Tag.owner_user_id == user_id).order_by(Tag.name)
+    tags = session.exec(stmt).all()
+    return [_tag_to_out(tag, counts) for tag in tags]
+
+
+@router.post(
+    "/tags",
+    response_model=TagOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
+)
+def create_tag(tag: TagCreate, current_user=Depends(get_current_user), session=Depends(get_session)):
+    user_id = current_user["sub"]
+    name = (tag.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Tag name is required")
+    record = Tag(owner_user_id=user_id, name=name)
+    session.add(record)
+    try:
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.warning("Duplicate tag create ignored user=%s name=%s", user_id, name)
+        raise HTTPException(status_code=400, detail="Tag already exists") from exc
+    session.refresh(record)
+    return TagOut(id=record.id, name=record.name, bookmark_count=0)
+
+
+@router.put(
+    "/tags/{tag_id}",
+    response_model=TagOut,
+    dependencies=[Depends(csrf_protect)],
+)
+def update_tag(
+    tag_id: str,
+    payload: TagUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    tag = session.get(Tag, tag_id)
+    if not tag or tag.owner_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    name = (payload.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Tag name is required")
+    if name != tag.name:
+        exists = session.exec(
+            select(Tag).where(
+                (Tag.owner_user_id == user_id) & (Tag.name == name) & (Tag.id != tag_id)
+            )
+        ).first()
+        if exists:
+            raise HTTPException(status_code=400, detail="Tag already exists")
+        tag.name = name
+    session.add(tag)
+    session.commit()
+    session.refresh(tag)
+    counts = _tag_counts(session, user_id)
+    return _tag_to_out(tag, counts)
+
+
+@router.delete(
+    "/tags/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
+def delete_tag(tag_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
+    user_id = current_user["sub"]
+    tag = session.get(Tag, tag_id)
+    if not tag or tag.owner_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    session.delete(tag)
+    session.commit()
+    return None
+
+
+@router.get("/folders", response_model=List[FolderOut])
+def list_folders(current_user=Depends(get_current_user), session=Depends(get_session)):
+    user_id = current_user["sub"]
+    counts = _folder_counts(session, user_id)
+    stmt = select(Folder).where(Folder.owner_user_id == user_id).order_by(Folder.name)
+    folders = session.exec(stmt).all()
+    return [_folder_to_out(folder, counts) for folder in folders]
+
+
+@router.post(
+    "/folders",
+    response_model=FolderOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
+)
+def create_folder(
+    folder: FolderCreate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    name = (folder.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Folder name is required")
+    instapaper_folder_id = (
+        folder.instapaper_folder_id.strip()
+        if isinstance(folder.instapaper_folder_id, str) and folder.instapaper_folder_id.strip()
+        else None
+    )
+    record = Folder(
+        owner_user_id=user_id,
+        name=name,
+        instapaper_folder_id=instapaper_folder_id,
+    )
+    session.add(record)
+    try:
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.warning("Duplicate folder create ignored user=%s name=%s", user_id, name)
+        raise HTTPException(status_code=400, detail="Folder already exists") from exc
+    session.refresh(record)
+    return _folder_to_out(record, {record.id: 0})
+
+
+@router.put(
+    "/folders/{folder_id}",
+    response_model=FolderOut,
+    dependencies=[Depends(csrf_protect)],
+)
+def update_folder(
+    folder_id: str,
+    payload: FolderUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    folder = session.get(Folder, folder_id)
+    if not folder or folder.owner_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    data = payload.model_dump(exclude_unset=True)
+    if "name" in data:
+        name = (data["name"] or "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Folder name is required")
+        if name != folder.name:
+            exists = session.exec(
+                select(Folder).where(
+                    (Folder.owner_user_id == user_id)
+                    & (Folder.name == name)
+                    & (Folder.id != folder_id)
+                )
+            ).first()
+            if exists:
+                raise HTTPException(status_code=400, detail="Folder already exists")
+            folder.name = name
+    if "instapaper_folder_id" in data:
+        instapaper_folder_id = data["instapaper_folder_id"]
+        if isinstance(instapaper_folder_id, str):
+            instapaper_folder_id = instapaper_folder_id.strip() or None
+        folder.instapaper_folder_id = instapaper_folder_id
+    session.add(folder)
+    session.commit()
+    session.refresh(folder)
+    counts = _folder_counts(session, user_id)
+    return _folder_to_out(folder, counts)
+
+
+@router.delete(
+    "/folders/{folder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
+def delete_folder(folder_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
+    user_id = current_user["sub"]
+    folder = session.get(Folder, folder_id)
+    if not folder or folder.owner_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    session.delete(folder)
+    session.commit()
+    return None
+
+
+@router.get("/{bookmark_id}/tags", response_model=List[TagOut])
+def get_bookmark_tags(
+    bookmark_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    _get_bookmark_or_404(session, bookmark_id, user_id)
+    counts = _tag_counts(session, user_id)
+    stmt = (
+        select(Tag)
+        .join(BookmarkTagLink, BookmarkTagLink.tag_id == Tag.id)
+        .where(BookmarkTagLink.bookmark_id == bookmark_id)
+        .order_by(Tag.name)
+    )
+    tags = session.exec(stmt).all()
+    return [_tag_to_out(tag, counts) for tag in tags]
+
+
+@router.put(
+    "/{bookmark_id}/tags",
+    response_model=List[TagOut],
+    dependencies=[Depends(csrf_protect)],
+)
+def update_bookmark_tags(
+    bookmark_id: str,
+    payload: BookmarkTagsUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    _get_bookmark_or_404(session, bookmark_id, user_id)
+    unique: List[str] = []
+    seen = set()
+    for raw in payload.tags:
+        if not isinstance(raw, str):
+            raise HTTPException(status_code=400, detail="Tag names must be strings")
+        name = raw.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Tag names must be non-empty")
+        if name not in seen:
+            seen.add(name)
+            unique.append(name)
+    tag_map: dict[str, Tag] = {}
+    if unique:
+        stmt = select(Tag).where((Tag.owner_user_id == user_id) & (Tag.name.in_(unique)))
+        existing = session.exec(stmt).all()
+        tag_map = {t.name: t for t in existing}
+        for name in unique:
+            if name not in tag_map:
+                tag = Tag(owner_user_id=user_id, name=name)
+                session.add(tag)
+                tag_map[name] = tag
+    session.exec(delete(BookmarkTagLink).where(BookmarkTagLink.bookmark_id == bookmark_id))
+    for name in unique:
+        tag = tag_map[name]
+        session.add(BookmarkTagLink(bookmark_id=bookmark_id, tag_id=tag.id))
+    try:
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.exception("Failed to update bookmark tags user=%s bookmark=%s", user_id, bookmark_id)
+        raise HTTPException(status_code=400, detail="Could not update bookmark tags") from exc
+    counts = _tag_counts(session, user_id)
+    tags = [tag_map[name] for name in unique]
+    return [_tag_to_out(tag, counts) for tag in tags]
+
+
+@router.get("/{bookmark_id}/folder", response_model=Optional[FolderOut])
+def get_bookmark_folder(
+    bookmark_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    _get_bookmark_or_404(session, bookmark_id, user_id)
+    stmt = (
+        select(Folder)
+        .join(BookmarkFolderLink, BookmarkFolderLink.folder_id == Folder.id)
+        .where(
+            (BookmarkFolderLink.bookmark_id == bookmark_id)
+            & (Folder.owner_user_id == user_id)
+        )
+    )
+    folder = session.exec(stmt).first()
+    if not folder:
+        return None
+    counts = _folder_counts(session, user_id)
+    return _folder_to_out(folder, counts)
+
+
+@router.put(
+    "/{bookmark_id}/folder",
+    response_model=FolderOut,
+    dependencies=[Depends(csrf_protect)],
+)
+def update_bookmark_folder(
+    bookmark_id: str,
+    payload: BookmarkFolderUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    _get_bookmark_or_404(session, bookmark_id, user_id)
+    if payload.folder_id and payload.folder_name:
+        raise HTTPException(status_code=400, detail="Provide either folder_id or folder_name")
+    folder: Optional[Folder] = None
+    if payload.folder_id:
+        folder = session.get(Folder, payload.folder_id)
+        if not folder or folder.owner_user_id != user_id:
+            raise HTTPException(status_code=400, detail="Invalid folder_id")
+    elif payload.folder_name:
+        name = payload.folder_name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="folder_name must be non-empty")
+        folder = session.exec(
+            select(Folder).where((Folder.owner_user_id == user_id) & (Folder.name == name))
+        ).first()
+        if not folder:
+            instapaper_folder_id = (
+                payload.instapaper_folder_id.strip()
+                if isinstance(payload.instapaper_folder_id, str)
+                and payload.instapaper_folder_id.strip()
+                else None
+            )
+            folder = Folder(
+                owner_user_id=user_id,
+                name=name,
+                instapaper_folder_id=instapaper_folder_id,
+            )
+            session.add(folder)
+    else:
+        raise HTTPException(status_code=400, detail="folder_id or folder_name required")
+    session.exec(delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id))
+    session.add(BookmarkFolderLink(bookmark_id=bookmark_id, folder_id=folder.id))
+    try:
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.exception("Failed to update bookmark folder user=%s bookmark=%s", user_id, bookmark_id)
+        raise HTTPException(status_code=400, detail="Could not update bookmark folder") from exc
+    counts = _folder_counts(session, user_id)
+    session.refresh(folder)
+    return _folder_to_out(folder, counts)
+
+
+@router.delete(
+    "/{bookmark_id}/folder",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
+def delete_bookmark_folder(
+    bookmark_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    _get_bookmark_or_404(session, bookmark_id, user_id)
+    session.exec(delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id))
     session.commit()
     return None
 

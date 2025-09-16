@@ -137,6 +137,8 @@ make sdk-ts
     - [x] Unit tests for modal state transitions and API errors: `web/__tests__/bulk-publish.test.tsx:1`
 - [~] Tags & Folders (UI-018)
   - Evidence: `alembic/versions/0011_tags_and_folders.py:1`
+  - [x] API endpoints for tag and folder management plus bookmark associations: `app/routers/bookmarks.py:1`
+  - [x] TypeScript SDK updated for tags/folders endpoints: `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`
  - [ ] Preview Pane (sanitized HTML) (UI-017)
  - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
 - [ ] Activity Log (UI-029)
