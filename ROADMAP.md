@@ -127,7 +127,7 @@ make sdk-ts
 
 - [x] Saved Views (Bookmarks)
 - [x] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
-  - Evidence: `sdk/ts/src/apis/BookmarksApi.ts`
+  - Evidence: `sdk/ts/src/apis/BookmarksApi.ts`, `web/pages/bookmarks.tsx`
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [ ] Publish; progress modals (UI-028)
