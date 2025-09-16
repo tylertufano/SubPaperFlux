@@ -1,5 +1,6 @@
 import useSWR from 'swr'
-import { Alert, EmptyState, Nav, ProgressModal } from '../components'
+import { Alert, BulkPublishModal, EmptyState, Nav } from '../components'
+import type { BulkPublishSummary } from '../components/BulkPublishModal'
 import type { ProgressModalItem, ProgressModalStatus } from '../components/ProgressModal'
 import { v1 } from '../lib/openapi'
 import { streamBulkPublish, type BulkPublishEvent } from '../lib/bulkPublish'
@@ -30,6 +31,9 @@ type BulkProgressState = {
   status: ProgressModalStatus
   items: ProgressModalItem[]
   message?: string
+  summary?: BulkPublishSummary | null
+  totalCount?: number
+  errorMessage?: string | null
 }
 
 export default function Bookmarks() {
@@ -195,6 +199,9 @@ export default function Bookmarks() {
       status: 'running',
       items: modalItems,
       message: t('bookmarks_publish_in_progress', { count: formattedCount }),
+      summary: null,
+      totalCount: items.length,
+      errorMessage: null,
     }
     setProgressState(initialState)
     const controller = new AbortController()
@@ -231,9 +238,19 @@ export default function Bookmarks() {
             })
           } else if (event.type === 'error') {
             const reason = event.message ? String(event.message) : t('bookmarks_publish_modal_failed_generic')
-            setProgressState(prev => (prev ? { ...prev, status: 'error', message: reason } : prev))
+            setProgressState(prev => (prev ? { ...prev, status: 'error', message: reason, errorMessage: reason } : prev))
           } else if (event.type === 'start') {
-            setProgressState(prev => (prev ? { ...prev, message: t('bookmarks_publish_in_progress', { count: formattedCount }) } : prev))
+            setProgressState(prev => {
+              if (!prev) return prev
+              const total = Number(event.total ?? prev.totalCount ?? items.length)
+              const resolvedTotal = Number.isFinite(total)
+                ? total
+                : typeof prev.totalCount === 'number'
+                  ? prev.totalCount
+                  : items.length
+              const nextMessage = t('bookmarks_publish_in_progress', { count: numberFormatter.format(resolvedTotal) })
+              return { ...prev, message: nextMessage, totalCount: resolvedTotal }
+            })
           } else if (event.type === 'complete') {
             const success = Number(event.success ?? 0) || 0
             const failed = Number(event.failed ?? 0) || 0
@@ -247,7 +264,14 @@ export default function Bookmarks() {
                   failed: numberFormatter.format(failed),
                 })
                 : t('bookmarks_publish_modal_success', { count: numberFormatter.format(success) })
-              return { ...prev, status, message }
+              return {
+                ...prev,
+                status,
+                message,
+                summary: { success, failed },
+                totalCount: typeof prev.totalCount === 'number' ? prev.totalCount : success + failed,
+                errorMessage: failed > 0 ? prev.errorMessage : null,
+              }
             })
           }
         },
@@ -264,19 +288,27 @@ export default function Bookmarks() {
         return { success, failed }
       })()
       if (summary) {
-        if (!finalSummary) {
-          setProgressState(prev => {
-            if (!prev) return prev
-            const status: ProgressModalStatus = summary.failed > 0 ? 'error' : 'success'
-            const message = summary.failed > 0
+        setProgressState(prev => {
+          if (!prev) return prev
+          const hasErrorMessage = Boolean(prev.errorMessage)
+          const status: ProgressModalStatus = hasErrorMessage ? prev.status : summary.failed > 0 ? 'error' : 'success'
+          const message = hasErrorMessage
+            ? prev.message
+            : summary.failed > 0
               ? t('bookmarks_publish_modal_partial', {
                 success: numberFormatter.format(summary.success),
                 failed: numberFormatter.format(summary.failed),
               })
               : t('bookmarks_publish_modal_success', { count: numberFormatter.format(summary.success) })
-            return { ...prev, status, message }
-          })
-        }
+          return {
+            ...prev,
+            status,
+            message,
+            summary,
+            totalCount: typeof prev.totalCount === 'number' ? prev.totalCount : summary.success + summary.failed,
+            errorMessage: status === 'success' ? null : prev.errorMessage,
+          }
+        })
         if (summary.failed === 0) {
           setBanner({ kind: 'success', message: t('bookmarks_publish_success', { count: formatNumberValue(summary.success, numberFormatter, '0') }) })
           setSelected({})
@@ -299,11 +331,11 @@ export default function Bookmarks() {
       }
     } catch (err: any) {
       if (err?.name === 'AbortError') {
-        setProgressState(prev => (prev ? { ...prev, status: 'cancelled', message: t('bookmarks_publish_modal_cancelled') } : prev))
+        setProgressState(prev => (prev ? { ...prev, status: 'cancelled', message: t('bookmarks_publish_modal_cancelled'), errorMessage: null } : prev))
         setBanner({ kind: 'info', message: t('bookmarks_publish_cancelled') })
       } else {
         const reason = err?.message || String(err)
-        setProgressState(prev => (prev ? { ...prev, status: 'error', message: t('bookmarks_publish_modal_failed', { reason }) } : prev))
+        setProgressState(prev => (prev ? { ...prev, status: 'error', message: t('bookmarks_publish_modal_failed', { reason }), errorMessage: reason } : prev))
         setBanner({ kind: 'error', message: t('bookmarks_publish_failed', { reason }) })
       }
     } finally {
@@ -578,12 +610,14 @@ export default function Bookmarks() {
         )}
       </main>
       {progress && (
-        <ProgressModal
+        <BulkPublishModal
           open={progress.open}
-          title={t('bookmarks_publish_progress_title', { count: numberFormatter.format(progress.items.length) })}
           status={progress.status}
           items={progress.items}
+          summary={progress.summary}
+          totalCount={progress.totalCount ?? progress.items.length}
           message={progress.message}
+          errorMessage={progress.errorMessage}
           onCancel={progress.status === 'running' ? cancelPublish : undefined}
           onClose={closeProgress}
         />
