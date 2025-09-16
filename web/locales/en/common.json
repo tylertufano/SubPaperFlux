@@ -391,6 +391,7 @@
   "admin_users_last_login_unknown": "Never",
   "admin_users_view_details": "View details",
   "admin_users_suspend": "Suspend",
+  "admin_users_suspend_confirm": "Are you sure you want to suspend {name}? This immediately disables access.",
   "admin_users_reactivate": "Reactivate",
   "admin_users_suspended_success": "Suspended {name}.",
   "admin_users_reactivated_success": "Reactivated {name}.",

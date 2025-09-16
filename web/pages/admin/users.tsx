@@ -129,12 +129,24 @@ export default function AdminUsers() {
   }
 
   const handleToggleActive = async (user: AdminUser, nextActive: boolean) => {
+    if (!nextActive) {
+      const confirmed = window.confirm(
+        t('admin_users_suspend_confirm', { name: displayName(user) }),
+      )
+      if (!confirmed) {
+        return
+      }
+    }
     setPendingUserId(user.id)
     setFlash(null)
     try {
+      const adminUserUpdate: { is_active: boolean; confirm?: boolean } = { is_active: nextActive }
+      if (!nextActive) {
+        adminUserUpdate.confirm = true
+      }
       const updated = await v1.updateAdminUserV1AdminUsersUserIdPatch({
         userId: user.id,
-        adminUserUpdate: { is_active: nextActive },
+        adminUserUpdate,
       })
       setFlash({
         kind: 'success',

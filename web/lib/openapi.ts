@@ -208,6 +208,7 @@ type AdminUsersQuery = {
 
 type AdminUserUpdatePayload = {
   is_active?: boolean
+  confirm?: boolean
 }
 
 export type RoleGrantRequest = {
@@ -315,8 +316,9 @@ async function grantAdminUserRole(
   )
 }
 
-async function revokeAdminUserRole(userId: string, roleName: string): Promise<void> {
-  await authorizedRequest(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleName)}`, {
+async function revokeAdminUserRole(userId: string, roleName: string, confirm = false): Promise<void> {
+  const query = confirm ? '?confirm=true' : ''
+  await authorizedRequest(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleName)}${query}`, {
     method: 'DELETE',
     expectJson: false,
     errorMessage: 'Failed to revoke role',
@@ -443,10 +445,12 @@ export const v1 = {
   revokeAdminUserRoleV1AdminUsersUserIdRolesRoleNameDelete: async ({
     userId,
     roleName,
+    confirm,
   }: {
     userId: string
     roleName: string
-  }) => revokeAdminUserRole(userId, roleName),
+    confirm?: boolean
+  }) => revokeAdminUserRole(userId, roleName, Boolean(confirm)),
 
   listJobsV1JobsGet: async (p: any = {}) => (await getClients()).v1.listJobsV1JobsGet(p),
   getJobV1JobsJobIdGet: async ({ jobId }: { jobId: string }) => (await getClients()).v1.getJobV1JobsJobIdGet({ jobId }),

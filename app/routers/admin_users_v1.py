@@ -144,16 +144,17 @@ def update_user(
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    _require_admin(session, current_user)
+    actor_id = _require_admin(session, current_user)
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     updated = False
-    actor_id = current_user.get("sub") if isinstance(current_user, dict) else None
     now = datetime.now(timezone.utc)
 
     if payload.is_active is not None and payload.is_active != user.is_active:
+        if payload.is_active is False and not payload.confirm:
+            raise HTTPException(status_code=400, detail="Confirmation required to suspend user")
         user.is_active = payload.is_active
         updated = True
         user.updated_at = now
@@ -189,13 +190,13 @@ def grant_user_role(
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    _require_admin(session, current_user)
+    actor_id = _require_admin(session, current_user)
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     request = payload or RoleGrantRequest()
-    granted_by = current_user.get("sub") if isinstance(current_user, dict) else None
+    granted_by = actor_id
 
     try:
         grant_role(
@@ -233,18 +234,24 @@ def revoke_user_role(
     *,
     user_id: str = Path(..., min_length=1),
     role_name: str = Path(..., min_length=1),
+    confirm: bool = Query(
+        False,
+        description="Set to true to confirm revoking the specified role assignment.",
+    ),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    _require_admin(session, current_user)
+    actor_id = _require_admin(session, current_user)
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    if not confirm:
+        raise HTTPException(status_code=400, detail="Confirmation required to revoke role")
+
     if not revoke_role(session, user_id, role_name):
         raise HTTPException(status_code=404, detail="Role assignment not found")
 
-    actor_id = current_user.get("sub") if isinstance(current_user, dict) else None
     record_audit_log(
         session,
         entity_type="user_role",

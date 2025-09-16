@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlmodel import select
 
@@ -92,7 +93,10 @@ def test_admin_users_listing_and_role_management(admin_client):
     assert resp_reviewer.json()["total"] == 1
 
     # Revoke the original role from user-1
-    resp_revoke = admin_client.delete("/v1/admin/users/user-1/roles/editor")
+    resp_revoke = admin_client.delete(
+        "/v1/admin/users/user-1/roles/editor",
+        params={"confirm": "true"},
+    )
     assert resp_revoke.status_code == 204
 
     # User detail should reflect updated roles
@@ -151,3 +155,78 @@ def test_admin_users_allows_db_admin_role():
 
     resp = client.get("/v1/admin/users")
     assert resp.status_code == 200
+
+
+def test_admin_user_suspend_requires_confirmation(admin_client):
+    from app.db import get_session
+    from app.models import User
+
+    with next(get_session()) as session:
+        session.add(User(id="confirm-user", email="confirm@example.com"))
+        session.commit()
+
+    resp_missing = admin_client.patch(
+        "/v1/admin/users/confirm-user",
+        json={"is_active": False},
+    )
+    assert resp_missing.status_code == 400
+
+    resp_confirmed = admin_client.patch(
+        "/v1/admin/users/confirm-user",
+        json={"is_active": False, "confirm": True},
+    )
+    assert resp_confirmed.status_code == 200
+    assert resp_confirmed.json()["is_active"] is False
+
+
+def test_admin_revoke_requires_confirmation(admin_client):
+    from app.auth import ensure_role, grant_role
+    from app.db import get_session
+    from app.models import User
+
+    with next(get_session()) as session:
+        ensure_role(session, "moderator")
+        session.commit()
+        user = User(id="revoke-user", email="revoke@example.com")
+        session.add(user)
+        session.commit()
+        grant_role(session, user.id, "moderator")
+        session.commit()
+
+    resp_missing = admin_client.delete("/v1/admin/users/revoke-user/roles/moderator")
+    assert resp_missing.status_code == 400
+
+    resp_ok = admin_client.delete(
+        "/v1/admin/users/revoke-user/roles/moderator",
+        params={"confirm": "true"},
+    )
+    assert resp_ok.status_code == 204
+
+
+def test_require_admin_respects_session_user(monkeypatch):
+    from app.auth import ADMIN_ROLE_NAME, ensure_admin_role, grant_role
+    from app.db import get_session_ctx, init_db
+    from app.models import User
+    from app.routers.admin import _require_admin
+
+    init_db()
+    with get_session_ctx() as session:
+        ensure_admin_role(session)
+        session.commit()
+        user = User(id="admin-ctx", email="ctx@example.com")
+        session.add(user)
+        session.commit()
+        grant_role(session, user.id, ADMIN_ROLE_NAME)
+        session.commit()
+
+        monkeypatch.setattr("app.routers.admin.get_session_user_id", lambda _: "admin-ctx")
+        current_user = {"sub": "admin-ctx", "groups": []}
+        assert _require_admin(session, current_user) == "admin-ctx"
+
+        monkeypatch.setattr("app.routers.admin.get_session_user_id", lambda _: "admin-ctx")
+        with pytest.raises(HTTPException) as excinfo:
+            _require_admin(session, {"sub": "other", "groups": []})
+        assert excinfo.value.status_code == 403
+
+        monkeypatch.setattr("app.routers.admin.get_session_user_id", lambda _: None)
+        assert _require_admin(session, current_user) == "admin-ctx"

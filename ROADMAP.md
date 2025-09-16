@@ -177,6 +177,8 @@ make sdk-ts
 - [x] DB RLS: Set `app.user_id` per DB session (middleware) (UI-012)
   - Evidence: `app/main.py:64`, `app/db.py:33`
 - [x] CSRF: UI sends `X-CSRF-Token`
+- [x] Admin hardening: destructive actions require confirmation and server checks `app.user_id`
+  - Evidence: `app/routers/admin.py:1`, `app/routers/admin_users_v1.py:1`, `web/pages/admin/users.tsx:1`
 
 ### API Polish
 

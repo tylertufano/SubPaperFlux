@@ -66,6 +66,22 @@ def get_current_user_id() -> Optional[str]:
     return _current_user_id.get()
 
 
+def get_session_user_id(session: Session) -> Optional[str]:
+    """Return the database session's ``app.user_id`` if available."""
+
+    if not is_postgres():
+        return get_current_user_id()
+
+    try:
+        result = session.exec(text("SELECT current_setting('app.user_id', true)"))
+        value = result.scalar_one_or_none()
+        if value:
+            return str(value)
+    except Exception:  # noqa: BLE001
+        logger.debug("Unable to read app.user_id session variable", exc_info=True)
+    return get_current_user_id()
+
+
 def _configure_rls(session: Session) -> bool:
     if not is_postgres():
         return False

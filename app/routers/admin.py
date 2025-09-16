@@ -8,7 +8,7 @@ from sqlmodel import select
 from ..auth import ADMIN_ROLE_NAME, user_has_role
 from ..auth.oidc import get_current_user
 from ..auth.rbac import is_admin
-from ..db import get_session, is_postgres
+from ..db import get_session, get_session_user_id, is_postgres
 from ..db_admin import prepare_postgres_search, enable_rls
 from ..models import AuditLog
 from ..schemas import AuditLogOut, AuditLogsPage
@@ -17,12 +17,22 @@ from ..schemas import AuditLogOut, AuditLogsPage
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _require_admin(session, current_user) -> None:
-    if is_admin(current_user):
-        return
-    user_id = current_user.get("sub") if isinstance(current_user, dict) else None
-    if user_id and user_has_role(session, user_id, ADMIN_ROLE_NAME):
-        return
+def _require_admin(session, current_user) -> str:
+    current_user_data = current_user if isinstance(current_user, dict) else {}
+    request_user_id = current_user_data.get("sub")
+    session_user_id = get_session_user_id(session)
+
+    if session_user_id and request_user_id and session_user_id != request_user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    resolved_user_id = session_user_id or request_user_id
+    if not resolved_user_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    if is_admin(current_user_data):
+        return resolved_user_id
+    if user_has_role(session, resolved_user_id, ADMIN_ROLE_NAME):
+        return resolved_user_id
     raise HTTPException(status_code=403, detail="Forbidden")
 
 

@@ -232,6 +232,7 @@ class AdminUsersPage(BaseModel):
 
 class AdminUserUpdate(BaseModel):
     is_active: Optional[bool] = None
+    confirm: Optional[bool] = None
 
 
 class ApiTokenCreate(BaseModel):
