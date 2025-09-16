@@ -101,6 +101,76 @@ async function getClients() {
   return clientsPromise
 }
 
+export type AuditLogEntry = {
+  id: string
+  entity_type: string
+  entity_id: string
+  action: string
+  owner_user_id?: string | null
+  actor_user_id?: string | null
+  details?: Record<string, any>
+  created_at: string
+}
+
+export type AuditLogsPage = {
+  items: AuditLogEntry[]
+  total: number
+  page: number
+  size: number
+  has_next?: boolean
+  total_pages?: number
+}
+
+type AuditLogQuery = {
+  page?: number
+  size?: number
+  entityType?: string
+  entityId?: string
+  action?: string
+  ownerUserId?: string
+  actorUserId?: string
+  since?: string
+  until?: string
+}
+
+async function listAuditLogs(params: AuditLogQuery = {}): Promise<AuditLogsPage> {
+  const basePath = await resolveApiBase()
+  const session = await getSession()
+  const headers: Record<string, string> = {
+    'X-CSRF-Token': CSRF,
+  }
+  const token = session?.accessToken as string | undefined
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.entityType) query.set('entity_type', params.entityType)
+  if (params.entityId) query.set('entity_id', params.entityId)
+  if (params.action) query.set('action', params.action)
+  if (params.ownerUserId) query.set('owner_user_id', params.ownerUserId)
+  if (params.actorUserId) query.set('actor_user_id', params.actorUserId)
+  if (params.since) query.set('since', params.since)
+  if (params.until) query.set('until', params.until)
+
+  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
+  const search = query.toString()
+  const url = `${normalizedBase}/v1/admin/audit${search ? `?${search}` : ''}`
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers,
+    credentials: 'include',
+  })
+
+  if (!res.ok) {
+    const message = (await res.text())?.trim()
+    throw new Error(message || `Failed to load audit logs (${res.status})`)
+  }
+
+  return res.json()
+}
+
 export async function bulkPublishBookmarksStream({ requestBody, signal }: { requestBody: any; signal?: AbortSignal }) {
   const basePath = await resolveApiBase()
   const session = await getSession()
@@ -169,6 +239,8 @@ export const v1 = {
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
+
+  listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
 
   listJobsV1JobsGet: async (p: any = {}) => (await getClients()).v1.listJobsV1JobsGet(p),
   getJobV1JobsJobIdGet: async ({ jobId }: { jobId: string }) => (await getClients()).v1.getJobV1JobsJobIdGet({ jobId }),
