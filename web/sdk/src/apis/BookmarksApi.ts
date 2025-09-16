@@ -74,6 +74,8 @@ export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
 
 export interface CountBookmarksBookmarksCountGetRequest {
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     search?: string | null;
@@ -87,6 +89,8 @@ export interface CountBookmarksBookmarksCountGetRequest {
 
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     search?: string | null;
@@ -165,6 +169,8 @@ export interface ExportBookmarksBookmarksExportGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -181,6 +187,8 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -219,6 +227,8 @@ export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
 export interface HeadBookmarksBookmarksHeadRequest {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -231,6 +241,8 @@ export interface HeadBookmarksBookmarksHeadRequest {
 export interface HeadBookmarksBookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -243,6 +255,8 @@ export interface HeadBookmarksBookmarksHead0Request {
 export interface HeadBookmarksV1BookmarksHeadRequest {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -255,6 +269,8 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
 export interface HeadBookmarksV1BookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -270,6 +286,8 @@ export interface ListBookmarksBookmarksGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -287,6 +305,8 @@ export interface ListBookmarksBookmarksGet0Request {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -304,6 +324,8 @@ export interface ListBookmarksV1BookmarksGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -321,6 +343,8 @@ export interface ListBookmarksV1BookmarksGet0Request {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -330,6 +354,14 @@ export interface ListBookmarksV1BookmarksGet0Request {
     regex?: string | null;
     regexTarget?: string | null;
     regexFlags?: string | null;
+}
+
+export interface PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
+}
+
+export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
 }
 
 export interface UpdateBookmarkFolderBookmarksBookmarkIdFolderPutRequest {
@@ -605,6 +637,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -680,6 +720,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1367,6 +1415,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -1458,6 +1514,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1815,6 +1879,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -1890,6 +1962,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1969,6 +2049,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2044,6 +2132,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2133,6 +2229,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2228,6 +2332,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2321,6 +2433,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2412,6 +2532,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2626,6 +2754,104 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     async listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
         const response = await this.listTagsV1BookmarksTagsGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkBookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkBookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

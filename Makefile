@@ -61,9 +61,11 @@ bookmarks-count:
 	@if [ -z "$(API_BASE)" ] || [ -z "$(TOKEN)" ]; then echo "Usage: make bookmarks-count API_BASE=http://localhost:8000 TOKEN=... [FEED_ID=..] [SINCE=..] [UNTIL=..] [SEARCH=..] [FUZZY=true]"; exit 2; fi; \
 	QS=""; \
 	[ -n "$(FEED_ID)" ] && QS="$$QS&feed_id=$(FEED_ID)"; \
-	[ -n "$(SINCE)" ] && QS="$$QS&since=$(SINCE)"; \
-	[ -n "$(UNTIL)" ] && QS="$$QS&until=$(UNTIL)"; \
-	[ -n "$(SEARCH)" ] && QS="$$QS&search=$(SEARCH)"; \
+        [ -n "$(SINCE)" ] && QS="$$QS&since=$(SINCE)"; \
+        [ -n "$(UNTIL)" ] && QS="$$QS&until=$(UNTIL)"; \
+        [ -n "$(SEARCH)" ] && QS="$$QS&search=$(SEARCH)"; \
+        [ -n "$(TAG_ID)" ] && QS="$$QS&tag_id=$(TAG_ID)"; \
+        [ -n "$(FOLDER_ID)" ] && QS="$$QS&folder_id=$(FOLDER_ID)"; \
 	[ -n "$(FUZZY)" ] && QS="$$QS&fuzzy=$(FUZZY)"; \
 	URL="$(API_BASE)/bookmarks$${QS:+?$${QS#&}}"; \
 	echo "HEAD $$URL"; \
@@ -78,9 +80,11 @@ bookmarks-export:
 	FMT="$${FORMAT:-json}"; \
 	QS="format=$$FMT"; \
 	[ -n "$(FEED_ID)" ] && QS="$$QS&feed_id=$(FEED_ID)"; \
-	[ -n "$(SINCE)" ] && QS="$$QS&since=$(SINCE)"; \
-	[ -n "$(UNTIL)" ] && QS="$$QS&until=$(UNTIL)"; \
-	[ -n "$(SEARCH)" ] && QS="$$QS&search=$(SEARCH)"; \
+        [ -n "$(SINCE)" ] && QS="$$QS&since=$(SINCE)"; \
+        [ -n "$(UNTIL)" ] && QS="$$QS&until=$(UNTIL)"; \
+        [ -n "$(SEARCH)" ] && QS="$$QS&search=$(SEARCH)"; \
+        [ -n "$(TAG_ID)" ] && QS="$$QS&tag_id=$(TAG_ID)"; \
+        [ -n "$(FOLDER_ID)" ] && QS="$$QS&folder_id=$(FOLDER_ID)"; \
 	[ -n "$(FUZZY)" ] && QS="$$QS&fuzzy=$(FUZZY)"; \
 	URL="$(API_BASE)/bookmarks/export?$${QS}"; \
 	if [ -n "$(OUT)" ]; then \

@@ -359,7 +359,15 @@ def _apply_sorting(stmt, sort_choice: Optional[str], sort_dir: Optional[str]):
     return stmt.order_by(Bookmark.published_at.desc(), Bookmark.id.desc())
 
 
-def _apply_filters(stmt, user_id: str, feed_id: Optional[str], since: Optional[str], until: Optional[str]):
+def _apply_filters(
+    stmt,
+    user_id: str,
+    feed_id: Optional[str],
+    since: Optional[str],
+    until: Optional[str],
+    tag_id: Optional[str] = None,
+    folder_id: Optional[str] = None,
+):
     stmt = stmt.where(Bookmark.owner_user_id == user_id)
     if feed_id:
         stmt = stmt.where(Bookmark.feed_id == feed_id)
@@ -367,6 +375,14 @@ def _apply_filters(stmt, user_id: str, feed_id: Optional[str], since: Optional[s
         stmt = stmt.where(Bookmark.published_at >= since)
     if until:
         stmt = stmt.where(Bookmark.published_at <= until)
+    if tag_id:
+        tag_subquery = select(BookmarkTagLink.bookmark_id).where(BookmarkTagLink.tag_id == tag_id)
+        stmt = stmt.where(Bookmark.id.in_(tag_subquery))
+    if folder_id:
+        folder_subquery = select(BookmarkFolderLink.bookmark_id).where(
+            BookmarkFolderLink.folder_id == folder_id
+        )
+        stmt = stmt.where(Bookmark.id.in_(folder_subquery))
     return stmt
 
 
@@ -420,6 +436,8 @@ def list_bookmarks(
     search: Optional[str] = None,
     fuzzy: bool = Query(False),
     feed_id: Optional[str] = None,
+    tag_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None),
     since: Optional[str] = None,
     until: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(title|url|published_at|relevance)$"),
@@ -433,10 +451,10 @@ def list_bookmarks(
     user_id = current_user["sub"]
     # parse since/until to ISO strings; with TIMESTAMPTZ in PG the comparison will work; on SQLite it treats as text
     base = select(Bookmark)
-    base = _apply_filters(base, user_id, feed_id, since, until)
+    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
     # Total count (without pagination)
     count_stmt = select(func.count()).select_from(Bookmark)
-    count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until)
+    count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
     total = session.exec(count_stmt).one()
 
     filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
@@ -448,7 +466,7 @@ def list_bookmarks(
         clauses = _sql_clauses(filters)
         stmt = base
         count_stmt = select(func.count()).select_from(Bookmark)
-        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until)
+        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
         for clause in clauses:
             stmt = stmt.where(clause)
             count_stmt = count_stmt.where(clause)
@@ -954,6 +972,8 @@ def count_bookmarks(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
     feed_id: Optional[str] = None,
+    tag_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None),
     since: Optional[str] = None,
     until: Optional[str] = None,
     search: Optional[str] = None,
@@ -967,11 +987,11 @@ def count_bookmarks(
     user_id = current_user["sub"]
     filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
     base = select(Bookmark)
-    base = _apply_filters(base, user_id, feed_id, since, until)
+    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
     if is_postgres():
         clauses = _sql_clauses(filters)
         count_stmt = select(func.count()).select_from(Bookmark)
-        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until)
+        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
         for clause in clauses:
             count_stmt = count_stmt.where(clause)
         total = session.exec(count_stmt).one()
@@ -989,6 +1009,8 @@ def head_bookmarks(
     session=Depends(get_session),
     search: Optional[str] = None,
     feed_id: Optional[str] = None,
+    tag_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None),
     since: Optional[str] = None,
     until: Optional[str] = None,
     title_query: Optional[str] = Query(None),
@@ -1000,11 +1022,11 @@ def head_bookmarks(
     user_id = current_user["sub"]
     filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
     base = select(Bookmark)
-    base = _apply_filters(base, user_id, feed_id, since, until)
+    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
     if is_postgres():
         clauses = _sql_clauses(filters)
         count_stmt = select(func.count()).select_from(Bookmark)
-        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until)
+        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
         for clause in clauses:
             count_stmt = count_stmt.where(clause)
         total = session.exec(count_stmt).one()
@@ -1024,6 +1046,8 @@ def export_bookmarks(
     search: Optional[str] = None,
     fuzzy: bool = Query(False),
     feed_id: Optional[str] = None,
+    tag_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None),
     since: Optional[str] = None,
     until: Optional[str] = None,
     sort_by: Optional[str] = Query(None, pattern="^(title|url|published_at|relevance)$"),
@@ -1036,7 +1060,7 @@ def export_bookmarks(
 ):
     user_id = current_user["sub"]
     base = select(Bookmark)
-    base = _apply_filters(base, user_id, feed_id, since, until)
+    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
     filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
     chosen_sort = sort_by or filters.sort_preference
     similarity_query = _similarity_term(filters)
