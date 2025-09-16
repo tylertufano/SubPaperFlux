@@ -52,6 +52,10 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
         groups=groups,
         roles=roles,
         is_admin=is_admin_flag,
+        quota_credentials=user.quota_credentials,
+        quota_site_configs=user.quota_site_configs,
+        quota_feeds=user.quota_feeds,
+        quota_api_tokens=user.quota_api_tokens,
     )
 
 
@@ -161,7 +165,6 @@ def update_user(
             raise HTTPException(status_code=400, detail="Confirmation required to suspend user")
         user.is_active = payload.is_active
         updated = True
-        user.updated_at = now
         record_audit_log(
             session,
             entity_type="user",
@@ -172,11 +175,44 @@ def update_user(
             details={"is_active": payload.is_active},
         )
 
+    quota_fields = {
+        "quota_credentials": "credential",
+        "quota_site_configs": "site_config",
+        "quota_feeds": "feed",
+        "quota_api_tokens": "api_token",
+    }
+    quota_changes = {}
+    for field, label in quota_fields.items():
+        if field not in payload.model_fields_set:
+            continue
+        new_value = getattr(payload, field)
+        if getattr(user, field) == new_value:
+            continue
+        quota_changes[field] = {
+            "resource": label,
+            "previous": getattr(user, field),
+            "next": new_value,
+        }
+        setattr(user, field, new_value)
+        updated = True
+
+    if quota_changes:
+        record_audit_log(
+            session,
+            entity_type="user",
+            entity_id=user.id,
+            action="update_quota",
+            owner_user_id=user.id,
+            actor_user_id=actor_id,
+            details={"changes": quota_changes},
+        )
+
     if not updated:
         result = _serialize_user(session, user)
         _record_admin_action_metric("update_user")
         return result
 
+    user.updated_at = now
     session.add(user)
     session.commit()
     session.refresh(user)

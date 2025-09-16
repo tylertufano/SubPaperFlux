@@ -18,6 +18,7 @@ from ..db import get_session
 from ..models import ApiToken, User
 from ..observability.metrics import increment_api_tokens_issued
 from ..schemas import ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage
+from ..util.quotas import enforce_user_quota
 
 
 router = APIRouter(prefix="/v1/me/tokens", tags=["v1", "me"])
@@ -163,6 +164,17 @@ def create_token(
 
     scopes = _normalize_scopes(payload.scopes)
     expires_at = _normalize_expires_at(payload.expires_at)
+    enforce_user_quota(
+        session,
+        user_id,
+        quota_field="quota_api_tokens",
+        resource_name="API token",
+        count_stmt=select(func.count()).select_from(ApiToken).where(
+            ApiToken.user_id == user_id,
+            ApiToken.revoked_at.is_(None),
+        ),
+        user=user,
+    )
     raw_token, token_hash = _generate_token_pair(session)
 
     token = ApiToken(

@@ -1,4 +1,5 @@
 from typing import List
+from sqlalchemy import func
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import select
 
@@ -9,6 +10,7 @@ from ..schemas import SiteConfig as SiteConfigSchema
 from ..db import get_session
 from ..security.csrf import csrf_protect
 from ..models import SiteConfig as SiteConfigModel
+from ..util.quotas import enforce_user_quota
 
 
 router = APIRouter()
@@ -33,6 +35,16 @@ def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_
     # Only admins may create global configs (owner_user_id None)
     if model.owner_user_id is None and not can_manage_global_site_configs(current_user):
         model.owner_user_id = current_user["sub"]
+    if model.owner_user_id:
+        enforce_user_quota(
+            session,
+            model.owner_user_id,
+            quota_field="quota_site_configs",
+            resource_name="Site config",
+            count_stmt=select(func.count()).select_from(SiteConfigModel).where(
+                SiteConfigModel.owner_user_id == model.owner_user_id
+            ),
+        )
     session.add(model)
     record_audit_log(
         session,

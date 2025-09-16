@@ -219,6 +219,10 @@ class AdminUserOut(BaseModel):
     groups: List[str] = Field(default_factory=list)
     roles: List[str] = Field(default_factory=list)
     is_admin: bool = False
+    quota_credentials: Optional[int] = Field(default=None, ge=0)
+    quota_site_configs: Optional[int] = Field(default=None, ge=0)
+    quota_feeds: Optional[int] = Field(default=None, ge=0)
+    quota_api_tokens: Optional[int] = Field(default=None, ge=0)
 
 
 class AdminUsersPage(BaseModel):
@@ -233,6 +237,10 @@ class AdminUsersPage(BaseModel):
 class AdminUserUpdate(BaseModel):
     is_active: Optional[bool] = None
     confirm: Optional[bool] = None
+    quota_credentials: Optional[int] = Field(default=None, ge=0)
+    quota_site_configs: Optional[int] = Field(default=None, ge=0)
+    quota_feeds: Optional[int] = Field(default=None, ge=0)
+    quota_api_tokens: Optional[int] = Field(default=None, ge=0)
 
 
 class ApiTokenCreate(BaseModel):
