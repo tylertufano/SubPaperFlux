@@ -332,6 +332,14 @@ export interface ListBookmarksV1BookmarksGet0Request {
     regexFlags?: string | null;
 }
 
+export interface PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
+}
+
+export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
+}
+
 export interface UpdateBookmarkFolderBookmarksBookmarkIdFolderPutRequest {
     bookmarkId: string;
     bookmarkFolderUpdate: BookmarkFolderUpdate;
@@ -2626,6 +2634,104 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     async listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
         const response = await this.listTagsV1BookmarksTagsGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkBookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkBookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkBookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

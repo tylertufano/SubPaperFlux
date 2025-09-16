@@ -1,5 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './AuditLogOut';
+export * from './AuditLogsPage';
 export * from './BookmarkFolderUpdate';
 export * from './BookmarkOut';
 export * from './BookmarkTagsUpdate';

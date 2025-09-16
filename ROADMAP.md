@@ -278,7 +278,9 @@ make sdk-ts
 
 ### API Endpoints
 
- - [ ] `/v1/admin/users`, `/v1/admin/audit`, `/v1/me/tokens` (UI-069)
+ - [ ] `/v1/admin/users` (UI-069)
+ - [x] `/v1/admin/audit` (UI-069) — `app/routers/admin.py`, `app/schemas.py`, `tests/test_routers_basic.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AuditLogsPage.ts`
+ - [ ] `/v1/me/tokens` (UI-069)
 
 ### UI
 

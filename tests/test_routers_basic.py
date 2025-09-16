@@ -99,6 +99,14 @@ def test_credentials_and_siteconfigs(client):
         ).all()
         assert [log.action for log in setting_logs] == ["create", "update", "delete"]
 
+    r_admin_audit = client.get("/v1/admin/audit")
+    assert r_admin_audit.status_code == 200
+    audit_payload = r_admin_audit.json()
+    assert audit_payload["total"] >= 1
+    assert audit_payload["items"]
+    first_entry = audit_payload["items"][0]
+    assert {"id", "entity_type", "action", "created_at"}.issubset(first_entry.keys())
+
 
 def test_jobs_validation(client):
     # Missing fields
@@ -109,4 +117,18 @@ def test_jobs_validation(client):
     r2 = client.post("/v1/jobs/validate", json={"type": "login", "payload": {"config_dir": ".", "site_config_id": "a", "credential_id": "b"}})
     assert r2.status_code == 200
     assert r2.json()["ok"] is True
+
+
+def test_admin_audit_requires_admin():
+    from app.main import create_app
+    from app.db import init_db
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u2", "groups": []}
+    client = TestClient(app)
+
+    resp = client.get("/v1/admin/audit")
+    assert resp.status_code == 403
 

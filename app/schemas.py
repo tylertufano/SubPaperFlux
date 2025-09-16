@@ -1,4 +1,5 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, AnyHttpUrl
 
 
@@ -178,3 +179,23 @@ class BookmarkFolderUpdate(BaseModel):
     folder_id: Optional[str] = None
     folder_name: Optional[str] = Field(default=None, min_length=1)
     instapaper_folder_id: Optional[str] = None
+
+
+class AuditLogOut(BaseModel):
+    id: str
+    entity_type: str
+    entity_id: str
+    action: str
+    owner_user_id: Optional[str] = None
+    actor_user_id: Optional[str] = None
+    details: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class AuditLogsPage(BaseModel):
+    items: List[AuditLogOut]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
