@@ -283,9 +283,9 @@ make sdk-ts
 
 ### API Endpoints
 
- - [ ] `/v1/admin/users` (UI-069)
-- [x] `/v1/admin/audit` (UI-069) — `app/routers/admin.py`, `app/schemas.py`, `tests/test_routers_basic.py`, `tests/test_audit_log.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AuditLogsPage.ts`
- - [ ] `/v1/me/tokens` (UI-069)
+ - [x] `/v1/admin/users` (UI-069) — `app/routers/admin_users_v1.py`, `app/schemas.py`, `tests/test_admin_users_router.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AdminUsersPage.ts`
+ - [x] `/v1/admin/audit` (UI-069) — `app/routers/admin.py`, `app/routers/admin_audit_v1.py`, `app/schemas.py`, `tests/test_routers_basic.py`, `tests/test_audit_log.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AuditLogsPage.ts`
+ - [x] `/v1/me/tokens` (UI-069) — `app/routers/me_tokens_v1.py`, `app/schemas.py`, `tests/test_me_tokens_router.py`, `sdk/ts/src/apis/MeApi.ts`, `sdk/ts/src/models/ApiTokensPage.ts`
 
 ### UI
 

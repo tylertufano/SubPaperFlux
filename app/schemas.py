@@ -199,3 +199,64 @@ class AuditLogsPage(BaseModel):
     size: int
     has_next: bool = False
     total_pages: int = 1
+
+
+class RoleGrantRequest(BaseModel):
+    description: Optional[str] = None
+    create_missing: bool = False
+    is_system: Optional[bool] = None
+
+
+class AdminUserOut(BaseModel):
+    id: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    picture_url: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login_at: Optional[datetime] = None
+    groups: List[str] = Field(default_factory=list)
+    roles: List[str] = Field(default_factory=list)
+    is_admin: bool = False
+
+
+class AdminUsersPage(BaseModel):
+    items: List[AdminUserOut]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
+
+
+class ApiTokenCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    description: Optional[str] = None
+    scopes: List[str] = Field(default_factory=list)
+    expires_at: Optional[datetime] = None
+
+
+class ApiTokenOut(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    scopes: List[str] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+    last_used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+
+
+class ApiTokenWithSecret(ApiTokenOut):
+    token: str
+
+
+class ApiTokensPage(BaseModel):
+    items: List[ApiTokenOut]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
