@@ -1,9 +1,7 @@
 import useSWR from 'swr'
 import { Alert, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
-import type { BulkPublishSummary } from '../components/BulkPublishModal'
-import type { ProgressModalItem, ProgressModalStatus } from '../components/ProgressModal'
+import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
-import { streamBulkPublish, type BulkPublishEvent } from '../lib/bulkPublish'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
@@ -28,14 +26,17 @@ type SavedView = {
   sort_dir?: 'asc' | 'desc'
 }
 
-type BulkProgressState = {
-  open: boolean
-  status: ProgressModalStatus
-  items: ProgressModalItem[]
-  message?: string
-  summary?: BulkPublishSummary | null
-  totalCount?: number
-  errorMessage?: string | null
+type BulkPublishRequestItem = {
+  id: string
+  url: string
+  title?: string | null
+  feed_id?: string | null
+  published_at?: string | null
+}
+
+type BulkPublishPlan = {
+  runKey: number
+  requestBody: { items: BulkPublishRequestItem[] }
 }
 
 type TagModalState = {
@@ -134,9 +135,8 @@ export default function Bookmarks() {
   const folderItems = Array.isArray(foldersData) ? foldersData : foldersData?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
-  const [progress, setProgress] = useState<BulkProgressState | null>(null)
-  const progressRef = useRef<BulkProgressState | null>(null)
-  const publishController = useRef<AbortController | null>(null)
+  const [publishPlan, setPublishPlan] = useState<BulkPublishPlan | null>(null)
+  const [publishInFlight, setPublishInFlight] = useState(false)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const selectedCount = Object.values(selected).filter(Boolean).length
   const hasSelection = selectedCount > 0
@@ -181,21 +181,6 @@ export default function Bookmarks() {
   }, [bookmarkItems.length])
 
   const getBookmarkLabel = (bookmark: any) => bookmark?.title || bookmark?.url || t('bookmarks_select_row_unknown')
-
-  const setProgressState = (
-    updater: BulkProgressState | null | ((prev: BulkProgressState | null) => BulkProgressState | null),
-  ) => {
-    if (typeof updater === 'function') {
-      setProgress(prev => {
-        const next = (updater as (prev: BulkProgressState | null) => BulkProgressState | null)(prev)
-        progressRef.current = next
-        return next
-      })
-    } else {
-      progressRef.current = updater
-      setProgress(updater)
-    }
-  }
 
   function clearFilters() {
     setKeyword('')
@@ -644,168 +629,76 @@ export default function Bookmarks() {
     for (const b of data?.items ?? []) next[b.id] = checked
     setSelected(next)
   }
-  async function bulkPublish() {
+  function bulkPublish() {
+    if (publishInFlight) return
     const items = (data?.items ?? []).filter((b: any) => selected[b.id])
     if (!items.length) return
-    const formattedCount = formatNumberValue(items.length, numberFormatter, '0')
-    const modalItems: ProgressModalItem[] = items.map((b: any) => ({
+    const requestItems: BulkPublishRequestItem[] = items.map((b: any) => ({
       id: b.id,
-      label: b.title || b.url || t('bookmarks_select_row_unknown'),
-      status: 'pending',
+      url: b.url,
+      title: b.title,
+      feed_id: b.feed_id ?? undefined,
+      published_at: b.published_at ?? undefined,
     }))
-    const initialState: BulkProgressState = {
-      open: true,
-      status: 'running',
-      items: modalItems,
-      message: t('bookmarks_publish_in_progress', { count: formattedCount }),
-      summary: null,
-      totalCount: items.length,
-      errorMessage: null,
-    }
-    setProgressState(initialState)
-    const controller = new AbortController()
-    publishController.current = controller
-    let finalSummary: { success: number; failed: number } | null = null
-    try {
-      const requestBody = {
-        items: items.map((b: any) => ({
-          id: b.id,
-          url: b.url,
-          title: b.title,
-          feed_id: b.feed_id,
-          published_at: b.published_at,
-        })),
+    setPublishInFlight(true)
+    setPublishPlan({
+      runKey: Date.now(),
+      requestBody: { items: requestItems },
+    })
+  }
+  function summarizeResult(result: BulkPublishResult | null): { success: number; failed: number } {
+    if (!result) return { success: 0, failed: 0 }
+    if (result.summary) {
+      return {
+        success: Number.isFinite(result.summary.success) ? result.summary.success : 0,
+        failed: Number.isFinite(result.summary.failed) ? result.summary.failed : 0,
       }
-      await streamBulkPublish({
-        requestBody,
-        signal: controller.signal,
-        onEvent: (event: BulkPublishEvent) => {
-          if (event.type === 'item') {
-            setProgressState(prev => {
-              if (!prev) return prev
-              const nextItems = prev.items.map(item => {
-                if (item.id !== event.id) return item
-                const nextStatus: ProgressModalItem['status'] =
-                  event.status === 'running' ? 'running' : event.status === 'success' ? 'success' : 'error'
-                return {
-                  ...item,
-                  status: nextStatus,
-                  message: event.message ? String(event.message) : undefined,
-                }
-              })
-              return { ...prev, items: nextItems }
-            })
-          } else if (event.type === 'error') {
-            const reason = event.message ? String(event.message) : t('bookmarks_publish_modal_failed_generic')
-            setProgressState(prev => (prev ? { ...prev, status: 'error', message: reason, errorMessage: reason } : prev))
-          } else if (event.type === 'start') {
-            setProgressState(prev => {
-              if (!prev) return prev
-              const total = Number(event.total ?? prev.totalCount ?? items.length)
-              const resolvedTotal = Number.isFinite(total)
-                ? total
-                : typeof prev.totalCount === 'number'
-                  ? prev.totalCount
-                  : items.length
-              const nextMessage = t('bookmarks_publish_in_progress', { count: numberFormatter.format(resolvedTotal) })
-              return { ...prev, message: nextMessage, totalCount: resolvedTotal }
-            })
-          } else if (event.type === 'complete') {
-            const success = Number(event.success ?? 0) || 0
-            const failed = Number(event.failed ?? 0) || 0
-            finalSummary = { success, failed }
-            setProgressState(prev => {
-              if (!prev) return prev
-              const status: ProgressModalStatus = failed > 0 ? 'error' : 'success'
-              const message = failed > 0
-                ? t('bookmarks_publish_modal_partial', {
-                  success: numberFormatter.format(success),
-                  failed: numberFormatter.format(failed),
-                })
-                : t('bookmarks_publish_modal_success', { count: numberFormatter.format(success) })
-              return {
-                ...prev,
-                status,
-                message,
-                summary: { success, failed },
-                totalCount: typeof prev.totalCount === 'number' ? prev.totalCount : success + failed,
-                errorMessage: failed > 0 ? prev.errorMessage : null,
-              }
-            })
-          }
-        },
+    }
+    let success = 0
+    let failed = 0
+    for (const item of result.items) {
+      if (item.status === 'success') success += 1
+      if (item.status === 'error') failed += 1
+    }
+    return { success, failed }
+  }
+  function handlePublishComplete(result: BulkPublishResult) {
+    setPublishInFlight(false)
+    const summary = summarizeResult(result)
+    if (summary.failed === 0) {
+      const count = summary.success > 0 ? summary.success : result.items.length
+      setBanner({
+        kind: 'success',
+        message: t('bookmarks_publish_success', { count: formatNumberValue(count, numberFormatter, '0') }),
       })
-      const summary = finalSummary ?? (() => {
-        const current = progressRef.current
-        if (!current) return null
-        let success = 0
-        let failed = 0
-        for (const item of current.items) {
-          if (item.status === 'success') success += 1
-          if (item.status === 'error') failed += 1
-        }
-        return { success, failed }
-      })()
-      if (summary) {
-        setProgressState(prev => {
-          if (!prev) return prev
-          const hasErrorMessage = Boolean(prev.errorMessage)
-          const status: ProgressModalStatus = hasErrorMessage ? prev.status : summary.failed > 0 ? 'error' : 'success'
-          const message = hasErrorMessage
-            ? prev.message
-            : summary.failed > 0
-              ? t('bookmarks_publish_modal_partial', {
-                success: numberFormatter.format(summary.success),
-                failed: numberFormatter.format(summary.failed),
-              })
-              : t('bookmarks_publish_modal_success', { count: numberFormatter.format(summary.success) })
-          return {
-            ...prev,
-            status,
-            message,
-            summary,
-            totalCount: typeof prev.totalCount === 'number' ? prev.totalCount : summary.success + summary.failed,
-            errorMessage: status === 'success' ? null : prev.errorMessage,
-          }
-        })
-        if (summary.failed === 0) {
-          setBanner({ kind: 'success', message: t('bookmarks_publish_success', { count: formatNumberValue(summary.success, numberFormatter, '0') }) })
-          setSelected({})
-        } else {
-          setBanner({
-            kind: 'error',
-            message: t('bookmarks_publish_partial', {
-              success: formatNumberValue(summary.success, numberFormatter, '0'),
-              failed: formatNumberValue(summary.failed, numberFormatter, '0'),
-            }),
-          })
-          const current = progressRef.current
-          if (current) {
-            const failedSelection: Record<string, boolean> = {}
-            current.items.forEach(item => { if (item.status === 'error') failedSelection[item.id] = true })
-            setSelected(failedSelection)
-          }
-        }
-        mutate()
-      }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        setProgressState(prev => (prev ? { ...prev, status: 'cancelled', message: t('bookmarks_publish_modal_cancelled'), errorMessage: null } : prev))
-        setBanner({ kind: 'info', message: t('bookmarks_publish_cancelled') })
-      } else {
-        const reason = err?.message || String(err)
-        setProgressState(prev => (prev ? { ...prev, status: 'error', message: t('bookmarks_publish_modal_failed', { reason }), errorMessage: reason } : prev))
-        setBanner({ kind: 'error', message: t('bookmarks_publish_failed', { reason }) })
-      }
-    } finally {
-      publishController.current = null
+      setSelected({})
+    } else {
+      setBanner({
+        kind: 'error',
+        message: t('bookmarks_publish_partial', {
+          success: formatNumberValue(summary.success, numberFormatter, '0'),
+          failed: formatNumberValue(summary.failed, numberFormatter, '0'),
+        }),
+      })
+      const failedSelection: Record<string, boolean> = {}
+      result.items.forEach(item => {
+        if (item.status === 'error') failedSelection[item.id] = true
+      })
+      setSelected(failedSelection)
     }
+    mutate()
   }
-  function cancelPublish() {
-    publishController.current?.abort()
+  function handlePublishCancel(_result: BulkPublishResult) {
+    setPublishInFlight(false)
+    setBanner({ kind: 'info', message: t('bookmarks_publish_cancelled') })
   }
-  function closeProgress() {
-    setProgressState(null)
+  function handlePublishError(error: Error, _result: BulkPublishResult | null) {
+    setPublishInFlight(false)
+    const reason = error?.message || String(error)
+    setBanner({ kind: 'error', message: t('bookmarks_publish_failed', { reason }) })
+  }
+  function closePublishModal() {
+    setPublishPlan(null)
   }
   async function bulkDelete() {
     const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k)
@@ -1172,10 +1065,10 @@ export default function Bookmarks() {
           <>
               <div className="card p-0 overflow-hidden">
               <div className="p-3 flex items-center gap-2">
-                <button className="btn" disabled={!hasSelection || progress?.status === 'running'} onClick={bulkPublish}>{t('btn_publish_selected')}</button>
-                <button className="btn" disabled={!hasSelection || progress?.status === 'running'} onClick={bulkDelete}>{t('btn_delete_selected')}</button>
-                <button className="btn" disabled={!hasSelection || progress?.status === 'running'} onClick={() => exportSelected('json')}>{t('btn_export_json')}</button>
-                <button className="btn" disabled={!hasSelection || progress?.status === 'running'} onClick={() => exportSelected('csv')}>{t('btn_export_csv')}</button>
+                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={bulkPublish}>{t('btn_publish_selected')}</button>
+                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={bulkDelete}>{t('btn_delete_selected')}</button>
+                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={() => exportSelected('json')}>{t('btn_export_json')}</button>
+                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={() => exportSelected('csv')}>{t('btn_export_csv')}</button>
               </div>
               {(!data.items || data.items.length === 0) ? (
                 <div className="p-4">
@@ -1333,17 +1226,15 @@ export default function Bookmarks() {
           </>
         )}
       </main>
-      {progress && (
+      {publishPlan && (
         <BulkPublishModal
-          open={progress.open}
-          status={progress.status}
-          items={progress.items}
-          summary={progress.summary}
-          totalCount={progress.totalCount ?? progress.items.length}
-          message={progress.message}
-          errorMessage={progress.errorMessage}
-          onCancel={progress.status === 'running' ? cancelPublish : undefined}
-          onClose={closeProgress}
+          open
+          runKey={publishPlan.runKey}
+          requestBody={publishPlan.requestBody}
+          onComplete={handlePublishComplete}
+          onCancel={handlePublishCancel}
+          onError={handlePublishError}
+          onClose={closePublishModal}
         />
       )}
       {tagModal && (

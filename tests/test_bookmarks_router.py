@@ -1,5 +1,7 @@
 import os
 import base64
+import json
+import time
 
 import httpx
 import pytest
@@ -15,6 +17,25 @@ def _env(monkeypatch):
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     # Crypto key for any encryption paths
     monkeypatch.setenv("CREDENTIALS_ENC_KEY", base64.urlsafe_b64encode(os.urandom(32)).decode())
+
+
+def _create_app_with_credential():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Credential
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        credential = Credential(owner_user_id="u1", kind="instapaper", data={"token": "abc"})
+        session.add(credential)
+        session.commit()
+        cred_id = credential.id
+
+    return app, cred_id
 
 
 def test_bookmarks_list_filters():
@@ -180,6 +201,132 @@ def test_bookmark_tags_and_folders_endpoints():
     assert any(log.details.get("folder_name") == "Read Now" for log in logs if log.details.get("folder_id"))
     assert any(log.details.get("folder_name") == "Fresh" for log in logs if log.details.get("folder_id"))
     assert any(log.details.get("folder_cleared") for log in logs)
+
+
+def test_bulk_publish_stream_success(monkeypatch):
+    from app.routers import bookmarks as bookmarks_router
+
+    app, cred_id = _create_app_with_credential()
+
+    published_urls: list[str] = []
+
+    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
+        published_urls.append(payload["url"])
+        return {"bookmark_id": f"ip-{payload['url'].rsplit('/', 1)[-1]}"}
+
+    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+
+    client = TestClient(app)
+    body = {
+        "instapaper_cred_id": cred_id,
+        "items": [
+            {"id": "one", "url": "https://example.com/one", "title": "One"},
+            {"id": "two", "url": "https://example.com/two", "title": "Two"},
+        ],
+    }
+
+    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+        assert response.status_code == 200
+        raw_events = []
+        for chunk in response.iter_lines():
+            if not chunk:
+                continue
+            text = chunk.decode() if isinstance(chunk, bytes) else chunk
+            raw_events.append(json.loads(text))
+
+    assert [event["type"] for event in raw_events] == [
+        "start",
+        "item",
+        "item",
+        "item",
+        "item",
+        "complete",
+    ]
+    assert raw_events[-1]["success"] == 2 and raw_events[-1]["failed"] == 0
+    assert published_urls == ["https://example.com/one", "https://example.com/two"]
+
+
+def test_bulk_publish_stream_failure(monkeypatch):
+    from app.routers import bookmarks as bookmarks_router
+
+    app, cred_id = _create_app_with_credential()
+
+    processed: list[str] = []
+
+    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
+        processed.append(payload["url"])
+        if payload["url"].endswith("/two"):
+            raise RuntimeError("Instapaper rejected the URL")
+        return {"bookmark_id": "ok"}
+
+    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+
+    client = TestClient(app)
+    body = {
+        "instapaper_cred_id": cred_id,
+        "items": [
+            {"id": "one", "url": "https://example.com/one", "title": "One"},
+            {"id": "two", "url": "https://example.com/two", "title": "Two"},
+        ],
+    }
+
+    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+        assert response.status_code == 200
+        events = []
+        for chunk in response.iter_lines():
+            if not chunk:
+                continue
+            text = chunk.decode() if isinstance(chunk, bytes) else chunk
+            events.append(json.loads(text))
+
+    assert any(event["type"] == "item" and event["id"] == "two" and event["status"] == "error" for event in events)
+    complete = events[-1]
+    assert complete["type"] == "complete"
+    assert complete["success"] == 1 and complete["failed"] == 1
+    assert processed == ["https://example.com/one", "https://example.com/two"]
+
+
+def test_bulk_publish_stream_cancellation(monkeypatch):
+    from app.routers import bookmarks as bookmarks_router
+
+    app, cred_id = _create_app_with_credential()
+
+    processed: list[str] = []
+
+    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
+        processed.append(payload["url"])
+        return {"bookmark_id": payload["url"]}
+
+    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+
+    call_counter = {"value": 0}
+
+    async def fake_is_disconnected(self):  # type: ignore[override]
+        call_counter["value"] += 1
+        return call_counter["value"] > 1
+
+    monkeypatch.setattr(bookmarks_router.Request, "is_disconnected", fake_is_disconnected, raising=False)
+
+    client = TestClient(app)
+    body = {
+        "instapaper_cred_id": cred_id,
+        "items": [
+            {"id": "one", "url": "https://example.com/one", "title": "One"},
+            {"id": "two", "url": "https://example.com/two", "title": "Two"},
+        ],
+    }
+
+    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+        assert response.status_code == 200
+        iterator = response.iter_lines()
+        for _ in range(3):
+            chunk = next(iterator)
+            text = chunk.decode() if isinstance(chunk, bytes) else chunk
+            json.loads(text)
+
+    time.sleep(0.05)
+    assert processed == ["https://example.com/one"]
+
 
 def test_bookmark_preview_sanitizes_html(monkeypatch):
     from app.db import init_db, get_session
