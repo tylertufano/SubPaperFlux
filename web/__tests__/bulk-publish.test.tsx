@@ -143,6 +143,7 @@ describe('Bookmarks bulk publish modal', () => {
     const publishButton = screen.getByRole('button', { name: 'Publish Selected' })
     expect(publishButton).toBeEnabled()
     fireEvent.click(publishButton)
+    expect(publishButton).toBeDisabled()
 
     await waitFor(() => expect(streamBulkPublishMock).toHaveBeenCalledTimes(1))
 
@@ -169,6 +170,12 @@ describe('Bookmarks bulk publish modal', () => {
     })
 
     await waitFor(() => {
+      expect(publishButton).toBeEnabled()
+      expect((screen.getByLabelText('Select bookmark First Bookmark') as HTMLInputElement).checked).toBe(false)
+      expect((screen.getByLabelText('Select bookmark Second Bookmark') as HTMLInputElement).checked).toBe(true)
+    })
+
+    await waitFor(() => {
       expect(screen.getByTestId('alert')).toHaveTextContent('Published 1 items; 1 failed.')
     })
 
@@ -183,7 +190,8 @@ describe('Bookmarks bulk publish modal', () => {
     fireEvent.click(screen.getByLabelText('Select bookmark First Bookmark'))
     fireEvent.click(screen.getByLabelText('Select bookmark Second Bookmark'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Publish Selected' }))
+    const publishButton = screen.getByRole('button', { name: 'Publish Selected' })
+    fireEvent.click(publishButton)
 
     await waitFor(() => expect(streamBulkPublishMock).toHaveBeenCalledTimes(1))
 
@@ -197,6 +205,48 @@ describe('Bookmarks bulk publish modal', () => {
       expect(screen.getByTestId('alert')).toHaveTextContent('Bulk publish failed: Server exploded')
     })
 
+    await waitFor(() => expect(publishButton).toBeEnabled())
+
+    expect(mutateMock).not.toHaveBeenCalled()
+  })
+
+  it('allows cancellation and surfaces info banner', async () => {
+    streamBulkPublishMock.mockImplementation(({ signal, onEvent }) => {
+      onEvent?.({ type: 'start', total: 2 })
+      onEvent?.({ type: 'item', id: 'bookmark-1', status: 'running' })
+      return new Promise((_resolve, reject) => {
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            const error = Object.assign(new Error('Aborted'), { name: 'AbortError' })
+            reject(error)
+          })
+        }
+      })
+    })
+
+    renderBookmarks()
+
+    fireEvent.click(screen.getByLabelText('Select bookmark First Bookmark'))
+    fireEvent.click(screen.getByLabelText('Select bookmark Second Bookmark'))
+
+    const publishButton = screen.getByRole('button', { name: 'Publish Selected' })
+    fireEvent.click(publishButton)
+
+    await waitFor(() => expect(streamBulkPublishMock).toHaveBeenCalledTimes(1))
+
+    const cancelButton = await screen.findByRole('button', { name: 'Cancel' })
+    fireEvent.click(cancelButton)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alert')).toHaveTextContent('Bulk publish cancelled.')
+    })
+
+    await waitFor(() => expect(publishButton).toBeEnabled())
     expect(mutateMock).not.toHaveBeenCalled()
   })
 })

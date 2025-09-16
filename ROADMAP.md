@@ -135,10 +135,11 @@ make sdk-ts
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [x] Publish; progress modals (UI-028)
-    - [x] Bulk publish modal component: `web/components/BulkPublishModal.tsx:1`
-    - [x] API streaming per-item status: `app/routers/bookmarks.py:560`
-    - [x] Modal integration triggered from Bookmarks UI: `web/pages/bookmarks.tsx:613`
-    - [x] Unit tests for modal state transitions and API errors: `web/__tests__/bulk-publish.test.tsx:1`
+    - [x] Bulk publish modal component orchestrates streaming & cancellation: `web/components/BulkPublishModal.tsx:111-220`
+    - [x] API streaming per-item status: `app/routers/bookmarks.py:1122-1205`
+    - [x] Modal integration triggered from Bookmarks UI: `web/pages/bookmarks.tsx:632-706`
+    - [x] Unit tests covering success, failure, and cancellation UI flows: `web/__tests__/bulk-publish.test.tsx:1-220`
+    - [x] API tests for stream success, failure, and cancellation: `tests/test_bookmarks_router.py:206-320`
 - [~] Tags & Folders (UI-018)
  - Evidence: `alembic/versions/0011_tags_and_folders.py:1`
   - [x] API endpoints for tag and folder management plus bookmark associations: `app/routers/bookmarks.py:1`
