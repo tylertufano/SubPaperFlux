@@ -84,7 +84,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">{t('dashboard_jobs_status_heading')}</h3>
+                <h2 className="font-semibold text-lg">{t('dashboard_jobs_status_heading')}</h2>
                 <Link href="/jobs" className="text-blue-600 hover:underline text-sm">{t('dashboard_view_all')}</Link>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -97,7 +97,7 @@ export default function Home() {
 
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">{t('dashboard_database_health_heading')}</h3>
+                <h2 className="font-semibold text-lg">{t('dashboard_database_health_heading')}</h2>
                 <Link href="/admin" className="text-blue-600 hover:underline text-sm">{t('nav_admin')}</Link>
               </div>
               <ul className="text-sm text-gray-800 space-y-1">
@@ -111,7 +111,7 @@ export default function Home() {
 
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">{t('dashboard_service_heading')}</h3>
+                <h2 className="font-semibold text-lg">{t('dashboard_service_heading')}</h2>
               </div>
               <ul className="text-sm text-gray-800 space-y-1">
                 <li>{t('dashboard_service_api')}: {status?.status || '—'}</li>
