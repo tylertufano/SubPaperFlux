@@ -237,7 +237,7 @@ export default function Bookmarks() {
         setPreviewBookmarkId(bookmarkItems[prevIndex].id)
         focusRow(prevIndex)
       }
-    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space') {
       event.preventDefault()
       setPreviewBookmarkId(bookmarkId)
     }
