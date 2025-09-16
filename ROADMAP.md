@@ -151,6 +151,13 @@ make sdk-ts
   - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`, `tests/test_audit_log.py:1`
   - Evidence: `web/pages/admin/audit.tsx:1`, `web/lib/openapi.ts:112`, `web/locales/en/common.json:150`
 
+## Phase 3 — User Management
+
+- [ ] Roll out user and role management in three stages — see [User Management Rollout Plan](docs/user-management-rollout.md).
+  - [ ] Phase A — Backend & Data Readiness
+  - [ ] Phase B — Management UI
+  - [ ] Phase C — RBAC Enforcement
+
 ## Optional / Recommended
 
 ### Accessibility (a11y)
