@@ -7,7 +7,7 @@ import DropdownMenu from './DropdownMenu'
 
 export default function Nav() {
   const { data: session, status } = useSession()
-  const { t, locale, setLocale } = useI18n()
+  const { t, locale, setLocale, locales } = useI18n()
   const { pathname } = useRouter()
   const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
@@ -16,7 +16,7 @@ export default function Nav() {
     <nav className="bg-white border-b border-gray-200" role="navigation" aria-label={t('nav_main_label')}>
       <div className="container py-3 flex items-center gap-4">
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
-          SubPaperFlux
+          {t('nav_brand')}
         </Link>
         <Link href="/bookmarks" className={linkClass('/bookmarks')} aria-current={pathname === '/bookmarks' ? 'page' : undefined}>
           {t('nav_bookmarks')}
@@ -61,6 +61,29 @@ export default function Nav() {
           {t('nav_admin')}
         </Link>
         <div className="ml-auto flex items-center gap-2">
+          <div>
+            <label htmlFor="nav-locale" className="sr-only">
+              {t('nav_locale_label')}
+            </label>
+            <select
+              id="nav-locale"
+              className="input text-sm"
+              aria-label={t('nav_locale_label')}
+              value={locale}
+              onChange={(event) => setLocale(event.target.value)}
+            >
+              {locales.map((code) => {
+                const key = `locale_${code}`
+                const value = t(key)
+                const label = value === key ? code : value
+                return (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                )
+              })}
+            </select>
+          </div>
           {status === 'authenticated' ? (
             <DropdownMenu
               label={session?.user?.name ? String(session.user.name) : t('nav_account_fallback')}
