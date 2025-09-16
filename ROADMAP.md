@@ -130,7 +130,8 @@ make sdk-ts
   - Evidence: `sdk/ts/src/apis/BookmarksApi.ts`, `web/pages/bookmarks.tsx`
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
-  - [ ] Publish; progress modals (UI-028)
+  - [~] Publish; progress modals (UI-028)
+    - [x] API streaming per-item status: `app/routers/bookmarks.py:560`
  - [ ] Tags & Folders (UI-018)
  - [ ] Preview Pane (sanitized HTML) (UI-017)
  - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
