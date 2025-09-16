@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ErrorBoundary, Nav } from '../components'
 import { v1 } from '../lib/openapi'
 import { useI18n } from '../lib/i18n'
+import { formatNumberValue, useNumberFormatter } from '../lib/format'
 
 function StatCard({ title, value, href }: { title: string; value: string | number; href?: string }) {
   const content = (
@@ -16,6 +17,7 @@ function StatCard({ title, value, href }: { title: string; value: string | numbe
 
 export default function Home() {
   const { t } = useI18n()
+  const numberFormatter = useNumberFormatter()
   // Bookmarks total (server-side count endpoint)
   const { data: bmCount, mutate: refreshBookmarks } = useSWR(['/v1/bookmarks/count'], () => v1.countBookmarksV1BookmarksCountGet({}))
 
@@ -34,14 +36,14 @@ export default function Home() {
   const { data: status, mutate: refreshStatus } = useSWR(['/v1/status'], () => v1.getStatusV1StatusGet())
   const { data: db, mutate: refreshDb } = useSWR(['/v1/status/db'], () => v1.dbStatusV1StatusDbGet())
 
-  const totalBookmarks = bmCount?.total ?? '—'
-  const totalJobs = jobsAll?.total ?? '—'
-  const totalFeeds = feedsPage?.total ?? '—'
-  const totalCreds = credsPage?.total ?? '—'
-  const failedJobs = jobsFailed?.total ?? 0
-  const deadJobs = jobsDead?.total ?? 0
-  const queuedJobs = jobsQueued?.total ?? 0
-  const inProgJobs = jobsInProg?.total ?? 0
+  const totalBookmarks = formatNumberValue(bmCount?.total, numberFormatter, '—')
+  const totalJobs = formatNumberValue(jobsAll?.total, numberFormatter, '—')
+  const totalFeeds = formatNumberValue(feedsPage?.total, numberFormatter, '—')
+  const totalCreds = formatNumberValue(credsPage?.total, numberFormatter, '—')
+  const failedJobs = formatNumberValue(jobsFailed?.total ?? 0, numberFormatter, '0')
+  const deadJobs = formatNumberValue(jobsDead?.total ?? 0, numberFormatter, '0')
+  const queuedJobs = formatNumberValue(jobsQueued?.total ?? 0, numberFormatter, '0')
+  const inProgJobs = formatNumberValue(jobsInProg?.total ?? 0, numberFormatter, '0')
   const dbOk = db?.ok === true
   const pgTrgm = db?.details?.pg_trgm_enabled === true
   const idxOk = db?.details?.indexes ? Object.values(db.details.indexes).every(Boolean) : undefined

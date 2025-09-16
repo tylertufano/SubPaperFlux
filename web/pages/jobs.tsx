@@ -4,9 +4,11 @@ import { v1 } from '../lib/openapi'
 import React, { useState, useEffect } from 'react'
 import { useI18n } from '../lib/i18n'
 import Link from 'next/link'
+import { formatNumberValue, useNumberFormatter } from '../lib/format'
 
 export default function Jobs() {
   const { t } = useI18n()
+  const numberFormatter = useNumberFormatter()
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
   const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s }))
@@ -133,14 +135,25 @@ export default function Jobs() {
                             <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">{t('jobs_badge_deduped')}</span>
                           )}
                           {j.type === 'rss_poll' && (j.details?.published != null) && (
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">{j.details.published}/{j.details.total}</span>
+                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">
+                              {formatNumberValue(j.details?.published, numberFormatter, '0')}/
+                              {formatNumberValue(j.details?.total, numberFormatter, '0')}
+                            </span>
                           )}
                         </td>
-                        <td className="td">{j.attempts}</td>
+                        <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
                         <td className="td">
                           {j.last_error || ''}
                           {(j.status === 'queued' && j.available_at && j.available_at > now) && (
-                            <span className="ml-2 text-gray-600">{t('jobs_retry_in', { seconds: Math.max(0, Math.floor(j.available_at - now)) })}</span>
+                            <span className="ml-2 text-gray-600">
+                              {t('jobs_retry_in', {
+                                seconds: formatNumberValue(
+                                  Math.max(0, Math.floor(j.available_at - now)),
+                                  numberFormatter,
+                                  '0',
+                                ),
+                              })}
+                            </span>
                           )}
                         </td>
                         <td className="td flex gap-2">
@@ -191,7 +204,12 @@ export default function Jobs() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages ?? 1 })}</span>
+              <span className="text-gray-700">
+                {t('pagination_status', {
+                  page: numberFormatter.format(page),
+                  total: numberFormatter.format(data.totalPages ?? 1),
+                })}
+              </span>
               <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>{t('pagination_next')}</button>
             </div>
           </>

@@ -4,9 +4,11 @@ import { v1 } from '../lib/openapi'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useI18n } from '../lib/i18n'
+import { formatNumberValue, useNumberFormatter } from '../lib/format'
 
 export default function JobsDead() {
   const { t } = useI18n()
+  const numberFormatter = useNumberFormatter()
   const [page, setPage] = useState(1)
   const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, 'dead'], ([, p]) => v1.listJobsV1JobsGet({ page: p, status: 'dead' }))
   const [now, setNow] = useState<number>(Date.now() / 1000)
@@ -75,7 +77,7 @@ export default function JobsDead() {
                         <td className="td">{j.id}</td>
                         <td className="td">{j.type}</td>
                         <td className="td">{j.status}</td>
-                        <td className="td">{j.attempts}</td>
+                        <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
                         <td className="td">{j.last_error || ''}</td>
                         <td className="td flex gap-2">
                           <button
@@ -121,7 +123,12 @@ export default function JobsDead() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">{t('pagination_status', { page, total: data.totalPages ?? 1 })}</span>
+              <span className="text-gray-700">
+                {t('pagination_status', {
+                  page: numberFormatter.format(page),
+                  total: numberFormatter.format(data.totalPages ?? 1),
+                })}
+              </span>
               <button className="btn" disabled={!data.hasNext} onClick={() => setPage(page + 1)}>{t('pagination_next')}</button>
             </div>
           </>
