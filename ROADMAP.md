@@ -117,6 +117,7 @@ make sdk-ts
 
 - [ ] Component tests for filters/pagination and form validations (UI-014)
 - [x] Integration tests for bookmark tag assignment and folder moves (UI-018)
+- [x] Preview pane sanitization + keyboard navigation tests (`web/__tests__/PreviewPane.test.tsx`, `web/__tests__/bookmarks-preview-navigation.test.tsx`)
 - [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
 
 ### Queue/Idempotency UX
