@@ -131,7 +131,7 @@ make sdk-ts
 
 - [x] Saved Views (Bookmarks)
 - [x] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
-  - Evidence: `sdk/ts/src/apis/BookmarksApi.ts`, `web/pages/bookmarks.tsx`
+  - Evidence: `web/sdk/src/apis/BookmarksApi.ts:1`, `web/pages/bookmarks.tsx:1`
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [x] Publish; progress modals (UI-028)
@@ -342,6 +342,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-008: Add dead-letter queue view under Jobs
 - UI-009: Jobs streaming via WebSocket/SSE + pill notifications
 - UI-010: Advanced Search (field-specific + regex) for Bookmarks — delivered with dedicated field filters, regex targeting, and relevance sort UI.
+  - Evidence: `web/sdk/src/apis/BookmarksApi.ts:1`, `web/pages/bookmarks.tsx:1`
 - UI-011: Add Sentry to UI (Next.js integration)
 - UI-012: Add middleware to set `app.user_id` session var for RLS enforcement in Postgres
 - UI-013: Expand i18n string catalog and wrap page text
