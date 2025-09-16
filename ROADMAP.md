@@ -306,8 +306,8 @@ make sdk-ts
 
 ### Profile
 
-- [~] Profile page (locale + preferences) (future)
-  - [x] Placeholder page scaffolded: `web/pages/me.tsx:1`
+- [x] Profile page (locale + preferences) (UI-077)
+  - Evidence: `web/pages/me.tsx:1`, `app/routers/me_v1.py:1`, `tests/test_me_router.py:1`
 
 ### Security & Observability
 

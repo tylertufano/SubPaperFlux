@@ -261,6 +261,25 @@ export type ApiTokenCreate = {
   expires_at?: string | null
 }
 
+export type MeNotificationPreferences = {
+  email_job_updates: boolean
+  email_digest: boolean
+}
+
+export type MeProfile = {
+  id: string
+  email?: string | null
+  full_name?: string | null
+  picture_url?: string | null
+  locale?: string | null
+  notification_preferences: MeNotificationPreferences
+}
+
+export type MeUpdatePayload = {
+  locale?: string | null
+  notification_preferences?: Partial<MeNotificationPreferences>
+}
+
 async function listAuditLogs(params: AuditLogQuery = {}): Promise<AuditLogsPage> {
   const query = new URLSearchParams()
   if (params.page !== undefined) query.set('page', String(params.page))
@@ -359,6 +378,21 @@ async function revokeApiToken(tokenId: string): Promise<void> {
     method: 'DELETE',
     expectJson: false,
     errorMessage: 'Failed to revoke token',
+  })
+}
+
+async function getMeProfile(): Promise<MeProfile> {
+  return authorizedRequest<MeProfile>('/v1/me', {
+    errorMessage: 'Failed to load profile',
+  })
+}
+
+async function updateMeProfile(payload: MeUpdatePayload): Promise<MeProfile> {
+  return authorizedRequest<MeProfile>('/v1/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to update profile',
   })
 }
 
@@ -479,6 +513,11 @@ export const v1 = {
   createMeTokenV1MeTokensPost: async ({ apiTokenCreate }: { apiTokenCreate: ApiTokenCreate }) =>
     createApiToken(apiTokenCreate),
   revokeMeTokenV1MeTokensTokenIdDelete: async ({ tokenId }: { tokenId: string }) => revokeApiToken(tokenId),
+}
+
+export const me = {
+  getProfile: async () => getMeProfile(),
+  updateProfile: async (payload: MeUpdatePayload) => updateMeProfile(payload),
 }
 
 export const creds = {
