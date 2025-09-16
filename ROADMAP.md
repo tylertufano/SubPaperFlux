@@ -174,7 +174,8 @@ make sdk-ts
 
 ### Security
 
- - [ ] DB RLS: Set `app.user_id` per DB session (middleware) (UI-012)
+- [x] DB RLS: Set `app.user_id` per DB session (middleware) (UI-012)
+  - Evidence: `app/main.py:64`, `app/db.py:33`
 - [x] CSRF: UI sends `X-CSRF-Token`
 
 ### API Polish
@@ -191,6 +192,8 @@ make sdk-ts
 ## Phase 4 — Multi-User & Sharing
 
 - [ ] RBAC UI (UI-040)
+  - [x] Backend models and migrations for users/roles/api tokens (UI-040)
+    - Evidence: `app/models.py:15`, `alembic/versions/0013_users_roles_api_tokens.py:1`
 - [ ] Global Assets (copy to my workspace) (UI-041)
 - [ ] Org Views / user management (if not delegated to IdP) (UI-042)
 
