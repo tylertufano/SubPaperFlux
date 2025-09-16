@@ -1,10 +1,10 @@
 import useSWR from 'swr'
-import { Alert, BulkPublishModal, EmptyState, Nav } from '../components'
+import { Alert, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
 import type { BulkPublishSummary } from '../components/BulkPublishModal'
 import type { ProgressModalItem, ProgressModalStatus } from '../components/ProgressModal'
 import { v1 } from '../lib/openapi'
 import { streamBulkPublish, type BulkPublishEvent } from '../lib/bulkPublish'
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 
@@ -90,6 +90,7 @@ export default function Bookmarks() {
   const [folderActionBusy, setFolderActionBusy] = useState(false)
   const [tagModal, setTagModal] = useState<TagModalState | null>(null)
   const [folderModal, setFolderModal] = useState<FolderModalState | null>(null)
+  const [previewBookmarkId, setPreviewBookmarkId] = useState<string | null>(null)
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
   const { data, error, isLoading, mutate } = useSWR([
     `/v1/bookmarks`,
@@ -136,8 +137,48 @@ export default function Bookmarks() {
   const [progress, setProgress] = useState<BulkProgressState | null>(null)
   const progressRef = useRef<BulkProgressState | null>(null)
   const publishController = useRef<AbortController | null>(null)
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const selectedCount = Object.values(selected).filter(Boolean).length
   const hasSelection = selectedCount > 0
+  const bookmarkItems = data?.items ?? []
+  const previewHeadingId = 'bookmark-preview-heading'
+  const previewPaneId = 'bookmark-preview-pane'
+  const previewSelectionIndex = previewBookmarkId
+    ? bookmarkItems.findIndex((item: any) => item.id === previewBookmarkId)
+    : -1
+
+  const { data: previewData, error: previewError, isLoading: previewLoading } = useSWR(
+    previewBookmarkId ? ['/v1/bookmarks', previewBookmarkId, 'preview'] : null,
+    () => v1.previewBookmarkV1BookmarksBookmarkIdPreviewGet({ bookmarkId: previewBookmarkId as string }),
+  )
+  const previewSnippet = typeof previewData === 'string' ? previewData : ''
+  const previewHasContent = previewSnippet.trim().length > 0
+  const previewErrorMessage = previewError?.message?.trim()
+  const previewEmptyState = previewError
+    ? (
+        <p className="text-sm text-red-600">
+          {previewErrorMessage
+            ? t('bookmarks_preview_error_detail', { reason: previewErrorMessage })
+            : t('bookmarks_preview_error')}
+        </p>
+      )
+    : previewBookmarkId
+      ? previewLoading
+        ? <p className="text-sm text-gray-500">{t('bookmarks_preview_loading')}</p>
+        : previewHasContent
+          ? undefined
+          : <p className="text-sm text-gray-500">{t('bookmarks_preview_empty')}</p>
+      : undefined
+
+  useEffect(() => {
+    if (previewBookmarkId && previewSelectionIndex === -1) {
+      setPreviewBookmarkId(null)
+    }
+  }, [previewBookmarkId, previewSelectionIndex])
+
+  useEffect(() => {
+    rowRefs.current.length = bookmarkItems.length
+  }, [bookmarkItems.length])
 
   const getBookmarkLabel = (bookmark: any) => bookmark?.title || bookmark?.url || t('bookmarks_select_row_unknown')
 
@@ -172,6 +213,49 @@ export default function Bookmarks() {
     setSortDir('desc')
     setPage(1)
     mutate()
+  }
+
+  const focusRow = (index: number) => {
+    const row = rowRefs.current[index]
+    if (row) {
+      setTimeout(() => {
+        row.focus()
+      }, 0)
+    }
+  }
+
+  const handleRowClick = (event: MouseEvent<HTMLTableRowElement>, bookmarkId: string) => {
+    const target = event.target as HTMLElement | null
+    if (target && target.closest('button, a, input, select, textarea, label')) {
+      return
+    }
+    setPreviewBookmarkId(bookmarkId)
+  }
+
+  const handleRowKeyDown = (
+    event: KeyboardEvent<HTMLTableRowElement>,
+    index: number,
+    bookmarkId: string,
+  ) => {
+    if (event.target !== event.currentTarget) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      const nextIndex = Math.min(index + 1, bookmarkItems.length - 1)
+      if (nextIndex !== index && bookmarkItems[nextIndex]) {
+        setPreviewBookmarkId(bookmarkItems[nextIndex].id)
+        focusRow(nextIndex)
+      }
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      const prevIndex = Math.max(index - 1, 0)
+      if (prevIndex !== index && bookmarkItems[prevIndex]) {
+        setPreviewBookmarkId(bookmarkItems[prevIndex].id)
+        focusRow(prevIndex)
+      }
+    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault()
+      setPreviewBookmarkId(bookmarkId)
+    }
   }
 
   useEffect(() => {
@@ -1111,69 +1195,129 @@ export default function Bookmarks() {
                   />
                 </div>
               ) : (
-              <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="th" scope="col"><input aria-label={t('bookmarks_select_all')} type="checkbox" onChange={(e) => toggleAll(e.target.checked)} /></th>
-                    <th
-                      className="th"
-                      scope="col"
-                      aria-sort={sortBy === 'title' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
-                        className="rounded focus-visible:underline hover:underline"
-                      >
-                        {t('title_label')} {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}
-                      </button>
-                    </th>
-                    <th
-                      className="th"
-                      scope="col"
-                      aria-sort={sortBy === 'url' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
-                        className="rounded focus-visible:underline hover:underline"
-                      >
-                        {t('url_label')} {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}
-                      </button>
-                    </th>
-                  <th
-                    className="th"
-                    scope="col"
-                    aria-sort={sortBy === 'published_at' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                  >
-                      <button
-                        type="button"
-                        onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
-                        className="rounded focus-visible:underline hover:underline"
-                      >
-                        {t('published_label')} {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}
-                      </button>
-                    </th>
-                    <th className="th" scope="col">{t('actions_label')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.items.map((b: any) => (
-                    <tr key={b.id} className="odd:bg-white even:bg-gray-50">
-                      <td className="td"><input aria-label={t('bookmarks_select_row', { value: b.title || b.url || t('bookmarks_select_row_unknown') })} type="checkbox" checked={selected[b.id] || false} onChange={(e) => toggleOne(b.id, e.target.checked)} /></td>
-                      <td className="td">{b.title}</td>
-                      <td className="td"><a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">{b.url}</a></td>
-                      <td className="td">{formatDateTimeValue(b.published_at, dateTimeFormatter, b.published_at || '')}</td>
-                      <td className="td">
-                        <div className="flex flex-wrap gap-2">
-                          <button type="button" className="btn text-sm" onClick={() => openTagModal(b)}>{t('btn_edit_tags')}</button>
-                          <button type="button" className="btn text-sm" onClick={() => openFolderModal(b)}>{t('btn_move_folder')}</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                <div className="border-t border-gray-200">
+                  <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-start">
+                    <div className="overflow-x-auto lg:flex-[2]">
+                      <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="th" scope="col">
+                            <input
+                              aria-label={t('bookmarks_select_all')}
+                              type="checkbox"
+                              onChange={(e) => toggleAll(e.target.checked)}
+                              onClick={(event) => event.stopPropagation()}
+                            />
+                          </th>
+                          <th
+                            className="th"
+                            scope="col"
+                            aria-sort={sortBy === 'title' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => { setSortBy('title'); setSortDir(sortBy === 'title' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                              className="rounded focus-visible:underline hover:underline"
+                            >
+                              {t('title_label')} {sortBy==='title' ? (sortDir==='asc'?'▲':'▼') : ''}
+                            </button>
+                          </th>
+                          <th
+                            className="th"
+                            scope="col"
+                            aria-sort={sortBy === 'url' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => { setSortBy('url'); setSortDir(sortBy === 'url' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                              className="rounded focus-visible:underline hover:underline"
+                            >
+                              {t('url_label')} {sortBy==='url' ? (sortDir==='asc'?'▲':'▼') : ''}
+                            </button>
+                          </th>
+                          <th
+                            className="th"
+                            scope="col"
+                            aria-sort={sortBy === 'published_at' ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => { setSortBy('published_at'); setSortDir(sortBy === 'published_at' && sortDir === 'asc' ? 'desc' : 'asc'); setPage(1); mutate() }}
+                              className="rounded focus-visible:underline hover:underline"
+                            >
+                              {t('published_label')} {sortBy==='published_at' ? (sortDir==='asc'?'▲':'▼') : ''}
+                            </button>
+                          </th>
+                          <th className="th" scope="col">{t('actions_label')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookmarkItems.map((b: any, index: number) => {
+                          const isActive = previewBookmarkId === b.id
+                          return (
+                            <tr
+                              key={b.id}
+                              ref={(el) => { rowRefs.current[index] = el }}
+                              tabIndex={0}
+                              aria-selected={isActive}
+                              aria-controls={previewPaneId}
+                              onClick={(event) => handleRowClick(event, b.id)}
+                              onKeyDown={(event) => handleRowKeyDown(event, index, b.id)}
+                              className={`odd:bg-white even:bg-gray-50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isActive ? 'bg-blue-50 dark:bg-blue-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                            >
+                              <td className="td">
+                                <input
+                                  aria-label={t('bookmarks_select_row', { value: b.title || b.url || t('bookmarks_select_row_unknown') })}
+                                  type="checkbox"
+                                  checked={selected[b.id] || false}
+                                  onChange={(e) => toggleOne(b.id, e.target.checked)}
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                              </td>
+                              <td className="td">{b.title}</td>
+                              <td className="td">
+                                <a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">
+                                  {b.url}
+                                </a>
+                              </td>
+                              <td className="td">{formatDateTimeValue(b.published_at, dateTimeFormatter, b.published_at || '')}</td>
+                              <td className="td">
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    className="btn text-sm"
+                                    onClick={(event) => { event.stopPropagation(); openTagModal(b) }}
+                                  >
+                                    {t('btn_edit_tags')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn text-sm"
+                                    onClick={(event) => { event.stopPropagation(); openFolderModal(b) }}
+                                  >
+                                    {t('btn_move_folder')}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="lg:flex-1" id={previewPaneId}>
+                    <h2 id={previewHeadingId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {t('bookmarks_preview_heading')}
+                    </h2>
+                    <PreviewPane
+                      snippet={previewSnippet}
+                      emptyState={previewEmptyState}
+                      labelledBy={previewHeadingId}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
               )}
             </div>
             <div className="mt-3 flex items-center gap-2">

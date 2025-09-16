@@ -141,6 +141,30 @@ export const v1 = {
     (await getClients()).bookmarks.updateBookmarkFolderBookmarksBookmarkIdFolderPut({ bookmarkId, bookmarkFolderUpdate, xCsrfToken: CSRF }),
   deleteBookmarkFolderBookmarksBookmarkIdFolderDelete: async ({ bookmarkId }: { bookmarkId: string }) =>
     (await getClients()).bookmarks.deleteBookmarkFolderBookmarksBookmarkIdFolderDelete({ bookmarkId, xCsrfToken: CSRF }),
+  previewBookmarkV1BookmarksBookmarkIdPreviewGet: async ({ bookmarkId }: { bookmarkId: string }) => {
+    const basePath = await resolveApiBase()
+    const session = await getSession()
+    const headers: Record<string, string> = {
+      'X-CSRF-Token': CSRF,
+    }
+    const token = session?.accessToken as string | undefined
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    const res = await fetch(`${basePath}/v1/bookmarks/${encodeURIComponent(bookmarkId)}/preview`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    })
+    if (res.status === 404) {
+      return ''
+    }
+    if (!res.ok) {
+      const message = (await res.text())?.trim()
+      throw new Error(message || `Failed to load preview (${res.status})`)
+    }
+    return res.text()
+  },
 
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),

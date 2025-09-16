@@ -147,7 +147,10 @@ describe('Critical page accessibility', () => {
 
     useSWRMock.mockImplementation((key: any) => {
       if (Array.isArray(key)) {
-        const [path] = key
+        const [path, , subresource] = key
+        if (path === '/v1/bookmarks' && subresource === 'preview') {
+          return createSwrResponse('<p>Preview</p>')
+        }
         if (path === '/v1/bookmarks') {
           return createSwrResponse({
             items: [
