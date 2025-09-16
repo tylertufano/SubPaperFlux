@@ -43,6 +43,9 @@ vi.mock('../components', async () => {
     Nav: () => <nav data-testid="nav">Nav</nav>,
     DropdownMenu: () => null,
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    PreviewPane: ({ snippet }: { snippet?: string }) => (
+      <div data-testid="preview-pane">{snippet}</div>
+    ),
   }
 })
 
@@ -80,6 +83,14 @@ describe('Bookmarks bulk publish modal', () => {
     }
     useSWRMock.mockImplementation((key: any) => {
       if (Array.isArray(key) && key[0] === '/v1/bookmarks') {
+        if (key[2] === 'preview') {
+          return {
+            data: '<p>Preview</p>',
+            error: undefined,
+            isLoading: false,
+            mutate: vi.fn(),
+          }
+        }
         return {
           data: bookmarksData,
           error: undefined,
