@@ -1,13 +1,14 @@
 import React from 'react'
 import { I18nContext } from '../lib/i18n'
 
+type Props = React.PropsWithChildren<{ onRetry?: () => void | Promise<void> }>
 type State = { hasError: boolean; error?: unknown }
 
-export default class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
+export default class ErrorBoundary extends React.Component<Props, State> {
   static contextType = I18nContext
   declare context: React.ContextType<typeof I18nContext>
 
-  constructor(props: React.PropsWithChildren) {
+  constructor(props: Props) {
     super(props)
     this.state = { hasError: false }
   }
@@ -22,7 +23,14 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
   }
 
   private handleRetry = () => {
-    this.setState({ hasError: false, error: undefined })
+    this.setState({ hasError: false, error: undefined }, () => {
+      const { onRetry } = this.props
+      if (onRetry) {
+        Promise.resolve(onRetry()).catch((err) => {
+          console.error('ErrorBoundary retry handler failed', err)
+        })
+      }
+    })
   }
 
   render() {
