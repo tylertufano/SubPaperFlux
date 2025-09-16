@@ -16,7 +16,7 @@ from ..auth.rbac import is_admin
 from ..db import get_session
 from ..models import Role, User, UserRole
 from ..schemas import AdminUserOut, AdminUserUpdate, AdminUsersPage, RoleGrantRequest
-from .admin import _require_admin
+from .admin import _require_admin, _record_admin_action_metric
 
 
 router = APIRouter(prefix="/v1/admin/users", tags=["v1", "admin"])
@@ -109,7 +109,7 @@ def list_users(
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
 
-    return AdminUsersPage(
+    result = AdminUsersPage(
         items=items,
         total=total,
         page=page,
@@ -117,6 +117,8 @@ def list_users(
         has_next=has_next,
         total_pages=total_pages,
     )
+    _record_admin_action_metric("list_users")
+    return result
 
 
 @router.get("/{user_id}", response_model=AdminUserOut, summary="Get a user")
@@ -129,7 +131,9 @@ def get_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return _serialize_user(session, user)
+    result = _serialize_user(session, user)
+    _record_admin_action_metric("get_user")
+    return result
 
 
 @router.patch(
@@ -169,12 +173,16 @@ def update_user(
         )
 
     if not updated:
-        return _serialize_user(session, user)
+        result = _serialize_user(session, user)
+        _record_admin_action_metric("update_user")
+        return result
 
     session.add(user)
     session.commit()
     session.refresh(user)
-    return _serialize_user(session, user)
+    result = _serialize_user(session, user)
+    _record_admin_action_metric("update_user")
+    return result
 
 
 @router.post(
@@ -222,7 +230,9 @@ def grant_user_role(
     )
     session.commit()
     session.refresh(user)
-    return _serialize_user(session, user)
+    result = _serialize_user(session, user)
+    _record_admin_action_metric("grant_user_role")
+    return result
 
 
 @router.delete(
@@ -262,4 +272,5 @@ def revoke_user_role(
         details={"role": role_name},
     )
     session.commit()
+    _record_admin_action_metric("revoke_user_role")
 

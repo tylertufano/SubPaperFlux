@@ -11,6 +11,7 @@ from ..auth.rbac import is_admin
 from ..db import get_session, get_session_user_id, is_postgres
 from ..db_admin import prepare_postgres_search, enable_rls
 from ..models import AuditLog
+from ..observability.metrics import increment_admin_action
 from ..schemas import AuditLogOut, AuditLogsPage
 
 
@@ -36,12 +37,17 @@ def _require_admin(session, current_user) -> str:
     raise HTTPException(status_code=403, detail="Forbidden")
 
 
+def _record_admin_action_metric(action: str) -> None:
+    increment_admin_action(action)
+
+
 @router.post("/postgres/prepare", response_model=dict)
 def postgres_prepare(current_user=Depends(get_current_user), session=Depends(get_session)):
     _require_admin(session, current_user)
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = prepare_postgres_search(session)
+    _record_admin_action_metric("postgres_prepare")
     return {"ok": bool(details.get("ok", True)), "details": details}
 
 
@@ -51,6 +57,7 @@ def postgres_enable_rls(current_user=Depends(get_current_user), session=Depends(
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = enable_rls(session)
+    _record_admin_action_metric("postgres_enable_rls")
     return {"ok": bool(details.get("ok", True)), "details": details}
 
 
@@ -114,7 +121,7 @@ def list_audit_logs(
     ]
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
-    return AuditLogsPage(
+    result = AuditLogsPage(
         items=items,
         total=total,
         page=page,
@@ -122,3 +129,5 @@ def list_audit_logs(
         has_next=has_next,
         total_pages=total_pages,
     )
+    _record_admin_action_metric("list_audit_logs")
+    return result
