@@ -15,6 +15,14 @@
 
 import * as runtime from '../runtime';
 import type {
+  AdminUserOut,
+  AdminUserUpdate,
+  AdminUsersPage,
+  ApiTokenCreate,
+  ApiTokenOut,
+  ApiTokenWithSecret,
+  ApiTokensPage,
+  AuditLogsPage,
   BookmarkFolderUpdate,
   BookmarkOut,
   BookmarkTagsUpdate,
@@ -28,6 +36,9 @@ import type {
   JobOut,
   JobRequest,
   JobsPage,
+  MeOut,
+  MeUpdate,
+  RoleGrantRequest,
   SiteConfigsPage,
   StatusResponse,
   TagCreate,
@@ -35,6 +46,22 @@ import type {
   TagUpdate,
 } from '../models/index';
 import {
+    AdminUserOutFromJSON,
+    AdminUserOutToJSON,
+    AdminUserUpdateFromJSON,
+    AdminUserUpdateToJSON,
+    AdminUsersPageFromJSON,
+    AdminUsersPageToJSON,
+    ApiTokenCreateFromJSON,
+    ApiTokenCreateToJSON,
+    ApiTokenOutFromJSON,
+    ApiTokenOutToJSON,
+    ApiTokenWithSecretFromJSON,
+    ApiTokenWithSecretToJSON,
+    ApiTokensPageFromJSON,
+    ApiTokensPageToJSON,
+    AuditLogsPageFromJSON,
+    AuditLogsPageToJSON,
     BookmarkFolderUpdateFromJSON,
     BookmarkFolderUpdateToJSON,
     BookmarkOutFromJSON,
@@ -61,6 +88,12 @@ import {
     JobRequestToJSON,
     JobsPageFromJSON,
     JobsPageToJSON,
+    MeOutFromJSON,
+    MeOutToJSON,
+    MeUpdateFromJSON,
+    MeUpdateToJSON,
+    RoleGrantRequestFromJSON,
+    RoleGrantRequestToJSON,
     SiteConfigsPageFromJSON,
     SiteConfigsPageToJSON,
     StatusResponseFromJSON,
@@ -85,6 +118,8 @@ export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
 
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     search?: string | null;
@@ -104,6 +139,10 @@ export interface CreateFolderV1BookmarksFoldersPostRequest {
 export interface CreateTagV1BookmarksTagsPostRequest {
     tagCreate: TagCreate;
     xCsrfToken?: string | null;
+}
+
+export interface CreateTokenV1MeTokensPostRequest {
+    apiTokenCreate: ApiTokenCreate;
 }
 
 export interface DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest {
@@ -136,6 +175,8 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -163,9 +204,25 @@ export interface GetJobV1JobsJobIdGetRequest {
     jobId: string;
 }
 
+export interface GetTokenV1MeTokensTokenIdGetRequest {
+    tokenId: string;
+}
+
+export interface GetUserV1AdminUsersUserIdGetRequest {
+    userId: string;
+}
+
+export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
+    userId: string;
+    roleName: string;
+    roleGrantRequest?: RoleGrantRequest;
+}
+
 export interface HeadBookmarksV1BookmarksHeadRequest {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -178,6 +235,8 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
 export interface HeadBookmarksV1BookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -192,12 +251,26 @@ export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
     minifluxCredId?: string | null;
 }
 
+export interface ListAuditLogsV1AdminAuditGetRequest {
+    page?: number;
+    size?: number;
+    entityType?: string | null;
+    entityId?: string | null;
+    action?: string | null;
+    ownerUserId?: string | null;
+    actorUserId?: string | null;
+    since?: Date | null;
+    until?: Date | null;
+}
+
 export interface ListBookmarksV1BookmarksGetRequest {
     page?: number;
     size?: number;
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -215,6 +288,8 @@ export interface ListBookmarksV1BookmarksGet0Request {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -275,12 +350,40 @@ export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
     size?: number;
 }
 
+export interface ListTokensV1MeTokensGetRequest {
+    page?: number;
+    size?: number;
+    includeRevoked?: boolean;
+}
+
+export interface ListUsersV1AdminUsersGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    isActive?: boolean | null;
+    role?: string | null;
+}
+
+export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
+}
+
 export interface RetryAllJobsV1JobsRetryAllPostRequest {
     requestBody: { [key: string]: any; };
 }
 
 export interface RetryJobV1JobsJobIdRetryPostRequest {
     jobId: string;
+}
+
+export interface RevokeTokenV1MeTokensTokenIdDeleteRequest {
+    tokenId: string;
+}
+
+export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
+    userId: string;
+    roleName: string;
+    confirm?: boolean;
 }
 
 export interface StreamJobsV1JobsStreamGetRequest {
@@ -322,10 +425,19 @@ export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
     xCsrfToken?: string | null;
 }
 
+export interface UpdateMeV1MePatchRequest {
+    meUpdate: MeUpdate;
+}
+
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
     tagId: string;
     tagUpdate: TagUpdate;
     xCsrfToken?: string | null;
+}
+
+export interface UpdateUserV1AdminUsersUserIdPatchRequest {
+    userId: string;
+    adminUserUpdate: AdminUserUpdate;
 }
 
 export interface ValidateJobPayloadV1JobsValidatePostRequest {
@@ -450,6 +562,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -618,6 +738,53 @@ export class V1Api extends runtime.BaseAPI {
      */
     async createTagV1BookmarksTagsPost(requestParameters: CreateTagV1BookmarksTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut> {
         const response = await this.createTagV1BookmarksTagsPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create an API token
+     */
+    async createTokenV1MeTokensPostRaw(requestParameters: CreateTokenV1MeTokensPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokenWithSecret>> {
+        if (requestParameters['apiTokenCreate'] == null) {
+            throw new runtime.RequiredError(
+                'apiTokenCreate',
+                'Required parameter "apiTokenCreate" was null or undefined when calling createTokenV1MeTokensPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/me/tokens`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ApiTokenCreateToJSON(requestParameters['apiTokenCreate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ApiTokenWithSecretFromJSON(jsonValue));
+    }
+
+    /**
+     * Create an API token
+     */
+    async createTokenV1MeTokensPost(requestParameters: CreateTokenV1MeTokensPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ApiTokenWithSecret> {
+        const response = await this.createTokenV1MeTokensPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -919,6 +1086,14 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -1173,6 +1348,43 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get current user profile
+     */
+    async getMeV1MeGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeOut>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/me`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => MeOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get current user profile
+     */
+    async getMeV1MeGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut> {
+        const response = await this.getMeV1MeGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get Status
      */
     async getStatusV1StatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusResponse>> {
@@ -1202,6 +1414,152 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get API token metadata
+     */
+    async getTokenV1MeTokensTokenIdGetRaw(requestParameters: GetTokenV1MeTokensTokenIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokenOut>> {
+        if (requestParameters['tokenId'] == null) {
+            throw new runtime.RequiredError(
+                'tokenId',
+                'Required parameter "tokenId" was null or undefined when calling getTokenV1MeTokensTokenIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/me/tokens/{token_id}`;
+        urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ApiTokenOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get API token metadata
+     */
+    async getTokenV1MeTokensTokenIdGet(requestParameters: GetTokenV1MeTokensTokenIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ApiTokenOut> {
+        const response = await this.getTokenV1MeTokensTokenIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get a user
+     */
+    async getUserV1AdminUsersUserIdGetRaw(requestParameters: GetUserV1AdminUsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling getUserV1AdminUsersUserIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users/{user_id}`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get a user
+     */
+    async getUserV1AdminUsersUserIdGet(requestParameters: GetUserV1AdminUsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut> {
+        const response = await this.getUserV1AdminUsersUserIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Grant a role to a user
+     */
+    async grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters: GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost().'
+            );
+        }
+
+        if (requestParameters['roleName'] == null) {
+            throw new runtime.RequiredError(
+                'roleName',
+                'Required parameter "roleName" was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users/{user_id}/roles/{role_name}`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+        urlPath = urlPath.replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters['roleName'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: RoleGrantRequestToJSON(requestParameters['roleGrantRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Grant a role to a user
+     */
+    async grantUserRoleV1AdminUsersUserIdRolesRoleNamePost(requestParameters: GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut> {
+        const response = await this.grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Head Bookmarks
      */
     async headBookmarksV1BookmarksHeadRaw(requestParameters: HeadBookmarksV1BookmarksHeadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
@@ -1213,6 +1571,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1290,6 +1656,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1401,6 +1775,79 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGetRaw(requestParameters: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['entityType'] != null) {
+            queryParameters['entity_type'] = requestParameters['entityType'];
+        }
+
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entity_id'] = requestParameters['entityId'];
+        }
+
+        if (requestParameters['action'] != null) {
+            queryParameters['action'] = requestParameters['action'];
+        }
+
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+        }
+
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = (requestParameters['since'] as any).toISOString();
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = (requestParameters['until'] as any).toISOString();
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/audit`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet(requestParameters: ListAuditLogsV1AdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List Bookmarks
      */
     async listBookmarksV1BookmarksGetRaw(requestParameters: ListBookmarksV1BookmarksGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
@@ -1424,6 +1871,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1517,6 +1972,14 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2036,10 +2499,22 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
-     * Postgres Enable Rls
+     * List API tokens
      */
-    async postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+    async listTokensV1MeTokensGetRaw(requestParameters: ListTokensV1MeTokensGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokensPage>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['includeRevoked'] != null) {
+            queryParameters['include_revoked'] = requestParameters['includeRevoked'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -2052,30 +2527,94 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/admin/postgres/enable-rls`;
+        let urlPath = `/v1/me/tokens`;
 
         const response = await this.request({
             path: urlPath,
-            method: 'POST',
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse<any>(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => ApiTokensPageFromJSON(jsonValue));
     }
 
     /**
-     * Postgres Enable Rls
+     * List API tokens
      */
-    async postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides);
+    async listTokensV1MeTokensGet(requestParameters: ListTokensV1MeTokensGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ApiTokensPage> {
+        const response = await this.listTokensV1MeTokensGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Postgres Prepare
+     * List users
      */
-    async postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+    async listUsersV1AdminUsersGetRaw(requestParameters: ListUsersV1AdminUsersGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUsersPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['isActive'] != null) {
+            queryParameters['is_active'] = requestParameters['isActive'];
+        }
+
+        if (requestParameters['role'] != null) {
+            queryParameters['role'] = requestParameters['role'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminUsersPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List users
+     */
+    async listUsersV1AdminUsersGet(requestParameters: ListUsersV1AdminUsersGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUsersPage> {
+        const response = await this.listUsersV1AdminUsersGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -2089,23 +2628,28 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/v1/admin/postgres/prepare`;
+        let urlPath = `/v1/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
 
         const response = await this.request({
             path: urlPath,
-            method: 'POST',
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse<any>(response);
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
-     * Postgres Prepare
+     * Preview Bookmark
      */
-    async postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2203,6 +2747,106 @@ export class V1Api extends runtime.BaseAPI {
     async retryJobV1JobsJobIdRetryPost(requestParameters: RetryJobV1JobsJobIdRetryPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobOut> {
         const response = await this.retryJobV1JobsJobIdRetryPostRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Revoke an API token
+     */
+    async revokeTokenV1MeTokensTokenIdDeleteRaw(requestParameters: RevokeTokenV1MeTokensTokenIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['tokenId'] == null) {
+            throw new runtime.RequiredError(
+                'tokenId',
+                'Required parameter "tokenId" was null or undefined when calling revokeTokenV1MeTokensTokenIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/me/tokens/{token_id}`;
+        urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Revoke an API token
+     */
+    async revokeTokenV1MeTokensTokenIdDelete(requestParameters: RevokeTokenV1MeTokensTokenIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.revokeTokenV1MeTokensTokenIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Revoke a role from a user
+     */
+    async revokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRaw(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete().'
+            );
+        }
+
+        if (requestParameters['roleName'] == null) {
+            throw new runtime.RequiredError(
+                'roleName',
+                'Required parameter "roleName" was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['confirm'] != null) {
+            queryParameters['confirm'] = requestParameters['confirm'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users/{user_id}/roles/{role_name}`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+        urlPath = urlPath.replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters['roleName'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Revoke a role from a user
+     */
+    async revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.revokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -2589,6 +3233,53 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Update current user profile
+     */
+    async updateMeV1MePatchRaw(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeOut>> {
+        if (requestParameters['meUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'meUpdate',
+                'Required parameter "meUpdate" was null or undefined when calling updateMeV1MePatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/me`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: MeUpdateToJSON(requestParameters['meUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => MeOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update current user profile
+     */
+    async updateMeV1MePatch(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut> {
+        const response = await this.updateMeV1MePatchRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Update Tag
      */
     async updateTagV1BookmarksTagsTagIdPutRaw(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TagOut>> {
@@ -2644,6 +3335,61 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateTagV1BookmarksTagsTagIdPut(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut> {
         const response = await this.updateTagV1BookmarksTagsTagIdPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update a user
+     */
+    async updateUserV1AdminUsersUserIdPatchRaw(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().'
+            );
+        }
+
+        if (requestParameters['adminUserUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'adminUserUpdate',
+                'Required parameter "adminUserUpdate" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users/{user_id}`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: AdminUserUpdateToJSON(requestParameters['adminUserUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update a user
+     */
+    async updateUserV1AdminUsersUserIdPatch(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut> {
+        const response = await this.updateUserV1AdminUsersUserIdPatchRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

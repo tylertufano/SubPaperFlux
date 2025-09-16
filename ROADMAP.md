@@ -140,10 +140,11 @@ make sdk-ts
     - [x] Modal integration triggered from Bookmarks UI: `web/pages/bookmarks.tsx:632-706`
     - [x] Unit tests covering success, failure, and cancellation UI flows: `web/__tests__/bulk-publish.test.tsx:1-220`
     - [x] API tests for stream success, failure, and cancellation: `tests/test_bookmarks_router.py:206-320`
-- [~] Tags & Folders (UI-018)
+- [x] Tags & Folders (UI-018)
  - Evidence: `alembic/versions/0011_tags_and_folders.py:1`
   - [x] API endpoints for tag and folder management plus bookmark associations: `app/routers/bookmarks.py:1`
   - [x] TypeScript SDK updated for tags/folders endpoints: `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`
+  - [x] Bookmarks listing filters by tag/folder with UI widgets and tests: `app/routers/bookmarks.py:340`, `web/pages/bookmarks.tsx:70`, `tests/test_bookmarks_router.py:120`
 - [x] Preview Pane (sanitized HTML) (UI-017)
   - Evidence: `web/components/PreviewPane.tsx:1`
   - [x] Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:1`

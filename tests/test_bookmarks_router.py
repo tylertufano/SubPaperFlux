@@ -99,7 +99,9 @@ def test_bookmark_tags_and_folders_endpoints():
 
     with next(get_session()) as session:
         bm = Bookmark(owner_user_id="u1", instapaper_bookmark_id="10", title="Gamma", url="https://gamma")
+        _other = Bookmark(owner_user_id="u1", instapaper_bookmark_id="11", title="Delta", url="https://delta")
         session.add(bm)
+        session.add(_other)
         session.commit()
         bookmark_id = bm.id
 
@@ -121,6 +123,13 @@ def test_bookmark_tags_and_folders_endpoints():
     returned_tags = resp.json()
     assert [t["name"] for t in returned_tags] == ["Work+", "Personal"]
     personal_id = next(t["id"] for t in returned_tags if t["name"] == "Personal")
+
+    # Tag filter should only return the tagged bookmark
+    resp = client.get(f"/bookmarks?tag_id={personal_id}")
+    assert resp.status_code == 200
+    filtered = resp.json()
+    assert filtered["total"] == 1
+    assert [item["id"] for item in filtered["items"]] == [bookmark_id]
 
     resp = client.get(f"/bookmarks/{bookmark_id}/tags")
     assert resp.status_code == 200
@@ -151,6 +160,13 @@ def test_bookmark_tags_and_folders_endpoints():
     resp = client.put(f"/bookmarks/{bookmark_id}/folder", json={"folder_id": folder_id})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Read Now"
+
+    # Folder filter should only return the assigned bookmark
+    resp = client.get(f"/bookmarks?folder_id={folder_id}")
+    assert resp.status_code == 200
+    folder_filtered = resp.json()
+    assert folder_filtered["total"] == 1
+    assert [item["id"] for item in folder_filtered["items"]] == [bookmark_id]
 
     resp = client.get(f"/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 200

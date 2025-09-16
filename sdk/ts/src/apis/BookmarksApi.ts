@@ -74,6 +74,8 @@ export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
 
 export interface CountBookmarksBookmarksCountGetRequest {
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     search?: string | null;
@@ -87,6 +89,8 @@ export interface CountBookmarksBookmarksCountGetRequest {
 
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     search?: string | null;
@@ -165,6 +169,8 @@ export interface ExportBookmarksBookmarksExportGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -181,6 +187,8 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -219,6 +227,8 @@ export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
 export interface HeadBookmarksBookmarksHeadRequest {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -231,6 +241,8 @@ export interface HeadBookmarksBookmarksHeadRequest {
 export interface HeadBookmarksBookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -243,6 +255,8 @@ export interface HeadBookmarksBookmarksHead0Request {
 export interface HeadBookmarksV1BookmarksHeadRequest {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -255,6 +269,8 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
 export interface HeadBookmarksV1BookmarksHead0Request {
     search?: string | null;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     titleQuery?: string | null;
@@ -270,6 +286,8 @@ export interface ListBookmarksBookmarksGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -287,6 +305,8 @@ export interface ListBookmarksBookmarksGet0Request {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -304,6 +324,8 @@ export interface ListBookmarksV1BookmarksGetRequest {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -321,6 +343,8 @@ export interface ListBookmarksV1BookmarksGet0Request {
     search?: string | null;
     fuzzy?: boolean;
     feedId?: string | null;
+    tagId?: string | null;
+    folderId?: string | null;
     since?: string | null;
     until?: string | null;
     sortBy?: string | null;
@@ -613,6 +637,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -688,6 +720,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1375,6 +1415,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -1466,6 +1514,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1823,6 +1879,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -1898,6 +1962,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -1977,6 +2049,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2052,6 +2132,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2141,6 +2229,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {
@@ -2236,6 +2332,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2329,6 +2433,14 @@ export class BookmarksApi extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters['feedId'];
         }
 
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
+        }
+
         if (requestParameters['since'] != null) {
             queryParameters['since'] = requestParameters['since'];
         }
@@ -2420,6 +2532,14 @@ export class BookmarksApi extends runtime.BaseAPI {
 
         if (requestParameters['feedId'] != null) {
             queryParameters['feed_id'] = requestParameters['feedId'];
+        }
+
+        if (requestParameters['tagId'] != null) {
+            queryParameters['tag_id'] = requestParameters['tagId'];
+        }
+
+        if (requestParameters['folderId'] != null) {
+            queryParameters['folder_id'] = requestParameters['folderId'];
         }
 
         if (requestParameters['since'] != null) {

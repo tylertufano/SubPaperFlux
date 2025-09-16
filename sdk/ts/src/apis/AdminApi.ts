@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   AdminUserOut,
+  AdminUserUpdate,
   AdminUsersPage,
   AuditLogsPage,
   HTTPValidationError,
@@ -24,6 +25,8 @@ import type {
 import {
     AdminUserOutFromJSON,
     AdminUserOutToJSON,
+    AdminUserUpdateFromJSON,
+    AdminUserUpdateToJSON,
     AdminUsersPageFromJSON,
     AdminUsersPageToJSON,
     AuditLogsPageFromJSON,
@@ -91,6 +94,12 @@ export interface ListUsersV1AdminUsersGetRequest {
 export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
     userId: string;
     roleName: string;
+    confirm?: boolean;
+}
+
+export interface UpdateUserV1AdminUsersUserIdPatchRequest {
+    userId: string;
+    adminUserUpdate: AdminUserUpdate;
 }
 
 /**
@@ -569,6 +578,10 @@ export class AdminApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['confirm'] != null) {
+            queryParameters['confirm'] = requestParameters['confirm'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -599,6 +612,61 @@ export class AdminApi extends runtime.BaseAPI {
      */
     async revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.revokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Update a user
+     */
+    async updateUserV1AdminUsersUserIdPatchRaw(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().'
+            );
+        }
+
+        if (requestParameters['adminUserUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'adminUserUpdate',
+                'Required parameter "adminUserUpdate" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/users/{user_id}`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: AdminUserUpdateToJSON(requestParameters['adminUserUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update a user
+     */
+    async updateUserV1AdminUsersUserIdPatch(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut> {
+        const response = await this.updateUserV1AdminUsersUserIdPatchRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
 }
