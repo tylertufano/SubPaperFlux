@@ -10,6 +10,30 @@ class User(BaseModel):
     groups: List[str] = Field(default_factory=list)
 
 
+class MeNotificationPreferences(BaseModel):
+    email_job_updates: bool = True
+    email_digest: bool = False
+
+
+class MeNotificationPreferencesUpdate(BaseModel):
+    email_job_updates: Optional[bool] = None
+    email_digest: Optional[bool] = None
+
+
+class MeOut(BaseModel):
+    id: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    picture_url: Optional[str] = None
+    locale: Optional[str] = None
+    notification_preferences: MeNotificationPreferences
+
+
+class MeUpdate(BaseModel):
+    locale: Optional[str] = Field(default=None, min_length=2, max_length=32)
+    notification_preferences: Optional[MeNotificationPreferencesUpdate] = None
+
+
 class SiteConfig(BaseModel):
     id: Optional[str] = None
     name: str

@@ -20,6 +20,8 @@ class User(SQLModel, table=True):
     picture_url: Optional[str] = None
     is_active: bool = Field(default=True, index=True)
     claims: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    locale: Optional[str] = Field(default=None, index=True)
+    notification_preferences: Dict = Field(default_factory=dict, sa_column=Column(JSON))
     quota_credentials: Optional[int] = Field(
         default=None,
         sa_column=Column(Integer, nullable=True),
