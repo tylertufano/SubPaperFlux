@@ -7,7 +7,7 @@ import re
 import shlex
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import AsyncGenerator, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -545,6 +545,92 @@ def _encode_event(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False) + "\n"
 
 
+async def _bulk_publish_event_stream(
+    *,
+    request: Request,
+    user_id: str,
+    items: List[dict],
+    config_dir: str,
+    instapaper_id: str,
+) -> AsyncGenerator[str, None]:
+    success = 0
+    failed = 0
+    yield _encode_event({"type": "start", "total": len(items)})
+    try:
+        for index, item in enumerate(items, start=1):
+            if await request.is_disconnected():
+                logging.info("Client disconnected from bulk publish stream user=%s", user_id)
+                return
+            item_id = str(item.get("id") or index)
+            yield _encode_event({"type": "item", "id": item_id, "status": "running"})
+            url = item.get("url")
+            if not isinstance(url, str) or not url.strip():
+                failed += 1
+                yield _encode_event(
+                    {
+                        "type": "item",
+                        "id": item_id,
+                        "status": "error",
+                        "message": "Missing URL",
+                    }
+                )
+                continue
+            payload = {
+                "config_dir": config_dir,
+                "instapaper_id": instapaper_id,
+                "url": url,
+            }
+            title = item.get("title")
+            if isinstance(title, str) and title:
+                payload["title"] = title
+            folder = item.get("folder")
+            if isinstance(folder, str) and folder:
+                payload["folder"] = folder
+            tags = _normalise_tags(item.get("tags"))
+            if tags:
+                payload["tags"] = tags
+            feed_id = item.get("feed_id") or item.get("feedId")
+            if isinstance(feed_id, str) and feed_id:
+                payload["feed_id"] = feed_id
+            published_at = item.get("published_at") or item.get("publishedAt")
+            if isinstance(published_at, str) and published_at:
+                payload["published_at"] = published_at
+            try:
+                result = await asyncio.to_thread(
+                    handle_publish,
+                    job_id=f"bulk-{uuid4().hex}",
+                    owner_user_id=user_id,
+                    payload=payload,
+                )
+            except Exception as exc:  # noqa: BLE001 - surface raw error to caller
+                logging.exception("Bulk publish failed for url=%s user=%s", url, user_id)
+                failed += 1
+                yield _encode_event(
+                    {
+                        "type": "item",
+                        "id": item_id,
+                        "status": "error",
+                        "message": str(exc),
+                    }
+                )
+                continue
+
+            success += 1
+            event_payload = {"type": "item", "id": item_id, "status": "success"}
+            if isinstance(result, dict):
+                event_payload["result"] = result
+            yield _encode_event(event_payload)
+    except asyncio.CancelledError:  # pragma: no cover - handled by server internals
+        logging.info("Bulk publish stream cancelled for user=%s", user_id)
+        raise
+    except Exception as exc:  # pragma: no cover - defensive catch
+        logging.exception("Bulk publish stream aborted for user=%s", user_id)
+        yield _encode_event({"type": "error", "message": str(exc)})
+        return
+
+    yield _encode_event({"type": "complete", "success": success, "failed": failed})
+
+
 @router.post("/bulk-publish", dependencies=[Depends(csrf_protect)])
 async def bulk_publish_bookmarks(
     body: dict,
@@ -573,78 +659,15 @@ async def bulk_publish_bookmarks(
         if not credential:
             raise HTTPException(status_code=400, detail="No Instapaper credential configured")
         instapaper_id = credential.id
-
-    async def event_generator():
-        success = 0
-        failed = 0
-        yield _encode_event({"type": "start", "total": len(items)})
-        try:
-            for index, item in enumerate(items, start=1):
-                if await request.is_disconnected():
-                    logging.info("Client disconnected from bulk publish stream user=%s", user_id)
-                    return
-                item_id = str(item.get("id") or index)
-                yield _encode_event({"type": "item", "id": item_id, "status": "running"})
-                url = item.get("url")
-                if not isinstance(url, str) or not url.strip():
-                    failed += 1
-                    yield _encode_event({
-                        "type": "item",
-                        "id": item_id,
-                        "status": "error",
-                        "message": "Missing URL",
-                    })
-                    continue
-                payload = {
-                    "config_dir": config_dir,
-                    "instapaper_id": instapaper_id,
-                    "url": url,
-                }
-                title = item.get("title")
-                if isinstance(title, str) and title:
-                    payload["title"] = title
-                folder = item.get("folder")
-                if isinstance(folder, str) and folder:
-                    payload["folder"] = folder
-                tags = _normalise_tags(item.get("tags"))
-                if tags:
-                    payload["tags"] = tags
-                feed_id = item.get("feed_id") or item.get("feedId")
-                if isinstance(feed_id, str) and feed_id:
-                    payload["feed_id"] = feed_id
-                published_at = item.get("published_at") or item.get("publishedAt")
-                if isinstance(published_at, str) and published_at:
-                    payload["published_at"] = published_at
-                try:
-                    result = await asyncio.to_thread(
-                        handle_publish,
-                        job_id=f"bulk-{uuid4().hex}",
-                        owner_user_id=user_id,
-                        payload=payload,
-                    )
-                except Exception as exc:  # noqa: BLE001 - surface raw error to caller
-                    logging.exception("Bulk publish failed for url=%s user=%s", url, user_id)
-                    failed += 1
-                    yield _encode_event({
-                        "type": "item",
-                        "id": item_id,
-                        "status": "error",
-                        "message": str(exc),
-                    })
-                    continue
-
-                success += 1
-                event_payload = {"type": "item", "id": item_id, "status": "success"}
-                if isinstance(result, dict):
-                    event_payload["result"] = result
-                yield _encode_event(event_payload)
-        except asyncio.CancelledError:  # pragma: no cover - handled by server internals
-            logging.info("Bulk publish stream cancelled for user=%s", user_id)
-            raise
-        yield _encode_event({"type": "complete", "success": success, "failed": failed})
-
+    stream = _bulk_publish_event_stream(
+        request=request,
+        user_id=user_id,
+        items=items,
+        config_dir=config_dir,
+        instapaper_id=str(instapaper_id),
+    )
     headers = {"Cache-Control": "no-cache"}
-    return StreamingResponse(event_generator(), media_type="application/x-ndjson", headers=headers)
+    return StreamingResponse(stream, media_type="application/x-ndjson", headers=headers)
 
 
 @router.post("/bulk-delete", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
