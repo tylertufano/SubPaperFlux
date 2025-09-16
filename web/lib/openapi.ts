@@ -101,6 +101,24 @@ async function getClients() {
   return clientsPromise
 }
 
+export async function bulkPublishBookmarksStream({ requestBody, signal }: { requestBody: any; signal?: AbortSignal }) {
+  const basePath = await resolveApiBase()
+  const session = await getSession()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': CSRF,
+  }
+  const token = session?.accessToken as string | undefined
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return fetch(`${basePath}/v1/bookmarks/bulk-publish`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(requestBody ?? {}),
+    signal,
+    credentials: 'include',
+  })
+}
+
 export const v1 = {
   listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).bookmarks.listBookmarksBookmarksGet(p),
   bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).bookmarks.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
