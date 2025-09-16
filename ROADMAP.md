@@ -134,6 +134,7 @@ make sdk-ts
     - [x] Bulk publish modal component: `web/components/BulkPublishModal.tsx:1`
     - [x] API streaming per-item status: `app/routers/bookmarks.py:560`
     - [x] Modal integration triggered from Bookmarks UI: `web/pages/bookmarks.tsx:613`
+    - [x] Unit tests for modal state transitions and API errors: `web/__tests__/bulk-publish.test.tsx:1`
  - [ ] Tags & Folders (UI-018)
  - [ ] Preview Pane (sanitized HTML) (UI-017)
  - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
