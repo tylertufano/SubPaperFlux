@@ -21,6 +21,12 @@ if (typeof window !== 'undefined') {
 
 let clientsPromise: Promise<{ v1: V1Api; bookmarks: BookmarksApi; creds: CredentialsApi; sites: SiteConfigsApi; feeds: FeedsApi }> | null = null
 
+type AuthorizedRequestOptions = Omit<RequestInit, 'headers'> & {
+  headers?: Record<string, string | undefined>
+  errorMessage?: string
+  expectJson?: boolean
+}
+
 async function resolveApiBase(): Promise<string> {
   if (typeof window === 'undefined') {
     return process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || ''
@@ -101,6 +107,42 @@ async function getClients() {
   return clientsPromise
 }
 
+async function authorizedRequest<T = any>(path: string, options: AuthorizedRequestOptions = {}): Promise<T> {
+  const { errorMessage, expectJson, headers: overrideHeaders, ...rest } = options
+  const basePath = await resolveApiBase()
+  const session = await getSession()
+  const headers: Record<string, string> = {
+    'X-CSRF-Token': CSRF,
+  }
+  if (overrideHeaders) {
+    for (const [key, value] of Object.entries(overrideHeaders)) {
+      if (value !== undefined) {
+        headers[key] = value
+      }
+    }
+  }
+  const token = session?.accessToken as string | undefined
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
+  const response = await fetch(`${normalizedBase}${path}`, {
+    ...rest,
+    headers,
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    const message = (await response.text())?.trim()
+    throw new Error(message || errorMessage || `Request failed (${response.status})`)
+  }
+
+  if (expectJson === false || response.status === 204) {
+    return null as T
+  }
+
+  return response.json() as Promise<T>
+}
+
 export type AuditLogEntry = {
   id: string
   entity_type: string
@@ -133,15 +175,84 @@ type AuditLogQuery = {
   until?: string
 }
 
-async function listAuditLogs(params: AuditLogQuery = {}): Promise<AuditLogsPage> {
-  const basePath = await resolveApiBase()
-  const session = await getSession()
-  const headers: Record<string, string> = {
-    'X-CSRF-Token': CSRF,
-  }
-  const token = session?.accessToken as string | undefined
-  if (token) headers['Authorization'] = `Bearer ${token}`
+export type AdminUser = {
+  id: string
+  email?: string | null
+  full_name?: string | null
+  picture_url?: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  last_login_at?: string | null
+  groups: string[]
+  roles: string[]
+  is_admin: boolean
+}
 
+export type AdminUsersPage = {
+  items: AdminUser[]
+  total: number
+  page: number
+  size: number
+  has_next?: boolean
+  total_pages?: number
+}
+
+type AdminUsersQuery = {
+  page?: number
+  size?: number
+  search?: string
+  isActive?: boolean
+  role?: string
+}
+
+type AdminUserUpdatePayload = {
+  is_active?: boolean
+}
+
+export type RoleGrantRequest = {
+  description?: string | null
+  create_missing?: boolean
+  is_system?: boolean | null
+}
+
+export type ApiToken = {
+  id: string
+  name: string
+  description?: string | null
+  scopes: string[]
+  created_at: string
+  updated_at: string
+  last_used_at?: string | null
+  expires_at?: string | null
+  revoked_at?: string | null
+}
+
+export type ApiTokenWithSecret = ApiToken & { token: string }
+
+export type ApiTokensPage = {
+  items: ApiToken[]
+  total: number
+  page: number
+  size: number
+  has_next?: boolean
+  total_pages?: number
+}
+
+type ApiTokensQuery = {
+  page?: number
+  size?: number
+  include_revoked?: boolean
+}
+
+export type ApiTokenCreate = {
+  name: string
+  description?: string | null
+  scopes?: string[]
+  expires_at?: string | null
+}
+
+async function listAuditLogs(params: AuditLogQuery = {}): Promise<AuditLogsPage> {
   const query = new URLSearchParams()
   if (params.page !== undefined) query.set('page', String(params.page))
   if (params.size !== undefined) query.set('size', String(params.size))
@@ -153,22 +264,92 @@ async function listAuditLogs(params: AuditLogQuery = {}): Promise<AuditLogsPage>
   if (params.since) query.set('since', params.since)
   if (params.until) query.set('until', params.until)
 
-  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
   const search = query.toString()
-  const url = `${normalizedBase}/v1/admin/audit${search ? `?${search}` : ''}`
-
-  const res = await fetch(url, {
-    method: 'GET',
-    headers,
-    credentials: 'include',
+  return authorizedRequest<AuditLogsPage>(`/v1/admin/audit${search ? `?${search}` : ''}`, {
+    errorMessage: 'Failed to load audit logs',
   })
+}
 
-  if (!res.ok) {
-    const message = (await res.text())?.trim()
-    throw new Error(message || `Failed to load audit logs (${res.status})`)
-  }
+async function listAdminUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.search) query.set('search', params.search)
+  if (params.role) query.set('role', params.role)
+  if (params.isActive !== undefined) query.set('is_active', String(params.isActive))
 
-  return res.json()
+  const search = query.toString()
+  return authorizedRequest<AdminUsersPage>(`/v1/admin/users${search ? `?${search}` : ''}`, {
+    errorMessage: 'Failed to load users',
+  })
+}
+
+async function getAdminUser(userId: string): Promise<AdminUser> {
+  return authorizedRequest<AdminUser>(`/v1/admin/users/${encodeURIComponent(userId)}`, {
+    errorMessage: 'Failed to load user',
+  })
+}
+
+async function updateAdminUser(userId: string, payload: AdminUserUpdatePayload): Promise<AdminUser> {
+  return authorizedRequest<AdminUser>(`/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to update user',
+  })
+}
+
+async function grantAdminUserRole(
+  userId: string,
+  roleName: string,
+  payload?: RoleGrantRequest,
+): Promise<AdminUser> {
+  return authorizedRequest<AdminUser>(
+    `/v1/admin/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleName)}`,
+    {
+      method: 'POST',
+      headers: payload ? { 'Content-Type': 'application/json' } : undefined,
+      body: payload ? JSON.stringify(payload) : undefined,
+      errorMessage: 'Failed to grant role',
+    },
+  )
+}
+
+async function revokeAdminUserRole(userId: string, roleName: string): Promise<void> {
+  await authorizedRequest(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleName)}`, {
+    method: 'DELETE',
+    expectJson: false,
+    errorMessage: 'Failed to revoke role',
+  })
+}
+
+async function listApiTokens(params: ApiTokensQuery = {}): Promise<ApiTokensPage> {
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.include_revoked !== undefined) query.set('include_revoked', String(params.include_revoked))
+
+  const search = query.toString()
+  return authorizedRequest<ApiTokensPage>(`/v1/me/tokens${search ? `?${search}` : ''}`, {
+    errorMessage: 'Failed to load tokens',
+  })
+}
+
+async function createApiToken(payload: ApiTokenCreate): Promise<ApiTokenWithSecret> {
+  return authorizedRequest<ApiTokenWithSecret>('/v1/me/tokens', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to create token',
+  })
+}
+
+async function revokeApiToken(tokenId: string): Promise<void> {
+  await authorizedRequest(`/v1/me/tokens/${encodeURIComponent(tokenId)}`, {
+    method: 'DELETE',
+    expectJson: false,
+    errorMessage: 'Failed to revoke token',
+  })
 }
 
 export async function bulkPublishBookmarksStream({ requestBody, signal }: { requestBody: any; signal?: AbortSignal }) {
@@ -241,6 +422,31 @@ export const v1 = {
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
 
   listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
+  listAdminUsersV1AdminUsersGet: async (p: AdminUsersQuery = {}) => listAdminUsers(p),
+  getAdminUserV1AdminUsersUserIdGet: async ({ userId }: { userId: string }) => getAdminUser(userId),
+  updateAdminUserV1AdminUsersUserIdPatch: async ({
+    userId,
+    adminUserUpdate,
+  }: {
+    userId: string
+    adminUserUpdate: AdminUserUpdatePayload
+  }) => updateAdminUser(userId, adminUserUpdate),
+  grantAdminUserRoleV1AdminUsersUserIdRolesRoleNamePost: async ({
+    userId,
+    roleName,
+    roleGrantRequest,
+  }: {
+    userId: string
+    roleName: string
+    roleGrantRequest?: RoleGrantRequest
+  }) => grantAdminUserRole(userId, roleName, roleGrantRequest),
+  revokeAdminUserRoleV1AdminUsersUserIdRolesRoleNameDelete: async ({
+    userId,
+    roleName,
+  }: {
+    userId: string
+    roleName: string
+  }) => revokeAdminUserRole(userId, roleName),
 
   listJobsV1JobsGet: async (p: any = {}) => (await getClients()).v1.listJobsV1JobsGet(p),
   getJobV1JobsJobIdGet: async ({ jobId }: { jobId: string }) => (await getClients()).v1.getJobV1JobsJobIdGet({ jobId }),
@@ -256,6 +462,11 @@ export const v1 = {
 
   postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).v1.postgresPrepareV1AdminPostgresPreparePost(),
   postgresEnableRlsV1AdminPostgresEnableRlsPost: async () => (await getClients()).v1.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
+
+  listMeTokensV1MeTokensGet: async (p: ApiTokensQuery = {}) => listApiTokens(p),
+  createMeTokenV1MeTokensPost: async ({ apiTokenCreate }: { apiTokenCreate: ApiTokenCreate }) =>
+    createApiToken(apiTokenCreate),
+  revokeMeTokenV1MeTokensTokenIdDelete: async ({ tokenId }: { tokenId: string }) => revokeApiToken(tokenId),
 }
 
 export const creds = {

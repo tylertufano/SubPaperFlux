@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Iterable, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
@@ -14,7 +15,7 @@ from ..auth.oidc import get_current_user
 from ..auth.rbac import is_admin
 from ..db import get_session
 from ..models import Role, User, UserRole
-from ..schemas import AdminUserOut, AdminUsersPage, RoleGrantRequest
+from ..schemas import AdminUserOut, AdminUserUpdate, AdminUsersPage, RoleGrantRequest
 from .admin import _require_admin
 
 
@@ -128,6 +129,50 @@ def get_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    return _serialize_user(session, user)
+
+
+@router.patch(
+    "/{user_id}",
+    response_model=AdminUserOut,
+    summary="Update a user",
+)
+def update_user(
+    *,
+    user_id: str = Path(..., min_length=1),
+    payload: AdminUserUpdate = Body(...),
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    _require_admin(session, current_user)
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updated = False
+    actor_id = current_user.get("sub") if isinstance(current_user, dict) else None
+    now = datetime.now(timezone.utc)
+
+    if payload.is_active is not None and payload.is_active != user.is_active:
+        user.is_active = payload.is_active
+        updated = True
+        user.updated_at = now
+        record_audit_log(
+            session,
+            entity_type="user",
+            entity_id=user.id,
+            action="activate" if payload.is_active else "suspend",
+            owner_user_id=user.id,
+            actor_user_id=actor_id,
+            details={"is_active": payload.is_active},
+        )
+
+    if not updated:
+        return _serialize_user(session, user)
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
     return _serialize_user(session, user)
 
 

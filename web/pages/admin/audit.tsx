@@ -114,6 +114,13 @@ export default function AdminAudit() {
     setSize(50)
   }
 
+  const applyFilterAndClose = (partial: Partial<FilterState>) => {
+    setFormState((prev) => ({ ...prev, ...partial }))
+    setFilters((prev) => ({ ...prev, ...partial }))
+    setPage(1)
+    setSelected(null)
+  }
+
   const totalPages = data ? data.total_pages ?? Math.max(1, Math.ceil(data.total / Math.max(1, data.size))) : 1
   const hasPrev = Boolean(data && data.page > 1)
   const hasNext = Boolean(data && (data.has_next ?? data.page < totalPages))
@@ -398,6 +405,48 @@ export default function AdminAudit() {
                   ) : (
                     <p className="text-sm text-gray-600">{t('audit_details_empty')}</p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-gray-600">{t('audit_details_drilldown')}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => applyFilterAndClose({ entityType: selected.entity_type })}
+                    >
+                      {t('audit_filter_by_entity_type')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => applyFilterAndClose({ entityId: selected.entity_id || '' })}
+                    >
+                      {t('audit_filter_by_entity_id')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => applyFilterAndClose({ action: selected.action })}
+                    >
+                      {t('audit_filter_by_action')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => applyFilterAndClose({ ownerUserId: selected.owner_user_id || '' })}
+                      disabled={!selected.owner_user_id}
+                    >
+                      {t('audit_filter_by_owner')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => applyFilterAndClose({ actorUserId: selected.actor_user_id || '' })}
+                      disabled={!selected.actor_user_id}
+                    >
+                      {t('audit_filter_by_actor')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </aside>
