@@ -131,6 +131,7 @@ make sdk-ts
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [~] Publish; progress modals (UI-028)
+    - [x] Bulk publish modal component: `web/components/BulkPublishModal.tsx:1`
     - [x] API streaming per-item status: `app/routers/bookmarks.py:560`
  - [ ] Tags & Folders (UI-018)
  - [ ] Preview Pane (sanitized HTML) (UI-017)
