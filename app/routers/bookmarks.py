@@ -18,6 +18,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy import or_, literal
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import delete, func, select
+from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..db import is_postgres
@@ -504,6 +505,18 @@ def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), se
             except Exception:
                 # Swallow remote errors if DB delete is desired anyway
                 pass
+    record_audit_log(
+        session,
+        entity_type="bookmark",
+        entity_id=bm.id,
+        action="delete",
+        owner_user_id=bm.owner_user_id,
+        actor_user_id=current_user["sub"],
+        details={
+            "instapaper_bookmark_id": bm.instapaper_bookmark_id,
+            "delete_remote": bool(delete_remote),
+        },
+    )
     session.delete(bm)
     session.commit()
     return None
@@ -750,6 +763,15 @@ def update_bookmark_tags(
     for name in unique:
         tag = tag_map[name]
         session.add(BookmarkTagLink(bookmark_id=bookmark_id, tag_id=tag.id))
+    record_audit_log(
+        session,
+        entity_type="bookmark",
+        entity_id=bookmark_id,
+        action="update",
+        owner_user_id=user_id,
+        actor_user_id=current_user["sub"],
+        details={"tags": unique},
+    )
     try:
         session.commit()
     except IntegrityError as exc:  # pragma: no cover - defensive
@@ -828,6 +850,15 @@ def update_bookmark_folder(
         raise HTTPException(status_code=400, detail="folder_id or folder_name required")
     session.exec(delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id))
     session.add(BookmarkFolderLink(bookmark_id=bookmark_id, folder_id=folder.id))
+    record_audit_log(
+        session,
+        entity_type="bookmark",
+        entity_id=bookmark_id,
+        action="update",
+        owner_user_id=user_id,
+        actor_user_id=current_user["sub"],
+        details={"folder_id": folder.id, "folder_name": folder.name},
+    )
     try:
         session.commit()
     except IntegrityError as exc:  # pragma: no cover - defensive
@@ -851,7 +882,20 @@ def delete_bookmark_folder(
 ):
     user_id = current_user["sub"]
     _get_bookmark_or_404(session, bookmark_id, user_id)
+    existing_link = session.exec(
+        select(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id)
+    ).first()
+    folder_id = existing_link.folder_id if existing_link else None
     session.exec(delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id))
+    record_audit_log(
+        session,
+        entity_type="bookmark",
+        entity_id=bookmark_id,
+        action="update",
+        owner_user_id=user_id,
+        actor_user_id=current_user["sub"],
+        details={"folder_cleared": True, "previous_folder_id": folder_id},
+    )
     session.commit()
     return None
 
@@ -1221,6 +1265,19 @@ def bulk_delete_bookmarks(
                 resp.raise_for_status()
             except Exception:
                 pass
+        record_audit_log(
+            session,
+            entity_type="bookmark",
+            entity_id=bm.id,
+            action="delete",
+            owner_user_id=bm.owner_user_id,
+            actor_user_id=current_user["sub"],
+            details={
+                "instapaper_bookmark_id": bm.instapaper_bookmark_id,
+                "bulk": True,
+                "delete_remote": bool(delete_remote),
+            },
+        )
         session.delete(bm)
     session.commit()
     return None

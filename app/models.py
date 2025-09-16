@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, UniqueConstraint
 from sqlmodel import SQLModel, Field, Column
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def gen_id(prefix: str) -> str:
@@ -112,3 +112,19 @@ class BookmarkFolderLink(SQLModel, table=True):
 
     bookmark_id: str = Field(sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True))
     folder_id: str = Field(sa_column=Column(ForeignKey("folder.id", ondelete="CASCADE"), primary_key=True))
+
+
+class AuditLog(SQLModel, table=True):
+    __tablename__ = "audit_log"
+
+    id: str = Field(default_factory=lambda: gen_id("alog"), primary_key=True)
+    entity_type: str = Field(index=True)
+    entity_id: str = Field(index=True)
+    action: str = Field(index=True)
+    owner_user_id: Optional[str] = Field(default=None, index=True)
+    actor_user_id: Optional[str] = Field(default=None, index=True)
+    details: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from sqlmodel import select
 
+from ..audit import record_audit_log
 from ..db import get_session_ctx
 from ..models import Cookie as CookieModel, Credential as CredentialModel, SiteConfig as SiteConfigModel, Bookmark as BookmarkModel
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
@@ -284,6 +285,19 @@ def poll_rss_and_publish(
                         published_at=(entry.get("published_dt").isoformat() if entry.get("published_dt") else None),
                     )
                     session.add(bm)
+                    record_audit_log(
+                        session,
+                        entity_type="bookmark",
+                        entity_id=bm.id,
+                        action="create",
+                        owner_user_id=bm.owner_user_id,
+                        actor_user_id=owner_user_id,
+                        details={
+                            "instapaper_bookmark_id": bm.instapaper_bookmark_id,
+                            "source": "rss_import",
+                            "feed_title": entry.get("title"),
+                        },
+                    )
                     session.commit()
             except Exception:
                 # Best-effort persistence; continue

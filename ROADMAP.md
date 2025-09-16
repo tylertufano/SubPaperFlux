@@ -147,7 +147,8 @@ make sdk-ts
   - Evidence: `web/components/PreviewPane.tsx:1`
   - [x] Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:1`
 - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
-- [ ] Activity Log (UI-029)
+- [~] Activity Log (UI-029)
+  - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`
 
 ## Optional / Recommended
 

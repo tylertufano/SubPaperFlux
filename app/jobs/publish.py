@@ -1,5 +1,6 @@
 import logging
 
+from ..audit import record_audit_log
 from ..jobs import register_handler
 from .util_subpaperflux import publish_url
 from ..db import get_session_ctx
@@ -38,6 +39,19 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                 published_at=published_at,
             )
             session.add(bm)
+            record_audit_log(
+                session,
+                entity_type="bookmark",
+                entity_id=bm.id,
+                action="create",
+                owner_user_id=bm.owner_user_id,
+                actor_user_id=owner_user_id,
+                details={
+                    "instapaper_bookmark_id": bm.instapaper_bookmark_id,
+                    "job_id": job_id,
+                    "source": "publish_job",
+                },
+            )
             session.commit()
     return res
 
