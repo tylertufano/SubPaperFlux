@@ -194,6 +194,7 @@ make sdk-ts
 - [ ] RBAC UI (UI-040)
   - [x] Backend models and migrations for users/roles/api tokens (UI-040)
     - Evidence: `app/models.py:15`, `alembic/versions/0013_users_roles_api_tokens.py:1`
+  - [x] RBAC helper utilities and seed defaults — `app/auth/__init__.py:1`, `app/seed.py:1`
 - [ ] Global Assets (copy to my workspace) (UI-041)
 - [ ] Org Views / user management (if not delegated to IdP) (UI-042)
 
