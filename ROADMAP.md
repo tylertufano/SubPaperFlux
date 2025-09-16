@@ -41,6 +41,8 @@ Status legend: [x] done, [~] in progress, [ ] todo
   - [x] Bulk delete and export (JSON/CSV)
   - [x] Sorting (UI-004)
     - Evidence: `app/routers/bookmarks.py:1`, `web/pages/bookmarks.tsx:1`
+  - [x] Tag & folder management widgets and filters (UI-018)
+    - Evidence: `web/pages/bookmarks.tsx:360-920`
 - [x] Jobs
   - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
   - [x] Backoff timer and dedupe badges

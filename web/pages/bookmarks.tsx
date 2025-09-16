@@ -14,6 +14,8 @@ type SavedView = {
   name: string
   search?: string
   feed_id?: string
+  tag_id?: string
+  folder_id?: string
   since?: string
   until?: string
   fuzzy?: boolean
@@ -50,10 +52,22 @@ export default function Bookmarks() {
   const [views, setViews] = useState<SavedView[]>([])
   const [newViewName, setNewViewName] = useState('')
   const [feedId, setFeedId] = useState('')
+  const [tagIdFilter, setTagIdFilter] = useState('')
+  const [folderIdFilter, setFolderIdFilter] = useState('')
   const [since, setSince] = useState('')
   const [until, setUntil] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('published_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [newTagName, setNewTagName] = useState('')
+  const [tagEditId, setTagEditId] = useState<string | null>(null)
+  const [tagEditName, setTagEditName] = useState('')
+  const [tagActionBusy, setTagActionBusy] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [newFolderInstapaperId, setNewFolderInstapaperId] = useState('')
+  const [folderEditId, setFolderEditId] = useState<string | null>(null)
+  const [folderEditName, setFolderEditName] = useState('')
+  const [folderEditInstapaperId, setFolderEditInstapaperId] = useState('')
+  const [folderActionBusy, setFolderActionBusy] = useState(false)
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
   const { data, error, isLoading, mutate } = useSWR([
     `/v1/bookmarks`,
@@ -65,12 +79,14 @@ export default function Bookmarks() {
     regexTarget,
     regexCaseInsensitive,
     feedId,
+    tagIdFilter,
+    folderIdFilter,
     since,
     until,
     sortBy,
     sortDir,
   ],
-    ([, p, kw, tQuery, uQuery, regexValue, target, regexCI, f, s, u, sb, sd]) => v1.listBookmarksV1BookmarksGet({
+    ([, p, kw, tQuery, uQuery, regexValue, target, regexCI, f, tagFilter, folderFilter, s, u, sb, sd]) => v1.listBookmarksV1BookmarksGet({
       page: p,
       search: kw || undefined,
       titleQuery: tQuery || undefined,
@@ -79,6 +95,8 @@ export default function Bookmarks() {
       regexTarget: target,
       regexFlags: regexValue ? (regexCI ? 'i' : '') : undefined,
       feedId: f || undefined,
+      tagId: tagFilter || undefined,
+      folderId: folderFilter || undefined,
       since: addZ(s),
       until: addZ(u),
       fuzzy: sb === 'relevance',
@@ -87,6 +105,10 @@ export default function Bookmarks() {
     }))
   const { data: feeds } = useSWR([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
   const feedItems = Array.isArray(feeds) ? feeds : feeds?.items ?? []
+  const { data: tagsData, error: tagsError, isLoading: tagsLoading, mutate: mutateTags } = useSWR([`/v1/bookmarks/tags`], () => v1.listTagsBookmarksTagsGet())
+  const tagItems = Array.isArray(tagsData) ? tagsData : tagsData?.items ?? []
+  const { data: foldersData, error: foldersError, isLoading: foldersLoading, mutate: mutateFolders } = useSWR([`/v1/bookmarks/folders`], () => v1.listFoldersBookmarksFoldersGet())
+  const folderItems = Array.isArray(foldersData) ? foldersData : foldersData?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [progress, setProgress] = useState<BulkProgressState | null>(null)
@@ -118,6 +140,8 @@ export default function Bookmarks() {
     setRegexTarget('both')
     setRegexCaseInsensitive(true)
     setFeedId('')
+    setTagIdFilter('')
+    setFolderIdFilter('')
     setSince('')
     setUntil('')
     setSortBy('published_at')
@@ -138,6 +162,8 @@ export default function Bookmarks() {
       name: trimmed,
       search: keyword || undefined,
       feed_id: feedId || undefined,
+      tag_id: tagIdFilter || undefined,
+      folder_id: folderIdFilter || undefined,
       since: since || undefined,
       until: until || undefined,
       fuzzy: sortBy === 'relevance',
@@ -163,6 +189,8 @@ export default function Bookmarks() {
     setRegexTarget(v.regex_target || 'both')
     setRegexCaseInsensitive(v.regex_case_insensitive !== false)
     setFeedId(v.feed_id || '')
+    setTagIdFilter(v.tag_id || '')
+    setFolderIdFilter(v.folder_id || '')
     setSince(v.since || '')
     setUntil(v.until || '')
     if (v.sort_by) {
@@ -175,6 +203,160 @@ export default function Bookmarks() {
     setSortDir(v.sort_dir || 'desc')
     setPage(1)
     mutate()
+  }
+
+  function startEditTag(tag: any) {
+    setTagEditId(tag.id)
+    setTagEditName(tag.name || '')
+  }
+
+  function cancelEditTag() {
+    setTagEditId(null)
+    setTagEditName('')
+  }
+
+  async function handleCreateTag(event: FormEvent) {
+    event.preventDefault()
+    const trimmed = newTagName.trim()
+    if (!trimmed || tagActionBusy) return
+    setTagActionBusy(true)
+    try {
+      await v1.createTagBookmarksTagsPost({ tagCreate: { name: trimmed } })
+      setBanner({ kind: 'success', message: t('bookmarks_tag_create_success', { name: trimmed }) })
+      setNewTagName('')
+      mutateTags()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_tag_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setTagActionBusy(false)
+    }
+  }
+
+  async function handleSaveTag() {
+    if (!tagEditId || tagActionBusy) return
+    const trimmed = tagEditName.trim()
+    if (!trimmed) {
+      setBanner({ kind: 'error', message: t('bookmarks_tag_name_required') })
+      return
+    }
+    setTagActionBusy(true)
+    try {
+      await v1.updateTagBookmarksTagsTagIdPut({ tagId: tagEditId, tagUpdate: { name: trimmed } })
+      setBanner({ kind: 'success', message: t('bookmarks_tag_update_success', { name: trimmed }) })
+      cancelEditTag()
+      mutateTags()
+      mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_tag_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setTagActionBusy(false)
+    }
+  }
+
+  async function handleDeleteTag(tag: any) {
+    if (tagActionBusy) return
+    const name = tag?.name || ''
+    if (!confirm(t('bookmarks_tag_confirm_delete', { name: name || t('bookmarks_tag_fallback') }))) return
+    setTagActionBusy(true)
+    try {
+      await v1.deleteTagBookmarksTagsTagIdDelete({ tagId: tag.id })
+      setBanner({ kind: 'success', message: t('bookmarks_tag_delete_success', { name: name || t('bookmarks_tag_fallback') }) })
+      if (tagIdFilter === tag.id) {
+        setTagIdFilter('')
+        setPage(1)
+      }
+      mutateTags()
+      mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_tag_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setTagActionBusy(false)
+    }
+  }
+
+  function startEditFolder(folder: any) {
+    setFolderEditId(folder.id)
+    setFolderEditName(folder.name || '')
+    setFolderEditInstapaperId(folder.instapaper_folder_id || '')
+  }
+
+  function cancelEditFolder() {
+    setFolderEditId(null)
+    setFolderEditName('')
+    setFolderEditInstapaperId('')
+  }
+
+  async function handleCreateFolder(event: FormEvent) {
+    event.preventDefault()
+    if (folderActionBusy) return
+    const trimmed = newFolderName.trim()
+    if (!trimmed) {
+      setBanner({ kind: 'error', message: t('bookmarks_folder_name_required') })
+      return
+    }
+    const instapaper = newFolderInstapaperId.trim()
+    setFolderActionBusy(true)
+    try {
+      await v1.createFolderBookmarksFoldersPost({
+        folderCreate: {
+          name: trimmed,
+          instapaper_folder_id: instapaper ? instapaper : undefined,
+        },
+      })
+      setBanner({ kind: 'success', message: t('bookmarks_folder_create_success', { name: trimmed }) })
+      setNewFolderName('')
+      setNewFolderInstapaperId('')
+      mutateFolders()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_folder_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setFolderActionBusy(false)
+    }
+  }
+
+  async function handleSaveFolder() {
+    if (!folderEditId || folderActionBusy) return
+    const trimmed = folderEditName.trim()
+    if (!trimmed) {
+      setBanner({ kind: 'error', message: t('bookmarks_folder_name_required') })
+      return
+    }
+    const instapaperRaw = folderEditInstapaperId.trim()
+    const payload: any = { name: trimmed }
+    payload.instapaper_folder_id = instapaperRaw ? instapaperRaw : null
+    setFolderActionBusy(true)
+    try {
+      await v1.updateFolderBookmarksFoldersFolderIdPut({ folderId: folderEditId, folderUpdate: payload })
+      setBanner({ kind: 'success', message: t('bookmarks_folder_update_success', { name: trimmed }) })
+      cancelEditFolder()
+      mutateFolders()
+      mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_folder_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setFolderActionBusy(false)
+    }
+  }
+
+  async function handleDeleteFolder(folder: any) {
+    if (folderActionBusy) return
+    const name = folder?.name || ''
+    if (!confirm(t('bookmarks_folder_confirm_delete', { name: name || t('bookmarks_folder_fallback') }))) return
+    setFolderActionBusy(true)
+    try {
+      await v1.deleteFolderBookmarksFoldersFolderIdDelete({ folderId: folder.id })
+      setBanner({ kind: 'success', message: t('bookmarks_folder_delete_success', { name: name || t('bookmarks_folder_fallback') }) })
+      if (folderIdFilter === folder.id) {
+        setFolderIdFilter('')
+        setPage(1)
+      }
+      mutateFolders()
+      mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: t('bookmarks_folder_action_failed', { reason: err?.message || String(err) }) })
+    } finally {
+      setFolderActionBusy(false)
+    }
   }
 
   function toggleOne(id: string, checked: boolean) {
@@ -390,7 +572,7 @@ export default function Bookmarks() {
           aria-describedby="bookmarks-filter-description"
         >
           <p id="bookmarks-filter-description" className="sr-only">{t('bookmarks_filters_description')}</p>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
             <label className="flex flex-col gap-1" htmlFor="bookmark-keyword">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_keyword_label')}</span>
               <input
@@ -407,6 +589,24 @@ export default function Bookmarks() {
                 <option value="">{t('bookmarks_feed_all')}</option>
                 {feedItems.map((f: any) => (
                   <option key={f.id} value={f.id}>{f.url}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1" htmlFor="bookmark-tag">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_tag_label')}</span>
+              <select id="bookmark-tag" className="input" value={tagIdFilter} onChange={(e) => setTagIdFilter(e.target.value)}>
+                <option value="">{t('bookmarks_tag_all')}</option>
+                {tagItems.map((tag: any) => (
+                  <option key={tag.id} value={tag.id}>{tag.name || t('bookmarks_tag_fallback')}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1" htmlFor="bookmark-folder">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('bookmarks_folder_label')}</span>
+              <select id="bookmark-folder" className="input" value={folderIdFilter} onChange={(e) => setFolderIdFilter(e.target.value)}>
+                <option value="">{t('bookmarks_folder_all')}</option>
+                {folderItems.map((folder: any) => (
+                  <option key={folder.id} value={folder.id}>{folder.name || t('bookmarks_folder_fallback')}</option>
                 ))}
               </select>
             </label>
@@ -508,6 +708,186 @@ export default function Bookmarks() {
             </div>
           </div>
         </form>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <section className="card p-4 space-y-4" aria-labelledby="bookmark-tags-heading">
+            <div className="space-y-1">
+              <h3 id="bookmark-tags-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('bookmarks_tags_heading')}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t('bookmarks_tags_description')}</p>
+            </div>
+            <form className="flex flex-wrap items-center gap-2" onSubmit={handleCreateTag}>
+              <label className="sr-only" htmlFor="bookmark-new-tag">{t('bookmarks_tags_name_label')}</label>
+              <input
+                id="bookmark-new-tag"
+                className="input flex-1 min-w-[160px]"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder={t('bookmarks_tags_create_placeholder')}
+              />
+              <button type="submit" className="btn" disabled={tagActionBusy}>{t('btn_create')}</button>
+            </form>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn text-sm"
+                onClick={() => { setTagIdFilter(''); setPage(1); }}
+                disabled={!tagIdFilter}
+              >
+                {t('bookmarks_filter_clear_tag')}
+              </button>
+            </div>
+            {tagsError && <Alert kind="error" message={String(tagsError)} />}
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
+              {tagsLoading && !tagItems.length ? (
+                <li className="py-2 text-sm text-gray-600 dark:text-gray-300">{t('loading_text')}</li>
+              ) : tagItems.length === 0 ? (
+                <li className="py-2 text-sm text-gray-600 dark:text-gray-300">{t('bookmarks_tags_empty')}</li>
+              ) : (
+                tagItems.map((tag: any) => (
+                  <li key={tag.id} className="py-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-1 sm:gap-2">
+                      {tagEditId === tag.id ? (
+                        <input
+                          className="input"
+                          value={tagEditName}
+                          onChange={(e) => setTagEditName(e.target.value)}
+                          aria-label={t('bookmarks_tags_edit_label', { name: tag.name || t('bookmarks_tag_fallback') })}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className={`rounded px-2 py-1 text-left font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${tagIdFilter === tag.id ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                          onClick={() => { setTagIdFilter(tag.id); setPage(1) }}
+                          aria-pressed={tagIdFilter === tag.id}
+                        >
+                          {tag.name || t('bookmarks_tag_fallback')}
+                        </button>
+                      )}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('bookmarks_manage_count', { count: formatNumberValue(tag.bookmark_count ?? 0, numberFormatter, '0') })}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {tagEditId === tag.id ? (
+                        <>
+                          <button type="button" className="btn text-sm" onClick={handleSaveTag} disabled={tagActionBusy}>{t('btn_save')}</button>
+                          <button type="button" className="btn text-sm" onClick={cancelEditTag}>{t('btn_cancel')}</button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" className="btn text-sm" onClick={() => startEditTag(tag)} disabled={tagActionBusy}>{t('btn_edit')}</button>
+                          <button type="button" className="btn text-sm" onClick={() => handleDeleteTag(tag)} disabled={tagActionBusy}>{t('btn_delete')}</button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+          <section className="card p-4 space-y-4" aria-labelledby="bookmark-folders-heading">
+            <div className="space-y-1">
+              <h3 id="bookmark-folders-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('bookmarks_folders_heading')}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t('bookmarks_folders_description')}</p>
+            </div>
+            <form className="grid grid-cols-1 sm:grid-cols-3 gap-2" onSubmit={handleCreateFolder}>
+              <div className="flex flex-col gap-1">
+                <label className="sr-only" htmlFor="bookmark-new-folder">{t('bookmarks_folders_name_label')}</label>
+                <input
+                  id="bookmark-new-folder"
+                  className="input"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder={t('bookmarks_folders_create_placeholder')}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="sr-only" htmlFor="bookmark-new-folder-instapaper">{t('bookmarks_folder_instapaper_label')}</label>
+                <input
+                  id="bookmark-new-folder-instapaper"
+                  className="input"
+                  value={newFolderInstapaperId}
+                  onChange={(e) => setNewFolderInstapaperId(e.target.value)}
+                  placeholder={t('bookmarks_folder_instapaper_placeholder')}
+                />
+              </div>
+              <div className="flex items-start">
+                <button type="submit" className="btn w-full" disabled={folderActionBusy}>{t('btn_create')}</button>
+              </div>
+            </form>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn text-sm"
+                onClick={() => { setFolderIdFilter(''); setPage(1); }}
+                disabled={!folderIdFilter}
+              >
+                {t('bookmarks_filter_clear_folder')}
+              </button>
+            </div>
+            {foldersError && <Alert kind="error" message={String(foldersError)} />}
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
+              {foldersLoading && !folderItems.length ? (
+                <li className="py-2 text-sm text-gray-600 dark:text-gray-300">{t('loading_text')}</li>
+              ) : folderItems.length === 0 ? (
+                <li className="py-2 text-sm text-gray-600 dark:text-gray-300">{t('bookmarks_folders_empty')}</li>
+              ) : (
+                folderItems.map((folder: any) => (
+                  <li key={folder.id} className="py-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-1">
+                      {folderEditId === folder.id ? (
+                        <>
+                          <label className="sr-only" htmlFor={`bookmark-folder-edit-${folder.id}`}>{t('bookmarks_folders_edit_label', { name: folder.name || t('bookmarks_folder_fallback') })}</label>
+                          <input
+                            id={`bookmark-folder-edit-${folder.id}`}
+                            className="input"
+                            value={folderEditName}
+                            onChange={(e) => setFolderEditName(e.target.value)}
+                          />
+                          <label className="sr-only" htmlFor={`bookmark-folder-edit-instapaper-${folder.id}`}>{t('bookmarks_folder_instapaper_edit_label')}</label>
+                          <input
+                            id={`bookmark-folder-edit-instapaper-${folder.id}`}
+                            className="input"
+                            value={folderEditInstapaperId}
+                            onChange={(e) => setFolderEditInstapaperId(e.target.value)}
+                            placeholder={t('bookmarks_folder_instapaper_placeholder')}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className={`rounded px-2 py-1 text-left font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${folderIdFilter === folder.id ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                            onClick={() => { setFolderIdFilter(folder.id); setPage(1) }}
+                            aria-pressed={folderIdFilter === folder.id}
+                          >
+                            {folder.name || t('bookmarks_folder_fallback')}
+                          </button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {folder.instapaper_folder_id
+                              ? t('bookmarks_folder_instapaper_value', { value: folder.instapaper_folder_id })
+                              : t('bookmarks_folder_instapaper_none')}
+                          </span>
+                        </>
+                      )}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('bookmarks_manage_count', { count: formatNumberValue(folder.bookmark_count ?? 0, numberFormatter, '0') })}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {folderEditId === folder.id ? (
+                        <>
+                          <button type="button" className="btn text-sm" onClick={handleSaveFolder} disabled={folderActionBusy}>{t('btn_save')}</button>
+                          <button type="button" className="btn text-sm" onClick={cancelEditFolder}>{t('btn_cancel')}</button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" className="btn text-sm" onClick={() => startEditFolder(folder)} disabled={folderActionBusy}>{t('btn_edit')}</button>
+                          <button type="button" className="btn text-sm" onClick={() => handleDeleteFolder(folder)} disabled={folderActionBusy}>{t('btn_delete')}</button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+        </div>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
