@@ -12,6 +12,8 @@ src/apis/StatusApi.ts
 src/apis/V1Api.ts
 src/apis/index.ts
 src/index.ts
+src/models/AuditLogOut.ts
+src/models/AuditLogsPage.ts
 src/models/BookmarkFolderUpdate.ts
 src/models/BookmarkOut.ts
 src/models/BookmarkTagsUpdate.ts

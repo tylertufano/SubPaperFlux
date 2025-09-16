@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  AuditLogsPage,
   BookmarkFolderUpdate,
   BookmarkOut,
   BookmarkTagsUpdate,
@@ -35,6 +36,8 @@ import type {
   TagUpdate,
 } from '../models/index';
 import {
+    AuditLogsPageFromJSON,
+    AuditLogsPageToJSON,
     BookmarkFolderUpdateFromJSON,
     BookmarkFolderUpdateToJSON,
     BookmarkOutFromJSON,
@@ -192,6 +195,30 @@ export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
     minifluxCredId?: string | null;
 }
 
+export interface ListAuditLogsV1AdminAuditGetRequest {
+    page?: number;
+    size?: number;
+    entityType?: string | null;
+    entityId?: string | null;
+    action?: string | null;
+    ownerUserId?: string | null;
+    actorUserId?: string | null;
+    since?: Date | null;
+    until?: Date | null;
+}
+
+export interface ListAuditLogsV1AdminAuditGet0Request {
+    page?: number;
+    size?: number;
+    entityType?: string | null;
+    entityId?: string | null;
+    action?: string | null;
+    ownerUserId?: string | null;
+    actorUserId?: string | null;
+    since?: Date | null;
+    until?: Date | null;
+}
+
 export interface ListBookmarksV1BookmarksGetRequest {
     page?: number;
     size?: number;
@@ -273,6 +300,10 @@ export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
     search?: string | null;
     page?: number;
     size?: number;
+}
+
+export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
+    bookmarkId: string;
 }
 
 export interface RetryAllJobsV1JobsRetryAllPostRequest {
@@ -1401,6 +1432,152 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGetRaw(requestParameters: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['entityType'] != null) {
+            queryParameters['entity_type'] = requestParameters['entityType'];
+        }
+
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entity_id'] = requestParameters['entityId'];
+        }
+
+        if (requestParameters['action'] != null) {
+            queryParameters['action'] = requestParameters['action'];
+        }
+
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+        }
+
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = (requestParameters['since'] as any).toISOString();
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = (requestParameters['until'] as any).toISOString();
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/audit/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet(requestParameters: ListAuditLogsV1AdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet_2Raw(requestParameters: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['entityType'] != null) {
+            queryParameters['entity_type'] = requestParameters['entityType'];
+        }
+
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entity_id'] = requestParameters['entityId'];
+        }
+
+        if (requestParameters['action'] != null) {
+            queryParameters['action'] = requestParameters['action'];
+        }
+
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+        }
+
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+        }
+
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = (requestParameters['since'] as any).toISOString();
+        }
+
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = (requestParameters['until'] as any).toISOString();
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/admin/audit`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet_2(requestParameters: ListAuditLogsV1AdminAuditGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGet_2Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List Bookmarks
      */
     async listBookmarksV1BookmarksGetRaw(requestParameters: ListBookmarksV1BookmarksGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
@@ -1496,7 +1673,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_2Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+    async listBookmarksV1BookmarksGet_3Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -1581,8 +1758,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_2(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
-        const response = await this.listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides);
+    async listBookmarksV1BookmarksGet_3(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1642,7 +1819,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    async listCredentialsV1V1CredentialsGet_3Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
+    async listCredentialsV1V1CredentialsGet_4Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['includeGlobal'] != null) {
@@ -1687,8 +1864,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    async listCredentialsV1V1CredentialsGet_3(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
-        const response = await this.listCredentialsV1V1CredentialsGet_3Raw(requestParameters, initOverrides);
+    async listCredentialsV1V1CredentialsGet_4(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
+        const response = await this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1740,7 +1917,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    async listFeedsV1V1FeedsGet_4Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
+    async listFeedsV1V1FeedsGet_5Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -1777,8 +1954,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    async listFeedsV1V1FeedsGet_4(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
-        const response = await this.listFeedsV1V1FeedsGet_4Raw(requestParameters, initOverrides);
+    async listFeedsV1V1FeedsGet_5(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
+        const response = await this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1886,7 +2063,7 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_5Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
+    async listJobsV1JobsGet_6Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['status'] != null) {
@@ -1940,8 +2117,8 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_5(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
-        const response = await this.listJobsV1JobsGet_5Raw(requestParameters, initOverrides);
+    async listJobsV1JobsGet_6(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
+        const response = await this.listJobsV1JobsGet_6Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2106,6 +2283,55 @@ export class V1Api extends runtime.BaseAPI {
      */
     async postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
         const response = await this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/preview`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<string>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Preview Bookmark
+     */
+    async previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {
+        const response = await this.previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
