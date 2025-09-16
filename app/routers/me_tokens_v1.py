@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 
 from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
+from ..auth.users import ensure_user_from_identity
 from ..db import get_session
 from ..models import ApiToken, User
 from ..schemas import ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage
@@ -64,43 +65,11 @@ def _generate_token_pair(session: Session) -> tuple[str, str]:
 
 
 def _ensure_user(session: Session, current_user) -> User:
-    user_id = _require_user_id(current_user)
-    user = session.get(User, user_id)
-    claims = current_user.get("claims") if isinstance(current_user, dict) else None
-    claims_dict = claims if isinstance(claims, dict) else {}
-    picture = None
-    if isinstance(current_user, dict):
-        picture = current_user.get("picture") or current_user.get("picture_url")
-
-    if user:
-        updated = False
-        email = current_user.get("email") if isinstance(current_user, dict) else None
-        if email and user.email != email:
-            user.email = email
-            updated = True
-        full_name = current_user.get("name") if isinstance(current_user, dict) else None
-        if full_name and user.full_name != full_name:
-            user.full_name = full_name
-            updated = True
-        if picture and user.picture_url != picture:
-            user.picture_url = picture
-            updated = True
-        if claims_dict and user.claims != claims_dict:
-            user.claims = claims_dict
-            updated = True
-        if updated:
-            user.updated_at = datetime.now(timezone.utc)
-            session.add(user)
-        return user
-
-    user = User(
-        id=user_id,
-        email=current_user.get("email") if isinstance(current_user, dict) else None,
-        full_name=current_user.get("name") if isinstance(current_user, dict) else None,
-        picture_url=picture,
-        claims=claims_dict,
-    )
-    session.add(user)
+    _require_user_id(current_user)
+    try:
+        user, _, _ = ensure_user_from_identity(session, current_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return user
 
 
