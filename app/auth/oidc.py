@@ -122,24 +122,28 @@ def _verify_jwt(token: str, cfg: OIDCConfig) -> Dict[str, Any]:
     return payload
 
 
-def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
-    # Dev/test bypass: enable with DEV_NO_AUTH=1 (NOT for production)
-    if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
-        dev_groups = os.getenv("DEV_USER_GROUPS", "").split(",") if os.getenv("DEV_USER_GROUPS") else []
-        return {
-            "sub": os.getenv("DEV_USER_SUB", "dev-user"),
-            "email": os.getenv("DEV_USER_EMAIL", "dev@example.com"),
-            "name": os.getenv("DEV_USER_NAME", "Developer"),
-            "groups": [g.strip() for g in dev_groups if g.strip()],
-            "claims": {"dev_no_auth": True},
-        }
+def _dev_user() -> Dict[str, Any]:
+    dev_groups = os.getenv("DEV_USER_GROUPS", "").split(",") if os.getenv("DEV_USER_GROUPS") else []
+    return {
+        "sub": os.getenv("DEV_USER_SUB", "dev-user"),
+        "email": os.getenv("DEV_USER_EMAIL", "dev@example.com"),
+        "name": os.getenv("DEV_USER_NAME", "Developer"),
+        "groups": [g.strip() for g in dev_groups if g.strip()],
+        "claims": {"dev_no_auth": True},
+    }
 
-    token = creds.credentials if creds else None
-    cfg = get_oidc_config()
+
+def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Return a user dictionary from a bearer token, or ``None`` if missing."""
+
+    if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
+        return _dev_user()
+
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+        return None
+
+    cfg = get_oidc_config()
     payload = _verify_jwt(token, cfg)
-    # Map minimal fields; extend as needed
     return {
         "sub": payload.get("sub"),
         "email": payload.get("email"),
@@ -147,3 +151,10 @@ def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(sec
         "groups": payload.get("groups") or payload.get("roles") or [],
         "claims": payload,
     }
+
+
+def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
+    user = resolve_user_from_token(creds.credentials if creds else None)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    return user

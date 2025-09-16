@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+import logging
 
-from .auth.oidc import oidc_startup_event
-from .db import init_db
+from fastapi import FastAPI, HTTPException, Request
+
+from .auth.oidc import oidc_startup_event, resolve_user_from_token
+from .db import init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.jobs_v1 import router as jobs_v1_router
 from .routers.site_configs_v1 import router as site_configs_v1_router
@@ -13,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from .observability.logging import setup_logging, bind_request_id
 from .observability.metrics import metrics_endpoint, request_metrics_middleware
 from .observability.sentry import init_sentry
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -61,6 +66,33 @@ def create_app() -> FastAPI:
         if rid:
             response.headers["X-Request-Id"] = rid
         return response
+
+    @app.middleware("http")
+    async def bind_rls_user(request: Request, call_next):
+        ctx_token = None
+        try:
+            auth_header = request.headers.get("authorization")
+            bearer_token = None
+            if auth_header:
+                parts = auth_header.split(" ", 1)
+                if len(parts) == 2 and parts[0].lower() == "bearer":
+                    bearer_token = parts[1].strip()
+            try:
+                user = resolve_user_from_token(bearer_token)
+            except HTTPException:
+                raise
+            except Exception:  # noqa: BLE001
+                logger.exception("Failed to resolve user from bearer token")
+                user = None
+            user_id = user.get("sub") if user else None
+            request.state.current_user = user
+            request.state.user_id = user_id
+            ctx_token = set_current_user_id(user_id)
+            response = await call_next(request)
+            return response
+        finally:
+            if ctx_token is not None:
+                reset_current_user_id(ctx_token)
 
     # Routers
     app.include_router(status.router)
