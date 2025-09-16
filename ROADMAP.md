@@ -171,6 +171,8 @@ make sdk-ts
 
  - [ ] Per-endpoint histograms and job durations (UI surfacing) (UI-045)
  - [ ] Sentry client for UI and better grouping (UI-011)
+ - [x] Prometheus counters for logins, admin actions, and API token issuance exposed via `/metrics`
+   - Evidence: `app/observability/metrics.py:1`, `app/main.py:1`, `app/routers/admin_users_v1.py:1`, `app/routers/me_tokens_v1.py:1`
 
 ### Security
 

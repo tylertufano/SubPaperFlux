@@ -37,6 +37,34 @@ INTEGRATION_TEST_COUNTER = Counter(
     ["service", "status"],
 )
 
+USER_LOGINS_COUNTER = Counter(
+    "user_logins_total",
+    "Authenticated user requests processed",
+)
+
+ADMIN_ACTIONS_COUNTER = Counter(
+    "admin_actions_total",
+    "Administrative API actions processed",
+    ["action"],
+)
+
+API_TOKENS_ISSUED_COUNTER = Counter(
+    "api_tokens_issued_total",
+    "API tokens issued",
+)
+
+
+def increment_user_login() -> None:
+    USER_LOGINS_COUNTER.inc()
+
+
+def increment_admin_action(action: str) -> None:
+    ADMIN_ACTIONS_COUNTER.labels(action=action).inc()
+
+
+def increment_api_tokens_issued() -> None:
+    API_TOKENS_ISSUED_COUNTER.inc()
+
 
 async def metrics_endpoint(_: Request) -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

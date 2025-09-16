@@ -16,6 +16,7 @@ from ..auth.oidc import get_current_user
 from ..auth.users import ensure_user_from_identity
 from ..db import get_session
 from ..models import ApiToken, User
+from ..observability.metrics import increment_api_tokens_issued
 from ..schemas import ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage
 
 
@@ -187,6 +188,7 @@ def create_token(
     session.refresh(token)
 
     token_out = _serialize_token(token)
+    increment_api_tokens_issued()
     return ApiTokenWithSecret(**token_out.model_dump(), token=raw_token)
 
 

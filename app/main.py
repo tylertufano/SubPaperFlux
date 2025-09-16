@@ -17,7 +17,11 @@ from .routers.integrations import router as integrations_router
 from .errors import register_error_handlers
 from fastapi.middleware.cors import CORSMiddleware
 from .observability.logging import setup_logging, bind_request_id
-from .observability.metrics import metrics_endpoint, request_metrics_middleware
+from .observability.metrics import (
+    metrics_endpoint,
+    request_metrics_middleware,
+    increment_user_login,
+)
 from .observability.sentry import init_sentry
 
 
@@ -85,6 +89,7 @@ def create_app() -> FastAPI:
                 user = resolve_user_from_token(bearer_token)
                 if user:
                     maybe_provision_user(user)
+                    increment_user_login()
             except HTTPException:
                 raise
             except Exception:  # noqa: BLE001
