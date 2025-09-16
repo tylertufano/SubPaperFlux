@@ -7,11 +7,18 @@ src/apis/BookmarksApi.ts
 src/apis/CredentialsApi.ts
 src/apis/FeedsApi.ts
 src/apis/JobsApi.ts
+src/apis/MeApi.ts
 src/apis/SiteConfigsApi.ts
 src/apis/StatusApi.ts
 src/apis/V1Api.ts
 src/apis/index.ts
 src/index.ts
+src/models/AdminUserOut.ts
+src/models/AdminUsersPage.ts
+src/models/ApiTokenCreate.ts
+src/models/ApiTokenOut.ts
+src/models/ApiTokenWithSecret.ts
+src/models/ApiTokensPage.ts
 src/models/AuditLogOut.ts
 src/models/AuditLogsPage.ts
 src/models/BookmarkFolderUpdate.ts
@@ -30,6 +37,7 @@ src/models/HTTPValidationError.ts
 src/models/JobOut.ts
 src/models/JobRequest.ts
 src/models/JobsPage.ts
+src/models/RoleGrantRequest.ts
 src/models/SiteConfig.ts
 src/models/SiteConfigOut.ts
 src/models/SiteConfigsPage.ts
