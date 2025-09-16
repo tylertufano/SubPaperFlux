@@ -230,6 +230,10 @@ class AdminUsersPage(BaseModel):
     total_pages: int = 1
 
 
+class AdminUserUpdate(BaseModel):
+    is_active: Optional[bool] = None
+
+
 class ApiTokenCreate(BaseModel):
     name: str = Field(..., min_length=1)
     description: Optional[str] = None

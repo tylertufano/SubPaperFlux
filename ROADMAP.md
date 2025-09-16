@@ -268,7 +268,8 @@ make sdk-ts
  - [ ] Roles & RBAC with per‑resource ownership (UI-061)
  - [ ] OIDC group→role mapping with per-user overrides (UI-062)
  - [ ] Audit log for admin actions (UI-063)
- - [ ] API tokens (optional) (UI-064)
+ - [x] API tokens (optional) (UI-064)
+   - Evidence: `web/pages/me/tokens.tsx:1`
  - [ ] Quotas/policies per user (UI-065)
  - [ ] RLS enforcement: set `app.user_id` per DB session (UI-012)
 
@@ -289,12 +290,12 @@ make sdk-ts
 
 ### UI
 
-- [~] Users table, role badges, suspend/reactivate (UI-070)
-  - [x] Placeholder page scaffolded: `web/pages/admin/users.tsx:1`
-- [~] Audit filters and details (UI-071)
-  - [x] Placeholder page scaffolded: `web/pages/admin/audit.tsx:1`
-- [~] Token management UI (UI-072)
-  - [x] Placeholder page scaffolded: `web/pages/me/tokens.tsx:1`
+- [x] Users table, role badges, suspend/reactivate (UI-070)
+  - Evidence: `web/pages/admin/users.tsx:1`
+- [x] Audit filters and details (UI-071)
+  - Evidence: `web/pages/admin/audit.tsx:1`
+- [x] Token management UI (UI-072)
+  - Evidence: `web/pages/me/tokens.tsx:1`
 
 ### Profile
 
