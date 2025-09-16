@@ -1,12 +1,17 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './BookmarkFolderUpdate';
 export * from './BookmarkOut';
+export * from './BookmarkTagsUpdate';
 export * from './BookmarksPage';
 export * from './Credential';
 export * from './CredentialsPage';
 export * from './Feed';
 export * from './FeedOut';
 export * from './FeedsPage';
+export * from './FolderCreate';
+export * from './FolderOut';
+export * from './FolderUpdate';
 export * from './HTTPValidationError';
 export * from './JobOut';
 export * from './JobRequest';
@@ -15,5 +20,8 @@ export * from './SiteConfig';
 export * from './SiteConfigOut';
 export * from './SiteConfigsPage';
 export * from './StatusResponse';
+export * from './TagCreate';
+export * from './TagOut';
+export * from './TagUpdate';
 export * from './ValidationError';
 export * from './ValidationErrorLocInner';

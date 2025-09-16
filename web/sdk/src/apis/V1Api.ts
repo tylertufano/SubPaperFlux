@@ -15,26 +15,44 @@
 
 import * as runtime from '../runtime';
 import type {
+  BookmarkFolderUpdate,
   BookmarkOut,
+  BookmarkTagsUpdate,
   BookmarksPage,
   CredentialsPage,
   FeedsPage,
+  FolderCreate,
+  FolderOut,
+  FolderUpdate,
   HTTPValidationError,
   JobOut,
   JobRequest,
   JobsPage,
   SiteConfigsPage,
   StatusResponse,
+  TagCreate,
+  TagOut,
+  TagUpdate,
 } from '../models/index';
 import {
+    BookmarkFolderUpdateFromJSON,
+    BookmarkFolderUpdateToJSON,
     BookmarkOutFromJSON,
     BookmarkOutToJSON,
+    BookmarkTagsUpdateFromJSON,
+    BookmarkTagsUpdateToJSON,
     BookmarksPageFromJSON,
     BookmarksPageToJSON,
     CredentialsPageFromJSON,
     CredentialsPageToJSON,
     FeedsPageFromJSON,
     FeedsPageToJSON,
+    FolderCreateFromJSON,
+    FolderCreateToJSON,
+    FolderOutFromJSON,
+    FolderOutToJSON,
+    FolderUpdateFromJSON,
+    FolderUpdateToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
     JobOutFromJSON,
@@ -47,9 +65,20 @@ import {
     SiteConfigsPageToJSON,
     StatusResponseFromJSON,
     StatusResponseToJSON,
+    TagCreateFromJSON,
+    TagCreateToJSON,
+    TagOutFromJSON,
+    TagOutToJSON,
+    TagUpdateFromJSON,
+    TagUpdateToJSON,
 } from '../models/index';
 
 export interface BulkDeleteBookmarksV1BookmarksBulkDeletePostRequest {
+    requestBody: { [key: string]: any; };
+    xCsrfToken?: string | null;
+}
+
+export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
     requestBody: { [key: string]: any; };
     xCsrfToken?: string | null;
 }
@@ -59,12 +88,42 @@ export interface CountBookmarksV1BookmarksCountGetRequest {
     since?: string | null;
     until?: string | null;
     search?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
     size?: number;
+}
+
+export interface CreateFolderV1BookmarksFoldersPostRequest {
+    folderCreate: FolderCreate;
+    xCsrfToken?: string | null;
+}
+
+export interface CreateTagV1BookmarksTagsPostRequest {
+    tagCreate: TagCreate;
+    xCsrfToken?: string | null;
+}
+
+export interface DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest {
+    bookmarkId: string;
+    xCsrfToken?: string | null;
 }
 
 export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
     bookmarkId: string;
     deleteRemote?: boolean;
+    xCsrfToken?: string | null;
+}
+
+export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
+    folderId: string;
+    xCsrfToken?: string | null;
+}
+
+export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
+    tagId: string;
     xCsrfToken?: string | null;
 }
 
@@ -79,6 +138,21 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    sortBy?: string | null;
+    sortDir?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
+}
+
+export interface GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest {
+    bookmarkId: string;
+}
+
+export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
+    bookmarkId: string;
 }
 
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
@@ -94,6 +168,11 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
 }
 
 export interface HeadBookmarksV1BookmarksHead0Request {
@@ -101,6 +180,11 @@ export interface HeadBookmarksV1BookmarksHead0Request {
     feedId?: string | null;
     since?: string | null;
     until?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
 }
 
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
@@ -118,6 +202,11 @@ export interface ListBookmarksV1BookmarksGetRequest {
     until?: string | null;
     sortBy?: string | null;
     sortDir?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
 }
 
 export interface ListBookmarksV1BookmarksGet0Request {
@@ -130,6 +219,11 @@ export interface ListBookmarksV1BookmarksGet0Request {
     until?: string | null;
     sortBy?: string | null;
     sortDir?: string | null;
+    titleQuery?: string | null;
+    urlQuery?: string | null;
+    regex?: string | null;
+    regexTarget?: string | null;
+    regexFlags?: string | null;
 }
 
 export interface ListCredentialsV1V1CredentialsGetRequest {
@@ -210,6 +304,30 @@ export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
     configId: string;
 }
 
+export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
+    bookmarkId: string;
+    bookmarkFolderUpdate: BookmarkFolderUpdate;
+    xCsrfToken?: string | null;
+}
+
+export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
+    bookmarkId: string;
+    bookmarkTagsUpdate: BookmarkTagsUpdate;
+    xCsrfToken?: string | null;
+}
+
+export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
+    folderId: string;
+    folderUpdate: FolderUpdate;
+    xCsrfToken?: string | null;
+}
+
+export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
+    tagId: string;
+    tagUpdate: TagUpdate;
+    xCsrfToken?: string | null;
+}
+
 export interface ValidateJobPayloadV1JobsValidatePostRequest {
     requestBody: { [key: string]: any; };
 }
@@ -270,6 +388,61 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Bulk Publish Bookmarks
+     */
+    async bulkPublishBookmarksV1BookmarksBulkPublishPostRaw(requestParameters: BulkPublishBookmarksV1BookmarksBulkPublishPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['requestBody'] == null) {
+            throw new runtime.RequiredError(
+                'requestBody',
+                'Required parameter "requestBody" was null or undefined when calling bulkPublishBookmarksV1BookmarksBulkPublishPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/bulk-publish`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['requestBody'],
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Bulk Publish Bookmarks
+     */
+    async bulkPublishBookmarksV1BookmarksBulkPublishPost(requestParameters: BulkPublishBookmarksV1BookmarksBulkPublishPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.bulkPublishBookmarksV1BookmarksBulkPublishPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Count Bookmarks
      */
     async countBookmarksV1BookmarksCountGetRaw(requestParameters: CountBookmarksV1BookmarksCountGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
@@ -289,6 +462,26 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['search'] != null) {
             queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
         }
 
         if (requestParameters['size'] != null) {
@@ -327,6 +520,108 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Create Folder
+     */
+    async createFolderV1BookmarksFoldersPostRaw(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
+        if (requestParameters['folderCreate'] == null) {
+            throw new runtime.RequiredError(
+                'folderCreate',
+                'Required parameter "folderCreate" was null or undefined when calling createFolderV1BookmarksFoldersPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/folders`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FolderCreateToJSON(requestParameters['folderCreate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create Folder
+     */
+    async createFolderV1BookmarksFoldersPost(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
+        const response = await this.createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create Tag
+     */
+    async createTagV1BookmarksTagsPostRaw(requestParameters: CreateTagV1BookmarksTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TagOut>> {
+        if (requestParameters['tagCreate'] == null) {
+            throw new runtime.RequiredError(
+                'tagCreate',
+                'Required parameter "tagCreate" was null or undefined when calling createTagV1BookmarksTagsPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/tags`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: TagCreateToJSON(requestParameters['tagCreate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create Tag
+     */
+    async createTagV1BookmarksTagsPost(requestParameters: CreateTagV1BookmarksTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut> {
+        const response = await this.createTagV1BookmarksTagsPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Db Status
      */
     async dbStatusV1StatusDbGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
@@ -353,6 +648,54 @@ export class V1Api extends runtime.BaseAPI {
     async dbStatusV1StatusDbGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
         const response = await this.dbStatusV1StatusDbGetRaw(initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Delete Bookmark Folder
+     */
+    async deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete Bookmark Folder
+     */
+    async deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -405,6 +748,102 @@ export class V1Api extends runtime.BaseAPI {
      */
     async deleteBookmarkV1BookmarksBookmarkIdDelete(requestParameters: DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteBookmarkV1BookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Delete Folder
+     */
+    async deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['folderId'] == null) {
+            throw new runtime.RequiredError(
+                'folderId',
+                'Required parameter "folderId" was null or undefined when calling deleteFolderV1BookmarksFoldersFolderIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/folders/{folder_id}`;
+        urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete Folder
+     */
+    async deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Delete Tag
+     */
+    async deleteTagV1BookmarksTagsTagIdDeleteRaw(requestParameters: DeleteTagV1BookmarksTagsTagIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['tagId'] == null) {
+            throw new runtime.RequiredError(
+                'tagId',
+                'Required parameter "tagId" was null or undefined when calling deleteTagV1BookmarksTagsTagIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/tags/{tag_id}`;
+        urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete Tag
+     */
+    async deleteTagV1BookmarksTagsTagIdDelete(requestParameters: DeleteTagV1BookmarksTagsTagIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteTagV1BookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -488,6 +927,34 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortDir'] != null) {
+            queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -520,6 +987,96 @@ export class V1Api extends runtime.BaseAPI {
      */
     async exportBookmarksV1BookmarksExportGet(requestParameters: ExportBookmarksV1BookmarksExportGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get Bookmark Folder
+     */
+    async getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling getBookmarkFolderV1BookmarksBookmarkIdFolderGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get Bookmark Folder
+     */
+    async getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
+        const response = await this.getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get Bookmark Tags
+     */
+    async getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling getBookmarkTagsV1BookmarksBookmarkIdTagsGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/tags`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+    }
+
+    /**
+     * Get Bookmark Tags
+     */
+    async getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
+        const response = await this.getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -666,6 +1223,26 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['until'] = requestParameters['until'];
         }
 
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -721,6 +1298,26 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['until'] != null) {
             queryParameters['until'] = requestParameters['until'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -845,6 +1442,26 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['sort_dir'] = requestParameters['sortDir'];
         }
 
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -916,6 +1533,26 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters['sortDir'] != null) {
             queryParameters['sort_dir'] = requestParameters['sortDir'];
+        }
+
+        if (requestParameters['titleQuery'] != null) {
+            queryParameters['title_query'] = requestParameters['titleQuery'];
+        }
+
+        if (requestParameters['urlQuery'] != null) {
+            queryParameters['url_query'] = requestParameters['urlQuery'];
+        }
+
+        if (requestParameters['regex'] != null) {
+            queryParameters['regex'] = requestParameters['regex'];
+        }
+
+        if (requestParameters['regexTarget'] != null) {
+            queryParameters['regex_target'] = requestParameters['regexTarget'];
+        }
+
+        if (requestParameters['regexFlags'] != null) {
+            queryParameters['regex_flags'] = requestParameters['regexFlags'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1146,6 +1783,43 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List Folders
+     */
+    async listFoldersV1BookmarksFoldersGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FolderOut>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/folders`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FolderOutFromJSON));
+    }
+
+    /**
+     * List Folders
+     */
+    async listFoldersV1BookmarksFoldersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FolderOut>> {
+        const response = await this.listFoldersV1BookmarksFoldersGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
@@ -1321,6 +1995,43 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listSiteConfigsV1V1SiteConfigsGet(requestParameters: ListSiteConfigsV1V1SiteConfigsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfigsPage> {
         const response = await this.listSiteConfigsV1V1SiteConfigsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List Tags
+     */
+    async listTagsV1BookmarksTagsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/tags`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+    }
+
+    /**
+     * List Tags
+     */
+    async listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
+        const response = await this.listTagsV1BookmarksTagsGetRaw(initOverrides);
         return await response.value();
     }
 
@@ -1697,6 +2408,242 @@ export class V1Api extends runtime.BaseAPI {
      */
     async testSiteConfigV1SiteConfigsConfigIdTestPost(requestParameters: TestSiteConfigV1SiteConfigsConfigIdTestPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
         const response = await this.testSiteConfigV1SiteConfigsConfigIdTestPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update Bookmark Folder
+     */
+    async updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut().'
+            );
+        }
+
+        if (requestParameters['bookmarkFolderUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkFolderUpdate',
+                'Required parameter "bookmarkFolderUpdate" was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: BookmarkFolderUpdateToJSON(requestParameters['bookmarkFolderUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update Bookmark Folder
+     */
+    async updateBookmarkFolderV1BookmarksBookmarkIdFolderPut(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
+        const response = await this.updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update Bookmark Tags
+     */
+    async updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>> {
+        if (requestParameters['bookmarkId'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkId',
+                'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut().'
+            );
+        }
+
+        if (requestParameters['bookmarkTagsUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'bookmarkTagsUpdate',
+                'Required parameter "bookmarkTagsUpdate" was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/{bookmark_id}/tags`;
+        urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: BookmarkTagsUpdateToJSON(requestParameters['bookmarkTagsUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+    }
+
+    /**
+     * Update Bookmark Tags
+     */
+    async updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
+        const response = await this.updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update Folder
+     */
+    async updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
+        if (requestParameters['folderId'] == null) {
+            throw new runtime.RequiredError(
+                'folderId',
+                'Required parameter "folderId" was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut().'
+            );
+        }
+
+        if (requestParameters['folderUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'folderUpdate',
+                'Required parameter "folderUpdate" was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/folders/{folder_id}`;
+        urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FolderUpdateToJSON(requestParameters['folderUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update Folder
+     */
+    async updateFolderV1BookmarksFoldersFolderIdPut(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
+        const response = await this.updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update Tag
+     */
+    async updateTagV1BookmarksTagsTagIdPutRaw(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TagOut>> {
+        if (requestParameters['tagId'] == null) {
+            throw new runtime.RequiredError(
+                'tagId',
+                'Required parameter "tagId" was null or undefined when calling updateTagV1BookmarksTagsTagIdPut().'
+            );
+        }
+
+        if (requestParameters['tagUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'tagUpdate',
+                'Required parameter "tagUpdate" was null or undefined when calling updateTagV1BookmarksTagsTagIdPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/tags/{tag_id}`;
+        urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: TagUpdateToJSON(requestParameters['tagUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update Tag
+     */
+    async updateTagV1BookmarksTagsTagIdPut(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut> {
+        const response = await this.updateTagV1BookmarksTagsTagIdPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
