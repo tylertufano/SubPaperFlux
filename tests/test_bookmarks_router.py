@@ -356,8 +356,11 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
 
     sample_html = (
-        "<html><body><script>alert('x')</script><div onclick=\"alert(1)\">"
-        "<a href=\"javascript:alert(2)\">Click</a><p>Content</p></div></body></html>"
+        "<!DOCTYPE html><html><head><style>.noop { color: red; }</style></head>"
+        "<body style=\"background:red\"><script>alert('x')</script><div onclick=\"alert(1)\">"
+        "<a href=\"javascript:alert(2)\">Click</a>"
+        "<img src=\"data:text/plain;base64,AAAA\" onerror=\"alert(3)\" alt=\"Evil\" />"
+        "<p>Content</p></div></body></html>"
     )
     monkeypatch.setattr(bookmarks_router, "_fetch_html", lambda url: sample_html)
 
@@ -379,8 +382,15 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
     body = resp.text
     assert "<script" not in body.lower()
     assert "onclick" not in body.lower()
+    assert "onerror" not in body.lower()
     assert "javascript:" not in body.lower()
+    assert "data:" not in body.lower()
+    assert "<style" not in body.lower()
+    assert "style=" not in body.lower()
+    assert "<html" not in body.lower()
+    assert "<body" not in body.lower()
     assert "Content" in body
+    assert "Evil" in body
     assert resp.headers["content-type"].startswith("text/html")
 
 

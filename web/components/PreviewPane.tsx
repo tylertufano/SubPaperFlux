@@ -38,6 +38,8 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     a: ['href', 'title'],
     img: ['src', 'alt', 'title', 'width', 'height'],
   },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  allowProtocolRelative: false,
 }
 
 type PreviewPaneProps = {

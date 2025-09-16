@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Doctype
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy import or_, literal
@@ -119,6 +119,9 @@ def _sanitize_html_content(html: str) -> str:
     if not html:
         return ""
     soup = BeautifulSoup(html, "html.parser")
+    for element in list(soup.contents):
+        if isinstance(element, Doctype):
+            element.extract()
     for tag_name in _REMOVABLE_TAGS:
         for tag in soup.find_all(tag_name):
             tag.decompose()
@@ -141,7 +144,12 @@ def _sanitize_html_content(html: str) -> str:
                 else:
                     if _is_disallowed_attr_url(value):
                         del tag.attrs[attr_name]
-    return str(soup)
+    body = soup.body
+    if body:
+        content = body.decode_contents()
+        return content.strip() if content else ""
+    sanitized = soup.decode()
+    return sanitized.strip() if sanitized else ""
 
 
 @dataclass

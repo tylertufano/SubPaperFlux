@@ -190,4 +190,49 @@ describe('Bookmarks preview keyboard navigation', () => {
       ).toBe(true)
     })
   })
+
+  it('activates previews with Enter and Space', async () => {
+    render(
+      <I18nProvider>
+        <Bookmarks />
+      </I18nProvider>,
+    )
+
+    const firstRow = screen.getByText('First Bookmark').closest('tr') as HTMLTableRowElement
+    const secondRow = screen.getByText('Second Bookmark').closest('tr') as HTMLTableRowElement
+    const previewRegion = screen.getByRole('region', { name: 'Preview' })
+
+    expect(firstRow).not.toBeNull()
+    expect(secondRow).not.toBeNull()
+
+    firstRow.focus()
+    expect(firstRow).toHaveFocus()
+
+    fireEvent.keyDown(firstRow, { key: 'Enter' })
+
+    await waitFor(() => expect(firstRow).toHaveAttribute('aria-selected', 'true'))
+    await waitFor(() => expect(previewRegion).toHaveTextContent('Preview for bookmark-1'))
+    await waitFor(() => {
+      expect(
+        useSWRMock.mock.calls.some(
+          ([key]) => Array.isArray(key) && key[0] === '/v1/bookmarks' && key[1] === 'bookmark-1' && key[2] === 'preview',
+        ),
+      ).toBe(true)
+    })
+
+    secondRow.focus()
+    expect(secondRow).toHaveFocus()
+
+    fireEvent.keyDown(secondRow, { key: 'Space' })
+
+    await waitFor(() => expect(secondRow).toHaveAttribute('aria-selected', 'true'))
+    await waitFor(() => expect(previewRegion).toHaveTextContent('Preview for bookmark-2'))
+    await waitFor(() => {
+      expect(
+        useSWRMock.mock.calls.some(
+          ([key]) => Array.isArray(key) && key[0] === '/v1/bookmarks' && key[1] === 'bookmark-2' && key[2] === 'preview',
+        ),
+      ).toBe(true)
+    })
+  })
 })
