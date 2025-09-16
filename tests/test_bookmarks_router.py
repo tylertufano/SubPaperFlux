@@ -5,6 +5,7 @@ import httpx
 import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
+from sqlmodel import select
 
 
 @pytest.fixture(autouse=True)
@@ -166,6 +167,19 @@ def test_bookmark_tags_and_folders_endpoints():
     # Cleanup: ensure folder assignment can be removed again
     resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 204
+
+    from app.db import get_session
+    from app.models import AuditLog
+
+    with next(get_session()) as session:
+        logs = session.exec(
+            select(AuditLog).where(AuditLog.entity_type == "bookmark").order_by(AuditLog.created_at)
+        ).all()
+    tag_logs = [log for log in logs if "tags" in log.details]
+    assert tag_logs and tag_logs[-1].details.get("tags") == ["Work+", "Personal"]
+    assert any(log.details.get("folder_name") == "Read Now" for log in logs if log.details.get("folder_id"))
+    assert any(log.details.get("folder_name") == "Fresh" for log in logs if log.details.get("folder_id"))
+    assert any(log.details.get("folder_cleared") for log in logs)
 
 def test_bookmark_preview_sanitizes_html(monkeypatch):
     from app.db import init_db, get_session

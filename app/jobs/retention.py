@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from sqlmodel import select
 
+from ..audit import record_audit_log
 from ..jobs import register_handler
 from ..db import get_session_ctx
 from ..models import Bookmark
@@ -63,9 +64,25 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
                 limiter.wait("instapaper")
                 resp = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data={"bookmark_id": b.instapaper_bookmark_id})
                 resp.raise_for_status()
-                session.delete(session.get(Bookmark, b.id))
-                session.commit()
-                deleted += 1
+                db_bookmark = session.get(Bookmark, b.id)
+                if db_bookmark:
+                    record_audit_log(
+                        session,
+                        entity_type="bookmark",
+                        entity_id=db_bookmark.id,
+                        action="delete",
+                        owner_user_id=db_bookmark.owner_user_id,
+                        actor_user_id=owner_user_id,
+                        details={
+                            "instapaper_bookmark_id": db_bookmark.instapaper_bookmark_id,
+                            "job_id": job_id,
+                            "source": "retention_job",
+                            "cutoff": cutoff.isoformat(),
+                        },
+                    )
+                    session.delete(db_bookmark)
+                    session.commit()
+                    deleted += 1
             except Exception as e:  # noqa: BLE001
                 logging.warning("[job:%s] Failed to delete bookmark %s: %s", job_id, b.instapaper_bookmark_id, e)
 

@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlmodel import select
 
+from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
 from ..auth.rbac import can_manage_global_credentials
 from ..schemas import Credential as CredentialSchema
@@ -68,6 +69,15 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         owner = current_user["sub"]
     model = CredentialModel(kind=body.kind, data=data, owner_user_id=owner)
     session.add(model)
+    record_audit_log(
+        session,
+        entity_type="credential",
+        entity_id=model.id,
+        action="create",
+        owner_user_id=model.owner_user_id,
+        actor_user_id=current_user["sub"],
+        details={"kind": model.kind, "data_keys": sorted((body.data or {}).keys())},
+    )
     session.commit()
     session.refresh(model)
     # Return masked plaintext view
@@ -80,6 +90,15 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
     model = session.get(CredentialModel, cred_id)
     if not model or model.owner_user_id != current_user["sub"]:
         return None
+    record_audit_log(
+        session,
+        entity_type="credential",
+        entity_id=model.id,
+        action="delete",
+        owner_user_id=model.owner_user_id,
+        actor_user_id=current_user["sub"],
+        details={"kind": model.kind},
+    )
     session.delete(model)
     session.commit()
     return None
@@ -106,6 +125,7 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
     if model.owner_user_id not in (current_user["sub"], None):
         raise HTTPException(status_code=404, detail="Not found")
     incoming = body.data or {}
+    previous_kind = model.kind
     if is_encrypted(incoming):
         enc = incoming
     else:
@@ -117,6 +137,19 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
     model.kind = body.kind or model.kind
     model.data = enc
     session.add(model)
+    record_audit_log(
+        session,
+        entity_type="credential",
+        entity_id=model.id,
+        action="update",
+        owner_user_id=model.owner_user_id,
+        actor_user_id=current_user["sub"],
+        details={
+            "kind": model.kind,
+            "updated_fields": sorted(incoming.keys()),
+            "kind_changed": model.kind != previous_kind,
+        },
+    )
     session.commit()
     session.refresh(model)
     plain = decrypt_dict(model.data or {})
