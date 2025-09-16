@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime
+from sqlalchemy import JSON, DateTime, ForeignKey, UniqueConstraint
 from sqlmodel import SQLModel, Field, Column
 from datetime import datetime
 
@@ -79,3 +79,36 @@ class Bookmark(SQLModel, table=True):
     content_location: Optional[str] = None
     feed_id: Optional[str] = Field(default=None, index=True)
     published_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+
+
+class Tag(SQLModel, table=True):
+    __tablename__ = "tag"
+    __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_tag_owner_name"),)
+
+    id: str = Field(default_factory=lambda: gen_id("tag"), primary_key=True)
+    owner_user_id: Optional[str] = Field(default=None, index=True)
+    name: str = Field(index=True)
+
+
+class Folder(SQLModel, table=True):
+    __tablename__ = "folder"
+    __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_folder_owner_name"),)
+
+    id: str = Field(default_factory=lambda: gen_id("fld"), primary_key=True)
+    owner_user_id: Optional[str] = Field(default=None, index=True)
+    name: str = Field(index=True)
+    instapaper_folder_id: Optional[str] = Field(default=None, index=True)
+
+
+class BookmarkTagLink(SQLModel, table=True):
+    __tablename__ = "bookmark_tag_link"
+
+    bookmark_id: str = Field(sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True))
+    tag_id: str = Field(sa_column=Column(ForeignKey("tag.id", ondelete="CASCADE"), primary_key=True))
+
+
+class BookmarkFolderLink(SQLModel, table=True):
+    __tablename__ = "bookmark_folder_link"
+
+    bookmark_id: str = Field(sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True))
+    folder_id: str = Field(sa_column=Column(ForeignKey("folder.id", ondelete="CASCADE"), primary_key=True))
