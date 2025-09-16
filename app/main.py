@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, HTTPException, Request
 
 from .auth.oidc import oidc_startup_event, resolve_user_from_token
+from .auth.provisioning import maybe_provision_user
 from .db import init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
@@ -82,6 +83,8 @@ def create_app() -> FastAPI:
                     bearer_token = parts[1].strip()
             try:
                 user = resolve_user_from_token(bearer_token)
+                if user:
+                    maybe_provision_user(user)
             except HTTPException:
                 raise
             except Exception:  # noqa: BLE001
