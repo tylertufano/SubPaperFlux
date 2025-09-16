@@ -323,6 +323,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-015: Admin health/status panels and System view (OpenAPI/metrics/version)
 - UI-016: Keyboard shortcuts (`/`, `j/k`, `?`)
 - UI-017: Preview pane for article content
+  - API endpoint: `GET /bookmarks/{id}/preview`
 - UI-018: Tags & folders management for Instapaper
 - UI-019: Retry/backoff policy in client with exponential backoff
 - UI-020: Backpressure UI for bulk actions (rate limit feedback)

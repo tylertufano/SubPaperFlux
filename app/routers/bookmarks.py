@@ -8,10 +8,13 @@ import shlex
 from dataclasses import dataclass
 from datetime import datetime
 from typing import AsyncGenerator, List, Optional
+from urllib.parse import urlparse
 from uuid import uuid4
 
+import httpx
+from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy import or_, literal
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import delete, func, select
@@ -49,6 +52,95 @@ router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
 
 
 ALLOWED_REGEX_FLAGS = {"i"}
+
+_FETCHABLE_SCHEMES = {"http", "https"}
+_SAFE_ATTR_SCHEMES = {"http", "https", "mailto", "tel"}
+_REMOVABLE_TAGS = {
+    "script",
+    "style",
+    "iframe",
+    "object",
+    "embed",
+    "form",
+    "input",
+    "button",
+    "link",
+    "meta",
+    "noscript",
+}
+_URL_ATTRS = {"href", "src", "action", "xlink:href", "formaction"}
+
+
+def _normalize_preview_url(url: str) -> Optional[str]:
+    if not url:
+        return None
+    try:
+        parsed = urlparse(url)
+    except Exception:  # pragma: no cover - defensive
+        return None
+    if parsed.scheme:
+        return url if parsed.scheme.lower() in _FETCHABLE_SCHEMES else None
+    if parsed.netloc:
+        return parsed._replace(scheme="https").geturl()
+    return None
+
+
+def _resolve_preview_source(bookmark: "Bookmark") -> Optional[str]:
+    for candidate in (bookmark.content_location, bookmark.url):
+        normalized = _normalize_preview_url(candidate) if candidate else None
+        if normalized:
+            return normalized
+    return None
+
+
+def _fetch_html(url: str) -> str:
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; SubPaperFlux/1.0)"}
+    with httpx.Client(timeout=10.0, follow_redirects=True, headers=headers) as client:
+        response = client.get(url)
+        response.raise_for_status()
+        return response.text
+
+
+def _is_disallowed_attr_url(value: str) -> bool:
+    if value is None:
+        return False
+    text = str(value).strip()
+    if not text:
+        return False
+    parsed = urlparse(text)
+    if parsed.scheme:
+        return parsed.scheme.lower() not in _SAFE_ATTR_SCHEMES
+    lowered = text.lower()
+    return lowered.startswith("javascript:") or lowered.startswith("data:") or lowered.startswith("vbscript:")
+
+
+def _sanitize_html_content(html: str) -> str:
+    if not html:
+        return ""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag_name in _REMOVABLE_TAGS:
+        for tag in soup.find_all(tag_name):
+            tag.decompose()
+    for tag in soup.find_all(True):
+        for attr_name, value in list(tag.attrs.items()):
+            lower = attr_name.lower()
+            if lower.startswith("on"):
+                del tag.attrs[attr_name]
+                continue
+            if lower == "style":
+                del tag.attrs[attr_name]
+                continue
+            if lower in _URL_ATTRS:
+                if isinstance(value, list):
+                    cleaned = [v for v in value if not _is_disallowed_attr_url(v)]
+                    if cleaned:
+                        tag.attrs[attr_name] = cleaned if len(cleaned) > 1 else cleaned[0]
+                    else:
+                        del tag.attrs[attr_name]
+                else:
+                    if _is_disallowed_attr_url(value):
+                        del tag.attrs[attr_name]
+    return str(soup)
 
 
 @dataclass
@@ -762,6 +854,39 @@ def delete_bookmark_folder(
     session.exec(delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id))
     session.commit()
     return None
+
+
+@router.get("/{bookmark_id}/preview", response_class=HTMLResponse)
+def preview_bookmark(
+    bookmark_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    bm = session.get(Bookmark, bookmark_id)
+    if not bm or bm.owner_user_id != current_user["sub"]:
+        raise HTTPException(status_code=404, detail="Not found")
+    preview_url = _resolve_preview_source(bm)
+    if not preview_url:
+        raise HTTPException(status_code=404, detail="No content available for preview")
+    try:
+        raw_html = _fetch_html(preview_url)
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        logging.warning(
+            "Failed to fetch bookmark preview bookmark_id=%s url=%s: %s",
+            bookmark_id,
+            preview_url,
+            exc,
+        )
+        raise HTTPException(status_code=502, detail="Unable to fetch bookmark content") from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        logging.exception(
+            "Unexpected error fetching bookmark preview bookmark_id=%s url=%s",
+            bookmark_id,
+            preview_url,
+        )
+        raise HTTPException(status_code=502, detail="Unable to fetch bookmark content") from exc
+    sanitized = _sanitize_html_content(raw_html)
+    return HTMLResponse(content=sanitized or "")
 
 
 @router.get("/{bookmark_id}", response_model=BookmarkOut)
