@@ -250,5 +250,6 @@
   "profile_description": "This page will show your account details and allow updating preferences (including locale). Coming soon.",
   "me_tokens_description": "Manage personal API tokens for CLI and integrations. Coming soon.",
   "error_boundary_title": "Something went wrong",
-  "error_boundary_message": "Try reloading the page. If the problem persists, contact support."
+  "error_boundary_message": "Try reloading the page. If the problem persists, contact support.",
+  "error_boundary_contact_support": "Contact support"
 }

@@ -1,10 +1,8 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1, feeds as feedsApi } from '../lib/openapi'
 import { useState } from 'react'
-import Alert from '../components/Alert'
 import { useI18n } from '../lib/i18n'
-import EmptyState from '../components/EmptyState'
 
 export default function Feeds() {
   const { t } = useI18n()
@@ -149,8 +147,13 @@ export default function Feeds() {
             {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
               <div className="p-4">
                 <EmptyState
-                  title={t('empty_feeds_title')}
-                  description={t('empty_feeds_desc')}
+                  icon={<span>📰</span>}
+                  message={(
+                    <div className="space-y-1">
+                      <p className="text-lg font-semibold text-gray-700">{t('empty_feeds_title')}</p>
+                      <p>{t('empty_feeds_desc')}</p>
+                    </div>
+                  )}
                 />
               </div>
             ) : (

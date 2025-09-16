@@ -1,10 +1,8 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1 } from '../lib/openapi'
 import { FormEvent, useEffect, useState } from 'react'
-import Alert from '../components/Alert'
 import { useI18n } from '../lib/i18n'
-import EmptyState from '../components/EmptyState'
 
 type RegexTarget = 'both' | 'title' | 'url'
 type SortOption = 'title' | 'url' | 'published_at' | 'relevance'
@@ -324,10 +322,18 @@ export default function Bookmarks() {
               {(!data.items || data.items.length === 0) ? (
                 <div className="p-4">
                   <EmptyState
-                    title={t('empty_bookmarks_title')}
-                    description={t('empty_bookmarks_desc')}
-                    actionLabel={t('btn_clear_filters')}
-                    onAction={clearFilters}
+                    icon={<span>📭</span>}
+                    message={(
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold text-gray-700">{t('empty_bookmarks_title')}</p>
+                        <p>{t('empty_bookmarks_desc')}</p>
+                      </div>
+                    )}
+                    action={
+                      <button type="button" className="btn" onClick={clearFilters}>
+                        {t('btn_clear_filters')}
+                      </button>
+                    }
                   />
                 </div>
               ) : (

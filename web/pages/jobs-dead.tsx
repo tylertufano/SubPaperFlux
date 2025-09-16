@@ -1,8 +1,6 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1 } from '../lib/openapi'
-import Alert from '../components/Alert'
-import EmptyState from '../components/EmptyState'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useI18n } from '../lib/i18n'
@@ -49,8 +47,13 @@ export default function JobsDead() {
               {(!data.items || data.items.length === 0) ? (
                 <div className="p-4">
                   <EmptyState
-                    title={t('jobs_dead_empty_title')}
-                    description={t('jobs_dead_empty_desc')}
+                    icon={<span>💤</span>}
+                    message={(
+                      <div className="space-y-1">
+                        <p className="text-lg font-semibold text-gray-700">{t('jobs_dead_empty_title')}</p>
+                        <p>{t('jobs_dead_empty_desc')}</p>
+                      </div>
+                    )}
                   />
                 </div>
               ) : (

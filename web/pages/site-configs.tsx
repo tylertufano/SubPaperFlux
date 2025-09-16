@@ -1,9 +1,7 @@
 import useSWR from 'swr'
-import Nav from '../components/Nav'
+import { Alert, EmptyState, Nav } from '../components'
 import { v1, siteConfigs as site } from '../lib/openapi'
 import { useState } from 'react'
-import Alert from '../components/Alert'
-import EmptyState from '../components/EmptyState'
 import { validateSiteConfig } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 
@@ -160,8 +158,13 @@ export default function SiteConfigs() {
             {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
               <div className="p-4">
                 <EmptyState
-                  title={t('empty_site_configs_title')}
-                  description={t('empty_site_configs_desc')}
+                  icon={<span>🛠️</span>}
+                  message={(
+                    <div className="space-y-1">
+                      <p className="text-lg font-semibold text-gray-700">{t('empty_site_configs_title')}</p>
+                      <p>{t('empty_site_configs_desc')}</p>
+                    </div>
+                  )}
                 />
               </div>
             ) : (
