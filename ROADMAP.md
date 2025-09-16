@@ -148,7 +148,7 @@ make sdk-ts
   - [x] Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:1`
 - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
 - [x] Activity Log (UI-029)
-  - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`
+  - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`, `tests/test_audit_log.py:1`
   - Evidence: `web/pages/admin/audit.tsx:1`, `web/lib/openapi.ts:112`, `web/locales/en/common.json:150`
 
 ## Optional / Recommended
@@ -280,7 +280,7 @@ make sdk-ts
 ### API Endpoints
 
  - [ ] `/v1/admin/users` (UI-069)
- - [x] `/v1/admin/audit` (UI-069) — `app/routers/admin.py`, `app/schemas.py`, `tests/test_routers_basic.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AuditLogsPage.ts`
+- [x] `/v1/admin/audit` (UI-069) — `app/routers/admin.py`, `app/schemas.py`, `tests/test_routers_basic.py`, `tests/test_audit_log.py`, `sdk/ts/src/apis/AdminApi.ts`, `sdk/ts/src/models/AuditLogsPage.ts`
  - [ ] `/v1/me/tokens` (UI-069)
 
 ### UI
