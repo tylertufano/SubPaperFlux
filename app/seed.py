@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 from sqlmodel import Session
 
+from .auth import ensure_admin_role
 from .db import engine, init_db
 from .models import SiteConfig, Credential, Feed
 from .security.crypto import encrypt_dict
@@ -16,6 +17,9 @@ from .security.crypto import encrypt_dict
 def seed(user_id: str = "demo-user") -> None:
     init_db()
     with Session(engine) as session:
+        # Ensure the built-in admin role exists for RBAC helpers/tests.
+        ensure_admin_role(session)
+
         # Global Instapaper app creds (placeholder)
         app_cred = Credential(kind="instapaper_app", data=encrypt_dict({
             "consumer_key": "replace_me",
