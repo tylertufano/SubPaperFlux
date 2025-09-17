@@ -1168,7 +1168,7 @@ async def _bulk_publish_event_stream(
                 logging.info("Client disconnected from bulk publish stream user=%s", user_id)
                 return
             item_id = str(item.get("id") or index)
-            yield _encode_event({"type": "item", "id": item_id, "status": "running"})
+            yield _encode_event({"type": "item", "id": item_id, "status": "pending"})
             url = item.get("url")
             if not isinstance(url, str) or not url.strip():
                 failed += 1
@@ -1176,7 +1176,7 @@ async def _bulk_publish_event_stream(
                     {
                         "type": "item",
                         "id": item_id,
-                        "status": "error",
+                        "status": "failure",
                         "message": "Missing URL",
                     }
                 )
@@ -1215,7 +1215,7 @@ async def _bulk_publish_event_stream(
                     {
                         "type": "item",
                         "id": item_id,
-                        "status": "error",
+                        "status": "failure",
                         "message": str(exc),
                     }
                 )

@@ -1,6 +1,6 @@
 import { useI18n } from '../lib/i18n'
 
-export type ProgressItemStatus = 'pending' | 'running' | 'success' | 'error'
+export type ProgressItemStatus = 'pending' | 'running' | 'success' | 'failure' | 'error'
 export type ProgressModalItem = {
   id: string
   label: string
@@ -26,6 +26,7 @@ const statusDotClasses: Record<ProgressItemStatus, string> = {
   pending: 'bg-gray-300 dark:bg-gray-600',
   running: 'bg-blue-500 animate-pulse',
   success: 'bg-green-500',
+  failure: 'bg-red-500',
   error: 'bg-red-500',
 }
 
@@ -33,6 +34,7 @@ const statusTextKeys: Record<ProgressItemStatus, string> = {
   pending: 'progress_status_pending',
   running: 'progress_status_running',
   success: 'progress_status_success',
+  failure: 'progress_status_failure',
   error: 'progress_status_error',
 }
 

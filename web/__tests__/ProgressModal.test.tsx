@@ -45,7 +45,7 @@ describe('ProgressModal', () => {
   it('shows per-item status text and message', () => {
     const items: ProgressModalItem[] = [
       { id: '1', label: 'First', status: 'success', message: 'ok' },
-      { id: '2', label: 'Second', status: 'error', message: 'failed to publish' },
+      { id: '2', label: 'Second', status: 'failure', message: 'failed to publish' },
     ]
     render(
       <ProgressModal

@@ -159,6 +159,7 @@
   "progress_status_pending": "Pending",
   "progress_status_running": "In progress",
   "progress_status_success": "Completed",
+  "progress_status_failure": "Failed",
   "progress_status_error": "Failed",
   "id_label": "ID",
   "type_label": "Type",

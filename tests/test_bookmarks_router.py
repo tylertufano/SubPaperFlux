@@ -258,6 +258,11 @@ def test_bulk_publish_stream_success(monkeypatch):
         "item",
         "complete",
     ]
+    item_events = [event for event in raw_events if event["type"] == "item"]
+    assert any(event["id"] == "one" and event["status"] == "pending" for event in item_events)
+    assert any(event["id"] == "one" and event["status"] == "success" for event in item_events)
+    assert any(event["id"] == "two" and event["status"] == "pending" for event in item_events)
+    assert any(event["id"] == "two" and event["status"] == "success" for event in item_events)
     assert raw_events[-1]["success"] == 2 and raw_events[-1]["failed"] == 0
     assert published_urls == ["https://example.com/one", "https://example.com/two"]
 
@@ -295,7 +300,7 @@ def test_bulk_publish_stream_failure(monkeypatch):
             text = chunk.decode() if isinstance(chunk, bytes) else chunk
             events.append(json.loads(text))
 
-    assert any(event["type"] == "item" and event["id"] == "two" and event["status"] == "error" for event in events)
+    assert any(event["type"] == "item" and event["id"] == "two" and event["status"] == "failure" for event in events)
     complete = events[-1]
     assert complete["type"] == "complete"
     assert complete["success"] == 1 and complete["failed"] == 1
