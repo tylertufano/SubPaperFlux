@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkActionToolbar, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkPublishModal, BulkTagModal, EmptyState, Nav, PreviewPane } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -139,10 +139,16 @@ export default function Bookmarks() {
   const folderItems = Array.isArray(foldersData) ? foldersData : foldersData?.items ?? []
   const [banner, setBanner] = useState<{ kind: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const [bulkTagModalOpen, setBulkTagModalOpen] = useState(false)
+  const [bulkTagBookmarkIds, setBulkTagBookmarkIds] = useState<string[]>([])
   const [publishPlan, setPublishPlan] = useState<BulkPublishPlan | null>(null)
   const [publishInFlight, setPublishInFlight] = useState(false)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
-  const selectedCount = Object.values(selected).filter(Boolean).length
+  const selectedIds = useMemo(
+    () => Object.entries(selected).filter(([, value]) => value).map(([id]) => id),
+    [selected],
+  )
+  const selectedCount = selectedIds.length
   const bookmarkItems = data?.items ?? []
   const previewHeadingId = 'bookmark-preview-heading'
   const previewPaneId = 'bookmark-preview-pane'
@@ -649,6 +655,43 @@ export default function Bookmarks() {
   function clearSelection() {
     setSelected({})
   }
+  function openBulkTagModal() {
+    if (!selectedIds.length) return
+    setBulkTagBookmarkIds(selectedIds)
+    setBulkTagModalOpen(true)
+  }
+  function closeBulkTagModal() {
+    setBulkTagModalOpen(false)
+    setBulkTagBookmarkIds([])
+  }
+  async function submitBulkTagModal({ tags, clear }: { tags: string[]; clear: boolean }) {
+    if (!bulkTagBookmarkIds.length) {
+      throw new Error(t('bookmarks_bulk_tags_error_no_selection'))
+    }
+    await v1.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost({
+      bulkBookmarkTagUpdate: {
+        bookmarkIds: bulkTagBookmarkIds,
+        tags: clear ? [] : tags,
+        clear,
+      },
+    })
+  }
+  function handleBulkTagSuccess({ tags, clear }: { tags: string[]; clear: boolean }) {
+    const bookmarkCount = formatNumberValue(bulkTagBookmarkIds.length, numberFormatter, '0')
+    if (clear) {
+      setBanner({ kind: 'success', message: t('bookmarks_bulk_tags_cleared', { bookmarks: bookmarkCount }) })
+    } else {
+      const tagCount = formatNumberValue(tags.length, numberFormatter, '0')
+      setBanner({
+        kind: 'success',
+        message: t('bookmarks_bulk_tags_success', { bookmarks: bookmarkCount, tags: tagCount }),
+      })
+    }
+    clearSelection()
+    mutateTags()
+    mutate()
+    closeBulkTagModal()
+  }
   function bulkPublish() {
     if (publishInFlight) return
     const items = (data?.items ?? []).filter((b: any) => selected[b.id])
@@ -1091,6 +1134,7 @@ export default function Bookmarks() {
                 onClearSelection={clearSelection}
                 actions={[
                   { label: t('btn_publish_selected'), onClick: bulkPublish, busy: publishInFlight },
+                  { label: t('btn_assign_tags'), onClick: openBulkTagModal },
                   { label: t('btn_delete_selected'), onClick: bulkDelete },
                   { label: t('btn_export_json'), onClick: () => exportSelected('json') },
                   { label: t('btn_export_csv'), onClick: () => exportSelected('csv') },
@@ -1261,6 +1305,16 @@ export default function Bookmarks() {
           onCancel={handlePublishCancel}
           onError={handlePublishError}
           onClose={closePublishModal}
+        />
+      )}
+      {bulkTagModalOpen && (
+        <BulkTagModal
+          open={bulkTagModalOpen}
+          selectedCount={bulkTagBookmarkIds.length}
+          tags={tagItems}
+          onClose={closeBulkTagModal}
+          onSubmit={submitBulkTagModal}
+          onSuccess={handleBulkTagSuccess}
         />
       )}
       {tagModal && (

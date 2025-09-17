@@ -119,6 +119,8 @@ make sdk-ts
 - [x] Integration tests for bookmark tag assignment and folder moves (UI-018)
   - Evidence: `tests/test_bookmarks_router.py:90-220, 257-618`
 - [x] Preview pane sanitization + keyboard navigation tests (`web/__tests__/PreviewPane.test.tsx`, `web/__tests__/bookmarks-preview-navigation.test.tsx`)
+- [x] Vitest coverage for bulk tag modal flows (UI-027)
+  - Evidence: `web/__tests__/bulk-tags.test.tsx:1-200`
 - [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
 
 ### Queue/Idempotency UX
@@ -134,7 +136,7 @@ make sdk-ts
 - [x] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
   - Evidence: `web/sdk/src/apis/BookmarksApi.ts:1`, `web/pages/bookmarks.tsx:1`
   - Evidence: Regenerated SDK clients and wrapper wiring — `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`, `web/lib/openapi.ts:1`
-- [ ] Bulk Actions (UI-027)
+- [x] Bulk Actions (UI-027)
   - [x] Delete/export
   - [x] Publish; progress modals (UI-028)
     - [x] API streaming per-item pending/success/failure updates: `app/routers/bookmarks.py:1152-1233`
@@ -145,6 +147,8 @@ make sdk-ts
     - [x] API tests for stream success, failure, and cancellation: `tests/test_bookmarks_router.py:222-320`
   - [x] Bulk tag update API + SDK coverage
     - Evidence: `app/schemas.py:200-212`, `app/routers/bookmarks.py:824-938`, `sdk/ts/src/apis/BookmarksApi.ts:3113-3204`, `web/lib/openapi.ts:428-431`
+  - [x] Bulk tag assignment modal + toolbar action with localized feedback and tests
+    - Evidence: `web/components/BulkTagModal.tsx:1-200`, `web/pages/bookmarks.tsx:130-220`, `web/__tests__/bulk-tags.test.tsx:1-200`
   - [x] Bulk folder update API + SDK coverage
     - Evidence: `app/schemas.py:213-256`, `app/routers/bookmarks.py:939-1150`, `tests/test_bookmarks_router.py:405-618`, `sdk/ts/src/apis/BookmarksApi.ts:3205-3450`, `web/sdk/src/apis/BookmarksApi.ts:3205-3450`, `web/lib/openapi.ts:431-445`
 - [x] Tags & Folders (UI-018)

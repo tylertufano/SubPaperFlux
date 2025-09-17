@@ -34,6 +34,7 @@ vi.mock('../components', async () => {
     __esModule: true,
     BulkPublishModal: modalModule.default,
     BulkActionToolbar: toolbarModule.default,
+    BulkTagModal: () => null,
     ProgressModal: progressModule.default,
     Alert: ({ kind, message }: { kind: string; message: React.ReactNode }) => (
       <div data-testid="alert" data-kind={kind}>
