@@ -123,11 +123,13 @@ describe('Bookmarks bulk publish modal', () => {
     streamBulkPublishMock.mockImplementation(async ({ onEvent }) => {
       onEvent?.({ type: 'start', total: 2 })
       await Promise.resolve()
-      onEvent?.({ type: 'item', id: 'bookmark-1', status: 'running' })
+      onEvent?.({ type: 'item', id: 'bookmark-1', status: 'pending' })
       await Promise.resolve()
       onEvent?.({ type: 'item', id: 'bookmark-1', status: 'success' })
       await Promise.resolve()
-      onEvent?.({ type: 'item', id: 'bookmark-2', status: 'error', message: 'API said nope' })
+      onEvent?.({ type: 'item', id: 'bookmark-2', status: 'pending' })
+      await Promise.resolve()
+      onEvent?.({ type: 'item', id: 'bookmark-2', status: 'failure', message: 'API said nope' })
       await Promise.resolve()
       onEvent?.({ type: 'complete', success: 1, failed: 1 })
       return { success: 1, failed: 1 }
@@ -213,7 +215,7 @@ describe('Bookmarks bulk publish modal', () => {
   it('allows cancellation and surfaces info banner', async () => {
     streamBulkPublishMock.mockImplementation(({ signal, onEvent }) => {
       onEvent?.({ type: 'start', total: 2 })
-      onEvent?.({ type: 'item', id: 'bookmark-1', status: 'running' })
+      onEvent?.({ type: 'item', id: 'bookmark-1', status: 'pending' })
       return new Promise((_resolve, reject) => {
         if (signal) {
           signal.addEventListener('abort', () => {

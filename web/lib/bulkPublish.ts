@@ -4,7 +4,7 @@ export type BulkPublishStartEvent = { type: 'start'; total?: number }
 export type BulkPublishItemEvent = {
   type: 'item'
   id: string
-  status: 'running' | 'success' | 'error'
+  status: 'pending' | 'success' | 'failure'
   message?: string
   result?: Record<string, unknown>
 }

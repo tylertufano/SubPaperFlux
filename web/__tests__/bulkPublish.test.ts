@@ -26,7 +26,7 @@ describe('streamBulkPublish', () => {
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(encoder.encode(`${JSON.stringify({ type: 'start', total: 2 })}\n`))
-        controller.enqueue(encoder.encode(`${JSON.stringify({ type: 'item', id: '1', status: 'running' })}\n`))
+        controller.enqueue(encoder.encode(`${JSON.stringify({ type: 'item', id: '1', status: 'pending' })}\n`))
         controller.enqueue(encoder.encode(`${JSON.stringify({ type: 'item', id: '1', status: 'success' })}\n`))
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'complete', success: 1, failed: 0 })))
         controller.close()

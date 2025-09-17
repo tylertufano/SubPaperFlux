@@ -73,7 +73,7 @@ const summariseItems = (items: ProgressModalItem[]): BulkPublishSummary => {
   return items.reduce<BulkPublishSummary>(
     (acc, item) => {
       if (item.status === 'success') acc.success += 1
-      if (item.status === 'error') acc.failed += 1
+      if (item.status === 'failure' || item.status === 'error') acc.failed += 1
       return acc
     },
     { success: 0, failed: 0 },
@@ -190,10 +190,26 @@ export default function BulkPublishModal({
           if (controllerRef.current !== controller) return prev
           const nextItems = prev.items.map((item) => {
             if (item.id !== String(event.id)) return item
-            const nextStatus: ProgressModalItem['status'] =
-              event.status === 'running' ? 'running'
-              : event.status === 'success' ? 'success'
-              : 'error'
+            let nextStatus: ProgressModalItem['status']
+            switch (event.status) {
+              case 'success':
+                nextStatus = 'success'
+                break
+              case 'failure':
+                nextStatus = 'failure'
+                break
+              case 'pending':
+                nextStatus = 'pending'
+                break
+              case 'running':
+                nextStatus = 'running'
+                break
+              case 'error':
+                nextStatus = 'failure'
+                break
+              default:
+                nextStatus = 'pending'
+            }
             return {
               ...item,
               status: nextStatus,

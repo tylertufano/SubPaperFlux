@@ -658,7 +658,7 @@ export default function Bookmarks() {
     let failed = 0
     for (const item of result.items) {
       if (item.status === 'success') success += 1
-      if (item.status === 'error') failed += 1
+      if (item.status === 'failure' || item.status === 'error') failed += 1
     }
     return { success, failed }
   }
@@ -682,7 +682,7 @@ export default function Bookmarks() {
       })
       const failedSelection: Record<string, boolean> = {}
       result.items.forEach(item => {
-        if (item.status === 'error') failedSelection[item.id] = true
+        if (item.status === 'failure' || item.status === 'error') failedSelection[item.id] = true
       })
       setSelected(failedSelection)
     }
