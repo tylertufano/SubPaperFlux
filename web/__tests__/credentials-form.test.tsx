@@ -1,9 +1,9 @@
-import { screen, within } from '@testing-library/react'
+import { screen, within, fireEvent, waitFor } from '@testing-library/react'
 import type { RenderResult } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import { renderWithSWR, makeSWRSuccess, type RenderWithSWROptions, useSWRMock } from './helpers/renderWithSWR'
 import Credentials from '../pages/credentials'
-import { renderWithSWR, makeSWRSuccess, type RenderWithSWROptions } from './helpers/renderWithSWR'
 
 const openApiSpies = vi.hoisted(() => ({
   listCredentials: vi.fn(),
@@ -108,12 +108,13 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
     swr: swrConfig,
   })
 
-  const form = await screen.findByRole('form', { name: 'Create Credential' })
+  const kindSelect = (await screen.findByLabelText(/Kind/)) as HTMLSelectElement
+  const form = kindSelect.closest('form') as HTMLElement
   const withinForm = within(form)
   const findInput = (label: string | RegExp) => withinForm.queryByLabelText(label) as HTMLInputElement | null
 
   const inputs: CredentialFormControls = {
-    kind: withinForm.getByLabelText(/Kind/) as HTMLSelectElement,
+    kind: kindSelect,
     scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/ }) as HTMLInputElement,
     username: findInput('Username'),
     password: findInput('Password'),
@@ -149,5 +150,78 @@ describe('credentials form setup helper', () => {
     expect(inputs.username).toBeInstanceOf(HTMLInputElement)
     expect(inputs.password).toBeInstanceOf(HTMLInputElement)
     expect(queryBanner()).toBeNull()
+  })
+})
+
+describe('credential creation form', () => {
+  it('shows validation errors and prevents submission when required site login fields are empty', async () => {
+    const { form, withinForm, inputs, mutate } = await setup()
+
+    const usernameInput = inputs.username
+    const passwordInput = inputs.password
+    expect(usernameInput).toBeTruthy()
+    expect(passwordInput).toBeTruthy()
+    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+
+    fireEvent.change(usernameInput, { target: { value: 'alice' } })
+    fireEvent.change(usernameInput, { target: { value: '' } })
+
+    fireEvent.change(passwordInput, { target: { value: 'secret' } })
+    fireEvent.change(passwordInput, { target: { value: '' } })
+
+    fireEvent.submit(form)
+
+    expect(await withinForm.findByText('Username is required')).toBeInTheDocument()
+    expect(await withinForm.findByText('Password is required')).toBeInTheDocument()
+    expect(createCredentialMock).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('submits valid site login credentials and shows a success banner', async () => {
+    const { withinForm, inputs, mutate } = await setup()
+
+    createCredentialMock.mockResolvedValueOnce({})
+
+    const swrState = useSWRMock.mock.results.at(-1)?.value as { mutate?: ReturnType<typeof vi.fn> }
+    expect(swrState?.mutate).toBe(mutate)
+
+    const usernameInput = inputs.username
+    const passwordInput = inputs.password
+    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+
+    fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
+    fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
+
+    const submitButton = withinForm.getByRole('button', { name: 'Create' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
+
+    const banner = await screen.findByRole('status')
+    expect(banner).toHaveTextContent('Credential created')
+    await waitFor(() => expect(mutate).toHaveBeenCalled())
+  })
+
+  it('shows an error banner when the credential creation request fails', async () => {
+    const { withinForm, inputs, mutate } = await setup()
+
+    const error = new Error('Network exploded')
+    createCredentialMock.mockRejectedValueOnce(error)
+
+    const usernameInput = inputs.username
+    const passwordInput = inputs.password
+    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+
+    fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
+    fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
+
+    const submitButton = withinForm.getByRole('button', { name: 'Create' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
+
+    const banner = await screen.findByRole('alert')
+    expect(banner).toHaveTextContent(error.message)
+    expect(mutate).not.toHaveBeenCalled()
   })
 })
