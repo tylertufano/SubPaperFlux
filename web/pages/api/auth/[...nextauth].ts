@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
-import type { NextAuthConfig } from 'next-auth'
+import type { Account, NextAuthConfig, Session } from 'next-auth'
+import type { JWT } from 'next-auth/jwt'
 
 const wellKnown = process.env.OIDC_ISSUER!
 
@@ -25,16 +26,16 @@ export const authOptions: NextAuthConfig = {
     } as any,
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account }: { token: JWT; account: Account | null | undefined }) {
       if (account) {
         token.accessToken = account.access_token
         token.idToken = account.id_token
       }
       return token
     },
-    async session({ session, token }) {
-      ;(session as any).accessToken = token.accessToken
-      ;(session as any).idToken = token.idToken
+    async session({ session, token }: { session: Session; token: JWT }) {
+      session.accessToken = token.accessToken
+      session.idToken = token.idToken
       return session
     },
   },

@@ -87,9 +87,20 @@ export default function AdminAudit() {
     [page, size, filters],
   )
 
-  const { data, error, isLoading } = useSWR<AuditLogsPage>(
+  const { data, error, isLoading } = useSWR<AuditLogsPage, Error, typeof swrKey>(
     swrKey,
-    ([, currentPage, pageSize, entityType, entityId, action, ownerUserId, actorUserId, since, until]) =>
+    ([
+      ,
+      currentPage,
+      pageSize,
+      entityType,
+      entityId,
+      action,
+      ownerUserId,
+      actorUserId,
+      since,
+      until,
+    ]) =>
       v1.listAuditLogsV1AdminAuditGet({
         page: currentPage,
         size: pageSize,
