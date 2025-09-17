@@ -10,6 +10,7 @@ const openApiSpies = vi.hoisted(() => ({
   createSiteConfig: vi.fn(),
   deleteSiteConfig: vi.fn(),
   testSiteConfig: vi.fn(),
+  updateSiteConfig: vi.fn(),
 }))
 
 vi.mock('next/router', () => ({
@@ -48,6 +49,7 @@ vi.mock('../lib/openapi', () => ({
   siteConfigs: {
     createSiteConfigSiteConfigsPost: openApiSpies.createSiteConfig,
     deleteSiteConfigSiteConfigsConfigIdDelete: openApiSpies.deleteSiteConfig,
+    updateSiteConfigSiteConfigsConfigIdPut: openApiSpies.updateSiteConfig,
   },
 }))
 
@@ -55,6 +57,7 @@ export const listSiteConfigsMock = openApiSpies.listSiteConfigs
 export const createSiteConfigMock = openApiSpies.createSiteConfig
 export const deleteSiteConfigMock = openApiSpies.deleteSiteConfig
 export const testSiteConfigMock = openApiSpies.testSiteConfig
+export const updateSiteConfigMock = openApiSpies.updateSiteConfig
 
 export const defaultSiteConfigsResponse = {
   items: [
@@ -228,8 +231,94 @@ describe('site configs creation validation', () => {
 })
 
 describe('site configs creation success path', () => {
-  it('submits normalized cookies and owner scope, then shows success feedback', async () => {
-    const { form, inputs, mutate, unmount } = await setup()
+  it('submits normalized cookies while toggling owner scope and shows success feedback', async () => {
+    const { form, inputs, withinForm, mutate, unmount } = await setup()
+
+    try {
+      const submitButton = withinForm.getByRole('button', { name: 'Create' })
+      const fillForm = (
+        values: Partial<{
+          name: string
+          siteUrl: string
+          username: string
+          password: string
+          login: string
+          cookies: string
+        }> = {},
+      ) => {
+        fireEvent.change(inputs.name, { target: { value: values.name ?? 'Acme Login' } })
+        fireEvent.change(inputs.siteUrl, { target: { value: values.siteUrl ?? 'https://acme.example/login' } })
+        fireEvent.change(inputs.usernameSelector, { target: { value: values.username ?? '#username' } })
+        fireEvent.change(inputs.passwordSelector, { target: { value: values.password ?? '#password' } })
+        fireEvent.change(inputs.loginSelector, { target: { value: values.login ?? 'button[type="submit"]' } })
+        fireEvent.change(inputs.cookies, {
+          target: { value: values.cookies ?? 'session=abc,  theme , ,  xyz  ' },
+        })
+      }
+
+      createSiteConfigMock.mockResolvedValue({})
+
+      fireEvent.click(inputs.scopeGlobal)
+      fireEvent.click(inputs.scopeGlobal)
+      fillForm()
+
+      expect(submitButton).toBeEnabled()
+
+      fireEvent.click(submitButton)
+
+      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
+      const firstCall = createSiteConfigMock.mock.calls[0][0]
+      expect(firstCall.siteConfig).toMatchObject({
+        name: 'Acme Login',
+        site_url: 'https://acme.example/login',
+        username_selector: '#username',
+        password_selector: '#password',
+        login_button_selector: 'button[type="submit"]',
+        cookies_to_store: ['session=abc', 'theme', 'xyz'],
+      })
+      expect(firstCall.siteConfig.ownerUserId).toBeUndefined()
+
+      const firstSuccess = await screen.findByText('Site config created')
+      expect(firstSuccess.closest('[role="status"]')).toBeInTheDocument()
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+
+      fillForm({
+        name: 'Global Entry',
+        siteUrl: 'https://global.example/login',
+        username: '#global-user',
+        password: '#global-pass',
+        login: 'button.global-submit',
+        cookies: 'token=one, two , , three',
+      })
+      fireEvent.click(inputs.scopeGlobal)
+      expect(inputs.scopeGlobal.checked).toBe(true)
+
+      fireEvent.click(submitButton)
+
+      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(2))
+      const secondCall = createSiteConfigMock.mock.calls[1][0]
+      expect(secondCall.siteConfig).toMatchObject({
+        name: 'Global Entry',
+        site_url: 'https://global.example/login',
+        username_selector: '#global-user',
+        password_selector: '#global-pass',
+        login_button_selector: 'button.global-submit',
+        cookies_to_store: ['token=one', 'two', 'three'],
+      })
+      expect(secondCall.siteConfig.ownerUserId).toBeNull()
+
+      const secondSuccess = await screen.findByText('Site config created')
+      expect(secondSuccess.closest('[role="status"]')).toBeInTheDocument()
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
+    } finally {
+      unmount()
+    }
+  })
+})
+
+describe('site configs error handling', () => {
+  it('surfaces create failures in the banner with the thrown message', async () => {
+    const { inputs, withinForm, mutate, withinBanner, unmount } = await setup()
 
     try {
       fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
@@ -237,32 +326,110 @@ describe('site configs creation success path', () => {
       fireEvent.change(inputs.usernameSelector, { target: { value: '#username' } })
       fireEvent.change(inputs.passwordSelector, { target: { value: '#password' } })
       fireEvent.change(inputs.loginSelector, { target: { value: 'button[type="submit"]' } })
-      fireEvent.change(inputs.cookies, { target: { value: 'session=abc,  theme , ,  xyz  ' } })
-      fireEvent.click(inputs.scopeGlobal)
 
-      const submitButton = within(form).getByRole('button', { name: 'Create' })
+      const submitButton = withinForm.getByRole('button', { name: 'Create' })
       expect(submitButton).toBeEnabled()
 
-      createSiteConfigMock.mockResolvedValueOnce({})
+      createSiteConfigMock.mockRejectedValueOnce(new Error('Create failed'))
 
       fireEvent.click(submitButton)
 
       await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
-      expect(createSiteConfigMock).toHaveBeenCalledWith({
+
+      const banner = await screen.findByRole('alert')
+      expect(banner).toBeInTheDocument()
+      const bannerUtils = withinBanner()
+      expect(bannerUtils?.getByText('Create failed')).toBeInTheDocument()
+      expect(mutate).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
+  })
+
+  it('surfaces test failures in the banner with the thrown message', async () => {
+    const { withinBanner, unmount } = await setup()
+
+    try {
+      testSiteConfigMock.mockRejectedValueOnce(new Error('Test failure'))
+
+      const testButton = await screen.findByRole('button', { name: 'Test Login' })
+      fireEvent.click(testButton)
+
+      await waitFor(() => expect(testSiteConfigMock).toHaveBeenCalledTimes(1))
+
+      const banner = await screen.findByRole('alert')
+      expect(banner).toBeInTheDocument()
+      const bannerUtils = withinBanner()
+      expect(bannerUtils?.getByText('Test failure')).toBeInTheDocument()
+    } finally {
+      unmount()
+    }
+  })
+})
+
+describe('site configs edit form', () => {
+  it('retains inline validation when blanked and saves updates while clearing errors on success', async () => {
+    const { mutate, withinBanner, unmount } = await setup()
+
+    try {
+      const editButton = await screen.findByRole('button', { name: 'Edit' })
+      fireEvent.click(editButton)
+
+      const editForm = await screen.findByRole('form', { name: /edit site config/i })
+      const withinEditForm = within(editForm)
+      const usernameInput = withinEditForm.getByLabelText('Username selector') as HTMLInputElement
+      const passwordInput = withinEditForm.getByLabelText('Password selector') as HTMLInputElement
+      const loginInput = withinEditForm.getByLabelText('Login button selector') as HTMLInputElement
+      const cookiesInput = withinEditForm.getByLabelText('Cookies to store (comma-separated)') as HTMLInputElement
+      const saveButton = withinEditForm.getByRole('button', { name: 'Save' }) as HTMLButtonElement
+
+      expect(saveButton).toBeEnabled()
+
+      fireEvent.change(usernameInput, { target: { value: ' ' } })
+      expect(usernameInput).toHaveAttribute('aria-describedby', 'edit-site-config-username-selector-error')
+      const inlineError = withinEditForm.getByText('Required')
+      expect(inlineError).toHaveAttribute('id', 'edit-site-config-username-selector-error')
+      expect(saveButton).toBeDisabled()
+
+      fireEvent.change(usernameInput, { target: { value: '#updated-user' } })
+      expect(withinEditForm.queryByText('Required')).not.toBeInTheDocument()
+      expect(usernameInput).not.toHaveAttribute('aria-describedby', 'edit-site-config-username-selector-error')
+      expect(saveButton).toBeEnabled()
+
+      fireEvent.change(passwordInput, { target: { value: '#updated-pass' } })
+      fireEvent.change(loginInput, { target: { value: 'button.updated-submit' } })
+      fireEvent.change(cookiesInput, { target: { value: 'sessionid, remember_me ,  extra  ' } })
+
+      updateSiteConfigMock.mockResolvedValueOnce({})
+      mutate.mockClear()
+
+      fireEvent.click(saveButton)
+
+      await waitFor(() => expect(updateSiteConfigMock).toHaveBeenCalledTimes(1))
+      const updateCall = updateSiteConfigMock.mock.calls[0][0]
+      expect(updateCall).toEqual({
+        configId: 'config-1',
         siteConfig: {
-          name: 'Acme Login',
-          site_url: 'https://acme.example/login',
-          username_selector: '#username',
-          password_selector: '#password',
-          login_button_selector: 'button[type="submit"]',
-          cookies_to_store: ['session=abc', 'theme', 'xyz'],
-          ownerUserId: null,
+          id: 'config-1',
+          name: 'Example Site',
+          site_url: 'https://example.com/login',
+          username_selector: '#updated-user',
+          password_selector: '#updated-pass',
+          login_button_selector: 'button.updated-submit',
+          cookies_to_store: ['sessionid', 'remember_me', 'extra'],
+          owner_user_id: 'user-1',
         },
       })
 
-      const successMessage = await screen.findByText('Site config created')
-      expect(successMessage.closest('[role="status"]')).toBeInTheDocument()
-      await waitFor(() => expect(mutate).toHaveBeenCalled())
+      const successBanner = await screen.findByText('Site config updated')
+      expect(successBanner.closest('[role="status"]')).toBeInTheDocument()
+      const bannerUtils = withinBanner()
+      expect(bannerUtils?.getByText('Site config updated')).toBeInTheDocument()
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+
+      await waitFor(() =>
+        expect(screen.queryByRole('form', { name: /edit site config/i })).not.toBeInTheDocument(),
+      )
     } finally {
       unmount()
     }
