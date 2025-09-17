@@ -115,7 +115,8 @@ make sdk-ts
 
 ### Testing
 
-- [ ] Component tests for filters/pagination and form validations (UI-014)
+- [~] Component tests for filters/pagination and form validations (UI-014)
+  - Evidence: `web/__tests__/bookmarks-filters.test.tsx:1`
 - [x] Integration tests for bookmark tag assignment and folder moves (UI-018)
   - Evidence: `tests/test_bookmarks_router.py:90-220, 257-618`
 - [x] Preview pane sanitization + keyboard navigation tests (`web/__tests__/PreviewPane.test.tsx`, `web/__tests__/bookmarks-preview-navigation.test.tsx`)
