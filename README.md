@@ -158,6 +158,19 @@ Frontend (Next.js) API Base Resolution
 - Resolution order (client): `NEXT_PUBLIC_API_BASE` (build-time) → `window.__SPF_API_BASE` → `GET /ui-config` (runtime) → relative base `''` (same-origin proxy).
 - Resolution order (server): `API_BASE` (runtime env) → `NEXT_PUBLIC_API_BASE` → `''`.
 - To proxy the API under the same domain with a subpath (recommended): set `API_BASE=/api` on the web container and configure your reverse proxy to route `/api/*` to the backend.
+
+Testing
+- **Local end-to-end loop**
+  1. Start the API: `make dev-api` (bootstraps a virtualenv, runs Alembic migrations for non-SQLite databases, and serves FastAPI on port 8000).
+  2. In a second terminal start the web app: `cd web && npm install && npm run dev`. The dev server reads defaults for `NEXT_PUBLIC_API_BASE`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `NEXTAUTH_SECRET`, so no extra exports are needed for the happy path.
+  3. With both services running, execute Playwright tests from `web/`: `npm run test:e2e`. Add `--headed` for interactive debugging or `--headless` to mirror CI.
+- **CI pointers**
+  - Use `make test-e2e` to mirror the GitHub Actions workflow. It provisions the virtualenv, ensures the database schema is ready (skipping Alembic when `DATABASE_URL` is SQLite), launches the API, and runs `npm run test:e2e` with `API_BASE`/`NEXT_PUBLIC_API_BASE` wired to the local services.
+  - Set `CI=1` or `HEADLESS=1` in automated runs to force Chromium headless mode. Provide any custom secrets (`NEXTAUTH_SECRET`, OIDC issuer/client values, `NEXT_PUBLIC_CSRF_TOKEN`, etc.) through the environment before invoking the target.
+  - Artifacts for failures (traces, videos, screenshots) are written under `web/test-results/`, and the HTML report lives in `web/playwright-report/`. Open traces locally with `npx playwright show-trace web/test-results/<test>/trace.zip`.
+- **Additional guidance**
+  - Reference [`docs/testing-guidelines.md`](docs/testing-guidelines.md) for expected coverage and tips on extending the suite.
+  - If you need the worker for background jobs, run it in another shell via `python -m app.worker` before kicking off the tests.
 - For a separate domain: set `API_BASE=https://api.example.com` on the web container. Optionally set `NEXT_PUBLIC_API_BASE` at build time (not required).
 - The UI warns in the console if loaded over HTTPS while the configured base is `http://` (mixed content).
 - The endpoint `/ui-config` serves `{ apiBase }` from server env; ensure your proxy does not intercept it.
@@ -187,9 +200,10 @@ Local Dev via Make
 - Web uses placeholders for OIDC; set real `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `NEXTAUTH_SECRET` for actual sign-in.
 
 End-to-End Tests
-- `npm run test:e2e` runs the Playwright suite in headed mode (pass `--headless` to the script for CLI-only environments).
-- `npm run test:e2e:ci` runs the same suite headlessly and is safe for automation.
-- `make test-e2e` provisions the API and web dev servers, waits for the API health check, runs `npm run test:e2e`, and tears everything down. Provide `ARGS=--headless` when you need the Make target to force headless mode (e.g., CI).
+- Quick commands (see the Testing section above for prerequisites):
+  - `npm run test:e2e` runs the Playwright suite (headed by default unless `CI`/`HEADLESS` is set).
+  - `npm run test:e2e:ci` forces headless mode.
+  - `make test-e2e ARGS=--headless` mirrors CI orchestration and stops services when complete.
 
 Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
