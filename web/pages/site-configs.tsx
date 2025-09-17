@@ -1,12 +1,16 @@
 import useSWR from 'swr'
-import { Alert, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, siteConfigs as site } from '../lib/openapi'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { validateSiteConfig } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 export default function SiteConfigs() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], () => v1.listSiteConfigsV1V1SiteConfigsGet({}))
   const [form, setForm] = useState({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
   const [createErrors, setCreateErrors] = useState<Record<string,string>>({})
@@ -46,6 +50,7 @@ export default function SiteConfigs() {
   return (
     <div>
       <Nav />
+      <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <h2 id="site-configs-heading" className="text-xl font-semibold mb-3">{t('site_configs_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}

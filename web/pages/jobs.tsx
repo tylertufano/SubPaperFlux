@@ -1,13 +1,17 @@
 import useSWR from 'swr'
-import { Alert, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1 } from '../lib/openapi'
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import Link from 'next/link'
 import { formatNumberValue, useNumberFormatter } from '../lib/format'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 export default function Jobs() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
@@ -48,6 +52,7 @@ export default function Jobs() {
   return (
     <div>
       <Nav />
+      <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
           <h2 id="jobs-heading" className="text-xl font-semibold">{t('jobs_title')}</h2>

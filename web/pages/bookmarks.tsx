@@ -1,10 +1,12 @@
 import useSWR from 'swr'
-import { Alert, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
-import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 type RegexTarget = 'both' | 'title' | 'url'
 type SortOption = 'title' | 'url' | 'published_at' | 'relevance'
@@ -61,6 +63,8 @@ type FolderModalState = {
 
 export default function Bookmarks() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
   const [page, setPage] = useState(1)
@@ -744,6 +748,7 @@ export default function Bookmarks() {
   return (
     <div>
       <Nav />
+      <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-3">
           <h2 id="bookmarks-heading" className="text-xl font-semibold">{t('bookmarks_title')}</h2>

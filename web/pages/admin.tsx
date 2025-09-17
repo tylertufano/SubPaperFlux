@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
-import { Alert, ErrorBoundary, Nav } from '../components'
+import { Alert, Breadcrumbs, ErrorBoundary, Nav } from '../components'
 import { v1 } from '../lib/openapi'
 import { useI18n } from '../lib/i18n'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 export default function Admin() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const [msg, setMsg] = useState<string>('')
   const { data: status, error: statusError, isLoading: statusLoading, mutate: refreshStatus } = useSWR(['/v1/status'], () => v1.getStatusV1StatusGet())
   const { data: db, error: dbError, isLoading: dbLoading, mutate: refreshDb } = useSWR(['/v1/status/db'], () => v1.dbStatusV1StatusDbGet())
@@ -21,6 +25,7 @@ export default function Admin() {
     <ErrorBoundary onRetry={handleRetry}>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <h2 className="text-xl font-semibold mb-3">{t('nav_admin')}</h2>
           {(statusLoading || dbLoading) && <p className="text-gray-600">{t('loading_text')}</p>}

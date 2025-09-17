@@ -1,11 +1,15 @@
 import useSWR from 'swr'
-import { Alert, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, feeds as feedsApi } from '../lib/openapi'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 export default function Feeds() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const { data, error, isLoading, mutate } = useSWR(['/v1/feeds'], () => v1.listFeedsV1V1FeedsGet({}))
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
@@ -89,6 +93,7 @@ export default function Feeds() {
   return (
     <div>
       <Nav />
+      <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <h2 id="feeds-heading" className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}

@@ -1,9 +1,12 @@
+import { useMemo } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
-import { ErrorBoundary, Nav } from '../components'
+import { Breadcrumbs, ErrorBoundary, Nav } from '../components'
 import { v1 } from '../lib/openapi'
 import { useI18n } from '../lib/i18n'
 import { formatNumberValue, useNumberFormatter } from '../lib/format'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 function StatCard({ title, value, href }: { title: string; value: string | number; href?: string }) {
   const content = (
@@ -17,7 +20,9 @@ function StatCard({ title, value, href }: { title: string; value: string | numbe
 
 export default function Home() {
   const { t } = useI18n()
+  const router = useRouter()
   const numberFormatter = useNumberFormatter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   // Bookmarks total (server-side count endpoint)
   const { data: bmCount, mutate: refreshBookmarks } = useSWR(['/v1/bookmarks/count'], () => v1.countBookmarksV1BookmarksCountGet({}))
 
@@ -70,6 +75,7 @@ export default function Home() {
     <ErrorBoundary onRetry={handleRetry}>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <div className="mb-4">
             <h1 className="text-2xl font-semibold">{t('dashboard_title')}</h1>
