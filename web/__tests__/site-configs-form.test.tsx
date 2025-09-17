@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, within, fireEvent, waitFor } from '@testing-library/react'
 import type { RenderResult } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -149,13 +149,122 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
 
 describe('site configs form setup helper', () => {
   it('renders the create site config form with default fields and data', async () => {
-    const { form, inputs, queryBanner } = await setup()
+    const { form, inputs, queryBanner, unmount } = await setup()
 
-    expect(form).toBeInTheDocument()
-    expect(inputs.name).toBeInstanceOf(HTMLInputElement)
-    expect(inputs.siteUrl.value).toBe('')
-    expect(inputs.scopeGlobal.checked).toBe(false)
-    expect(queryBanner()).toBeNull()
-    expect(await screen.findByText('Example Site')).toBeInTheDocument()
+    try {
+      expect(form).toBeInTheDocument()
+      expect(inputs.name).toBeInstanceOf(HTMLInputElement)
+      expect(inputs.siteUrl.value).toBe('')
+      expect(inputs.scopeGlobal.checked).toBe(false)
+      expect(queryBanner()).toBeNull()
+      expect(await screen.findByText('Example Site')).toBeInTheDocument()
+    } finally {
+      unmount()
+    }
+  })
+})
+
+describe('site configs creation validation', () => {
+  it('shows inline errors and skips submission when required fields are empty', async () => {
+    const { form, inputs, unmount } = await setup()
+
+    try {
+      fireEvent.change(inputs.name, { target: { value: ' ' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: ' ' } })
+      fireEvent.change(inputs.usernameSelector, { target: { value: ' ' } })
+      fireEvent.change(inputs.passwordSelector, { target: { value: ' ' } })
+      fireEvent.change(inputs.loginSelector, { target: { value: ' ' } })
+
+      fireEvent.submit(form)
+
+      expect(inputs.name).toHaveAttribute('aria-describedby', 'create-site-config-name-error')
+      expect(inputs.siteUrl).toHaveAttribute('aria-describedby', 'create-site-config-url-error')
+      expect(inputs.usernameSelector).toHaveAttribute(
+        'aria-describedby',
+        'create-site-config-username-selector-error',
+      )
+      expect(inputs.passwordSelector).toHaveAttribute(
+        'aria-describedby',
+        'create-site-config-password-selector-error',
+      )
+      expect(inputs.loginSelector).toHaveAttribute(
+        'aria-describedby',
+        'create-site-config-login-selector-error',
+      )
+
+      expect(within(form).getByText('Name is required')).toBeInTheDocument()
+      expect(within(form).getByText('Valid URL required')).toBeInTheDocument()
+      expect(within(form).getAllByText('Required')).toHaveLength(3)
+
+      expect(createSiteConfigMock).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
+  })
+
+  it('blocks submission when the site URL is invalid', async () => {
+    const { form, inputs, unmount } = await setup()
+
+    try {
+      fireEvent.change(inputs.name, { target: { value: 'Example' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'example.com/login' } })
+      fireEvent.change(inputs.usernameSelector, { target: { value: '#user' } })
+      fireEvent.change(inputs.passwordSelector, { target: { value: '#pass' } })
+      fireEvent.change(inputs.loginSelector, { target: { value: 'button[type="submit"]' } })
+
+      const submitButton = within(form).getByRole('button', { name: 'Create' })
+      expect(submitButton).toBeDisabled()
+
+      fireEvent.submit(form)
+
+      await screen.findByTestId('alert-alert')
+      expect(within(form).getByText('Valid URL required')).toBeInTheDocument()
+      expect(await screen.findByText('Site URL is invalid')).toBeInTheDocument()
+      expect(createSiteConfigMock).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
+  })
+})
+
+describe('site configs creation success path', () => {
+  it('submits normalized cookies and owner scope, then shows success feedback', async () => {
+    const { form, inputs, mutate, unmount } = await setup()
+
+    try {
+      fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'https://acme.example/login' } })
+      fireEvent.change(inputs.usernameSelector, { target: { value: '#username' } })
+      fireEvent.change(inputs.passwordSelector, { target: { value: '#password' } })
+      fireEvent.change(inputs.loginSelector, { target: { value: 'button[type="submit"]' } })
+      fireEvent.change(inputs.cookies, { target: { value: 'session=abc,  theme , ,  xyz  ' } })
+      fireEvent.click(inputs.scopeGlobal)
+
+      const submitButton = within(form).getByRole('button', { name: 'Create' })
+      expect(submitButton).toBeEnabled()
+
+      createSiteConfigMock.mockResolvedValueOnce({})
+
+      fireEvent.click(submitButton)
+
+      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
+      expect(createSiteConfigMock).toHaveBeenCalledWith({
+        siteConfig: {
+          name: 'Acme Login',
+          site_url: 'https://acme.example/login',
+          username_selector: '#username',
+          password_selector: '#password',
+          login_button_selector: 'button[type="submit"]',
+          cookies_to_store: ['session=abc', 'theme', 'xyz'],
+          ownerUserId: null,
+        },
+      })
+
+      const successMessage = await screen.findByText('Site config created')
+      expect(successMessage.closest('[role="status"]')).toBeInTheDocument()
+      await waitFor(() => expect(mutate).toHaveBeenCalled())
+    } finally {
+      unmount()
+    }
   })
 })
