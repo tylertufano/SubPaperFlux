@@ -125,7 +125,9 @@ make sdk-ts
   - Evidence: `web/__tests__/bulk-tags.test.tsx:1-200`
 - [x] Vitest coverage for bulk folder modal flows (UI-027)
   - Evidence: `web/__tests__/bulk-folders.test.tsx:1-220`
-- [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
+- [x] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
+  - Evidence: `web/playwright.config.ts:1-56`, `web/e2e/smoke.spec.ts:73-199`
+  - Run via: `npm run test:e2e`, `npm run test:e2e:ci`, or `make test-e2e` (`web/package.json:6-12`, `Makefile:136-165`)
 
 ### Queue/Idempotency UX
 
@@ -268,12 +270,15 @@ make sdk-ts
 
 - [ ] Unit: Component tests for filters, pagination, modals (UI-014)
 - [ ] Integration: Mock SDK to simulate API; test flows (UI-050)
- - [ ] E2E: Playwright/Cypress for login, CRUD, job retry, bulk delete (UI-014)
+ - [x] E2E: Playwright smoke for login, credential creation/test, bookmark preview, and bulk delete dry-run (UI-014)
+   - Evidence: `web/playwright.config.ts:1-56`, `web/e2e/smoke.spec.ts:73-199`
+   - Run via: `npm run test:e2e`, `npm run test:e2e:ci`, or `make test-e2e` (`web/package.json:6-12`, `Makefile:136-165`)
 - [ ] Accessibility: Axe audits in CI; color contrast testing (UI-051)
 
 ## CI/CD & Ops
 
-- [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
+ - [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
+   - Playwright smoke can run via `npm run test:e2e:ci` or `make test-e2e` for CI wiring (`web/package.json:6-12`, `Makefile:136-165`)
  - [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
    - [x] Runtime API base resolution via `/ui-config` (UI-084)
 - [ ] Error Reporting: Sentry client SDK; breadcrumb logs; user-friendly fallback (UI-011)
@@ -368,7 +373,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-011: Add Sentry to UI (Next.js integration)
 - UI-012: Add middleware to set `app.user_id` session var for RLS enforcement in Postgres
 - UI-013: Expand i18n string catalog and wrap page text
-- UI-014: Add component tests and minimal E2E (Playwright)
+- UI-014: Add component tests and minimal E2E (Playwright) — `web/__tests__/bookmarks-filters.test.tsx:1`, `web/playwright.config.ts:1-56`, `web/e2e/smoke.spec.ts:73-199`
 - UI-015: Admin health/status panels and System view (OpenAPI/metrics/version)
 - UI-016: Keyboard shortcuts (`/`, `j/k`, `?`)
 - UI-017: Preview pane for article content
@@ -405,7 +410,7 @@ Use these IDs in future prompts to request specific work. We will keep this list
  - UI-049: Optimistic UX for deletes/retries
  - UI-050: Integration tests with mocked SDK
  - UI-051: Accessibility audits in CI (Axe, contrast)
- - UI-052: CI builds (lint, type-check, unit/E2E smoke, bundle analysis)
+ - UI-052: CI builds (lint, type-check, unit/E2E smoke, bundle analysis) — Playwright smoke runs via `npm run test:e2e:ci` or `make test-e2e` (`web/package.json:6-12`, `Makefile:136-165`)
  - UI-053: Environment configs and feature flags (Dev/Stage/Prod)
  - UI-054: API compatibility policy (`/v1` only) and deprecation tracking
  - UI-055: SDK versioning policy and release notes
