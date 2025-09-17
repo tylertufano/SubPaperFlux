@@ -10,6 +10,7 @@ const messages = enMessages as Record<string, string>
 function renderWithI18n(ui: React.ReactElement) {
   const value = {
     locale: 'en',
+    locales: ['en', 'pseudo'],
     setLocale: vi.fn(),
     t: (key: string) => messages[key] ?? key,
   }
