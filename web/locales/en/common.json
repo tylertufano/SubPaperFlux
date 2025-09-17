@@ -1,6 +1,7 @@
 {
   "home_welcome": "Welcome. Use the navigation to explore bookmarks, jobs, and admin tools.",
   "breadcrumb_home": "Dashboard",
+  "breadcrumb_navigation_label": "Breadcrumb navigation",
   "nav_bookmarks": "Bookmarks",
   "nav_jobs": "Jobs",
   "nav_jobs_all": "All Jobs",
@@ -130,6 +131,7 @@
   "bookmarks_select_row": "Select bookmark {value}",
   "bookmarks_select_row_unknown": "without title",
   "bookmarks_preview_heading": "Preview",
+  "bookmarks_preview_select_prompt": "Select a bookmark to preview its contents.",
   "bookmarks_preview_loading": "Loading preview…",
   "bookmarks_preview_empty": "No preview available for this bookmark.",
   "bookmarks_preview_error": "Unable to load preview.",
