@@ -1,5 +1,6 @@
 import { Configuration, Middleware, ResponseError, FetchError } from '../sdk/src/runtime'
 import { V1Api } from '../sdk/src/apis/V1Api'
+import { AdminApi } from '../sdk/src/apis/AdminApi'
 import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
@@ -19,7 +20,14 @@ if (typeof window !== 'undefined') {
   } catch {}
 }
 
-let clientsPromise: Promise<{ v1: V1Api; bookmarks: BookmarksApi; creds: CredentialsApi; sites: SiteConfigsApi; feeds: FeedsApi }> | null = null
+let clientsPromise: Promise<{
+  v1: V1Api
+  admin: AdminApi
+  bookmarks: BookmarksApi
+  creds: CredentialsApi
+  sites: SiteConfigsApi
+  feeds: FeedsApi
+}> | null = null
 
 type AuthorizedRequestOptions = Omit<RequestInit, 'headers'> & {
   headers?: Record<string, string | undefined>
@@ -97,6 +105,7 @@ async function getClients() {
       })
       return {
         v1: new V1Api(cfg),
+        admin: new AdminApi(cfg),
         bookmarks: new BookmarksApi(cfg),
         creds: new CredentialsApi(cfg),
         sites: new SiteConfigsApi(cfg),
@@ -528,8 +537,9 @@ export const v1 = {
   getStatusV1StatusGet: async () => (await getClients()).v1.getStatusV1StatusGet(),
   dbStatusV1StatusDbGet: async () => (await getClients()).v1.dbStatusV1StatusDbGet(),
 
-  postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).v1.postgresPrepareV1AdminPostgresPreparePost(),
-  postgresEnableRlsV1AdminPostgresEnableRlsPost: async () => (await getClients()).v1.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
+  postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).admin.postgresPrepareAdminPostgresPreparePost(),
+  postgresEnableRlsV1AdminPostgresEnableRlsPost: async () =>
+    (await getClients()).admin.postgresEnableRlsAdminPostgresEnableRlsPost(),
 
   listMeTokensV1MeTokensGet: async (p: ApiTokensQuery = {}) => listApiTokens(p),
   createMeTokenV1MeTokensPost: async ({ apiTokenCreate }: { apiTokenCreate: ApiTokenCreate }) =>
