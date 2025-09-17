@@ -398,7 +398,9 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
         "<!DOCTYPE html><html><head><style>.noop { color: red; }</style></head>"
         "<body style=\"background:red\"><script>alert('x')</script><div onclick=\"alert(1)\">"
         "<a href=\"javascript:alert(2)\">Click</a>"
+        "<a href=\"https://allowed.example/article\" title=\"Safe\">Allowed</a>"
         "<img src=\"data:text/plain;base64,AAAA\" onerror=\"alert(3)\" alt=\"Evil\" />"
+        "<img src=\"https://allowed.example/image.jpg\" alt=\"Legit\" />"
         "<p>Content</p></div></body></html>"
     )
     monkeypatch.setattr(bookmarks_router, "_fetch_html", lambda url: sample_html)
@@ -430,6 +432,8 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
     assert "<body" not in body.lower()
     assert "Content" in body
     assert "Evil" in body
+    assert "https://allowed.example/article" in body
+    assert "https://allowed.example/image.jpg" in body
     assert resp.headers["content-type"].startswith("text/html")
 
 

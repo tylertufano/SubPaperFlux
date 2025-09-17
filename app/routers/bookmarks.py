@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 import httpx
+from bleach.sanitizer import Cleaner
 from bs4 import BeautifulSoup, Doctype
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, StreamingResponse
@@ -55,21 +56,63 @@ router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
 ALLOWED_REGEX_FLAGS = {"i"}
 
 _FETCHABLE_SCHEMES = {"http", "https"}
-_SAFE_ATTR_SCHEMES = {"http", "https", "mailto", "tel"}
-_REMOVABLE_TAGS = {
-    "script",
-    "style",
-    "iframe",
-    "object",
-    "embed",
-    "form",
-    "input",
-    "button",
-    "link",
-    "meta",
-    "noscript",
+
+_ALLOWED_PREVIEW_TAGS = {
+    "a",
+    "abbr",
+    "b",
+    "blockquote",
+    "br",
+    "code",
+    "div",
+    "em",
+    "figcaption",
+    "figure",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "i",
+    "img",
+    "li",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "small",
+    "span",
+    "strong",
+    "sub",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "th",
+    "thead",
+    "tr",
+    "ul",
 }
-_URL_ATTRS = {"href", "src", "action", "xlink:href", "formaction"}
+
+_ALLOWED_PREVIEW_ATTRS = {
+    "a": ["href", "title"],
+    "abbr": ["title"],
+    "img": ["alt", "title", "src"],
+    "td": ["colspan", "rowspan"],
+    "th": ["colspan", "rowspan", "scope"],
+}
+
+_ALLOWED_PREVIEW_PROTOCOLS = ["http", "https", "mailto", "tel"]
+
+_PREVIEW_CLEANER = Cleaner(
+    tags=sorted(_ALLOWED_PREVIEW_TAGS),
+    attributes=_ALLOWED_PREVIEW_ATTRS,
+    protocols=_ALLOWED_PREVIEW_PROTOCOLS,
+    strip=True,
+    strip_comments=True,
+)
 
 
 def _normalize_preview_url(url: str) -> Optional[str]:
@@ -102,19 +145,6 @@ def _fetch_html(url: str) -> str:
         return response.text
 
 
-def _is_disallowed_attr_url(value: str) -> bool:
-    if value is None:
-        return False
-    text = str(value).strip()
-    if not text:
-        return False
-    parsed = urlparse(text)
-    if parsed.scheme:
-        return parsed.scheme.lower() not in _SAFE_ATTR_SCHEMES
-    lowered = text.lower()
-    return lowered.startswith("javascript:") or lowered.startswith("data:") or lowered.startswith("vbscript:")
-
-
 def _sanitize_html_content(html: str) -> str:
     if not html:
         return ""
@@ -122,34 +152,14 @@ def _sanitize_html_content(html: str) -> str:
     for element in list(soup.contents):
         if isinstance(element, Doctype):
             element.extract()
-    for tag_name in _REMOVABLE_TAGS:
-        for tag in soup.find_all(tag_name):
-            tag.decompose()
-    for tag in soup.find_all(True):
-        for attr_name, value in list(tag.attrs.items()):
-            lower = attr_name.lower()
-            if lower.startswith("on"):
-                del tag.attrs[attr_name]
-                continue
-            if lower == "style":
-                del tag.attrs[attr_name]
-                continue
-            if lower in _URL_ATTRS:
-                if isinstance(value, list):
-                    cleaned = [v for v in value if not _is_disallowed_attr_url(v)]
-                    if cleaned:
-                        tag.attrs[attr_name] = cleaned if len(cleaned) > 1 else cleaned[0]
-                    else:
-                        del tag.attrs[attr_name]
-                else:
-                    if _is_disallowed_attr_url(value):
-                        del tag.attrs[attr_name]
     body = soup.body
     if body:
         content = body.decode_contents()
-        return content.strip() if content else ""
-    sanitized = soup.decode()
-    return sanitized.strip() if sanitized else ""
+        fragment = content if content else ""
+    else:
+        fragment = soup.decode()
+    cleaned = _PREVIEW_CLEANER.clean(fragment)
+    return cleaned.strip()
 
 
 @dataclass
