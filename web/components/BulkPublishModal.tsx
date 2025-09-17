@@ -269,7 +269,7 @@ export default function BulkPublishModal({
           const result: BulkPublishResult = {
             status: 'error',
             items: errorState.items,
-            summary: errorState.summary,
+            summary: effectiveSummary,
             errorMessage: errorState.errorMessage,
           }
           onErrorRef.current?.(new Error(errorState.errorMessage ?? 'Bulk publish failed'), result)
