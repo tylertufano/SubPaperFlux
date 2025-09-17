@@ -7,6 +7,9 @@ import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import type { FeedOut } from '../sdk/src/models/FeedOut'
+import type { FolderOut } from '../sdk/src/models/FolderOut'
+import type { TagOut } from '../sdk/src/models/TagOut'
 
 type RegexTarget = 'both' | 'title' | 'url'
 type SortOption = 'title' | 'url' | 'published_at' | 'relevance'
@@ -59,6 +62,12 @@ type FolderModalState = {
   instapaper: string
   hasCurrent: boolean
   currentName: string | null
+}
+
+type ItemsSource<T> = T[] | { items?: T[] }
+
+function extractItems<T>(source: ItemsSource<T> | undefined): T[] {
+  return Array.isArray(source) ? source : source?.items ?? []
 }
 
 export default function Bookmarks() {
@@ -131,12 +140,22 @@ export default function Bookmarks() {
       sortBy: sb,
       sortDir: sb === 'relevance' ? undefined : sd,
     }))
-  const { data: feeds } = useSWR([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
-  const feedItems = Array.isArray(feeds) ? feeds : feeds?.items ?? []
-  const { data: tagsData, error: tagsError, isLoading: tagsLoading, mutate: mutateTags } = useSWR([`/v1/bookmarks/tags`], () => v1.listTagsBookmarksTagsGet())
-  const tagItems = Array.isArray(tagsData) ? tagsData : tagsData?.items ?? []
-  const { data: foldersData, error: foldersError, isLoading: foldersLoading, mutate: mutateFolders } = useSWR([`/v1/bookmarks/folders`], () => v1.listFoldersBookmarksFoldersGet())
-  const folderItems = Array.isArray(foldersData) ? foldersData : foldersData?.items ?? []
+  const { data: feeds } = useSWR<ItemsSource<FeedOut>>([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
+  const feedItems = extractItems(feeds)
+  const {
+    data: tagsData,
+    error: tagsError,
+    isLoading: tagsLoading,
+    mutate: mutateTags,
+  } = useSWR<ItemsSource<TagOut>>([`/v1/bookmarks/tags`], () => v1.listTagsBookmarksTagsGet())
+  const tagItems = extractItems(tagsData)
+  const {
+    data: foldersData,
+    error: foldersError,
+    isLoading: foldersLoading,
+    mutate: mutateFolders,
+  } = useSWR<ItemsSource<FolderOut>>([`/v1/bookmarks/folders`], () => v1.listFoldersBookmarksFoldersGet())
+  const folderItems = extractItems(foldersData)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [bulkTagModalOpen, setBulkTagModalOpen] = useState(false)

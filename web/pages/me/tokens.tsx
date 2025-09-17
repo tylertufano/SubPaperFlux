@@ -57,7 +57,7 @@ export default function Tokens() {
     [page, size, includeRevoked],
   )
 
-  const { data, error, isLoading, mutate } = useSWR<ApiTokensPage>(
+  const { data, error, isLoading, mutate } = useSWR<ApiTokensPage, Error, typeof swrKey>(
     swrKey,
     ([, currentPage, pageSize, showRevoked]) =>
       v1.listMeTokensV1MeTokensGet({

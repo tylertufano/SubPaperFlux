@@ -119,7 +119,7 @@ export default function AdminUsers() {
     [page, size, filters],
   )
 
-  const { data, error, isLoading, mutate } = useSWR<AdminUsersPage>(
+  const { data, error, isLoading, mutate } = useSWR<AdminUsersPage, Error, typeof swrKey>(
     swrKey,
     ([, currentPage, pageSize, search, status, role]) =>
       v1.listAdminUsersV1AdminUsersGet({
