@@ -121,6 +121,8 @@ make sdk-ts
 - [x] Preview pane sanitization + keyboard navigation tests (`web/__tests__/PreviewPane.test.tsx`, `web/__tests__/bookmarks-preview-navigation.test.tsx`)
 - [x] Vitest coverage for bulk tag modal flows (UI-027)
   - Evidence: `web/__tests__/bulk-tags.test.tsx:1-200`
+- [x] Vitest coverage for bulk folder modal flows (UI-027)
+  - Evidence: `web/__tests__/bulk-folders.test.tsx:1-220`
 - [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
 
 ### Queue/Idempotency UX
@@ -151,6 +153,8 @@ make sdk-ts
     - Evidence: `web/components/BulkTagModal.tsx:1-200`, `web/pages/bookmarks.tsx:130-220`, `web/__tests__/bulk-tags.test.tsx:1-200`
   - [x] Bulk folder update API + SDK coverage
     - Evidence: `app/schemas.py:213-256`, `app/routers/bookmarks.py:939-1150`, `tests/test_bookmarks_router.py:405-618`, `sdk/ts/src/apis/BookmarksApi.ts:3205-3450`, `web/sdk/src/apis/BookmarksApi.ts:3205-3450`, `web/lib/openapi.ts:431-445`
+  - [x] Bulk folder assignment modal + toolbar action with localized feedback and tests
+    - Evidence: `web/components/BulkFolderModal.tsx:1-200`, `web/pages/bookmarks.tsx:640-940`, `web/__tests__/bulk-folders.test.tsx:1-200`
 - [x] Tags & Folders (UI-018)
   - Evidence: `alembic/versions/0011_tags_and_folders.py:1`, `alembic/versions/0016_tag_folder_foreign_keys.py:1`, `app/models.py:200-240`
   - [x] API endpoints for tag and folder management plus bookmark associations: `app/routers/bookmarks.py:1`

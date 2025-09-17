@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkActionToolbar, BulkPublishModal, BulkTagModal, EmptyState, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, Nav, PreviewPane } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -160,6 +160,8 @@ export default function Bookmarks() {
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [bulkTagModalOpen, setBulkTagModalOpen] = useState(false)
   const [bulkTagBookmarkIds, setBulkTagBookmarkIds] = useState<string[]>([])
+  const [bulkFolderModalOpen, setBulkFolderModalOpen] = useState(false)
+  const [bulkFolderBookmarkIds, setBulkFolderBookmarkIds] = useState<string[]>([])
   const [publishPlan, setPublishPlan] = useState<BulkPublishPlan | null>(null)
   const [publishInFlight, setPublishInFlight] = useState(false)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
@@ -711,6 +713,54 @@ export default function Bookmarks() {
     mutate()
     closeBulkTagModal()
   }
+  function openBulkFolderModal() {
+    if (!selectedIds.length) return
+    setBulkFolderBookmarkIds(selectedIds)
+    setBulkFolderModalOpen(true)
+  }
+  function closeBulkFolderModal() {
+    setBulkFolderModalOpen(false)
+    setBulkFolderBookmarkIds([])
+  }
+  async function submitBulkFolderModal({ folderId, instapaperId, clear }: { folderId: string | null; instapaperId: string | null; clear: boolean }) {
+    if (!bulkFolderBookmarkIds.length) {
+      throw new Error(t('bookmarks_bulk_folders_error_no_selection'))
+    }
+    const requestFolderId = clear ? null : folderId
+    const instapaperValue = clear ? null : (instapaperId ? instapaperId : undefined)
+    try {
+      await v1.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost({
+        bulkBookmarkFolderUpdate: {
+          bookmarkIds: bulkFolderBookmarkIds,
+          folderId: requestFolderId,
+          instapaperFolderId: instapaperValue,
+        },
+      })
+    } catch (err: any) {
+      const reason = (err?.message || String(err) || '').trim() || t('bookmarks_bulk_folders_error_generic')
+      setBanner({ kind: 'error', message: t('bookmarks_bulk_folders_error', { reason }) })
+      throw new Error(reason)
+    }
+  }
+  function handleBulkFolderSuccess({ folderId, clear }: { folderId: string | null; instapaperId: string | null; clear: boolean }) {
+    const bookmarkCount = formatNumberValue(bulkFolderBookmarkIds.length, numberFormatter, '0')
+    if (clear) {
+      setBanner({ kind: 'success', message: t('bookmarks_bulk_folders_cleared', { bookmarks: bookmarkCount }) })
+    } else {
+      const folder = folderItems.find((f: any) => f.id === folderId)
+      const folderName = typeof folder?.name === 'string' && folder.name.trim()
+        ? folder.name.trim()
+        : t('bookmarks_folder_fallback')
+      setBanner({
+        kind: 'success',
+        message: t('bookmarks_bulk_folders_success', { bookmarks: bookmarkCount, folder: folderName }),
+      })
+    }
+    clearSelection()
+    mutateFolders()
+    mutate()
+    closeBulkFolderModal()
+  }
   function bulkPublish() {
     if (publishInFlight) return
     const items = (data?.items ?? []).filter((b: any) => selected[b.id])
@@ -1154,6 +1204,7 @@ export default function Bookmarks() {
                 actions={[
                   { label: t('btn_publish_selected'), onClick: bulkPublish, busy: publishInFlight },
                   { label: t('btn_assign_tags'), onClick: openBulkTagModal },
+                  { label: t('btn_move_to_folder'), onClick: openBulkFolderModal },
                   { label: t('btn_delete_selected'), onClick: bulkDelete },
                   { label: t('btn_export_json'), onClick: () => exportSelected('json') },
                   { label: t('btn_export_csv'), onClick: () => exportSelected('csv') },
@@ -1334,6 +1385,16 @@ export default function Bookmarks() {
           onClose={closeBulkTagModal}
           onSubmit={submitBulkTagModal}
           onSuccess={handleBulkTagSuccess}
+        />
+      )}
+      {bulkFolderModalOpen && (
+        <BulkFolderModal
+          open={bulkFolderModalOpen}
+          selectedCount={bulkFolderBookmarkIds.length}
+          folders={folderItems}
+          onClose={closeBulkFolderModal}
+          onSubmit={submitBulkFolderModal}
+          onSuccess={handleBulkFolderSuccess}
         />
       )}
       {tagModal && (
