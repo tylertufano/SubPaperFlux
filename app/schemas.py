@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, AnyHttpUrl
+from uuid import UUID
+
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class User(BaseModel):
@@ -197,6 +199,17 @@ class FolderOut(BaseModel):
 
 class BookmarkTagsUpdate(BaseModel):
     tags: List[str] = Field(default_factory=list)
+
+
+class BulkBookmarkTagUpdate(BaseModel):
+    bookmark_ids: List[UUID] = Field(..., min_length=1)
+    tags: List[str] = Field(default_factory=list)
+    clear: bool = False
+
+
+class BookmarkTagSummary(BaseModel):
+    bookmark_id: str
+    tags: List[TagOut] = Field(default_factory=list)
 
 
 class BookmarkFolderUpdate(BaseModel):

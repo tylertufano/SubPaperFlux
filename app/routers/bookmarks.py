@@ -36,8 +36,10 @@ from ..jobs.util_subpaperflux import get_instapaper_oauth_session
 from ..schemas import (
     BookmarkFolderUpdate,
     BookmarkOut,
+    BookmarkTagSummary,
     BookmarkTagsUpdate,
     BookmarksPage,
+    BulkBookmarkTagUpdate,
     FolderCreate,
     FolderOut,
     FolderUpdate,
@@ -817,6 +819,123 @@ def update_bookmark_tags(
     counts = _tag_counts(session, user_id)
     tags = [tag_map[name] for name in unique]
     return [_tag_to_out(tag, counts) for tag in tags]
+
+
+@router.post(
+    "/bulk-tags",
+    response_model=List[BookmarkTagSummary],
+    dependencies=[Depends(csrf_protect)],
+)
+def bulk_update_bookmark_tags(
+    payload: BulkBookmarkTagUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    bookmark_ids = [str(value) for value in payload.bookmark_ids]
+    if not bookmark_ids:
+        raise HTTPException(status_code=400, detail="bookmark_ids list required")
+
+    normalised = _normalise_tags(payload.tags) or []
+    if payload.clear:
+        if normalised:
+            raise HTTPException(status_code=400, detail="Cannot provide tags when clear is true")
+        unique_tags: List[str] = []
+    else:
+        seen: set[str] = set()
+        unique_tags = []
+        for raw in normalised:
+            name = raw.strip()
+            if not name:
+                raise HTTPException(status_code=400, detail="Tag names must be non-empty")
+            if name not in seen:
+                seen.add(name)
+                unique_tags.append(name)
+        if not unique_tags:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one tag is required unless clear is true",
+            )
+
+    stmt = select(Bookmark).where(
+        (Bookmark.owner_user_id == user_id) & (Bookmark.id.in_(bookmark_ids))
+    )
+    bookmarks = session.exec(stmt).all()
+    if not bookmarks:
+        return []
+
+    bookmark_map = {bookmark.id: bookmark for bookmark in bookmarks}
+    ordered_bookmarks: List[Bookmark] = []
+    seen_bookmarks: set[str] = set()
+    for bookmark_id in bookmark_ids:
+        if bookmark_id in bookmark_map and bookmark_id not in seen_bookmarks:
+            ordered_bookmarks.append(bookmark_map[bookmark_id])
+            seen_bookmarks.add(bookmark_id)
+
+    if not ordered_bookmarks:
+        return []
+
+    tag_map: dict[str, Tag] = {}
+    if unique_tags:
+        tag_stmt = select(Tag).where(
+            (Tag.owner_user_id == user_id) & (Tag.name.in_(unique_tags))
+        )
+        existing = session.exec(tag_stmt).all()
+        tag_map = {tag.name: tag for tag in existing}
+        for name in unique_tags:
+            if name not in tag_map:
+                tag = Tag(owner_user_id=user_id, name=name)
+                session.add(tag)
+                tag_map[name] = tag
+
+    updated_ids: List[str] = []
+    for bookmark in ordered_bookmarks:
+        session.exec(
+            delete(BookmarkTagLink).where(BookmarkTagLink.bookmark_id == bookmark.id)
+        )
+        if unique_tags:
+            for name in unique_tags:
+                tag = tag_map[name]
+                session.add(BookmarkTagLink(bookmark_id=bookmark.id, tag_id=tag.id))
+        updated_ids.append(bookmark.id)
+        record_audit_log(
+            session,
+            entity_type="bookmark",
+            entity_id=bookmark.id,
+            action="update",
+            owner_user_id=user_id,
+            actor_user_id=current_user["sub"],
+            details={
+                "tags": unique_tags,
+                "bulk": True,
+                "clear": bool(payload.clear),
+            },
+        )
+
+    try:
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.exception(
+            "Failed to bulk update bookmark tags user=%s bookmark_ids=%s",
+            user_id,
+            ",".join(updated_ids),
+        )
+        raise HTTPException(
+            status_code=400, detail="Could not update bookmark tags"
+        ) from exc
+
+    counts = _tag_counts(session, user_id)
+    ordered_tags = [tag_map[name] for name in unique_tags]
+    summaries: List[BookmarkTagSummary] = []
+    for bookmark_id in updated_ids:
+        summaries.append(
+            BookmarkTagSummary(
+                bookmark_id=bookmark_id,
+                tags=[_tag_to_out(tag, counts) for tag in ordered_tags],
+            )
+        )
+    return summaries
 
 
 @router.get("/{bookmark_id}/folder", response_model=Optional[FolderOut])
