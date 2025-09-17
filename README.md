@@ -184,7 +184,12 @@ Local Dev via Make
 - Defaults and env vars:
   - Uses SQLite by default: `DATABASE_URL=sqlite:///./dev.db`
   - Override for Postgres: `DATABASE_URL=postgresql://user:pass@localhost:5432/subpaperflux`
-  - Web uses placeholders for OIDC; set real `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `NEXTAUTH_SECRET` for actual sign-in.
+- Web uses placeholders for OIDC; set real `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `NEXTAUTH_SECRET` for actual sign-in.
+
+End-to-End Tests
+- `npm run test:e2e` runs the Playwright suite in headed mode (pass `--headless` to the script for CLI-only environments).
+- `npm run test:e2e:ci` runs the same suite headlessly and is safe for automation.
+- `make test-e2e` provisions the API and web dev servers, waits for the API health check, runs `npm run test:e2e`, and tears everything down. Provide `ARGS=--headless` when you need the Make target to force headless mode (e.g., CI).
 
 Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
