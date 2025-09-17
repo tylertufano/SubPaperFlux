@@ -1,5 +1,6 @@
 import base64
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -136,3 +137,58 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
     assert all(entry["entity_id"] == site_config["id"] for entry in final_logs["items"])
     assert final_logs["items"][0]["details"]["name"] == "Demo Site Updated"
     assert final_logs["items"][2]["details"]["name"] == "Demo Site"
+
+
+def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient):
+    from app.db import get_session
+    from app.models import Bookmark
+
+    with next(get_session()) as session:
+        bookmark = Bookmark(
+            owner_user_id="admin",
+            instapaper_bookmark_id="insta-001",
+            title="Audit Bookmark",
+            url="https://example.com/audit",
+            published_at=datetime.now(timezone.utc),
+        )
+        session.add(bookmark)
+        session.commit()
+        bookmark_id = bookmark.id
+
+    update_response = admin_client.put(
+        f"/bookmarks/{bookmark_id}/tags",
+        json={"tags": ["alpha", "beta"]},
+    )
+    assert update_response.status_code == 200
+
+    logs_after_update = fetch_audit(
+        admin_client,
+        entity_type="bookmark",
+        entity_id=bookmark_id,
+        size=10,
+    )
+    assert logs_after_update["total"] >= 1
+    assert logs_after_update["items"][0]["action"] == "update"
+    assert logs_after_update["items"][0]["entity_id"] == bookmark_id
+    assert logs_after_update["items"][0]["details"]["tags"] == ["alpha", "beta"]
+
+    delete_response = admin_client.delete(
+        f"/bookmarks/{bookmark_id}",
+        params={"delete_remote": "false"},
+    )
+    assert delete_response.status_code == 204
+
+    final_logs = fetch_audit(
+        admin_client,
+        entity_type="bookmark",
+        entity_id=bookmark_id,
+        size=10,
+    )
+    assert final_logs["total"] >= 2
+    assert [item["action"] for item in final_logs["items"][:2]] == [
+        "delete",
+        "update",
+    ]
+    assert final_logs["items"][0]["details"]["delete_remote"] is False
+    assert final_logs["items"][0]["details"]["instapaper_bookmark_id"] == "insta-001"
+    assert final_logs["items"][1]["details"]["tags"] == ["alpha", "beta"]

@@ -154,8 +154,9 @@ make sdk-ts
   - Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:200-520`, `web/__tests__/bookmarks-preview-navigation.test.tsx:1-220`
 - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
 - [x] Activity Log (UI-029)
-  - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`, `tests/test_audit_log.py:1`
-  - Evidence: `web/pages/admin/audit.tsx:1`, `web/lib/openapi.ts:112`, `web/locales/en/common.json:150`
+  - Evidence (data + API): `alembic/versions/0012_audit_log.py:1`, `app/models.py:260`, `app/routers/admin.py:64-130`, `app/routers/admin_audit_v1.py:1-17`
+  - Evidence (hooks + tests): `app/audit.py:1`, `app/routers/credentials.py:80-158`, `app/routers/site_configs.py:34-130`, `app/routers/bookmarks.py:520-1330`, `tests/test_audit_log.py:1-170`
+  - Evidence (UI + SDK): `web/pages/admin/audit.tsx:1-320`, `web/__tests__/admin-audit.test.tsx:1-140`, `web/lib/openapi.ts:166-320`, `web/locales/en/common.json:187-368`, `web/sdk/src/apis/AdminApi.ts:50-425`
 
 ## Phase 3 — User Management
 
