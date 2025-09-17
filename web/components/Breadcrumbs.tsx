@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { BreadcrumbItem } from '../lib/breadcrumbs'
+import { useI18n } from '../lib/i18n'
 
 type BreadcrumbsProps = {
   items: BreadcrumbItem[]
@@ -7,12 +8,13 @@ type BreadcrumbsProps = {
 }
 
 export default function Breadcrumbs({ items, className }: BreadcrumbsProps) {
+  const { t } = useI18n()
   if (!items || items.length === 0) return null
 
   const containerClass = className ?? 'border-b border-gray-200 bg-gray-50'
 
   return (
-    <nav aria-label="Breadcrumb" className={containerClass}>
+    <nav aria-label={t('breadcrumb_navigation_label')} className={containerClass}>
       <ol className="container flex flex-wrap items-center gap-2 py-2 text-sm text-gray-600">
         {items.map((item, index) => {
           const isLast = index === items.length - 1

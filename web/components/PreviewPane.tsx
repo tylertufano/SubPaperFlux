@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import sanitizeHtml from 'sanitize-html'
+import { useI18n } from '../lib/i18n'
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -41,10 +42,6 @@ type PreviewPaneProps = {
   ariaLabel?: string
 }
 
-const DEFAULT_EMPTY_STATE = (
-  <p className="text-sm text-gray-500">Select a bookmark to preview its contents.</p>
-)
-
 export default function PreviewPane({
   snippet,
   className,
@@ -52,6 +49,7 @@ export default function PreviewPane({
   labelledBy,
   ariaLabel,
 }: PreviewPaneProps) {
+  const { t } = useI18n()
   const sanitized = useMemo(() => {
     if (!snippet) {
       return ''
@@ -82,6 +80,13 @@ export default function PreviewPane({
         ? { 'aria-label': ariaLabel }
         : {}
 
+  const defaultEmptyState = useMemo(
+    () => (
+      <p className="text-sm text-gray-500">{t('bookmarks_preview_select_prompt')}</p>
+    ),
+    [t],
+  )
+
   return (
     <section
       role="region"
@@ -96,7 +101,7 @@ export default function PreviewPane({
           dangerouslySetInnerHTML={{ __html: sanitized }}
         />
       ) : (
-        emptyState ?? DEFAULT_EMPTY_STATE
+        emptyState ?? defaultEmptyState
       )}
     </section>
   )
