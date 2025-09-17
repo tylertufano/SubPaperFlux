@@ -17,21 +17,25 @@ vi.mock('next/router', () => ({
   useRouter: () => ({ pathname: '/admin/audit' }),
 }))
 
-vi.mock('../components', () => ({
-  __esModule: true,
-  Nav: () => <nav data-testid="nav">Nav</nav>,
-  Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
-  Alert: ({ message }: { message: React.ReactNode }) => (
-    <div data-testid="alert">{message}</div>
-  ),
-  EmptyState: ({ message, action }: { message: React.ReactNode; action?: React.ReactNode }) => (
-    <div data-testid="empty-state">
-      <div>{message}</div>
-      {action}
-    </div>
-  ),
-  ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
+vi.mock('../components', async () => {
+  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
+  return {
+    __esModule: true,
+    Nav: () => <nav data-testid="nav">Nav</nav>,
+    Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
+    BulkActionToolbar: toolbarModule.default,
+    Alert: ({ message }: { message: React.ReactNode }) => (
+      <div data-testid="alert">{message}</div>
+    ),
+    EmptyState: ({ message, action }: { message: React.ReactNode; action?: React.ReactNode }) => (
+      <div data-testid="empty-state">
+        <div>{message}</div>
+        {action}
+      </div>
+    ),
+    ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  }
+})
 
 describe('AdminAudit page', () => {
   beforeEach(() => {

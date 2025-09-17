@@ -5,5 +5,8 @@
   "locale_pseudo": "Pseudo (demo)",
   "breadcrumb_home": "Tablero ✨",
   "breadcrumb_navigation_label": "Migas ✨",
-  "bookmarks_preview_select_prompt": "Elige un marcador para ver su contenido ✨"
+  "bookmarks_preview_select_prompt": "Elige un marcador para ver su contenido ✨",
+  "bulk_actions_selected_count": "{count} seleccionados ✨",
+  "bulk_actions_clear": "Borrar selección ✨",
+  "bulk_actions_action_busy": "{label} en progreso ✨"
 }
