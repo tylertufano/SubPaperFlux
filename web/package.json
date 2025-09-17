@@ -10,7 +10,6 @@
     "test:a11y": "vitest run __tests__/a11y"
   },
   "dependencies": {
-    "marked": "^16.3.0",
     "next": "14.2.5",
     "next-auth": "5.0.0-beta.20",
     "react": "18.2.0",

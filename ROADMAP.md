@@ -149,9 +149,9 @@ make sdk-ts
   - [x] TypeScript SDK updated for tags/folders endpoints: `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`
   - [x] Bookmarks listing filters by tag/folder with UI widgets and tests: `app/routers/bookmarks.py:340`, `web/pages/bookmarks.tsx:70-120`, `web/pages/bookmarks.tsx:360-940`, `tests/test_bookmarks_router.py:90-220`
 - [x] Preview Pane (sanitized HTML) (UI-017)
-  - API + sanitization pipeline: `app/routers/bookmarks.py:1`, `tests/test_bookmarks_router.py:1`
-  - Component rendering + sanitization safeguards: `web/components/PreviewPane.tsx:1`, `web/__tests__/PreviewPane.test.tsx:1`
-  - [x] Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:1`, `web/__tests__/bookmarks-preview-navigation.test.tsx:1`
+  - Backend preview endpoint returns Bleach-sanitized snippets: `app/routers/bookmarks.py:70-170`, `tests/test_bookmarks_router.py:360-460`
+  - Preview pane component renders sanitized markup safely: `web/components/PreviewPane.tsx:1-120`, `web/__tests__/PreviewPane.test.tsx:1-80`
+  - Integrated preview pane into Bookmarks table with keyboard navigation: `web/pages/bookmarks.tsx:200-520`, `web/__tests__/bookmarks-preview-navigation.test.tsx:1-220`
 - [x] Jobs Streaming (WebSocket/SSE) (UI-009)
 - [x] Activity Log (UI-029)
   - Evidence: `alembic/versions/0012_audit_log.py:1`, `app/audit.py:1`, audit hooks in `app/routers/credentials.py`, `app/routers/site_configs.py`, `app/routers/bookmarks.py`, `tests/test_audit_log.py:1`

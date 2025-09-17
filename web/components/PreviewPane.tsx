@@ -1,14 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
 import sanitizeHtml from 'sanitize-html'
-import { marked } from 'marked'
-
-marked.setOptions({
-  async: false,
-  breaks: true,
-  gfm: true,
-  headerIds: false,
-  mangle: false,
-})
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -72,8 +63,7 @@ export default function PreviewPane({
       return ''
     }
 
-    const html = marked.parse(trimmed)
-    return sanitizeHtml(html, SANITIZE_OPTIONS)
+    return sanitizeHtml(trimmed, SANITIZE_OPTIONS)
   }, [snippet])
 
   const containerClasses = [
