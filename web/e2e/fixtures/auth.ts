@@ -1,4 +1,14 @@
-import { test as base, expect, type Page } from '@playwright/test'
+import {
+  test as base,
+  expect,
+  type Fixtures,
+  type Page,
+  type PlaywrightTestArgs,
+  type PlaywrightTestOptions,
+  type PlaywrightWorkerArgs,
+  type PlaywrightWorkerOptions,
+  type TestType,
+} from '@playwright/test'
 import { createHash, randomBytes } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { URL } from 'node:url'
@@ -447,12 +457,26 @@ async function authenticatePage(page: Page, baseURL: string, oidc: OidcStub, red
   return fetchSession(page)
 }
 
-export const test = base.extend<{
-  oidc: OidcStub
+type BaseTestArgs = PlaywrightTestArgs & PlaywrightTestOptions
+type BaseWorkerArgs = PlaywrightWorkerArgs & PlaywrightWorkerOptions
+
+type ExtendWithWorker = <T extends {}, W extends {} = {}>(
+  fixtures: Fixtures<T, W, BaseTestArgs, BaseWorkerArgs>,
+  workerFixtures: Fixtures<{}, W, BaseTestArgs & T, BaseWorkerArgs & W>,
+) => TestType<BaseTestArgs & T, BaseWorkerArgs & W>
+
+type TestFixtures = {
   testUser: TestUser
+  page: Page
   authSession: AuthSession
   oidcTokens: OidcTokens
-}>({
+}
+
+type WorkerFixtures = {
+  oidc: OidcStub
+}
+
+const workerFixtures = {
   oidc: [async ({}, use) => {
     const stub = new OidcStub()
     await stub.ensureStarted()
@@ -462,6 +486,9 @@ export const test = base.extend<{
       await stub.stop()
     }
   }, { scope: 'worker' }],
+} satisfies Fixtures<{}, WorkerFixtures, BaseTestArgs, BaseWorkerArgs>
+
+const testFixtures = {
   testUser: async ({}, use) => {
     await use(cloneUser(DEFAULT_TEST_USER))
   },
@@ -480,6 +507,13 @@ export const test = base.extend<{
     const tokens = await oidc.issueTokens(testUser)
     await use(tokens)
   },
-})
+} satisfies Fixtures<TestFixtures, WorkerFixtures, BaseTestArgs, BaseWorkerArgs>
+
+const typed = (base.extend as unknown as ExtendWithWorker)<TestFixtures, WorkerFixtures>(
+  testFixtures,
+  workerFixtures,
+)
+
+export const test = typed.extend<{}, WorkerFixtures>(workerFixtures)
 
 export { expect, OidcStub }
