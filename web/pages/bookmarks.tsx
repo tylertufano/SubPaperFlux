@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkPublishModal, EmptyState, Nav, PreviewPane } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -143,7 +143,6 @@ export default function Bookmarks() {
   const [publishInFlight, setPublishInFlight] = useState(false)
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
   const selectedCount = Object.values(selected).filter(Boolean).length
-  const hasSelection = selectedCount > 0
   const bookmarkItems = data?.items ?? []
   const previewHeadingId = 'bookmark-preview-heading'
   const previewPaneId = 'bookmark-preview-pane'
@@ -647,6 +646,9 @@ export default function Bookmarks() {
     for (const b of data?.items ?? []) next[b.id] = checked
     setSelected(next)
   }
+  function clearSelection() {
+    setSelected({})
+  }
   function bulkPublish() {
     if (publishInFlight) return
     const items = (data?.items ?? []).filter((b: any) => selected[b.id])
@@ -689,7 +691,7 @@ export default function Bookmarks() {
         kind: 'success',
         message: t('bookmarks_publish_success', { count: formatNumberValue(count, numberFormatter, '0') }),
       })
-      setSelected({})
+      clearSelection()
     } else {
       setBanner({
         kind: 'error',
@@ -726,7 +728,7 @@ export default function Bookmarks() {
     try {
       await v1.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody: { ids, delete_remote: true } })
       setBanner({ kind: 'success', message: t('bookmarks_deleted_success', { count: formattedCount }) })
-      setSelected({})
+      clearSelection()
       mutate()
     } catch (e: any) {
       setBanner({ kind: 'error', message: t('bookmarks_delete_failed', { reason: e?.message || String(e) }) })
@@ -1082,13 +1084,18 @@ export default function Bookmarks() {
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
           <>
-              <div className="card p-0 overflow-hidden">
-              <div className="p-3 flex items-center gap-2">
-                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={bulkPublish}>{t('btn_publish_selected')}</button>
-                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={bulkDelete}>{t('btn_delete_selected')}</button>
-                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={() => exportSelected('json')}>{t('btn_export_json')}</button>
-                <button className="btn" disabled={!hasSelection || publishInFlight} onClick={() => exportSelected('csv')}>{t('btn_export_csv')}</button>
-              </div>
+            <div className="card p-0 overflow-hidden">
+              <BulkActionToolbar
+                selectedCount={selectedCount}
+                disabled={publishInFlight}
+                onClearSelection={clearSelection}
+                actions={[
+                  { label: t('btn_publish_selected'), onClick: bulkPublish, busy: publishInFlight },
+                  { label: t('btn_delete_selected'), onClick: bulkDelete },
+                  { label: t('btn_export_json'), onClick: () => exportSelected('json') },
+                  { label: t('btn_export_csv'), onClick: () => exportSelected('csv') },
+                ]}
+              />
               {(!data.items || data.items.length === 0) ? (
                 <div className="p-4">
                   <EmptyState

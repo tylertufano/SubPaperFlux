@@ -1,5 +1,6 @@
 export { default as Alert } from './Alert'
 export { default as Breadcrumbs } from './Breadcrumbs'
+export { default as BulkActionToolbar } from './BulkActionToolbar'
 export { default as BulkPublishModal } from './BulkPublishModal'
 export { default as DropdownMenu } from './DropdownMenu'
 export { default as EmptyState } from './EmptyState'
