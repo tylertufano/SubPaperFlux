@@ -139,6 +139,17 @@ Quickstart
 - Run locally: `python subpaperflux.py ./config/yourfeed.ini`
 - Or Docker: `docker run --rm -v "$PWD/config":/config subpaperflux`
 
+## Testing
+
+See [docs/testing-guidelines.md](docs/testing-guidelines.md) for the required UI suites and conventions.
+
+To run the web workspace tests locally:
+
+1. `cd web`
+2. Install dependencies if you have not already: `npm install`
+3. Execute the Vitest component and accessibility suites once: `npm run test -- --run`
+4. Point Playwright at a running API (for example, `export API_BASE=http://localhost:8000`) and launch the smoke test: `npm run test:e2e` (add `-- --headless` to mirror CI).
+
 API (OIDC + DB) — Optional Preview
 - Install API deps: `pip install -r requirements.api.txt`
 - Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
