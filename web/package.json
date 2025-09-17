@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest",
-    "test:a11y": "vitest run __tests__/a11y"
+    "test:a11y": "vitest run __tests__/a11y",
+    "test:e2e": "node ./e2e/run-tests.mjs",
+    "test:e2e:ci": "node ./e2e/run-tests.mjs --headless"
   },
   "dependencies": {
     "next": "14.2.5",
