@@ -401,6 +401,231 @@ def test_bulk_tags_validation_errors():
     assert resp.status_code == 400
     assert resp.json()["title"] == "Cannot provide tags when clear is true"
 
+
+def test_bulk_folders_assigns_and_syncs_instapaper(monkeypatch):
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import AuditLog, Bookmark, BookmarkFolderLink, Folder
+    from app.auth.oidc import get_current_user
+    from app.routers import bookmarks as bookmarks_router
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "folders"}
+
+    with next(get_session()) as session:
+        folder = Folder(owner_user_id="folders", name="Inbox")
+        bm1 = Bookmark(id=str(uuid4()), owner_user_id="folders", instapaper_bookmark_id="400", title="One")
+        bm2 = Bookmark(id=str(uuid4()), owner_user_id="folders", instapaper_bookmark_id="401", title="Two")
+        session.add(folder)
+        session.add(bm1)
+        session.add(bm2)
+        session.commit()
+        folder_id = folder.id
+        bookmark_ids = [bm1.id, bm2.id]
+
+    calls: list[tuple[str, dict[str, str]]] = []
+
+    class DummyResp:
+        def raise_for_status(self):
+            return None
+
+    class DummyOAuth:
+        def post(self, url, data):
+            calls.append((url, data))
+            return DummyResp()
+
+    monkeypatch.setattr(
+        bookmarks_router,
+        "get_instapaper_oauth_session",
+        lambda user_id: DummyOAuth(),
+    )
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-folders",
+        json={
+            "bookmark_ids": bookmark_ids,
+            "folder_id": folder_id,
+            "instapaper_folder_id": "77",
+        },
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert [item["bookmark_id"] for item in payload] == bookmark_ids
+    assert all(item["folder"]["id"] == folder_id for item in payload)
+    assert payload[0]["folder"]["instapaper_folder_id"] == "77"
+    assert payload[0]["folder"]["bookmark_count"] == 2
+
+    with next(get_session()) as session:
+        links = session.exec(select(BookmarkFolderLink)).all()
+        assert {link.bookmark_id for link in links} == set(bookmark_ids)
+        folder = session.get(Folder, folder_id)
+        assert folder.instapaper_folder_id == "77"
+        logs = session.exec(
+            select(AuditLog)
+            .where(AuditLog.entity_id.in_(bookmark_ids))
+            .order_by(AuditLog.created_at)
+        ).all()
+
+    assert len(logs) == 2
+    assert all(log.details.get("bulk") for log in logs)
+    assert all(log.details.get("folder_id") == folder_id for log in logs)
+    assert all(log.details.get("instapaper_folder_id") == "77" for log in logs)
+    assert [call[0] for call in calls] == [bookmarks_router.INSTAPAPER_BOOKMARKS_MOVE_URL] * 2
+    assert [call[1]["bookmark_id"] for call in calls] == ["400", "401"]
+    assert all(call[1]["folder_id"] == "77" for call in calls)
+
+
+def test_bulk_folders_returns_404_for_missing_folder():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark, Folder
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "folders"}
+
+    with next(get_session()) as session:
+        folder = Folder(owner_user_id="other", name="Elsewhere")
+        bm = Bookmark(id=str(uuid4()), owner_user_id="folders", instapaper_bookmark_id="410")
+        session.add(folder)
+        session.add(bm)
+        session.commit()
+        bookmark_id = bm.id
+        folder_id = folder.id
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-folders",
+        json={"bookmark_ids": [bookmark_id], "folder_id": folder_id},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["message"] == "Folder not found"
+
+
+def test_bulk_folders_rejects_foreign_bookmarks():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark, BookmarkFolderLink, Folder
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "folders"}
+
+    with next(get_session()) as session:
+        folder = Folder(owner_user_id="folders", name="Team")
+        owned = Bookmark(id=str(uuid4()), owner_user_id="folders", instapaper_bookmark_id="420")
+        foreign = Bookmark(id=str(uuid4()), owner_user_id="outsider", instapaper_bookmark_id="421")
+        session.add(folder)
+        session.add(owned)
+        session.add(foreign)
+        session.commit()
+        folder_id = folder.id
+        owned_id = owned.id
+        foreign_id = foreign.id
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-folders",
+        json={"bookmark_ids": [owned_id, foreign_id], "folder_id": folder_id},
+    )
+    assert resp.status_code == 403
+    body = resp.json()
+    assert foreign_id in body["message"]
+
+    with next(get_session()) as session:
+        links = session.exec(select(BookmarkFolderLink)).all()
+        assert links == []
+
+
+def test_bulk_folders_audit_entries(monkeypatch):
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import AuditLog, Bookmark, BookmarkFolderLink, Folder
+    from app.auth.oidc import get_current_user
+    from app.routers import bookmarks as bookmarks_router
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "audit"}
+
+    with next(get_session()) as session:
+        folder_one = Folder(owner_user_id="audit", name="Old", instapaper_folder_id="old")
+        folder_two = Folder(owner_user_id="audit", name="New")
+        bm = Bookmark(id=str(uuid4()), owner_user_id="audit", instapaper_bookmark_id="500")
+        session.add(folder_one)
+        session.add(folder_two)
+        session.add(bm)
+        session.commit()
+        session.add(BookmarkFolderLink(bookmark_id=bm.id, folder_id=folder_one.id))
+        session.commit()
+        bookmark_id = bm.id
+        folder_one_id = folder_one.id
+        folder_two_id = folder_two.id
+
+    calls: list[tuple[str, dict[str, str]]] = []
+
+    class DummyResp:
+        def raise_for_status(self):
+            return None
+
+    class DummyOAuth:
+        def post(self, url, data):
+            calls.append((url, data))
+            return DummyResp()
+
+    monkeypatch.setattr(
+        bookmarks_router,
+        "get_instapaper_oauth_session",
+        lambda user_id: DummyOAuth(),
+    )
+
+    client = TestClient(app)
+    move_resp = client.post(
+        "/bookmarks/bulk-folders",
+        json={
+            "bookmark_ids": [bookmark_id],
+            "folder_id": folder_two_id,
+            "instapaper_folder_id": "new",
+        },
+    )
+    assert move_resp.status_code == 200
+    clear_resp = client.post(
+        "/bookmarks/bulk-folders",
+        json={"bookmark_ids": [bookmark_id]},
+    )
+    assert clear_resp.status_code == 200
+    assert clear_resp.json()[0]["folder"] is None
+
+    with next(get_session()) as session:
+        logs = session.exec(
+            select(AuditLog)
+            .where(AuditLog.entity_id == bookmark_id)
+            .order_by(AuditLog.created_at)
+        ).all()
+
+    assert len(logs) >= 2
+    move_log = logs[-2]
+    clear_log = logs[-1]
+
+    assert move_log.details.get("previous_folder_id") == folder_one_id
+    assert move_log.details.get("folder_id") == folder_two_id
+    assert move_log.details.get("folder_name") == "New"
+    assert move_log.details.get("instapaper_folder_id") == "new"
+    assert move_log.details.get("bulk") is True
+
+    assert clear_log.details.get("folder_cleared") is True
+    assert clear_log.details.get("previous_folder_id") == folder_two_id
+    assert clear_log.details.get("bulk") is True
+
+    assert len(calls) == 1
+    assert calls[0][0] == bookmarks_router.INSTAPAPER_BOOKMARKS_MOVE_URL
+    assert calls[0][1]["bookmark_id"] == "500"
+    assert calls[0][1]["folder_id"] == "new"
+
 def test_bulk_publish_stream_success(monkeypatch):
     from app.routers import bookmarks as bookmarks_router
 

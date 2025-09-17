@@ -23,11 +23,13 @@ import type {
   ApiTokenWithSecret,
   ApiTokensPage,
   AuditLogsPage,
+  BookmarkFolderSummary,
   BookmarkFolderUpdate,
   BookmarkOut,
   BookmarkTagSummary,
   BookmarkTagsUpdate,
   BookmarksPage,
+  BulkBookmarkFolderUpdate,
   BulkBookmarkTagUpdate,
   CredentialsPage,
   FeedsPage,
@@ -64,6 +66,8 @@ import {
     ApiTokensPageToJSON,
     AuditLogsPageFromJSON,
     AuditLogsPageToJSON,
+    BookmarkFolderSummaryFromJSON,
+    BookmarkFolderSummaryToJSON,
     BookmarkFolderUpdateFromJSON,
     BookmarkFolderUpdateToJSON,
     BookmarkOutFromJSON,
@@ -74,6 +78,8 @@ import {
     BookmarkTagsUpdateToJSON,
     BookmarksPageFromJSON,
     BookmarksPageToJSON,
+    BulkBookmarkFolderUpdateFromJSON,
+    BulkBookmarkFolderUpdateToJSON,
     BulkBookmarkTagUpdateFromJSON,
     BulkBookmarkTagUpdateToJSON,
     CredentialsPageFromJSON,
@@ -119,6 +125,11 @@ export interface BulkDeleteBookmarksV1BookmarksBulkDeletePostRequest {
 
 export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
     requestBody: { [key: string]: any; };
+    xCsrfToken?: string | null;
+}
+
+export interface BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest {
+    bulkBookmarkFolderUpdate: BulkBookmarkFolderUpdate;
     xCsrfToken?: string | null;
 }
 
@@ -562,6 +573,108 @@ export class V1Api extends runtime.BaseAPI {
      */
     async bulkPublishBookmarksV1BookmarksBulkPublishPost(requestParameters: BulkPublishBookmarksV1BookmarksBulkPublishPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.bulkPublishBookmarksV1BookmarksBulkPublishPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Bulk Update Bookmark Folders
+     */
+    async bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<BookmarkFolderSummary>>> {
+        if (requestParameters['bulkBookmarkFolderUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'bulkBookmarkFolderUpdate',
+                'Required parameter "bulkBookmarkFolderUpdate" was null or undefined when calling bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/bulk-folders`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: BulkBookmarkFolderUpdateToJSON(requestParameters['bulkBookmarkFolderUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkFolderSummaryFromJSON));
+    }
+
+    /**
+     * Bulk Update Bookmark Folders
+     */
+    async bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkFolderSummary>> {
+        const response = await this.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Bulk Update Bookmark Tags
+     */
+    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<BookmarkTagSummary>>> {
+        if (requestParameters['bulkBookmarkTagUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'bulkBookmarkTagUpdate',
+                'Required parameter "bulkBookmarkTagUpdate" was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xCsrfToken'] != null) {
+            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/bookmarks/bulk-tags`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: BulkBookmarkTagUpdateToJSON(requestParameters['bulkBookmarkTagUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkTagSummaryFromJSON));
+    }
+
+    /**
+     * Bulk Update Bookmark Tags
+     */
+    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkTagSummary>> {
+        const response = await this.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3181,55 +3294,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>> {
         const response = await this.updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<BookmarkTagSummary>>> {
-        if (requestParameters['bulkBookmarkTagUpdate'] == null) {
-            throw new runtime.RequiredError(
-                'bulkBookmarkTagUpdate',
-                'Required parameter "bulkBookmarkTagUpdate" was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost().' 
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        const response = await this.request({
-            path: `/v1/bookmarks/bulk-tags`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: BulkBookmarkTagUpdateToJSON(requestParameters['bulkBookmarkTagUpdate']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkTagSummaryFromJSON));
-    }
-
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkTagSummary>> {
-        const response = await this.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
