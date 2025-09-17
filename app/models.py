@@ -203,7 +203,14 @@ class Tag(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_tag_owner_name"),)
 
     id: str = Field(default_factory=lambda: gen_id("tag"), primary_key=True)
-    owner_user_id: Optional[str] = Field(default=None, index=True)
+    owner_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=True,
+            index=True,
+        ),
+    )
     name: str = Field(index=True)
 
 
@@ -212,7 +219,14 @@ class Folder(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_folder_owner_name"),)
 
     id: str = Field(default_factory=lambda: gen_id("fld"), primary_key=True)
-    owner_user_id: Optional[str] = Field(default=None, index=True)
+    owner_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=True,
+            index=True,
+        ),
+    )
     name: str = Field(index=True)
     instapaper_folder_id: Optional[str] = Field(default=None, index=True)
 
@@ -220,15 +234,31 @@ class Folder(SQLModel, table=True):
 class BookmarkTagLink(SQLModel, table=True):
     __tablename__ = "bookmark_tag_link"
 
-    bookmark_id: str = Field(sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True))
-    tag_id: str = Field(sa_column=Column(ForeignKey("tag.id", ondelete="CASCADE"), primary_key=True))
+    bookmark_id: str = Field(
+        sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True)
+    )
+    tag_id: str = Field(
+        sa_column=Column(
+            ForeignKey("tag.id", ondelete="CASCADE"),
+            primary_key=True,
+            index=True,
+        ),
+    )
 
 
 class BookmarkFolderLink(SQLModel, table=True):
     __tablename__ = "bookmark_folder_link"
 
-    bookmark_id: str = Field(sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True))
-    folder_id: str = Field(sa_column=Column(ForeignKey("folder.id", ondelete="CASCADE"), primary_key=True))
+    bookmark_id: str = Field(
+        sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True)
+    )
+    folder_id: str = Field(
+        sa_column=Column(
+            ForeignKey("folder.id", ondelete="CASCADE"),
+            primary_key=True,
+            index=True,
+        ),
+    )
 
 
 class AuditLog(SQLModel, table=True):

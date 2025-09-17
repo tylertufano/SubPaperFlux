@@ -147,6 +147,20 @@ export default function Bookmarks() {
     ? bookmarkItems.findIndex((item: any) => item.id === previewBookmarkId)
     : -1
 
+  const formatTagFilterLabel = (tag: any) => {
+    const raw = typeof tag?.name === 'string' ? tag.name.trim() : ''
+    const base = raw || t('bookmarks_tag_fallback')
+    const count = Number.isFinite(tag?.bookmark_count) ? Number(tag.bookmark_count) : 0
+    return count > 0 ? `${base} (${formatNumberValue(count, numberFormatter, '0')})` : base
+  }
+
+  const formatFolderFilterLabel = (folder: any) => {
+    const raw = typeof folder?.name === 'string' ? folder.name.trim() : ''
+    const base = raw || t('bookmarks_folder_fallback')
+    const count = Number.isFinite(folder?.bookmark_count) ? Number(folder.bookmark_count) : 0
+    return count > 0 ? `${base} (${formatNumberValue(count, numberFormatter, '0')})` : base
+  }
+
   const { data: previewData, error: previewError, isLoading: previewLoading } = useSWR(
     previewBookmarkId ? ['/v1/bookmarks', previewBookmarkId, 'preview'] : null,
     () => v1.previewBookmarkV1BookmarksBookmarkIdPreviewGet({ bookmarkId: previewBookmarkId as string }),
@@ -767,7 +781,7 @@ export default function Bookmarks() {
               <select id="bookmark-tag" className="input" value={tagIdFilter} onChange={(e) => setTagIdFilter(e.target.value)}>
                 <option value="">{t('bookmarks_tag_all')}</option>
                 {tagItems.map((tag: any) => (
-                  <option key={tag.id} value={tag.id}>{tag.name || t('bookmarks_tag_fallback')}</option>
+                  <option key={tag.id} value={tag.id}>{formatTagFilterLabel(tag)}</option>
                 ))}
               </select>
             </label>
@@ -776,7 +790,7 @@ export default function Bookmarks() {
               <select id="bookmark-folder" className="input" value={folderIdFilter} onChange={(e) => setFolderIdFilter(e.target.value)}>
                 <option value="">{t('bookmarks_folder_all')}</option>
                 {folderItems.map((folder: any) => (
-                  <option key={folder.id} value={folder.id}>{folder.name || t('bookmarks_folder_fallback')}</option>
+                  <option key={folder.id} value={folder.id}>{formatFolderFilterLabel(folder)}</option>
                 ))}
               </select>
             </label>
