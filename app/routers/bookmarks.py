@@ -34,11 +34,13 @@ from ..models import (
 from ..jobs.publish import handle_publish
 from ..jobs.util_subpaperflux import get_instapaper_oauth_session
 from ..schemas import (
+    BookmarkFolderSummary,
     BookmarkFolderUpdate,
     BookmarkOut,
     BookmarkTagSummary,
     BookmarkTagsUpdate,
     BookmarksPage,
+    BulkBookmarkFolderUpdate,
     BulkBookmarkTagUpdate,
     FolderCreate,
     FolderOut,
@@ -50,6 +52,7 @@ from ..schemas import (
 from ..security.csrf import csrf_protect
 # Inline constant to avoid importing subpaperflux (which initializes Selenium at import time)
 INSTAPAPER_BOOKMARKS_DELETE_URL = "https://www.instapaper.com/api/1.1/bookmarks/delete"
+INSTAPAPER_BOOKMARKS_MOVE_URL = "https://www.instapaper.com/api/1.1/bookmarks/move"
 
 
 router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
@@ -936,6 +939,143 @@ def bulk_update_bookmark_tags(
             )
         )
     return summaries
+
+
+@router.post(
+    "/bulk-folders",
+    response_model=List[BookmarkFolderSummary],
+    dependencies=[Depends(csrf_protect)],
+)
+def bulk_update_bookmark_folders(
+    payload: BulkBookmarkFolderUpdate,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    bookmark_ids = [str(value) for value in payload.bookmark_ids]
+    if not bookmark_ids:
+        raise HTTPException(status_code=400, detail="bookmark_ids list required")
+
+    deduped_ids: List[str] = []
+    seen_ids: set[str] = set()
+    for bookmark_id in bookmark_ids:
+        if bookmark_id not in seen_ids:
+            seen_ids.add(bookmark_id)
+            deduped_ids.append(bookmark_id)
+    bookmark_ids = deduped_ids
+
+    data = payload.model_dump(exclude_unset=True)
+    instapaper_field_provided = "instapaper_folder_id" in data
+    instapaper_folder_id = data.get("instapaper_folder_id")
+    if isinstance(instapaper_folder_id, str):
+        instapaper_folder_id = instapaper_folder_id.strip() or None
+
+    folder: Optional[Folder] = None
+    if payload.folder_id:
+        folder = session.get(Folder, payload.folder_id)
+        if not folder or folder.owner_user_id != user_id:
+            raise HTTPException(status_code=404, detail="Folder not found")
+    elif instapaper_field_provided and payload.folder_id is None:
+        raise HTTPException(status_code=400, detail="instapaper_folder_id requires folder_id")
+
+    stmt = select(Bookmark).where(Bookmark.id.in_(bookmark_ids))
+    bookmarks = session.exec(stmt).all()
+    bookmark_map = {bookmark.id: bookmark for bookmark in bookmarks}
+    missing_ids = [bookmark_id for bookmark_id in bookmark_ids if bookmark_id not in bookmark_map]
+    if missing_ids:
+        raise HTTPException(status_code=404, detail="Bookmark not found")
+
+    forbidden_ids = [bookmark_id for bookmark_id in bookmark_ids if bookmark_map[bookmark_id].owner_user_id != user_id]
+    if forbidden_ids:
+        joined = ", ".join(forbidden_ids)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden bookmark IDs: {joined}",
+        )
+
+    ordered_bookmarks = [bookmark_map[bookmark_id] for bookmark_id in bookmark_ids]
+    if not ordered_bookmarks:
+        return []
+
+    link_stmt = select(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id.in_(bookmark_ids))
+    existing_links = session.exec(link_stmt).all()
+    previous_map = {link.bookmark_id: link.folder_id for link in existing_links}
+
+    try:
+        if folder and instapaper_field_provided:
+            folder.instapaper_folder_id = instapaper_folder_id
+            session.add(folder)
+        for bookmark in ordered_bookmarks:
+            session.exec(
+                delete(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark.id)
+            )
+            details = {"bulk": True}
+            previous_folder_id = previous_map.get(bookmark.id)
+            if previous_folder_id:
+                details["previous_folder_id"] = previous_folder_id
+            if folder:
+                session.add(BookmarkFolderLink(bookmark_id=bookmark.id, folder_id=folder.id))
+                details["folder_id"] = folder.id
+                details["folder_name"] = folder.name
+                if instapaper_field_provided and instapaper_folder_id is not None:
+                    details["instapaper_folder_id"] = instapaper_folder_id
+            else:
+                details["folder_cleared"] = True
+            record_audit_log(
+                session,
+                entity_type="bookmark",
+                entity_id=bookmark.id,
+                action="update",
+                owner_user_id=user_id,
+                actor_user_id=current_user["sub"],
+                details=details,
+            )
+        session.commit()
+    except IntegrityError as exc:  # pragma: no cover - defensive
+        session.rollback()
+        logging.exception(
+            "Failed to bulk update bookmark folders user=%s bookmark_ids=%s",
+            user_id,
+            ",".join(bookmark_ids),
+        )
+        raise HTTPException(status_code=400, detail="Could not update bookmark folders") from exc
+
+    remote_folder_id: Optional[str] = None
+    if folder:
+        session.refresh(folder)
+        if instapaper_field_provided:
+            remote_folder_id = instapaper_folder_id
+        if not remote_folder_id:
+            remote_folder_id = folder.instapaper_folder_id
+
+    if folder and remote_folder_id:
+        oauth = get_instapaper_oauth_session(user_id)
+        if oauth:
+            for bookmark in ordered_bookmarks:
+                try:
+                    resp = oauth.post(
+                        INSTAPAPER_BOOKMARKS_MOVE_URL,
+                        data={
+                            "bookmark_id": bookmark.instapaper_bookmark_id,
+                            "folder_id": remote_folder_id,
+                        },
+                    )
+                    if hasattr(resp, "raise_for_status"):
+                        resp.raise_for_status()
+                except Exception:
+                    logging.warning(
+                        "Failed to sync Instapaper folder user=%s bookmark=%s",
+                        user_id,
+                        bookmark.id,
+                        exc_info=True,
+                    )
+
+    counts = _folder_counts(session, user_id)
+    folder_out = _folder_to_out(folder, counts) if folder else None
+    return [
+        BookmarkFolderSummary(bookmark_id=bookmark.id, folder=folder_out)
+        for bookmark in ordered_bookmarks
+    ]
 
 
 @router.get("/{bookmark_id}/folder", response_model=Optional[FolderOut])

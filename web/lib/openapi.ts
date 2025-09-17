@@ -429,6 +429,24 @@ export const v1 = {
     (await getClients()).bookmarks.bulkUpdateBookmarkTagsBookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
   bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost: async ({ bulkBookmarkTagUpdate }: { bulkBookmarkTagUpdate: any }) =>
     (await getClients()).bookmarks.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
+  bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost: async ({
+    bulkBookmarkFolderUpdate,
+  }: {
+    bulkBookmarkFolderUpdate: any
+  }) =>
+    (await getClients()).bookmarks.bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost({
+      bulkBookmarkFolderUpdate,
+      xCsrfToken: CSRF,
+    }),
+  bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost: async ({
+    bulkBookmarkFolderUpdate,
+  }: {
+    bulkBookmarkFolderUpdate: any
+  }) =>
+    (await getClients()).bookmarks.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost({
+      bulkBookmarkFolderUpdate,
+      xCsrfToken: CSRF,
+    }),
   listFoldersBookmarksFoldersGet: async () => (await getClients()).bookmarks.listFoldersBookmarksFoldersGet(),
   createFolderBookmarksFoldersPost: async ({ folderCreate }: { folderCreate: any }) => (await getClients()).bookmarks.createFolderBookmarksFoldersPost({ folderCreate, xCsrfToken: CSRF }),
   updateFolderBookmarksFoldersFolderIdPut: async ({ folderId, folderUpdate }: { folderId: string; folderUpdate: any }) =>

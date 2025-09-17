@@ -218,6 +218,17 @@ class BookmarkFolderUpdate(BaseModel):
     instapaper_folder_id: Optional[str] = None
 
 
+class BulkBookmarkFolderUpdate(BaseModel):
+    bookmark_ids: List[UUID] = Field(..., min_length=1)
+    folder_id: Optional[str] = None
+    instapaper_folder_id: Optional[str] = None
+
+
+class BookmarkFolderSummary(BaseModel):
+    bookmark_id: str
+    folder: Optional[FolderOut] = None
+
+
 class AuditLogOut(BaseModel):
     id: str
     entity_type: str
