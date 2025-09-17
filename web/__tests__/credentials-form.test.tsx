@@ -153,6 +153,86 @@ describe('credentials form setup helper', () => {
   })
 })
 
+describe('credential editing', () => {
+  const existingCredential = { id: 'cred-1', kind: 'site_login', ownerUserId: null }
+  const maskedCredentialResponse = { data: { username: 'alice', password: '********' } }
+
+  async function openEditForm() {
+    const idCell = await screen.findByRole('cell', { name: existingCredential.id })
+    const row = idCell.closest('tr')
+    if (!row) {
+      throw new Error('credential row not found')
+    }
+    const editButton = within(row).getByRole('button', { name: 'Edit' })
+    fireEvent.click(editButton)
+    await waitFor(() => expect(getCredentialMock).toHaveBeenCalledWith({ credId: existingCredential.id }))
+    const form = await screen.findByRole('form', { name: `Edit Credential ${existingCredential.id}` })
+    return form
+  }
+
+  it('omits masked values when saving and resets state on success', async () => {
+    const { mutate, unmount } = await setup({ data: { items: [existingCredential] } })
+
+    try {
+      getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
+      updateCredentialMock.mockResolvedValueOnce({})
+
+      const editForm = await openEditForm()
+      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
+      expect(usernameInput).toHaveValue('alice')
+
+      fireEvent.change(usernameInput, { target: { value: 'bob' } })
+      expect(usernameInput).toHaveValue('bob')
+
+      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
+      fireEvent.click(saveButton)
+
+      await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
+      expect(updateCredentialMock).toHaveBeenCalledWith({
+        credId: existingCredential.id,
+        credential: {
+          kind: existingCredential.kind,
+          data: { username: 'bob' },
+        },
+      })
+
+      const successMessage = await screen.findByText('Credential updated')
+      expect(successMessage.closest('[role="status"]')).toBeInTheDocument()
+      await waitFor(() =>
+        expect(screen.queryByRole('form', { name: `Edit Credential ${existingCredential.id}` })).not.toBeInTheDocument(),
+      )
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+    } finally {
+      unmount()
+    }
+  })
+
+  it('keeps the dialog open and shows an error banner when the update fails', async () => {
+    const { mutate, unmount } = await setup({ data: { items: [existingCredential] } })
+
+    try {
+      getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
+      updateCredentialMock.mockRejectedValueOnce(new Error('Update failed'))
+
+      const editForm = await openEditForm()
+      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
+      fireEvent.change(usernameInput, { target: { value: 'bob' } })
+
+      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
+      fireEvent.click(saveButton)
+
+      await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
+      const errorMessage = await screen.findByText('Update failed')
+      expect(errorMessage.closest('[role="alert"]')).toBeInTheDocument()
+
+      expect(screen.getByRole('form', { name: `Edit Credential ${existingCredential.id}` })).toBeInTheDocument()
+      expect(mutate).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
+  })
+})
+
 describe('credential creation form', () => {
   it('shows validation errors and prevents submission when required site login fields are empty', async () => {
     const { form, withinForm, inputs, mutate } = await setup()
@@ -197,8 +277,8 @@ describe('credential creation form', () => {
 
     await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
 
-    const banner = await screen.findByRole('status')
-    expect(banner).toHaveTextContent('Credential created')
+    const bannerMessage = await screen.findByText('Credential created')
+    expect(bannerMessage.closest('[role="status"]')).toBeInTheDocument()
     await waitFor(() => expect(mutate).toHaveBeenCalled())
   })
 
