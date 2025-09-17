@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { Alert, EmptyState, ErrorBoundary, Nav } from '../../components'
+import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../components'
 import { useI18n } from '../../lib/i18n'
 import { useFormatDateTime } from '../../lib/format'
 import { v1, type ApiToken, type ApiTokensPage, type ApiTokenWithSecret } from '../../lib/openapi'
+import { buildBreadcrumbs } from '../../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 type TokenFormState = {
   name: string
@@ -30,6 +32,8 @@ function isTokenActive(token: ApiToken): boolean {
 
 export default function Tokens() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const formatDateTime = useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' })
   const [formState, setFormState] = useState<TokenFormState>(createInitialFormState)
   const [page, setPage] = useState(1)
@@ -124,6 +128,7 @@ export default function Tokens() {
     <ErrorBoundary>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <h2 className="text-xl font-semibold mb-1">{t('nav_tokens')}</h2>
           <p className="text-gray-600 mb-4">{t('me_tokens_description')}</p>

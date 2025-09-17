@@ -1,5 +1,6 @@
 {
   "home_welcome": "Welcome. Use the navigation to explore bookmarks, jobs, and admin tools.",
+  "breadcrumb_home": "Dashboard",
   "nav_bookmarks": "Bookmarks",
   "nav_jobs": "Jobs",
   "nav_jobs_all": "All Jobs",

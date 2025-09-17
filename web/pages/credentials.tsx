@@ -1,12 +1,16 @@
 import useSWR from 'swr'
-import { Alert, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, creds } from '../lib/openapi'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 export default function Credentials() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
   const [kind, setKind] = useState('site_login')
   const [scopeGlobal, setScopeGlobal] = useState(false)
@@ -95,6 +99,7 @@ export default function Credentials() {
   return (
     <div>
       <Nav />
+      <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <h2 id="credentials-heading" className="text-xl font-semibold mb-3">{t('credentials_title')}</h2>
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}

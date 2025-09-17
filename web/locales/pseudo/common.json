@@ -2,5 +2,6 @@
   "nav_brand": "SubPaperFlux ✨",
   "nav_locale_label": "Idioma",
   "locale_en": "Inglés",
-  "locale_pseudo": "Pseudo (demo)"
+  "locale_pseudo": "Pseudo (demo)",
+  "breadcrumb_home": "Tablero ✨"
 }

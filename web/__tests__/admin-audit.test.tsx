@@ -13,9 +13,14 @@ vi.mock('swr', () => ({
   default: (key: any, fetcher?: any) => useSWRMock(key, fetcher),
 }))
 
+vi.mock('next/router', () => ({
+  useRouter: () => ({ pathname: '/admin/audit' }),
+}))
+
 vi.mock('../components', () => ({
   __esModule: true,
   Nav: () => <nav data-testid="nav">Nav</nav>,
+  Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
   Alert: ({ message }: { message: React.ReactNode }) => (
     <div data-testid="alert">{message}</div>
   ),

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
-import { Alert, EmptyState, ErrorBoundary, Nav } from '../../components'
+import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../components'
 import { useI18n } from '../../lib/i18n'
 import { v1, type AuditLogEntry, type AuditLogsPage } from '../../lib/openapi'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
+import { buildBreadcrumbs } from '../../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 type FilterState = {
   entityType: string
@@ -35,6 +37,8 @@ function toIsoString(input: string): string | undefined {
 
 export default function AdminAudit() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const formatDateTime = useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' })
   const [page, setPage] = useState(1)
@@ -129,6 +133,7 @@ export default function AdminAudit() {
     <ErrorBoundary>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <h2 id="audit-heading" className="text-xl font-semibold mb-1">{t('nav_audit')}</h2>
           <p className="text-gray-600 mb-4">{t('admin_audit_description')}</p>

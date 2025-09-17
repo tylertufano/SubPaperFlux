@@ -30,6 +30,10 @@ vi.mock('swr', () => ({
   default: (key: any, fetcher?: any) => useSWRMock(key, fetcher),
 }))
 
+vi.mock('next/router', () => ({
+  useRouter: () => ({ pathname: '/bookmarks' }),
+}))
+
 vi.mock('../lib/bulkPublish', () => ({
   streamBulkPublish: vi.fn(),
 }))
@@ -71,6 +75,7 @@ vi.mock('../components', async () => {
         {action}
       </div>
     ),
+    Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
     Nav: () => <nav data-testid="nav">Nav</nav>,
     DropdownMenu: () => null,
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,

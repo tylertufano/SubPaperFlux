@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
-import { Alert, EmptyState, ErrorBoundary, Nav } from '../../components'
+import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../components'
 import { useI18n } from '../../lib/i18n'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
 import { v1, type AdminUser, type AdminUsersPage } from '../../lib/openapi'
+import { buildBreadcrumbs } from '../../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 type FilterState = {
   search: string
@@ -56,6 +58,8 @@ function statusBadge(user: AdminUser, t: ReturnType<typeof useI18n>['t']): { lab
 
 export default function AdminUsers() {
   const { t } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const formatDateTime = useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' })
   const [formState, setFormState] = useState<FilterState>(createEmptyFilters)
@@ -255,6 +259,7 @@ export default function AdminUsers() {
     <ErrorBoundary>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <h2 id="admin-users-heading" className="text-xl font-semibold mb-1">{t('nav_users')}</h2>
           <p className="text-gray-600 mb-4">{t('admin_users_description')}</p>

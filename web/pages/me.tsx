@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, ErrorBoundary, Nav } from '../components'
+import { Alert, Breadcrumbs, ErrorBoundary, Nav } from '../components'
 import { useI18n } from '../lib/i18n'
 import { me, type MeNotificationPreferences, type MeProfile } from '../lib/openapi'
+import { buildBreadcrumbs } from '../lib/breadcrumbs'
+import { useRouter } from 'next/router'
 
 type FlashMessage = { kind: 'success' | 'error'; message: string }
 
@@ -30,6 +32,8 @@ function getLocaleLabel(code: string, translate: (key: string, vars?: Record<str
 
 export default function Me() {
   const { t, locales, locale: activeLocale, setLocale } = useI18n()
+  const router = useRouter()
+  const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const [profile, setProfile] = useState<MeProfile | null>(null)
   const [localeValue, setLocaleValue] = useState('')
   const [notifications, setNotifications] = useState<NotificationFormState>(DEFAULT_NOTIFICATIONS)
@@ -136,6 +140,7 @@ export default function Me() {
     <ErrorBoundary>
       <div>
         <Nav />
+        <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6">
           <h2 className="text-xl font-semibold mb-1">{t('nav_profile')}</h2>
           {profile?.email ? (
