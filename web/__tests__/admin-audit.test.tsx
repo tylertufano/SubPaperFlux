@@ -24,6 +24,7 @@ vi.mock('../components', async () => {
     Nav: () => <nav data-testid="nav">Nav</nav>,
     Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
     BulkActionToolbar: toolbarModule.default,
+    BulkTagModal: () => null,
     Alert: ({ message }: { message: React.ReactNode }) => (
       <div data-testid="alert">{message}</div>
     ),
