@@ -73,10 +73,10 @@ function ensureApiBase(user?: TestUser): string {
 }
 
 export const test = authTest.extend<{ api: ApiHelper }>({
-  api: async ({ request, oidc, testUser }, use) => {
+  api: async ({ playwright, oidc, testUser }, use) => {
     const apiBase = normalizeBaseURL(ensureApiBase(testUser))
     const tokens = await oidc.issueTokens(testUser)
-    const context = await request.newContext({
+    const context = await playwright.request.newContext({
       baseURL: apiBase,
       extraHTTPHeaders: {
         Authorization: `Bearer ${tokens.accessToken}`,
