@@ -425,6 +425,10 @@ export const v1 = {
   getBookmarkTagsBookmarksBookmarkIdTagsGet: async ({ bookmarkId }: { bookmarkId: string }) => (await getClients()).bookmarks.getBookmarkTagsBookmarksBookmarkIdTagsGet({ bookmarkId }),
   updateBookmarkTagsBookmarksBookmarkIdTagsPut: async ({ bookmarkId, bookmarkTagsUpdate }: { bookmarkId: string; bookmarkTagsUpdate: any }) =>
     (await getClients()).bookmarks.updateBookmarkTagsBookmarksBookmarkIdTagsPut({ bookmarkId, bookmarkTagsUpdate, xCsrfToken: CSRF }),
+  bulkUpdateBookmarkTagsBookmarksBulkTagsPost: async ({ bulkBookmarkTagUpdate }: { bulkBookmarkTagUpdate: any }) =>
+    (await getClients()).bookmarks.bulkUpdateBookmarkTagsBookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
+  bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost: async ({ bulkBookmarkTagUpdate }: { bulkBookmarkTagUpdate: any }) =>
+    (await getClients()).bookmarks.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
   listFoldersBookmarksFoldersGet: async () => (await getClients()).bookmarks.listFoldersBookmarksFoldersGet(),
   createFolderBookmarksFoldersPost: async ({ folderCreate }: { folderCreate: any }) => (await getClients()).bookmarks.createFolderBookmarksFoldersPost({ folderCreate, xCsrfToken: CSRF }),
   updateFolderBookmarksFoldersFolderIdPut: async ({ folderId, folderUpdate }: { folderId: string; folderUpdate: any }) =>

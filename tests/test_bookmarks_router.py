@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import time
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -252,6 +253,153 @@ def test_bookmark_tags_and_folders_endpoints():
     assert any(log.details.get("folder_name") == "Fresh" for log in logs if log.details.get("folder_id"))
     assert any(log.details.get("folder_cleared") for log in logs)
 
+
+def test_bulk_tags_success_and_audit_logging():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import AuditLog, Bookmark, BookmarkTagLink
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        bm1 = Bookmark(id=str(uuid4()), owner_user_id="u1", instapaper_bookmark_id="100", title="First")
+        bm2 = Bookmark(id=str(uuid4()), owner_user_id="u1", instapaper_bookmark_id="101", title="Second")
+        session.add(bm1)
+        session.add(bm2)
+        session.commit()
+        bookmark_ids = [bm1.id, bm2.id]
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": bookmark_ids, "tags": ["  Work  ", "Focus"], "clear": False},
+    )
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert [item["bookmark_id"] for item in payload] == bookmark_ids
+    assert [tag["name"] for tag in payload[0]["tags"]] == ["Work", "Focus"]
+    assert all(tag["bookmark_count"] == 2 for tag in payload[0]["tags"])
+
+    with next(get_session()) as session:
+        links = session.exec(select(BookmarkTagLink)).all()
+        assert len(links) == 4  # two tags attached to two bookmarks
+        logs = session.exec(
+            select(AuditLog)
+            .where(AuditLog.entity_id.in_(bookmark_ids))
+            .order_by(AuditLog.created_at)
+        ).all()
+
+    assert len(logs) == 2
+    assert all(log.details.get("bulk") for log in logs)
+    assert all(log.details.get("clear") is False for log in logs)
+    assert all(log.details.get("tags") == ["Work", "Focus"] for log in logs)
+
+    clear_resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": bookmark_ids, "tags": [], "clear": True},
+    )
+    assert clear_resp.status_code == 200
+    assert all(item["tags"] == [] for item in clear_resp.json())
+
+    with next(get_session()) as session:
+        remaining = session.exec(select(BookmarkTagLink)).all()
+        assert remaining == []
+        clear_logs = session.exec(
+            select(AuditLog)
+            .where(AuditLog.entity_id.in_(bookmark_ids))
+            .order_by(AuditLog.created_at)
+        ).all()
+
+    assert len(clear_logs) == 4
+    assert all(clear_logs[i].details.get("clear") is True for i in (-1, -2))
+
+
+def test_bulk_tags_skips_foreign_bookmarks():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark, BookmarkTagLink
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        owned = Bookmark(id=str(uuid4()), owner_user_id="u1", instapaper_bookmark_id="200", title="Owned")
+        foreign = Bookmark(id=str(uuid4()), owner_user_id="u2", instapaper_bookmark_id="201", title="Foreign")
+        session.add(owned)
+        session.add(foreign)
+        session.commit()
+        owned_id = owned.id
+        foreign_id = foreign.id
+
+    client = TestClient(app)
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={
+            "bookmark_ids": [owned_id, foreign_id],
+            "tags": ["Mixed"],
+            "clear": False,
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert [item["bookmark_id"] for item in data] == [owned_id]
+
+    with next(get_session()) as session:
+        foreign_links = session.exec(
+            select(BookmarkTagLink).where(BookmarkTagLink.bookmark_id == foreign_id)
+        ).all()
+    assert foreign_links == []
+
+
+def test_bulk_tags_validation_errors():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        bookmark = Bookmark(id=str(uuid4()), owner_user_id="u1", instapaper_bookmark_id="300", title="Solo")
+        session.add(bookmark)
+        session.commit()
+        bookmark_id = bookmark.id
+
+    client = TestClient(app)
+
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": [], "tags": ["One"], "clear": False},
+    )
+    assert resp.status_code == 422
+
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": [bookmark_id], "tags": [], "clear": False},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["title"] == "At least one tag is required unless clear is true"
+
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": [bookmark_id], "tags": ["   "], "clear": False},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["title"] == "Tag names must be non-empty"
+
+    resp = client.post(
+        "/bookmarks/bulk-tags",
+        json={"bookmark_ids": [bookmark_id], "tags": ["One"], "clear": True},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["title"] == "Cannot provide tags when clear is true"
 
 def test_bulk_publish_stream_success(monkeypatch):
     from app.routers import bookmarks as bookmarks_router
