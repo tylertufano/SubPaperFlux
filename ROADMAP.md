@@ -42,7 +42,7 @@ Status legend: [x] done, [~] in progress, [ ] todo
   - [x] Sorting (UI-004)
     - Evidence: `app/routers/bookmarks.py:1`, `web/pages/bookmarks.tsx:1`
   - [x] Tag & folder management widgets and filters (UI-018)
-    - Evidence: `web/pages/bookmarks.tsx:360-920`
+    - Evidence: `web/pages/bookmarks.tsx:70-120`, `web/pages/bookmarks.tsx:360-940`
 - [x] Jobs
   - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
   - [x] Backoff timer and dedupe badges
@@ -117,6 +117,7 @@ make sdk-ts
 
 - [ ] Component tests for filters/pagination and form validations (UI-014)
 - [x] Integration tests for bookmark tag assignment and folder moves (UI-018)
+  - Evidence: `tests/test_bookmarks_router.py:90-220`
 - [x] Preview pane sanitization + keyboard navigation tests (`web/__tests__/PreviewPane.test.tsx`, `web/__tests__/bookmarks-preview-navigation.test.tsx`)
 - [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
 
@@ -143,10 +144,10 @@ make sdk-ts
     - [x] UI tests covering success, failure, and cancellation flows: `web/__tests__/bulk-publish.test.tsx:1-240`
     - [x] API tests for stream success, failure, and cancellation: `tests/test_bookmarks_router.py:222-320`
 - [x] Tags & Folders (UI-018)
- - Evidence: `alembic/versions/0011_tags_and_folders.py:1`
+  - Evidence: `alembic/versions/0011_tags_and_folders.py:1`, `alembic/versions/0016_tag_folder_foreign_keys.py:1`, `app/models.py:200-240`
   - [x] API endpoints for tag and folder management plus bookmark associations: `app/routers/bookmarks.py:1`
   - [x] TypeScript SDK updated for tags/folders endpoints: `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`
-  - [x] Bookmarks listing filters by tag/folder with UI widgets and tests: `app/routers/bookmarks.py:340`, `web/pages/bookmarks.tsx:70`, `tests/test_bookmarks_router.py:120`
+  - [x] Bookmarks listing filters by tag/folder with UI widgets and tests: `app/routers/bookmarks.py:340`, `web/pages/bookmarks.tsx:70-120`, `web/pages/bookmarks.tsx:360-940`, `tests/test_bookmarks_router.py:90-220`
 - [x] Preview Pane (sanitized HTML) (UI-017)
   - API + sanitization pipeline: `app/routers/bookmarks.py:1`, `tests/test_bookmarks_router.py:1`
   - Component rendering + sanitization safeguards: `web/components/PreviewPane.tsx:1`, `web/__tests__/PreviewPane.test.tsx:1`

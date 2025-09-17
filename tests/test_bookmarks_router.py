@@ -114,6 +114,11 @@ def test_bookmark_tags_and_folders_endpoints():
     assert tag_payload["name"] == "Work"
     tag_id = tag_payload["id"]
 
+    list_resp = client.get("/bookmarks/tags")
+    assert list_resp.status_code == 200
+    tags_list = list_resp.json()
+    assert any(item["id"] == tag_id and item["bookmark_count"] == 0 for item in tags_list)
+
     resp = client.put(f"/bookmarks/tags/{tag_id}", json={"name": "Work+"})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Work+"
@@ -123,6 +128,7 @@ def test_bookmark_tags_and_folders_endpoints():
     returned_tags = resp.json()
     assert [t["name"] for t in returned_tags] == ["Work+", "Personal"]
     personal_id = next(t["id"] for t in returned_tags if t["name"] == "Personal")
+    assert all(t["bookmark_count"] == 1 for t in returned_tags)
 
     # Tag filter should only return the tagged bookmark
     resp = client.get(f"/bookmarks?tag_id={personal_id}")
@@ -133,14 +139,24 @@ def test_bookmark_tags_and_folders_endpoints():
 
     resp = client.get(f"/bookmarks/{bookmark_id}/tags")
     assert resp.status_code == 200
-    assert sorted(t["name"] for t in resp.json()) == ["Personal", "Work+"]
+    bookmark_tags = resp.json()
+    assert sorted(t["name"] for t in bookmark_tags) == ["Personal", "Work+"]
+    assert all(t["bookmark_count"] == 1 for t in bookmark_tags)
 
     resp = client.delete(f"/bookmarks/tags/{personal_id}")
     assert resp.status_code == 204
 
     resp = client.get(f"/bookmarks/{bookmark_id}/tags")
     assert resp.status_code == 200
-    assert [t["name"] for t in resp.json()] == ["Work+"]
+    updated_tags = resp.json()
+    assert [t["name"] for t in updated_tags] == ["Work+"]
+    assert updated_tags[0]["bookmark_count"] == 1
+
+    resp = client.get("/bookmarks/tags")
+    assert resp.status_code == 200
+    remaining_tags = resp.json()
+    assert all(t["name"] != "Personal" for t in remaining_tags)
+    assert any(t["id"] == tag_id and t["bookmark_count"] == 1 for t in remaining_tags)
 
     # Folder CRUD + bookmark association
     resp = client.post(
@@ -153,13 +169,20 @@ def test_bookmark_tags_and_folders_endpoints():
     assert folder_payload["instapaper_folder_id"] == "123"
     folder_id = folder_payload["id"]
 
+    folder_list = client.get("/bookmarks/folders")
+    assert folder_list.status_code == 200
+    folders_data = folder_list.json()
+    assert any(f["id"] == folder_id and f["bookmark_count"] == 0 for f in folders_data)
+
     resp = client.put(f"/bookmarks/folders/{folder_id}", json={"name": "Read Now"})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Read Now"
 
     resp = client.put(f"/bookmarks/{bookmark_id}/folder", json={"folder_id": folder_id})
     assert resp.status_code == 200
-    assert resp.json()["name"] == "Read Now"
+    folder_assignment = resp.json()
+    assert folder_assignment["name"] == "Read Now"
+    assert folder_assignment["bookmark_count"] == 1
 
     # Folder filter should only return the assigned bookmark
     resp = client.get(f"/bookmarks?folder_id={folder_id}")
@@ -175,6 +198,11 @@ def test_bookmark_tags_and_folders_endpoints():
     resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 204
 
+    resp = client.get("/bookmarks/folders")
+    assert resp.status_code == 200
+    cleared_folders = resp.json()
+    assert any(f["id"] == folder_id and f["bookmark_count"] == 0 for f in cleared_folders)
+
     resp = client.get(f"/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 200
     assert resp.json() is None
@@ -188,6 +216,7 @@ def test_bookmark_tags_and_folders_endpoints():
     assert new_folder["name"] == "Fresh"
     assert new_folder["instapaper_folder_id"] == "987"
     new_folder_id = new_folder["id"]
+    assert new_folder["bookmark_count"] == 1
 
     resp = client.get("/bookmarks/folders")
     assert resp.status_code == 200
@@ -204,6 +233,11 @@ def test_bookmark_tags_and_folders_endpoints():
     # Cleanup: ensure folder assignment can be removed again
     resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 204
+
+    resp = client.get("/bookmarks/folders")
+    assert resp.status_code == 200
+    post_clear = resp.json()
+    assert any(f["id"] == new_folder_id and f["bookmark_count"] == 0 for f in post_clear)
 
     from app.db import get_session
     from app.models import AuditLog
