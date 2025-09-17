@@ -154,6 +154,7 @@ API (OIDC + DB) — Optional Preview
 - Install API deps: `pip install -r requirements.api.txt`
 - Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
 - Set DB URL (defaults to SQLite): `DATABASE_URL=sqlite:///./dev.db`
+- Toggle the core user-management APIs: set `USER_MGMT_CORE=1` (accepted values: `1`, `true`, `yes`, `on`) to expose `/v1/admin/users` and `/v1/admin/audit` and to permit OIDC auto-provisioning when `OIDC_AUTO_PROVISION_USERS` is also enabled.
 - Set encryption key for secrets (32-byte base64 urlsafe):
   - `export CREDENTIALS_ENC_KEY=$(python - <<'PY'
 import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())

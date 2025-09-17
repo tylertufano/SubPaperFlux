@@ -9,9 +9,13 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
-    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    monkeypatch.setenv("USER_MGMT_CORE", "1")
+    from app.config import is_user_mgmt_core_enabled
+
+    is_user_mgmt_core_enabled.cache_clear()
 
 
 def _make_identity() -> Dict[str, object]:
@@ -74,3 +78,23 @@ def test_auto_provision_disabled(monkeypatch):
 
     with next(get_session()) as session:
         assert session.get(User, identity["sub"]) is None
+
+
+def test_auto_provision_respects_user_mgmt_flag(monkeypatch):
+    from app.db import get_session
+    from app.models import User
+    from app.config import is_user_mgmt_core_enabled
+
+    identity = _make_identity()
+    monkeypatch.setenv("OIDC_AUTO_PROVISION_USERS", "1")
+    is_user_mgmt_core_enabled.cache_clear()
+    monkeypatch.setenv("USER_MGMT_CORE", "0")
+
+    client = _setup_app(monkeypatch, identity)
+    with client:
+        resp = client.get("/v1/feeds", headers={"Authorization": "Bearer test"})
+        assert resp.status_code == 200
+
+    with next(get_session()) as session:
+        assert session.get(User, identity["sub"]) is None
+    is_user_mgmt_core_enabled.cache_clear()

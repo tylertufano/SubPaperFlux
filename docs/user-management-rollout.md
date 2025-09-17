@@ -13,11 +13,13 @@ Before entering Phase A ensure the following foundational work has landed in pro
 
 | Flag | Default | Purpose |
 | --- | --- | --- |
-| `user_mgmt_core` | `off` | Enables persistence and API endpoints for managing users and role assignments.
+| `user_mgmt_core` (`USER_MGMT_CORE`) | `off` | Enables persistence and API endpoints for managing users and role assignments.
 | `user_mgmt_ui` | `off` | Surfaces the management UI (list, create, assign roles) in the admin area.
 | `user_mgmt_enforce` | `off` | Enforces role-based access control (RBAC) checks on protected endpoints.
 
 Each flag can be enabled independently per environment. Turning a flag off should always return the system to the prior behavior.
+
+`USER_MGMT_CORE` is read from the process environment. Set it to `1`, `true`, `yes`, or `on` to expose the `/v1/admin/users` and `/v1/admin/audit` routers and to allow OIDC auto-provisioning to run when `OIDC_AUTO_PROVISION_USERS` is also enabled. Leave it unset (or any other value) to keep those endpoints hidden and skip auto-provisioning entirely.
 
 ## Migration Order
 
