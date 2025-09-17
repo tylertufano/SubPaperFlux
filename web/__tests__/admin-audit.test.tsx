@@ -1,17 +1,8 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderWithSWR, makeSWRSuccess, useSWRMock } from './helpers/renderWithSWR'
 import AdminAudit from '../pages/admin/audit'
-import { I18nProvider } from '../lib/i18n'
-
-const { useSWRMock } = vi.hoisted(() => ({
-  useSWRMock: vi.fn(),
-}))
-
-vi.mock('swr', () => ({
-  __esModule: true,
-  default: (key: any, fetcher?: any) => useSWRMock(key, fetcher),
-}))
 
 vi.mock('next/router', () => ({
   useRouter: () => ({ pathname: '/admin/audit' }),
@@ -76,29 +67,20 @@ describe('AdminAudit page', () => {
 
     let lastKey: any = null
 
-    useSWRMock.mockImplementation((key: any) => {
-      if (Array.isArray(key) && key[0] === '/v1/admin/audit') {
-        lastKey = key
-        return {
-          data: sample,
-          error: undefined,
-          isLoading: false,
-          mutate: vi.fn(),
-        }
-      }
-      return {
-        data: undefined,
-        error: undefined,
-        isLoading: false,
-        mutate: vi.fn(),
-      }
+    renderWithSWR(<AdminAudit />, {
+      locale: 'en',
+      swr: {
+        handlers: [
+          {
+            matcher: (key) => Array.isArray(key) && key[0] === '/v1/admin/audit',
+            value: (key) => {
+              lastKey = key
+              return makeSWRSuccess(sample)
+            },
+          },
+        ],
+      },
     })
-
-    render(
-      <I18nProvider locale="en">
-        <AdminAudit />
-      </I18nProvider>,
-    )
 
     expect(screen.getByRole('heading', { level: 2, name: 'Audit Log' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Audit events' })).toBeInTheDocument()
@@ -126,28 +108,17 @@ describe('AdminAudit page', () => {
   })
 
   it('shows empty state when no audit events exist', () => {
-    useSWRMock.mockImplementation((key: any) => {
-      if (Array.isArray(key) && key[0] === '/v1/admin/audit') {
-        return {
-          data: { items: [], total: 0, page: 1, size: 50, has_next: false, total_pages: 1 },
-          error: undefined,
-          isLoading: false,
-          mutate: vi.fn(),
-        }
-      }
-      return {
-        data: undefined,
-        error: undefined,
-        isLoading: false,
-        mutate: vi.fn(),
-      }
+    renderWithSWR(<AdminAudit />, {
+      locale: 'en',
+      swr: {
+        handlers: [
+          {
+            matcher: (key) => Array.isArray(key) && key[0] === '/v1/admin/audit',
+            value: makeSWRSuccess({ items: [], total: 0, page: 1, size: 50, has_next: false, total_pages: 1 }),
+          },
+        ],
+      },
     })
-
-    render(
-      <I18nProvider locale="en">
-        <AdminAudit />
-      </I18nProvider>,
-    )
 
     const forms = screen.getAllByRole('search')
     expect(forms.length).toBeGreaterThan(0)
