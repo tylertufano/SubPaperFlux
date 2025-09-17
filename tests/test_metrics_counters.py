@@ -43,10 +43,14 @@ def _read_metric(
 
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     monkeypatch.setenv("OIDC_AUTO_PROVISION_USERS", "1")
-    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    monkeypatch.setenv("USER_MGMT_CORE", "1")
+    from app.config import is_user_mgmt_core_enabled
+
+    is_user_mgmt_core_enabled.cache_clear()
 
 
 @pytest.fixture

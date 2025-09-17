@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 
 from .auth.oidc import oidc_startup_event, resolve_user_from_token
 from .auth.provisioning import maybe_provision_user
+from .config import is_user_mgmt_core_enabled
 from .db import init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
         {"name": "v1", "description": "Versioned API endpoints"},
     ]
     app = FastAPI(title="SubPaperFlux API", version="0.1.0", openapi_tags=tags_metadata)
+    user_mgmt_core_enabled = is_user_mgmt_core_enabled()
 
     # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
     app.add_event_handler("startup", oidc_startup_event)
@@ -89,7 +91,8 @@ def create_app() -> FastAPI:
             try:
                 user = resolve_user_from_token(bearer_token)
                 if user:
-                    maybe_provision_user(user)
+                    if user_mgmt_core_enabled:
+                        maybe_provision_user(user)
                     increment_user_login()
             except HTTPException:
                 raise
@@ -126,8 +129,9 @@ def create_app() -> FastAPI:
     app.include_router(jobs_v1_router)  # list + detail under /v1/jobs
     app.include_router(bookmarks.router, prefix="/v1", tags=["v1"])  # /v1/bookmarks, etc.
     app.include_router(status.router, prefix="/v1", tags=["v1"])  # v1 status
-    app.include_router(admin_audit_v1_router)
-    app.include_router(admin_users_v1_router)
+    if user_mgmt_core_enabled:
+        app.include_router(admin_audit_v1_router)
+        app.include_router(admin_users_v1_router)
     app.include_router(me_v1_router)
     app.include_router(me_tokens_v1_router)
     app.include_router(integrations_router)

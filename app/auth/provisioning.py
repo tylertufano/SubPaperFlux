@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlmodel import Session
 
+from ..config import is_user_mgmt_core_enabled
 from ..db import get_session_ctx
 from ..models import User
 from . import grant_role
@@ -46,6 +47,8 @@ def _apply_default_role(session: Session, user: User) -> bool:
 def maybe_provision_user(identity: Any) -> None:
     """Ensure a :class:`User` exists for ``identity`` when configured."""
 
+    if not is_user_mgmt_core_enabled():
+        return
     if not _is_enabled():
         return
     if not isinstance(identity, Mapping):

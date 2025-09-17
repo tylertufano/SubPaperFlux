@@ -9,6 +9,10 @@ from sqlmodel import select
 def _env(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
     monkeypatch.setenv("CREDENTIALS_ENC_KEY", base64.urlsafe_b64encode(os.urandom(32)).decode())
+    monkeypatch.setenv("USER_MGMT_CORE", "1")
+    from app.config import is_user_mgmt_core_enabled
+
+    is_user_mgmt_core_enabled.cache_clear()
 
 
 @pytest.fixture()
