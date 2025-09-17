@@ -132,6 +132,7 @@ make sdk-ts
 - [x] Saved Views (Bookmarks)
 - [x] Advanced Search: Field-specific (`title:`/`url:`), regex (PG only), similarity sort (UI-010)
   - Evidence: `web/sdk/src/apis/BookmarksApi.ts:1`, `web/pages/bookmarks.tsx:1`
+  - Evidence: Regenerated SDK clients and wrapper wiring — `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`, `web/lib/openapi.ts:1`
 - [ ] Bulk Actions (UI-027)
   - [x] Delete/export
   - [x] Publish; progress modals (UI-028)
@@ -344,8 +345,9 @@ Use these IDs in future prompts to request specific work. We will keep this list
 - UI-007: Add purposeful empty states across tables and pages
 - UI-008: Add dead-letter queue view under Jobs
 - UI-009: Jobs streaming via WebSocket/SSE + pill notifications
-- UI-010: Advanced Search (field-specific + regex) for Bookmarks — delivered with dedicated field filters, regex targeting, and relevance sort UI.
+- UI-010: Advanced Search (field-specific + regex) for Bookmarks — delivered with dedicated field filters, regex targeting, and relevance sort UI. See `web/pages/bookmarks.tsx:1`, `web/sdk/src/apis/BookmarksApi.ts:1`, `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/lib/openapi.ts:1`.
   - Evidence: `web/sdk/src/apis/BookmarksApi.ts:1`, `web/pages/bookmarks.tsx:1`
+  - Evidence: Regenerated SDK clients and wrapper wiring — `sdk/ts/src/apis/BookmarksApi.ts:1`, `web/sdk/src/apis/BookmarksApi.ts:1`, `web/lib/openapi.ts:1`
 - UI-011: Add Sentry to UI (Next.js integration)
 - UI-012: Add middleware to set `app.user_id` session var for RLS enforcement in Postgres
 - UI-013: Expand i18n string catalog and wrap page text
