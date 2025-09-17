@@ -2,10 +2,11 @@ import logging
 
 from fastapi import FastAPI, HTTPException, Request
 
+from .auth import ensure_admin_role
 from .auth.oidc import oidc_startup_event, resolve_user_from_token
 from .auth.provisioning import maybe_provision_user
 from .config import is_user_mgmt_core_enabled
-from .db import init_db, reset_current_user_id, set_current_user_id
+from .db import get_session_ctx, init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
 from .routers.admin_users_v1 import router as admin_users_v1_router
@@ -47,6 +48,22 @@ def create_app() -> FastAPI:
     # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
     app.add_event_handler("startup", oidc_startup_event)
     app.add_event_handler("startup", init_db)
+    if user_mgmt_core_enabled:
+
+        def ensure_admin_role_startup_task() -> None:
+            with get_session_ctx() as session:
+                try:
+                    ensure_admin_role(session)
+                    session.commit()
+                except Exception:  # noqa: BLE001
+                    session.rollback()
+                    logger.exception(
+                        "Failed to ensure admin role during startup; continuing without blocking",
+                    )
+                else:
+                    logger.info("Admin role ensured during startup")
+
+        app.add_event_handler("startup", ensure_admin_role_startup_task)
     register_error_handlers(app)
     setup_logging()
     init_sentry(app)

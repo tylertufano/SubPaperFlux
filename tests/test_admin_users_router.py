@@ -39,6 +39,23 @@ def admin_client():
         app.dependency_overrides.clear()
 
 
+def test_admin_role_ensured_on_startup():
+    from app.auth import ADMIN_ROLE_NAME
+    from app.db import get_session_ctx, init_db
+    from app.main import create_app
+    from app.models import Role
+
+    init_db()
+    app = create_app()
+    with TestClient(app):
+        pass
+
+    with get_session_ctx() as session:
+        role = session.exec(select(Role).where(Role.name == ADMIN_ROLE_NAME)).first()
+        assert role is not None
+        assert role.is_system is True
+
+
 def test_admin_routes_hidden_when_flag_disabled(monkeypatch):
     from app.config import is_user_mgmt_core_enabled
     from app.db import init_db
