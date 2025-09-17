@@ -52,8 +52,8 @@ export default function BulkFolderModal({ open, selectedCount, folders, onClose,
         const label = rawName || t('bookmarks_folder_fallback')
         return { id, label }
       })
-      .filter(Boolean)
-      .sort((a, b) => a.label.localeCompare(b.label)) as FolderOptionView[]
+      .filter((option): option is FolderOptionView => option !== null)
+      .sort((a, b) => a.label.localeCompare(b.label))
   }, [folders, t])
 
   if (!open) return null
