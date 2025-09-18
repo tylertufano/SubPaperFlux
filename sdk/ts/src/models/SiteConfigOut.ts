@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,71 +21,73 @@ import { mapValues } from '../runtime';
 export interface SiteConfigOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    siteUrl: string;
+    siteUrl: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    usernameSelector: string;
+    usernameSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    passwordSelector: string;
+    passwordSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    loginButtonSelector: string;
+    loginButtonSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    postLoginSelector?: string | null;
+    postLoginSelector?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    cookiesToStore?: Array<string>;
+    cookiesToStore?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteConfigOut interface.
  */
-export function instanceOfSiteConfigOut(value: object): value is SiteConfigOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('siteUrl' in value) || value['siteUrl'] === undefined) return false;
-    if (!('usernameSelector' in value) || value['usernameSelector'] === undefined) return false;
-    if (!('passwordSelector' in value) || value['passwordSelector'] === undefined) return false;
-    if (!('loginButtonSelector' in value) || value['loginButtonSelector'] === undefined) return false;
-    return true;
+export function instanceOfSiteConfigOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "siteUrl" in value;
+    isInstance = isInstance && "usernameSelector" in value;
+    isInstance = isInstance && "passwordSelector" in value;
+    isInstance = isInstance && "loginButtonSelector" in value;
+
+    return isInstance;
 }
 
 export function SiteConfigOutFromJSON(json: any): SiteConfigOut {
@@ -93,7 +95,7 @@ export function SiteConfigOutFromJSON(json: any): SiteConfigOut {
 }
 
 export function SiteConfigOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -104,32 +106,30 @@ export function SiteConfigOutFromJSONTyped(json: any, ignoreDiscriminator: boole
         'usernameSelector': json['username_selector'],
         'passwordSelector': json['password_selector'],
         'loginButtonSelector': json['login_button_selector'],
-        'postLoginSelector': json['post_login_selector'] == null ? undefined : json['post_login_selector'],
-        'cookiesToStore': json['cookies_to_store'] == null ? undefined : json['cookies_to_store'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'postLoginSelector': !exists(json, 'post_login_selector') ? undefined : json['post_login_selector'],
+        'cookiesToStore': !exists(json, 'cookies_to_store') ? undefined : json['cookies_to_store'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
     };
 }
 
-export function SiteConfigOutToJSON(json: any): SiteConfigOut {
-    return SiteConfigOutToJSONTyped(json, false);
-}
-
-export function SiteConfigOutToJSONTyped(value?: SiteConfigOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteConfigOutToJSON(value?: SiteConfigOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'name': value['name'],
-        'site_url': value['siteUrl'],
-        'username_selector': value['usernameSelector'],
-        'password_selector': value['passwordSelector'],
-        'login_button_selector': value['loginButtonSelector'],
-        'post_login_selector': value['postLoginSelector'],
-        'cookies_to_store': value['cookiesToStore'],
-        'owner_user_id': value['ownerUserId'],
+        'id': value.id,
+        'name': value.name,
+        'site_url': value.siteUrl,
+        'username_selector': value.usernameSelector,
+        'password_selector': value.passwordSelector,
+        'login_button_selector': value.loginButtonSelector,
+        'post_login_selector': value.postLoginSelector,
+        'cookies_to_store': value.cookiesToStore,
+        'owner_user_id': value.ownerUserId,
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,18 +21,20 @@ import { mapValues } from '../runtime';
 export interface TagUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof TagUpdate
      */
-    name: string;
+    name: any | null;
 }
 
 /**
  * Check if a given object implements the TagUpdate interface.
  */
-export function instanceOfTagUpdate(value: object): value is TagUpdate {
-    if (!('name' in value) || value['name'] === undefined) return false;
-    return true;
+export function instanceOfTagUpdate(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+
+    return isInstance;
 }
 
 export function TagUpdateFromJSON(json: any): TagUpdate {
@@ -40,7 +42,7 @@ export function TagUpdateFromJSON(json: any): TagUpdate {
 }
 
 export function TagUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -49,18 +51,16 @@ export function TagUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     };
 }
 
-export function TagUpdateToJSON(json: any): TagUpdate {
-    return TagUpdateToJSONTyped(json, false);
-}
-
-export function TagUpdateToJSONTyped(value?: TagUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function TagUpdateToJSON(value?: TagUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'name': value['name'],
+        'name': value.name,
     };
 }
 

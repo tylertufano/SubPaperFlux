@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,76 +21,78 @@ import { mapValues } from '../runtime';
 export interface ApiTokenWithSecret {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    scopes?: Array<string>;
+    scopes?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    lastUsedAt?: Date | null;
+    lastUsedAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    expiresAt?: Date | null;
+    expiresAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    revokedAt?: Date | null;
+    revokedAt?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    token: string;
+    token: any | null;
 }
 
 /**
  * Check if a given object implements the ApiTokenWithSecret interface.
  */
-export function instanceOfApiTokenWithSecret(value: object): value is ApiTokenWithSecret {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
-    if (!('token' in value) || value['token'] === undefined) return false;
-    return true;
+export function instanceOfApiTokenWithSecret(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+    isInstance = isInstance && "token" in value;
+
+    return isInstance;
 }
 
 export function ApiTokenWithSecretFromJSON(json: any): ApiTokenWithSecret {
@@ -98,45 +100,43 @@ export function ApiTokenWithSecretFromJSON(json: any): ApiTokenWithSecret {
 }
 
 export function ApiTokenWithSecretFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenWithSecret {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'scopes': json['scopes'] == null ? undefined : json['scopes'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'lastUsedAt': json['last_used_at'] == null ? undefined : (new Date(json['last_used_at'])),
-        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
-        'revokedAt': json['revoked_at'] == null ? undefined : (new Date(json['revoked_at'])),
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'scopes': !exists(json, 'scopes') ? undefined : json['scopes'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'lastUsedAt': !exists(json, 'last_used_at') ? undefined : json['last_used_at'],
+        'expiresAt': !exists(json, 'expires_at') ? undefined : json['expires_at'],
+        'revokedAt': !exists(json, 'revoked_at') ? undefined : json['revoked_at'],
         'token': json['token'],
     };
 }
 
-export function ApiTokenWithSecretToJSON(json: any): ApiTokenWithSecret {
-    return ApiTokenWithSecretToJSONTyped(json, false);
-}
-
-export function ApiTokenWithSecretToJSONTyped(value?: ApiTokenWithSecret | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function ApiTokenWithSecretToJSON(value?: ApiTokenWithSecret | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'scopes': value['scopes'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'last_used_at': value['lastUsedAt'] === null ? null : ((value['lastUsedAt'] as any)?.toISOString()),
-        'expires_at': value['expiresAt'] === null ? null : ((value['expiresAt'] as any)?.toISOString()),
-        'revoked_at': value['revokedAt'] === null ? null : ((value['revokedAt'] as any)?.toISOString()),
-        'token': value['token'],
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'scopes': value.scopes,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'last_used_at': value.lastUsedAt,
+        'expires_at': value.expiresAt,
+        'revoked_at': value.revokedAt,
+        'token': value.token,
     };
 }
 

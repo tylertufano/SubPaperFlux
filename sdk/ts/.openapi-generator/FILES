@@ -13,14 +13,6 @@ src/apis/StatusApi.ts
 src/apis/V1Api.ts
 src/apis/index.ts
 src/index.ts
-src/models/AdminRoleCreate.ts
-src/models/AdminRoleDetail.ts
-src/models/AdminRoleListItem.ts
-src/models/AdminRoleUpdate.ts
-src/models/AdminRolesPage.ts
-src/models/AdminUserOut.ts
-src/models/AdminUserUpdate.ts
-src/models/AdminUsersPage.ts
 src/models/ApiTokenCreate.ts
 src/models/ApiTokenOut.ts
 src/models/ApiTokenWithSecret.ts
@@ -52,7 +44,6 @@ src/models/MeNotificationPreferences.ts
 src/models/MeNotificationPreferencesUpdate.ts
 src/models/MeOut.ts
 src/models/MeUpdate.ts
-src/models/RoleGrantRequest.ts
 src/models/SiteConfig.ts
 src/models/SiteConfigOut.ts
 src/models/SiteConfigsPage.ts
@@ -61,7 +52,6 @@ src/models/TagCreate.ts
 src/models/TagOut.ts
 src/models/TagUpdate.ts
 src/models/ValidationError.ts
-src/models/ValidationErrorLocInner.ts
 src/models/index.ts
 src/runtime.ts
 tsconfig.esm.json

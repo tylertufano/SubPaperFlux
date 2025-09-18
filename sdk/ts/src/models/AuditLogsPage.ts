@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { AuditLogOut } from './AuditLogOut';
-import {
-    AuditLogOutFromJSON,
-    AuditLogOutFromJSONTyped,
-    AuditLogOutToJSON,
-    AuditLogOutToJSONTyped,
-} from './AuditLogOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface AuditLogsPage {
     /**
      * 
-     * @type {Array<AuditLogOut>}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    items: Array<AuditLogOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the AuditLogsPage interface.
  */
-export function instanceOfAuditLogsPage(value: object): value is AuditLogsPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfAuditLogsPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function AuditLogsPageFromJSON(json: any): AuditLogsPage {
@@ -81,37 +75,35 @@ export function AuditLogsPageFromJSON(json: any): AuditLogsPage {
 }
 
 export function AuditLogsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuditLogsPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(AuditLogOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function AuditLogsPageToJSON(json: any): AuditLogsPage {
-    return AuditLogsPageToJSONTyped(json, false);
-}
-
-export function AuditLogsPageToJSONTyped(value?: AuditLogsPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AuditLogsPageToJSON(value?: AuditLogsPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(AuditLogOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 
