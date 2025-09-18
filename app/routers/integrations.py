@@ -5,6 +5,7 @@ from ..auth.oidc import get_current_user
 from ..jobs.util_subpaperflux import (
     get_instapaper_oauth_session_for_id,
     get_miniflux_config,
+    resolve_config_dir,
 )
 from ..observability.metrics import INTEGRATION_TEST_COUNTER
 from ..security.ratelimit_dep import rate_limiter_dep
@@ -15,12 +16,20 @@ INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 router = APIRouter(prefix="/v1/integrations", tags=["v1"])
 
 
+def _resolve_config_dir_from_body(body: dict) -> str:
+    explicit = body.get("config_dir") or body.get("configDir")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+    return resolve_config_dir()
+
+
 @router.post("/instapaper/test", response_model=dict, summary="Test Instapaper creds")
 def test_instapaper(body: dict, current_user=Depends(get_current_user), _rl=Depends(rate_limiter_dep("instapaper_test"))):
     cred_id = body.get("credential_id")
     if not cred_id:
         return {"ok": False, "error": "credential_id is required"}
-    sess = get_instapaper_oauth_session_for_id(cred_id, current_user["sub"])
+    config_dir = _resolve_config_dir_from_body(body)
+    sess = get_instapaper_oauth_session_for_id(cred_id, current_user["sub"], config_dir=config_dir)
     if not sess:
         return {"ok": False, "error": "credential not found or no app creds"}
     try:
