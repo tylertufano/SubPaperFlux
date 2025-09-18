@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,19 +21,17 @@ import { exists, mapValues } from '../runtime';
 export interface BookmarkTagsUpdate {
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof BookmarkTagsUpdate
      */
-    tags?: any | null;
+    tags?: Array<string>;
 }
 
 /**
  * Check if a given object implements the BookmarkTagsUpdate interface.
  */
-export function instanceOfBookmarkTagsUpdate(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfBookmarkTagsUpdate(value: object): value is BookmarkTagsUpdate {
+    return true;
 }
 
 export function BookmarkTagsUpdateFromJSON(json: any): BookmarkTagsUpdate {
@@ -41,25 +39,27 @@ export function BookmarkTagsUpdateFromJSON(json: any): BookmarkTagsUpdate {
 }
 
 export function BookmarkTagsUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkTagsUpdate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'tags': !exists(json, 'tags') ? undefined : json['tags'],
+        'tags': json['tags'] == null ? undefined : json['tags'],
     };
 }
 
-export function BookmarkTagsUpdateToJSON(value?: BookmarkTagsUpdate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BookmarkTagsUpdateToJSON(json: any): BookmarkTagsUpdate {
+    return BookmarkTagsUpdateToJSONTyped(json, false);
+}
+
+export function BookmarkTagsUpdateToJSONTyped(value?: BookmarkTagsUpdate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'tags': value.tags,
+        'tags': value['tags'],
     };
 }
 
