@@ -8,6 +8,7 @@ Before entering Phase A ensure the following foundational work has landed in pro
 
 - Users/roles data model (new tables, associations, and seed data for the default operator role).
 - Session variable middleware that populates `current_user_id`, `current_role`, and audit context on every request.
+- Organizations and membership data model (`alembic` revision `0018_add_organizations`) seeded with a default tenant for legacy users.
 
 ## Feature Flags
 
