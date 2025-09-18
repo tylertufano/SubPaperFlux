@@ -5,6 +5,8 @@ import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
+import type { Credential } from '../sdk/src/models/Credential'
+import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
 
@@ -187,7 +189,7 @@ async function getClients() {
           const token = resolveSessionToken(session)
           return token ?? ''
         },
-        headers: { 'X-CSRF-Token': CSRF },
+        headers: { 'X-CSRF-Token': CSRF, 'x-csrf-token': CSRF },
         middleware: [retry],
       })
       return {
@@ -722,6 +724,10 @@ export const v1 = {
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
+  copyCredentialV1CredentialsCredIdCopyPost: async ({ credId }: { credId: string }): Promise<Credential> =>
+    (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
+  copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
+    (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 
   listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
   listAdminUsersV1AdminUsersGet: async (p: AdminUsersQuery = {}) => listAdminUsers(p),
@@ -828,12 +834,16 @@ export const creds = {
   deleteCredentialCredentialsCredIdDelete: async ({ credId }: { credId: string }) => (await getClients()).creds.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
   getCredentialCredentialsCredIdGet: async ({ credId }: { credId: string }) => (await getClients()).creds.getCredentialCredentialsCredIdGet({ credId }),
   updateCredentialCredentialsCredIdPut: async ({ credId, credential }: { credId: string; credential: any }) => (await getClients()).creds.updateCredentialCredentialsCredIdPut({ credId, credential, xCsrfToken: CSRF }),
+  copyCredentialToUser: async ({ credId }: { credId: string }): Promise<Credential> =>
+    (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
 }
 
 export const siteConfigs = {
   createSiteConfigSiteConfigsPost: async ({ siteConfig }: { siteConfig: any }) => (await getClients()).sites.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
   deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) => (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
   updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, siteConfig }: { configId: string; siteConfig: any }) => (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, siteConfig, xCsrfToken: CSRF }),
+  copySiteConfigToUser: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
+    (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 }
 
 export const feeds = {

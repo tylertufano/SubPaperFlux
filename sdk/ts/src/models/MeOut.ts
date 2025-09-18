@@ -12,13 +12,12 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 import type { MeNotificationPreferences } from './MeNotificationPreferences';
 import {
     MeNotificationPreferencesFromJSON,
     MeNotificationPreferencesFromJSONTyped,
     MeNotificationPreferencesToJSON,
-    MeNotificationPreferencesToJSONTyped,
 } from './MeNotificationPreferences';
 
 /**
@@ -29,34 +28,34 @@ import {
 export interface MeOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    email?: string | null;
+    email?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    fullName?: string | null;
+    fullName?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    pictureUrl?: string | null;
+    pictureUrl?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    locale?: string | null;
+    locale?: any | null;
     /**
      * 
      * @type {MeNotificationPreferences}
@@ -68,10 +67,12 @@ export interface MeOut {
 /**
  * Check if a given object implements the MeOut interface.
  */
-export function instanceOfMeOut(value: object): value is MeOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('notificationPreferences' in value) || value['notificationPreferences'] === undefined) return false;
-    return true;
+export function instanceOfMeOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "notificationPreferences" in value;
+
+    return isInstance;
 }
 
 export function MeOutFromJSON(json: any): MeOut {
@@ -79,37 +80,35 @@ export function MeOutFromJSON(json: any): MeOut {
 }
 
 export function MeOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
-        'email': json['email'] == null ? undefined : json['email'],
-        'fullName': json['full_name'] == null ? undefined : json['full_name'],
-        'pictureUrl': json['picture_url'] == null ? undefined : json['picture_url'],
-        'locale': json['locale'] == null ? undefined : json['locale'],
+        'email': !exists(json, 'email') ? undefined : json['email'],
+        'fullName': !exists(json, 'full_name') ? undefined : json['full_name'],
+        'pictureUrl': !exists(json, 'picture_url') ? undefined : json['picture_url'],
+        'locale': !exists(json, 'locale') ? undefined : json['locale'],
         'notificationPreferences': MeNotificationPreferencesFromJSON(json['notification_preferences']),
     };
 }
 
-export function MeOutToJSON(json: any): MeOut {
-    return MeOutToJSONTyped(json, false);
-}
-
-export function MeOutToJSONTyped(value?: MeOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function MeOutToJSON(value?: MeOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'email': value['email'],
-        'full_name': value['fullName'],
-        'picture_url': value['pictureUrl'],
-        'locale': value['locale'],
-        'notification_preferences': MeNotificationPreferencesToJSON(value['notificationPreferences']),
+        'id': value.id,
+        'email': value.email,
+        'full_name': value.fullName,
+        'picture_url': value.pictureUrl,
+        'locale': value.locale,
+        'notification_preferences': MeNotificationPreferencesToJSON(value.notificationPreferences),
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,23 +21,25 @@ import { mapValues } from '../runtime';
 export interface MeNotificationPreferencesUpdate {
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof MeNotificationPreferencesUpdate
      */
-    emailJobUpdates?: boolean | null;
+    emailJobUpdates?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof MeNotificationPreferencesUpdate
      */
-    emailDigest?: boolean | null;
+    emailDigest?: any | null;
 }
 
 /**
  * Check if a given object implements the MeNotificationPreferencesUpdate interface.
  */
-export function instanceOfMeNotificationPreferencesUpdate(value: object): value is MeNotificationPreferencesUpdate {
-    return true;
+export function instanceOfMeNotificationPreferencesUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function MeNotificationPreferencesUpdateFromJSON(json: any): MeNotificationPreferencesUpdate {
@@ -45,29 +47,27 @@ export function MeNotificationPreferencesUpdateFromJSON(json: any): MeNotificati
 }
 
 export function MeNotificationPreferencesUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeNotificationPreferencesUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'emailJobUpdates': json['email_job_updates'] == null ? undefined : json['email_job_updates'],
-        'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
+        'emailJobUpdates': !exists(json, 'email_job_updates') ? undefined : json['email_job_updates'],
+        'emailDigest': !exists(json, 'email_digest') ? undefined : json['email_digest'],
     };
 }
 
-export function MeNotificationPreferencesUpdateToJSON(json: any): MeNotificationPreferencesUpdate {
-    return MeNotificationPreferencesUpdateToJSONTyped(json, false);
-}
-
-export function MeNotificationPreferencesUpdateToJSONTyped(value?: MeNotificationPreferencesUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function MeNotificationPreferencesUpdateToJSON(value?: MeNotificationPreferencesUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'email_job_updates': value['emailJobUpdates'],
-        'email_digest': value['emailDigest'],
+        'email_job_updates': value.emailJobUpdates,
+        'email_digest': value.emailDigest,
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,31 +21,33 @@ import { mapValues } from '../runtime';
 export interface TagOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof TagOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof TagOut
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof TagOut
      */
-    bookmarkCount?: number;
+    bookmarkCount?: any | null;
 }
 
 /**
  * Check if a given object implements the TagOut interface.
  */
-export function instanceOfTagOut(value: object): value is TagOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    return true;
+export function instanceOfTagOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+
+    return isInstance;
 }
 
 export function TagOutFromJSON(json: any): TagOut {
@@ -53,31 +55,29 @@ export function TagOutFromJSON(json: any): TagOut {
 }
 
 export function TagOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
         'name': json['name'],
-        'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
+        'bookmarkCount': !exists(json, 'bookmark_count') ? undefined : json['bookmark_count'],
     };
 }
 
-export function TagOutToJSON(json: any): TagOut {
-    return TagOutToJSONTyped(json, false);
-}
-
-export function TagOutToJSONTyped(value?: TagOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function TagOutToJSON(value?: TagOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'name': value['name'],
-        'bookmark_count': value['bookmarkCount'],
+        'id': value.id,
+        'name': value.name,
+        'bookmark_count': value.bookmarkCount,
     };
 }
 

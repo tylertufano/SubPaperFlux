@@ -18,7 +18,7 @@ import type {
   Credential,
   HTTPValidationError,
   InstapaperLoginRequest,
-} from '../models/index';
+} from '../models';
 import {
     CredentialFromJSON,
     CredentialToJSON,
@@ -26,35 +26,35 @@ import {
     HTTPValidationErrorToJSON,
     InstapaperLoginRequestFromJSON,
     InstapaperLoginRequestToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface CreateCredentialCredentialsPostRequest {
     credential: Credential;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 
 export interface CreateInstapaperCredentialFromLoginCredentialsInstapaperLoginPostRequest {
     instapaperLoginRequest: InstapaperLoginRequest;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 
 export interface DeleteCredentialCredentialsCredIdDeleteRequest {
-    credId: string;
-    xCsrfToken?: string | null;
+    credId: any;
+    xCsrfToken?: any;
 }
 
 export interface GetCredentialCredentialsCredIdGetRequest {
-    credId: string;
+    credId: any;
 }
 
 export interface ListCredentialsCredentialsGetRequest {
-    includeGlobal?: boolean;
+    includeGlobal?: any;
 }
 
 export interface UpdateCredentialCredentialsCredIdPutRequest {
-    credId: string;
+    credId: any;
     credential: Credential;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 
 /**
@@ -66,11 +66,8 @@ export class CredentialsApi extends runtime.BaseAPI {
      * Create Credential
      */
     async createCredentialCredentialsPostRaw(requestParameters: CreateCredentialCredentialsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
-        if (requestParameters['credential'] == null) {
-            throw new runtime.RequiredError(
-                'credential',
-                'Required parameter "credential" was null or undefined when calling createCredentialCredentialsPost().'
-            );
+        if (requestParameters.credential === null || requestParameters.credential === undefined) {
+            throw new runtime.RequiredError('credential','Required parameter requestParameters.credential was null or undefined when calling createCredentialCredentialsPost.');
         }
 
         const queryParameters: any = {};
@@ -79,8 +76,8 @@ export class CredentialsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -91,15 +88,12 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CredentialToJSON(requestParameters['credential']),
+            body: CredentialToJSON(requestParameters.credential),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
@@ -117,11 +111,8 @@ export class CredentialsApi extends runtime.BaseAPI {
      * Create Instapaper Credential From Login
      */
     async createInstapaperCredentialFromLoginCredentialsInstapaperLoginPostRaw(requestParameters: CreateInstapaperCredentialFromLoginCredentialsInstapaperLoginPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
-        if (requestParameters['instapaperLoginRequest'] == null) {
-            throw new runtime.RequiredError(
-                'instapaperLoginRequest',
-                'Required parameter "instapaperLoginRequest" was null or undefined when calling createInstapaperCredentialFromLoginCredentialsInstapaperLoginPost().'
-            );
+        if (requestParameters.instapaperLoginRequest === null || requestParameters.instapaperLoginRequest === undefined) {
+            throw new runtime.RequiredError('instapaperLoginRequest','Required parameter requestParameters.instapaperLoginRequest was null or undefined when calling createInstapaperCredentialFromLoginCredentialsInstapaperLoginPost.');
         }
 
         const queryParameters: any = {};
@@ -130,8 +121,8 @@ export class CredentialsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -142,15 +133,12 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/instapaper/login`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/instapaper/login`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: InstapaperLoginRequestToJSON(requestParameters['instapaperLoginRequest']),
+            body: InstapaperLoginRequestToJSON(requestParameters.instapaperLoginRequest),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
@@ -168,19 +156,16 @@ export class CredentialsApi extends runtime.BaseAPI {
      * Delete Credential
      */
     async deleteCredentialCredentialsCredIdDeleteRaw(requestParameters: DeleteCredentialCredentialsCredIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['credId'] == null) {
-            throw new runtime.RequiredError(
-                'credId',
-                'Required parameter "credId" was null or undefined when calling deleteCredentialCredentialsCredIdDelete().'
-            );
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling deleteCredentialCredentialsCredIdDelete.');
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -191,12 +176,8 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/{cred_id}`;
-        urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -216,11 +197,8 @@ export class CredentialsApi extends runtime.BaseAPI {
      * Get Credential
      */
     async getCredentialCredentialsCredIdGetRaw(requestParameters: GetCredentialCredentialsCredIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
-        if (requestParameters['credId'] == null) {
-            throw new runtime.RequiredError(
-                'credId',
-                'Required parameter "credId" was null or undefined when calling getCredentialCredentialsCredIdGet().'
-            );
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling getCredentialCredentialsCredIdGet.');
         }
 
         const queryParameters: any = {};
@@ -235,12 +213,8 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/{cred_id}`;
-        urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -260,11 +234,11 @@ export class CredentialsApi extends runtime.BaseAPI {
     /**
      * List Credentials
      */
-    async listCredentialsCredentialsGetRaw(requestParameters: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Credential>>> {
+    async listCredentialsCredentialsGetRaw(requestParameters: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         const queryParameters: any = {};
 
-        if (requestParameters['includeGlobal'] != null) {
-            queryParameters['include_global'] = requestParameters['includeGlobal'];
+        if (requestParameters.includeGlobal !== undefined) {
+            queryParameters['include_global'] = requestParameters.includeGlobal;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -277,23 +251,24 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(CredentialFromJSON));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * List Credentials
      */
-    async listCredentialsCredentialsGet(requestParameters: ListCredentialsCredentialsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Credential>> {
+    async listCredentialsCredentialsGet(requestParameters: ListCredentialsCredentialsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.listCredentialsCredentialsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -302,18 +277,12 @@ export class CredentialsApi extends runtime.BaseAPI {
      * Update Credential
      */
     async updateCredentialCredentialsCredIdPutRaw(requestParameters: UpdateCredentialCredentialsCredIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
-        if (requestParameters['credId'] == null) {
-            throw new runtime.RequiredError(
-                'credId',
-                'Required parameter "credId" was null or undefined when calling updateCredentialCredentialsCredIdPut().'
-            );
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling updateCredentialCredentialsCredIdPut.');
         }
 
-        if (requestParameters['credential'] == null) {
-            throw new runtime.RequiredError(
-                'credential',
-                'Required parameter "credential" was null or undefined when calling updateCredentialCredentialsCredIdPut().'
-            );
+        if (requestParameters.credential === null || requestParameters.credential === undefined) {
+            throw new runtime.RequiredError('credential','Required parameter requestParameters.credential was null or undefined when calling updateCredentialCredentialsCredIdPut.');
         }
 
         const queryParameters: any = {};
@@ -322,8 +291,8 @@ export class CredentialsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -334,16 +303,12 @@ export class CredentialsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/credentials/{cred_id}`;
-        urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: CredentialToJSON(requestParameters['credential']),
+            body: CredentialToJSON(requestParameters.credential),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));

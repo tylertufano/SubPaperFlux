@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { TagOut } from './TagOut';
-import {
-    TagOutFromJSON,
-    TagOutFromJSONTyped,
-    TagOutToJSON,
-    TagOutToJSONTyped,
-} from './TagOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,24 +21,26 @@ import {
 export interface BookmarkTagSummary {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkTagSummary
      */
-    bookmarkId: string;
+    bookmarkId: any | null;
     /**
      * 
-     * @type {Array<TagOut>}
+     * @type {any}
      * @memberof BookmarkTagSummary
      */
-    tags?: Array<TagOut>;
+    tags?: any | null;
 }
 
 /**
  * Check if a given object implements the BookmarkTagSummary interface.
  */
-export function instanceOfBookmarkTagSummary(value: object): value is BookmarkTagSummary {
-    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined) return false;
-    return true;
+export function instanceOfBookmarkTagSummary(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkId" in value;
+
+    return isInstance;
 }
 
 export function BookmarkTagSummaryFromJSON(json: any): BookmarkTagSummary {
@@ -54,29 +48,27 @@ export function BookmarkTagSummaryFromJSON(json: any): BookmarkTagSummary {
 }
 
 export function BookmarkTagSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkTagSummary {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'bookmarkId': json['bookmark_id'],
-        'tags': json['tags'] == null ? undefined : ((json['tags'] as Array<any>).map(TagOutFromJSON)),
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
     };
 }
 
-export function BookmarkTagSummaryToJSON(json: any): BookmarkTagSummary {
-    return BookmarkTagSummaryToJSONTyped(json, false);
-}
-
-export function BookmarkTagSummaryToJSONTyped(value?: BookmarkTagSummary | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function BookmarkTagSummaryToJSON(value?: BookmarkTagSummary | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'bookmark_id': value['bookmarkId'],
-        'tags': value['tags'] == null ? undefined : ((value['tags'] as Array<any>).map(TagOutToJSON)),
+        'bookmark_id': value.bookmarkId,
+        'tags': value.tags,
     };
 }
 

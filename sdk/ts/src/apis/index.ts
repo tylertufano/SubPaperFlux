@@ -8,4 +8,4 @@ export * from './JobsApi';
 export * from './MeApi';
 export * from './SiteConfigsApi';
 export * from './StatusApi';
-export { V1Api } from './V1Api';
+export * from './V1Api';

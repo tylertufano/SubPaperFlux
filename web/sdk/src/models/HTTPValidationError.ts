@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { ValidationError } from './ValidationError';
-import {
-    ValidationErrorFromJSON,
-    ValidationErrorFromJSONTyped,
-    ValidationErrorToJSON,
-    ValidationErrorToJSONTyped,
-} from './ValidationError';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,17 +21,19 @@ import {
 export interface HTTPValidationError {
     /**
      * 
-     * @type {Array<ValidationError>}
+     * @type {any}
      * @memberof HTTPValidationError
      */
-    detail?: Array<ValidationError>;
+    detail?: any | null;
 }
 
 /**
  * Check if a given object implements the HTTPValidationError interface.
  */
-export function instanceOfHTTPValidationError(value: object): value is HTTPValidationError {
-    return true;
+export function instanceOfHTTPValidationError(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function HTTPValidationErrorFromJSON(json: any): HTTPValidationError {
@@ -47,27 +41,25 @@ export function HTTPValidationErrorFromJSON(json: any): HTTPValidationError {
 }
 
 export function HTTPValidationErrorFromJSONTyped(json: any, ignoreDiscriminator: boolean): HTTPValidationError {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'detail': json['detail'] == null ? undefined : ((json['detail'] as Array<any>).map(ValidationErrorFromJSON)),
+        'detail': !exists(json, 'detail') ? undefined : json['detail'],
     };
 }
 
-export function HTTPValidationErrorToJSON(json: any): HTTPValidationError {
-    return HTTPValidationErrorToJSONTyped(json, false);
-}
-
-export function HTTPValidationErrorToJSONTyped(value?: HTTPValidationError | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function HTTPValidationErrorToJSON(value?: HTTPValidationError | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'detail': value['detail'] == null ? undefined : ((value['detail'] as Array<any>).map(ValidationErrorToJSON)),
+        'detail': value.detail,
     };
 }
 

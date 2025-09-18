@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { ApiTokenOut } from './ApiTokenOut';
-import {
-    ApiTokenOutFromJSON,
-    ApiTokenOutFromJSONTyped,
-    ApiTokenOutToJSON,
-    ApiTokenOutToJSONTyped,
-} from './ApiTokenOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface ApiTokensPage {
     /**
      * 
-     * @type {Array<ApiTokenOut>}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    items: Array<ApiTokenOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the ApiTokensPage interface.
  */
-export function instanceOfApiTokensPage(value: object): value is ApiTokensPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfApiTokensPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function ApiTokensPageFromJSON(json: any): ApiTokensPage {
@@ -81,37 +75,35 @@ export function ApiTokensPageFromJSON(json: any): ApiTokensPage {
 }
 
 export function ApiTokensPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokensPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(ApiTokenOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function ApiTokensPageToJSON(json: any): ApiTokensPage {
-    return ApiTokensPageToJSONTyped(json, false);
-}
-
-export function ApiTokensPageToJSONTyped(value?: ApiTokensPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function ApiTokensPageToJSON(value?: ApiTokensPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(ApiTokenOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 
