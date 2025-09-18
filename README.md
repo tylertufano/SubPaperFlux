@@ -210,7 +210,7 @@ PY
              - authorization_code
            response_types:
              - code
-           token_endpoint_auth_method: client_secret_post
+           token_endpoint_auth_method: client_secret_basic
            require_pkce: true
    ```
 
