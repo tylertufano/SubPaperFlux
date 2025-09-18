@@ -214,7 +214,7 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 ### Access Control & Org Management
 
 - [x] Roles & RBAC with per-resource ownership (UI-061) — see [RBAC enforcement flag rollout notes](docs/user-management-rollout.md#rbac-enforcement-flag)
-- [ ] RBAC UI (UI-040)
+- [x] RBAC UI (UI-040)
 - [ ] OIDC group→role mapping with per-user overrides (UI-062)
 - [ ] Global Assets (copy to my workspace) (UI-041)
 - [ ] Org Views / user management (if not delegated to IdP) (UI-042)
