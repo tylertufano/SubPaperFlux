@@ -206,8 +206,10 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
   - Evidence: `web/pages/me/tokens.tsx:1`
 - [x] Quotas/policies per user (UI-065)
   - Evidence: `app/util/quotas.py:1`, `app/routers/credentials.py:1`, `app/routers/site_configs.py:1`, `app/routers/feeds.py:1`, `app/routers/me_tokens_v1.py:1`, `web/pages/admin/users.tsx:1`, `tests/test_user_quotas.py:1`
-- [ ] Users table and admin UI (UI-060)
-- [ ] Audit log for admin actions (UI-063)
+- [x] Users table and admin UI (UI-060)
+  - Evidence: `app/routers/admin_users_v1.py:1`, `app/schemas.py:259`, `web/pages/admin/users.tsx:1`
+- [x] Audit log for admin actions (UI-063)
+  - Evidence: `app/audit.py:1`, `app/models.py:265`, `alembic/versions/0012_audit_log.py:1`, `app/routers/admin_users_v1.py:1`
 
 ### Access Control & Org Management
 
