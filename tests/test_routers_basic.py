@@ -17,13 +17,40 @@ def _env(monkeypatch):
 
 @pytest.fixture()
 def client():
-    from app.main import create_app
-    from app.db import init_db
+    from app.auth import ADMIN_ROLE_NAME, ensure_admin_role, grant_role
     from app.auth.oidc import get_current_user
-    app = create_app()
+    from app.db import get_session, init_db
+    from app.main import create_app
+    from app.models import User
+
     init_db()
-    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1", "groups": ["admin"]}
-    return TestClient(app)
+    identity = {"sub": "u1", "groups": ["admin"], "email": "admin@example.com"}
+
+    app = create_app()
+    app.dependency_overrides[get_current_user] = lambda: identity
+    client = TestClient(app)
+    with next(get_session()) as session:
+        ensure_admin_role(session)
+        session.commit()
+        admin_user = session.get(User, identity["sub"])
+        if admin_user is None:
+            admin_user = User(
+                id=identity["sub"],
+                email=identity.get("email"),
+                full_name="Admin User",
+                claims={"groups": identity.get("groups", [])},
+            )
+        if session.get(User, admin_user.id) is None:
+            session.add(admin_user)
+            session.commit()
+        grant_role(
+            session,
+            admin_user.id,
+            ADMIN_ROLE_NAME,
+            granted_by_user_id=admin_user.id,
+        )
+        session.commit()
+    return client
 
 
 def test_credentials_and_siteconfigs(client):

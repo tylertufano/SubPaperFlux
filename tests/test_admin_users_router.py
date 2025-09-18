@@ -19,20 +19,44 @@ def _env(monkeypatch):
 
 @pytest.fixture()
 def admin_client():
+    from app.auth import ADMIN_ROLE_NAME, ensure_admin_role, grant_role
+    from app.db import get_session, init_db
     from app.main import create_app
-    from app.db import init_db
     from app.auth.oidc import get_current_user
+    from app.models import User
 
     init_db()
-    app = create_app()
     identity = {
         "sub": "admin-1",
         "email": "admin@example.com",
         "name": "Admin",
         "groups": ["admin"],
     }
+
+    app = create_app()
     app.dependency_overrides[get_current_user] = lambda: identity
     client = TestClient(app)
+    with next(get_session()) as session:
+        ensure_admin_role(session)
+        session.commit()
+        admin_user = session.get(User, identity["sub"])
+        if admin_user is None:
+            admin_user = User(
+                id=identity["sub"],
+                email=identity["email"],
+                full_name=identity["name"],
+                claims={"groups": identity.get("groups", [])},
+            )
+        if session.get(User, admin_user.id) is None:
+            session.add(admin_user)
+            session.commit()
+        grant_role(
+            session,
+            admin_user.id,
+            ADMIN_ROLE_NAME,
+            granted_by_user_id=admin_user.id,
+        )
+        session.commit()
     try:
         yield client
     finally:
@@ -98,9 +122,13 @@ def test_admin_users_listing_and_role_management(admin_client):
     resp = admin_client.get("/v1/admin/users")
     assert resp.status_code == 200
     payload = resp.json()
-    assert payload["total"] == 2
+    assert payload["total"] >= 2
     assert payload["has_next"] is False
     items = {item["id"]: item for item in payload["items"]}
+    assert "admin-1" in items
+    assert items["admin-1"]["is_admin"] is True
+    assert "user-1" in items
+    assert "user-2" in items
     assert items["user-1"]["roles"] == ["editor"]
     assert items["user-1"]["groups"] == []
     assert items["user-1"]["is_admin"] is False
