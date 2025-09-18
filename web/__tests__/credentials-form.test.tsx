@@ -14,6 +14,7 @@ const openApiSpies = vi.hoisted(() => ({
   getCredential: vi.fn(),
   testInstapaper: vi.fn(),
   testMiniflux: vi.fn(),
+  copyCredentialToUser: vi.fn(),
 }))
 
 vi.mock('next/router', () => ({
@@ -46,6 +47,7 @@ vi.mock('../lib/openapi', () => ({
     deleteCredentialCredentialsCredIdDelete: openApiSpies.deleteCredential,
     getCredentialCredentialsCredIdGet: openApiSpies.getCredential,
     updateCredentialCredentialsCredIdPut: openApiSpies.updateCredential,
+    copyCredentialToUser: openApiSpies.copyCredentialToUser,
   },
   createInstapaperCredentialFromLogin: openApiSpies.createInstapaperFromLogin,
 }))
@@ -58,6 +60,7 @@ export const updateCredentialMock = openApiSpies.updateCredential
 export const getCredentialMock = openApiSpies.getCredential
 export const testInstapaperMock = openApiSpies.testInstapaper
 export const testMinifluxMock = openApiSpies.testMiniflux
+export const copyCredentialToUserMock = openApiSpies.copyCredentialToUser
 
 export const defaultCredentialsResponse = { items: [] as any[] }
 
@@ -96,12 +99,41 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
   const { data = defaultCredentialsResponse, locale = 'en', swr } = options
 
   Object.values(openApiSpies).forEach((spy) => spy.mockReset())
-  openApiSpies.listCredentials.mockResolvedValue(data)
+  const cloneValue = (value: any): any => {
+    if (Array.isArray(value)) {
+      return value.map((item) => cloneValue(item))
+    }
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, cloneValue(entry)]))
+    }
+    return value
+  }
+  const initialData = cloneValue(data)
+  openApiSpies.listCredentials.mockResolvedValue(initialData)
 
-  const mutate = vi.fn()
+  let currentData = initialData
+
+  const mutate = vi.fn(async (updater?: any) => {
+    let resolved = currentData
+    if (typeof updater === 'function') {
+      resolved = updater(currentData)
+    } else if (updater !== undefined) {
+      resolved = updater
+    }
+
+    if (resolved instanceof Promise) {
+      resolved = await resolved
+    }
+
+    if (resolved !== undefined) {
+      currentData = resolved
+    }
+
+    return currentData
+  })
   const baseHandler = {
     matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/credentials',
-    value: makeSWRSuccess(data, { mutate }),
+    value: () => makeSWRSuccess(currentData, { mutate }),
   }
   const handlers = [baseHandler, ...(swr?.handlers ?? [])]
   const swrConfig: RenderWithSWROptions['swr'] = {
@@ -376,5 +408,113 @@ describe('credential creation form', () => {
     expect(bannerMessage.closest('[role="status"]')).toBeInTheDocument()
     await waitFor(() => expect(mutate).toHaveBeenCalled())
     expect(createCredentialMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('credential copy to user scope', () => {
+  function buildCredential(overrides: Record<string, any> = {}) {
+    return {
+      id: 'cred-global',
+      description: 'Global credential',
+      kind: 'site_login',
+      ownerUserId: null,
+      ...overrides,
+    }
+  }
+
+  function copyLabelFor(credential: { description?: string | null; id?: string | null }) {
+    const description = String(credential.description ?? credential.id ?? '')
+    return `Copy credential ${description} to your workspace`
+  }
+
+  it('renders copy controls only for credentials without an owner', async () => {
+    const globalCredential = buildCredential()
+    const userCredential = buildCredential({
+      id: 'cred-user',
+      description: 'User credential',
+      ownerUserId: 'user-123',
+    })
+
+    const { unmount } = await setup({ data: { items: [globalCredential, userCredential] } })
+
+    try {
+      const globalRow = (await screen.findByText(globalCredential.description)).closest('tr') as HTMLElement
+      const userRow = (await screen.findByText(userCredential.description)).closest('tr') as HTMLElement
+
+      expect(within(globalRow).getByRole('button', { name: copyLabelFor(globalCredential) })).toBeInTheDocument()
+      expect(within(userRow).queryByRole('button', { name: copyLabelFor(userCredential) })).not.toBeInTheDocument()
+    } finally {
+      unmount()
+    }
+  })
+
+  it('appends copied credentials and reflects the new scope in the table', async () => {
+    const globalCredential = buildCredential({
+      id: 'cred-copy-source',
+      description: 'Workspace credential',
+    })
+    const copiedCredential = buildCredential({
+      id: 'cred-copied',
+      description: 'Workspace credential (personal)',
+      ownerUserId: 'user-456',
+    })
+
+    const { mutate, unmount } = await setup({ data: { items: [globalCredential] } })
+
+    copyCredentialToUserMock.mockResolvedValueOnce(copiedCredential)
+
+    try {
+      const copyButton = await screen.findByRole('button', { name: copyLabelFor(globalCredential) })
+      fireEvent.click(copyButton)
+
+      await waitFor(() => expect(copyCredentialToUserMock).toHaveBeenCalledTimes(1))
+      expect(copyCredentialToUserMock).toHaveBeenLastCalledWith({ credId: globalCredential.id })
+
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+      const mutateCall = mutate.mock.calls[0]
+      expect(typeof mutateCall[0]).toBe('function')
+      expect(mutateCall[1]).toEqual({ revalidate: false })
+
+      const resolvedData = await mutate.mock.results[0].value
+      const resolvedItems = Array.isArray(resolvedData) ? resolvedData : resolvedData?.items
+      expect(Array.isArray(resolvedItems)).toBe(true)
+      expect(resolvedItems).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: copiedCredential.id, ownerUserId: copiedCredential.ownerUserId }),
+        ]),
+      )
+
+      const copiedRow = (await screen.findByText(copiedCredential.description)).closest('tr') as HTMLElement
+      expect(within(copiedRow).getByText('User')).toBeInTheDocument()
+      expect(within(copiedRow).queryByRole('button', { name: copyLabelFor(copiedCredential) })).not.toBeInTheDocument()
+
+      const bannerMessage = await screen.findByText('Copied to your workspace.')
+      expect(bannerMessage.closest('[role="status"]')).toBeInTheDocument()
+    } finally {
+      unmount()
+    }
+  })
+
+  it('surfaces copy helper failures in the error banner', async () => {
+    const globalCredential = buildCredential({ id: 'cred-copy-error' })
+
+    const { mutate, withinBanner, unmount } = await setup({ data: { items: [globalCredential] } })
+
+    copyCredentialToUserMock.mockRejectedValueOnce(new Error('Copy failed'))
+
+    try {
+      const copyButton = await screen.findByRole('button', { name: copyLabelFor(globalCredential) })
+      fireEvent.click(copyButton)
+
+      await waitFor(() => expect(copyCredentialToUserMock).toHaveBeenCalledTimes(1))
+
+      const banner = await screen.findByRole('alert')
+      expect(banner).toBeInTheDocument()
+      const bannerUtils = withinBanner()
+      expect(bannerUtils?.getByText("Couldn't copy to workspace: Copy failed")).toBeInTheDocument()
+      expect(mutate).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
   })
 })
