@@ -56,7 +56,15 @@ def list_credentials(current_user=Depends(get_current_user), session=Depends(get
         except Exception:
             # If decryption fails, return a placeholder
             data = {"error": "cannot decrypt"}
-        resp.append(CredentialSchema(id=rec.id, kind=rec.kind, data=_mask_credential(rec.kind, data), owner_user_id=rec.owner_user_id))
+        resp.append(
+            CredentialSchema(
+                id=rec.id,
+                kind=rec.kind,
+                description=rec.description,
+                data=_mask_credential(rec.kind, data),
+                owner_user_id=rec.owner_user_id,
+            )
+        )
     return resp
 
 
@@ -66,6 +74,7 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
     data = body.data or {}
     if not is_encrypted(data):
         data = encrypt_dict(data)
+    description = body.description.strip()
     owner = body.owner_user_id
     if owner is None and not can_manage_global_credentials(current_user):
         owner = current_user["sub"]
@@ -79,7 +88,12 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
                 CredentialModel.owner_user_id == owner
             ),
         )
-    model = CredentialModel(kind=body.kind, data=data, owner_user_id=owner)
+    model = CredentialModel(
+        kind=body.kind,
+        description=description,
+        data=data,
+        owner_user_id=owner,
+    )
     session.add(model)
     record_audit_log(
         session,
@@ -88,13 +102,23 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         action="create",
         owner_user_id=model.owner_user_id,
         actor_user_id=current_user["sub"],
-        details={"kind": model.kind, "data_keys": sorted((body.data or {}).keys())},
+        details={
+            "kind": model.kind,
+            "description": model.description,
+            "data_keys": sorted((body.data or {}).keys()),
+        },
     )
     session.commit()
     session.refresh(model)
     # Return masked plaintext view
     plain = decrypt_dict(model.data or {})
-    return CredentialSchema(id=model.id, kind=model.kind, data=_mask_credential(model.kind, plain), owner_user_id=model.owner_user_id)
+    return CredentialSchema(
+        id=model.id,
+        kind=model.kind,
+        description=model.description,
+        data=_mask_credential(model.kind, plain),
+        owner_user_id=model.owner_user_id,
+    )
 
 
 @router.delete("/{cred_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
@@ -114,7 +138,7 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
         action="delete",
         owner_user_id=model.owner_user_id,
         actor_user_id=current_user["sub"],
-        details={"kind": model.kind},
+        details={"kind": model.kind, "description": model.description},
     )
     session.delete(model)
     session.commit()
@@ -130,7 +154,13 @@ def get_credential(cred_id: str, current_user=Depends(get_current_user), session
     if model.owner_user_id not in (current_user["sub"], None):
         raise HTTPException(status_code=404, detail="Not found")
     plain = decrypt_dict(model.data or {})
-    return CredentialSchema(id=model.id, kind=model.kind, data=_mask_credential(model.kind, plain), owner_user_id=model.owner_user_id)
+    return CredentialSchema(
+        id=model.id,
+        kind=model.kind,
+        description=model.description,
+        data=_mask_credential(model.kind, plain),
+        owner_user_id=model.owner_user_id,
+    )
 
 
 @router.put("/{cred_id}", response_model=CredentialSchema, dependencies=[Depends(csrf_protect)])
@@ -143,6 +173,7 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         raise HTTPException(status_code=404, detail="Not found")
     incoming = body.data or {}
     previous_kind = model.kind
+    previous_description = model.description
     if is_encrypted(incoming):
         enc = incoming
     else:
@@ -152,6 +183,7 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
             merged_plain[k] = v
         enc = encrypt_dict(merged_plain)
     model.kind = body.kind or model.kind
+    model.description = body.description.strip()
     model.data = enc
     session.add(model)
     record_audit_log(
@@ -165,9 +197,17 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
             "kind": model.kind,
             "updated_fields": sorted(incoming.keys()),
             "kind_changed": model.kind != previous_kind,
+            "description_changed": model.description != previous_description,
+            "description": model.description,
         },
     )
     session.commit()
     session.refresh(model)
     plain = decrypt_dict(model.data or {})
-    return CredentialSchema(id=model.id, kind=model.kind, data=_mask_credential(model.kind, plain), owner_user_id=model.owner_user_id)
+    return CredentialSchema(
+        id=model.id,
+        kind=model.kind,
+        description=model.description,
+        data=_mask_credential(model.kind, plain),
+        owner_user_id=model.owner_user_id,
+    )

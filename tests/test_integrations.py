@@ -37,6 +37,7 @@ def _create_app_with_instapaper_cred():
         cred = Credential(
             owner_user_id="user-1",
             kind="instapaper",
+            description="Instapaper credential",
             data={"oauth_token": "tok", "oauth_token_secret": "sec"},
         )
         session.add(cred)

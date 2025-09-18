@@ -21,24 +21,45 @@ def seed(user_id: str = "demo-user") -> None:
         ensure_admin_role(session)
 
         # Global Instapaper app creds (placeholder)
-        app_cred = Credential(kind="instapaper_app", data=encrypt_dict({
-            "consumer_key": "replace_me",
-            "consumer_secret": "replace_me",
-        }), owner_user_id=None)
+        app_cred = Credential(
+            kind="instapaper_app",
+            description="Instapaper app credential",
+            data=encrypt_dict(
+                {
+                    "consumer_key": "replace_me",
+                    "consumer_secret": "replace_me",
+                }
+            ),
+            owner_user_id=None,
+        )
         session.add(app_cred)
 
         # User Instapaper tokens (placeholder)
-        insta = Credential(kind="instapaper", data=encrypt_dict({
-            "oauth_token": "replace_me",
-            "oauth_token_secret": "replace_me",
-        }), owner_user_id=user_id)
+        insta = Credential(
+            kind="instapaper",
+            description="User Instapaper credential",
+            data=encrypt_dict(
+                {
+                    "oauth_token": "replace_me",
+                    "oauth_token_secret": "replace_me",
+                }
+            ),
+            owner_user_id=user_id,
+        )
         session.add(insta)
 
         # User Miniflux creds (placeholder)
-        mini = Credential(kind="miniflux", data=encrypt_dict({
-            "miniflux_url": "http://miniflux:8080",
-            "api_key": "replace_me",
-        }), owner_user_id=user_id)
+        mini = Credential(
+            kind="miniflux",
+            description="User Miniflux credential",
+            data=encrypt_dict(
+                {
+                    "miniflux_url": "http://miniflux:8080",
+                    "api_key": "replace_me",
+                }
+            ),
+            owner_user_id=user_id,
+        )
         session.add(mini)
 
         # Global site config example

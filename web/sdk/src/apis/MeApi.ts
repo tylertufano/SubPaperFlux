@@ -22,7 +22,7 @@ import type {
   HTTPValidationError,
   MeOut,
   MeUpdate,
-} from '../models/index';
+} from '../models';
 import {
     ApiTokenCreateFromJSON,
     ApiTokenCreateToJSON,
@@ -38,24 +38,24 @@ import {
     MeOutToJSON,
     MeUpdateFromJSON,
     MeUpdateToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface CreateTokenV1MeTokensPostRequest {
     apiTokenCreate: ApiTokenCreate;
 }
 
 export interface GetTokenV1MeTokensTokenIdGetRequest {
-    tokenId: string;
+    tokenId: any;
 }
 
 export interface ListTokensV1MeTokensGetRequest {
-    page?: number;
-    size?: number;
-    includeRevoked?: boolean;
+    page?: any;
+    size?: any;
+    includeRevoked?: any;
 }
 
 export interface RevokeTokenV1MeTokensTokenIdDeleteRequest {
-    tokenId: string;
+    tokenId: any;
 }
 
 export interface UpdateMeV1MePatchRequest {
@@ -71,11 +71,8 @@ export class MeApi extends runtime.BaseAPI {
      * Create an API token
      */
     async createTokenV1MeTokensPostRaw(requestParameters: CreateTokenV1MeTokensPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokenWithSecret>> {
-        if (requestParameters['apiTokenCreate'] == null) {
-            throw new runtime.RequiredError(
-                'apiTokenCreate',
-                'Required parameter "apiTokenCreate" was null or undefined when calling createTokenV1MeTokensPost().'
-            );
+        if (requestParameters.apiTokenCreate === null || requestParameters.apiTokenCreate === undefined) {
+            throw new runtime.RequiredError('apiTokenCreate','Required parameter requestParameters.apiTokenCreate was null or undefined when calling createTokenV1MeTokensPost.');
         }
 
         const queryParameters: any = {};
@@ -92,15 +89,12 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me/tokens`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me/tokens`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ApiTokenCreateToJSON(requestParameters['apiTokenCreate']),
+            body: ApiTokenCreateToJSON(requestParameters.apiTokenCreate),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ApiTokenWithSecretFromJSON(jsonValue));
@@ -130,11 +124,8 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -155,11 +146,8 @@ export class MeApi extends runtime.BaseAPI {
      * Get API token metadata
      */
     async getTokenV1MeTokensTokenIdGetRaw(requestParameters: GetTokenV1MeTokensTokenIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokenOut>> {
-        if (requestParameters['tokenId'] == null) {
-            throw new runtime.RequiredError(
-                'tokenId',
-                'Required parameter "tokenId" was null or undefined when calling getTokenV1MeTokensTokenIdGet().'
-            );
+        if (requestParameters.tokenId === null || requestParameters.tokenId === undefined) {
+            throw new runtime.RequiredError('tokenId','Required parameter requestParameters.tokenId was null or undefined when calling getTokenV1MeTokensTokenIdGet.');
         }
 
         const queryParameters: any = {};
@@ -174,12 +162,8 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me/tokens/{token_id}`;
-        urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me/tokens/{token_id}`.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters.tokenId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -202,16 +186,16 @@ export class MeApi extends runtime.BaseAPI {
     async listTokensV1MeTokensGetRaw(requestParameters: ListTokensV1MeTokensGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokensPage>> {
         const queryParameters: any = {};
 
-        if (requestParameters['page'] != null) {
-            queryParameters['page'] = requestParameters['page'];
+        if (requestParameters.page !== undefined) {
+            queryParameters['page'] = requestParameters.page;
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters.size !== undefined) {
+            queryParameters['size'] = requestParameters.size;
         }
 
-        if (requestParameters['includeRevoked'] != null) {
-            queryParameters['include_revoked'] = requestParameters['includeRevoked'];
+        if (requestParameters.includeRevoked !== undefined) {
+            queryParameters['include_revoked'] = requestParameters.includeRevoked;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -224,11 +208,8 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me/tokens`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me/tokens`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -249,11 +230,8 @@ export class MeApi extends runtime.BaseAPI {
      * Revoke an API token
      */
     async revokeTokenV1MeTokensTokenIdDeleteRaw(requestParameters: RevokeTokenV1MeTokensTokenIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['tokenId'] == null) {
-            throw new runtime.RequiredError(
-                'tokenId',
-                'Required parameter "tokenId" was null or undefined when calling revokeTokenV1MeTokensTokenIdDelete().'
-            );
+        if (requestParameters.tokenId === null || requestParameters.tokenId === undefined) {
+            throw new runtime.RequiredError('tokenId','Required parameter requestParameters.tokenId was null or undefined when calling revokeTokenV1MeTokensTokenIdDelete.');
         }
 
         const queryParameters: any = {};
@@ -268,12 +246,8 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me/tokens/{token_id}`;
-        urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me/tokens/{token_id}`.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters.tokenId))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -293,11 +267,8 @@ export class MeApi extends runtime.BaseAPI {
      * Update current user profile
      */
     async updateMeV1MePatchRaw(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeOut>> {
-        if (requestParameters['meUpdate'] == null) {
-            throw new runtime.RequiredError(
-                'meUpdate',
-                'Required parameter "meUpdate" was null or undefined when calling updateMeV1MePatch().'
-            );
+        if (requestParameters.meUpdate === null || requestParameters.meUpdate === undefined) {
+            throw new runtime.RequiredError('meUpdate','Required parameter requestParameters.meUpdate was null or undefined when calling updateMeV1MePatch.');
         }
 
         const queryParameters: any = {};
@@ -314,15 +285,12 @@ export class MeApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/me`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/me`,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: MeUpdateToJSON(requestParameters['meUpdate']),
+            body: MeUpdateToJSON(requestParameters.meUpdate),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => MeOutFromJSON(jsonValue));

@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { FeedOut } from './FeedOut';
-import {
-    FeedOutFromJSON,
-    FeedOutFromJSONTyped,
-    FeedOutToJSON,
-    FeedOutToJSONTyped,
-} from './FeedOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface FeedsPage {
     /**
      * 
-     * @type {Array<FeedOut>}
+     * @type {any}
      * @memberof FeedsPage
      */
-    items: Array<FeedOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof FeedsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the FeedsPage interface.
  */
-export function instanceOfFeedsPage(value: object): value is FeedsPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfFeedsPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function FeedsPageFromJSON(json: any): FeedsPage {
@@ -81,37 +75,35 @@ export function FeedsPageFromJSON(json: any): FeedsPage {
 }
 
 export function FeedsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): FeedsPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(FeedOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function FeedsPageToJSON(json: any): FeedsPage {
-    return FeedsPageToJSONTyped(json, false);
-}
-
-export function FeedsPageToJSONTyped(value?: FeedsPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function FeedsPageToJSON(value?: FeedsPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(FeedOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 

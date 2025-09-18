@@ -67,6 +67,7 @@ export type CredentialsSetupOptions = {
 export type CredentialFormControls = {
   kind: HTMLSelectElement
   scopeGlobal: HTMLInputElement
+  description: HTMLInputElement | null
   username: HTMLInputElement | null
   password: HTMLInputElement | null
   minifluxUrl: HTMLInputElement | null
@@ -116,6 +117,7 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
   const inputs: CredentialFormControls = {
     kind: kindSelect,
     scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/ }) as HTMLInputElement,
+    description: findInput('Description'),
     username: findInput('Username'),
     password: findInput('Password'),
     minifluxUrl: findInput('Miniflux URL'),
@@ -147,6 +149,7 @@ describe('credentials form setup helper', () => {
     const { form, inputs, queryBanner } = await setup()
     expect(form).toBeInTheDocument()
     expect(inputs.kind).toBeInstanceOf(HTMLSelectElement)
+    expect(inputs.description).toBeInstanceOf(HTMLInputElement)
     expect(inputs.username).toBeInstanceOf(HTMLInputElement)
     expect(inputs.password).toBeInstanceOf(HTMLInputElement)
     expect(queryBanner()).toBeNull()
@@ -154,8 +157,16 @@ describe('credentials form setup helper', () => {
 })
 
 describe('credential editing', () => {
-  const existingCredential = { id: 'cred-1', kind: 'site_login', ownerUserId: null }
-  const maskedCredentialResponse = { data: { username: 'alice', password: '********' } }
+  const existingCredential = {
+    id: 'cred-1',
+    kind: 'site_login',
+    ownerUserId: null,
+    description: 'Existing credential',
+  }
+  const maskedCredentialResponse = {
+    description: 'Existing credential',
+    data: { username: 'alice', password: '********' },
+  }
 
   async function openEditForm() {
     const idCell = await screen.findByRole('cell', { name: existingCredential.id })
@@ -181,8 +192,14 @@ describe('credential editing', () => {
       const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
       expect(usernameInput).toHaveValue('alice')
 
+      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
+      expect(descriptionInput).toHaveValue('Existing credential')
+
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
       expect(usernameInput).toHaveValue('bob')
+
+      fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
+      expect(descriptionInput).toHaveValue('Updated credential')
 
       const saveButton = within(editForm).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
@@ -192,6 +209,7 @@ describe('credential editing', () => {
         credId: existingCredential.id,
         credential: {
           kind: existingCredential.kind,
+          description: 'Updated credential',
           data: { username: 'bob' },
         },
       })
@@ -218,6 +236,9 @@ describe('credential editing', () => {
       const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
 
+      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
+      fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
+
       const saveButton = within(editForm).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
 
@@ -237,11 +258,13 @@ describe('credential creation form', () => {
   it('shows validation errors and prevents submission when required site login fields are empty', async () => {
     const { form, withinForm, inputs, mutate } = await setup()
 
+    const descriptionInput = inputs.description
     const usernameInput = inputs.username
     const passwordInput = inputs.password
+    expect(descriptionInput).toBeTruthy()
     expect(usernameInput).toBeTruthy()
     expect(passwordInput).toBeTruthy()
-    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
 
     fireEvent.change(usernameInput, { target: { value: 'alice' } })
     fireEvent.change(usernameInput, { target: { value: '' } })
@@ -251,6 +274,7 @@ describe('credential creation form', () => {
 
     fireEvent.submit(form)
 
+    expect(await withinForm.findByText('Description is required')).toBeInTheDocument()
     expect(await withinForm.findByText('Username is required')).toBeInTheDocument()
     expect(await withinForm.findByText('Password is required')).toBeInTheDocument()
     expect(createCredentialMock).not.toHaveBeenCalled()
@@ -265,10 +289,12 @@ describe('credential creation form', () => {
     const swrState = useSWRMock.mock.results.at(-1)?.value as { mutate?: ReturnType<typeof vi.fn> }
     expect(swrState?.mutate).toBe(mutate)
 
+    const descriptionInput = inputs.description
     const usernameInput = inputs.username
     const passwordInput = inputs.password
-    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
 
+    fireEvent.change(descriptionInput, { target: { value: 'Site login credential' } })
     fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
     fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
 
@@ -276,6 +302,9 @@ describe('credential creation form', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
+    expect(createCredentialMock).toHaveBeenCalledWith(expect.objectContaining({
+      credential: expect.objectContaining({ description: 'Site login credential' }),
+    }))
 
     const bannerMessage = await screen.findByText('Credential created')
     expect(bannerMessage.closest('[role="status"]')).toBeInTheDocument()
@@ -288,10 +317,12 @@ describe('credential creation form', () => {
     const error = new Error('Network exploded')
     createCredentialMock.mockRejectedValueOnce(error)
 
+    const descriptionInput = inputs.description
     const usernameInput = inputs.username
     const passwordInput = inputs.password
-    if (!usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
 
+    fireEvent.change(descriptionInput, { target: { value: 'Site login credential' } })
     fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
     fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
 

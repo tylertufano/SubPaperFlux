@@ -30,24 +30,37 @@ def test_credentials_and_siteconfigs(client):
     # Create a credential (site_login)
     r = client.post(
         "/credentials",
-        json={"kind": "site_login", "data": {"username": "u", "password": "p"}, "owner_user_id": "u1"},
+        json={
+            "kind": "site_login",
+            "description": "User credential",
+            "data": {"username": "u", "password": "p"},
+            "owner_user_id": "u1",
+        },
     )
     assert r.status_code == 201
     cred = r.json()
     assert cred["kind"] == "site_login"
+    assert cred["description"] == "User credential"
 
     # Update credential
     r_update = client.put(
         f"/credentials/{cred['id']}",
-        json={"id": cred["id"], "kind": "site_login", "data": {"username": "u", "note": "updated"}},
+        json={
+            "id": cred["id"],
+            "kind": "site_login",
+            "description": "Updated credential",
+            "data": {"username": "u", "note": "updated"},
+        },
     )
     assert r_update.status_code == 200
+    assert r_update.json()["description"] == "Updated credential"
 
     # List v1 credentials
     r2 = client.get("/v1/credentials")
     assert r2.status_code == 200
     data = r2.json()
     assert data["total"] >= 1
+    assert any(item["description"] == "Updated credential" for item in data["items"])
 
     # Delete credential
     r_delete = client.delete(f"/credentials/{cred['id']}")
@@ -60,11 +73,17 @@ def test_credentials_and_siteconfigs(client):
     # Create a global credential as admin
     r_global_create = client.post(
         "/credentials",
-        json={"kind": "site_login", "data": {"username": "ga", "password": "gp"}, "owner_user_id": None},
+        json={
+            "kind": "site_login",
+            "description": "Global credential",
+            "data": {"username": "ga", "password": "gp"},
+            "owner_user_id": None,
+        },
     )
     assert r_global_create.status_code == 201
     global_cred = r_global_create.json()
     assert global_cred["owner_user_id"] is None
+    assert global_cred["description"] == "Global credential"
 
     # Regular users should receive 404 when trying to delete a global credential
     from app.auth.oidc import get_current_user
@@ -80,6 +99,7 @@ def test_credentials_and_siteconfigs(client):
     # Ensure the credential still exists and admin can delete it
     r_global_detail = client.get(f"/credentials/{global_cred['id']}")
     assert r_global_detail.status_code == 200
+    assert r_global_detail.json()["description"] == "Global credential"
 
     r_global_delete = client.delete(f"/credentials/{global_cred['id']}")
     assert r_global_delete.status_code == 204

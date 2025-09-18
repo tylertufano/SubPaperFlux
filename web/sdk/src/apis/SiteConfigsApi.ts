@@ -17,36 +17,36 @@ import * as runtime from '../runtime';
 import type {
   HTTPValidationError,
   SiteConfig,
-} from '../models/index';
+} from '../models';
 import {
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
     SiteConfigFromJSON,
     SiteConfigToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface CreateSiteConfigSiteConfigsPostRequest {
     siteConfig: SiteConfig;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 
 export interface DeleteSiteConfigSiteConfigsConfigIdDeleteRequest {
-    configId: string;
-    xCsrfToken?: string | null;
+    configId: any;
+    xCsrfToken?: any;
 }
 
 export interface GetSiteConfigSiteConfigsConfigIdGetRequest {
-    configId: string;
+    configId: any;
 }
 
 export interface ListSiteConfigsSiteConfigsGetRequest {
-    includeGlobal?: boolean;
+    includeGlobal?: any;
 }
 
 export interface UpdateSiteConfigSiteConfigsConfigIdPutRequest {
-    configId: string;
+    configId: any;
     siteConfig: SiteConfig;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 
 /**
@@ -58,11 +58,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      * Create Site Config
      */
     async createSiteConfigSiteConfigsPostRaw(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
-        if (requestParameters['siteConfig'] == null) {
-            throw new runtime.RequiredError(
-                'siteConfig',
-                'Required parameter "siteConfig" was null or undefined when calling createSiteConfigSiteConfigsPost().'
-            );
+        if (requestParameters.siteConfig === null || requestParameters.siteConfig === undefined) {
+            throw new runtime.RequiredError('siteConfig','Required parameter requestParameters.siteConfig was null or undefined when calling createSiteConfigSiteConfigsPost.');
         }
 
         const queryParameters: any = {};
@@ -71,8 +68,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -83,15 +80,12 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/site-configs/`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/site-configs/`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteConfigToJSON(requestParameters['siteConfig']),
+            body: SiteConfigToJSON(requestParameters.siteConfig),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
@@ -109,19 +103,16 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      * Delete Site Config
      */
     async deleteSiteConfigSiteConfigsConfigIdDeleteRaw(requestParameters: DeleteSiteConfigSiteConfigsConfigIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['configId'] == null) {
-            throw new runtime.RequiredError(
-                'configId',
-                'Required parameter "configId" was null or undefined when calling deleteSiteConfigSiteConfigsConfigIdDelete().'
-            );
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling deleteSiteConfigSiteConfigsConfigIdDelete.');
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -132,12 +123,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/site-configs/{config_id}`;
-        urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -157,11 +144,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      * Get Site Config
      */
     async getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
-        if (requestParameters['configId'] == null) {
-            throw new runtime.RequiredError(
-                'configId',
-                'Required parameter "configId" was null or undefined when calling getSiteConfigSiteConfigsConfigIdGet().'
-            );
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling getSiteConfigSiteConfigsConfigIdGet.');
         }
 
         const queryParameters: any = {};
@@ -176,12 +160,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/site-configs/{config_id}`;
-        urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -201,11 +181,11 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * List Site Configs
      */
-    async listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SiteConfig>>> {
+    async listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         const queryParameters: any = {};
 
-        if (requestParameters['includeGlobal'] != null) {
-            queryParameters['include_global'] = requestParameters['includeGlobal'];
+        if (requestParameters.includeGlobal !== undefined) {
+            queryParameters['include_global'] = requestParameters.includeGlobal;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -218,23 +198,24 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/site-configs/`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/site-configs/`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SiteConfigFromJSON));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * List Site Configs
      */
-    async listSiteConfigsSiteConfigsGet(requestParameters: ListSiteConfigsSiteConfigsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SiteConfig>> {
+    async listSiteConfigsSiteConfigsGet(requestParameters: ListSiteConfigsSiteConfigsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.listSiteConfigsSiteConfigsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -243,18 +224,12 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      * Update Site Config
      */
     async updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
-        if (requestParameters['configId'] == null) {
-            throw new runtime.RequiredError(
-                'configId',
-                'Required parameter "configId" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().'
-            );
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut.');
         }
 
-        if (requestParameters['siteConfig'] == null) {
-            throw new runtime.RequiredError(
-                'siteConfig',
-                'Required parameter "siteConfig" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().'
-            );
+        if (requestParameters.siteConfig === null || requestParameters.siteConfig === undefined) {
+            throw new runtime.RequiredError('siteConfig','Required parameter requestParameters.siteConfig was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut.');
         }
 
         const queryParameters: any = {};
@@ -263,8 +238,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
-        if (requestParameters['xCsrfToken'] != null) {
-            headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
         }
 
         if (this.configuration && this.configuration.accessToken) {
@@ -275,16 +250,12 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/site-configs/{config_id}`;
-        urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteConfigToJSON(requestParameters['siteConfig']),
+            body: SiteConfigToJSON(requestParameters.siteConfig),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));

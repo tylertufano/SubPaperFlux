@@ -34,7 +34,13 @@ def list_credentials_v1(
     end = start + size
     rows = records[start:end]
     items = [
-        CredentialSchema(id=r.id, kind=r.kind, data=_mask_credential(r.kind, {}), owner_user_id=r.owner_user_id)
+        CredentialSchema(
+            id=r.id,
+            kind=r.kind,
+            description=r.description,
+            data=_mask_credential(r.kind, {}),
+            owner_user_id=r.owner_user_id,
+        )
         for r in rows
     ]
     has_next = (page * size) < total

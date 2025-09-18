@@ -42,6 +42,7 @@ def fetch_audit(client: TestClient, **params):
 def test_audit_log_tracks_credential_crud(admin_client: TestClient):
     create_payload = {
         "kind": "site_login",
+        "description": "Initial credential",
         "data": {"username": "demo", "password": "secret"},
         "owner_user_id": "admin",
     }
@@ -59,6 +60,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
     update_payload = {
         "id": cred["id"],
         "kind": "site_login",
+        "description": "Refreshed credential",
         "data": {"username": "demo", "note": "refreshed"},
         "owner_user_id": "admin",
     }
@@ -88,6 +90,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
     ]
     assert all(entry["entity_id"] == cred["id"] for entry in final_logs["items"])
     assert final_logs["items"][0]["details"]["kind"] == "site_login"
+    assert final_logs["items"][0]["details"]["description"] == "Refreshed credential"
 
 
 def test_audit_log_tracks_site_config_crud(admin_client: TestClient):

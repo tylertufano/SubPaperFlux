@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, UniqueConstraint, String
 from sqlmodel import SQLModel, Field, Column
 from datetime import datetime, timezone
 
@@ -156,6 +156,7 @@ class Credential(SQLModel, table=True):
     __tablename__ = "credential"
     id: str = Field(default_factory=lambda: gen_id("cred"), primary_key=True)
     kind: str  # instapaper|miniflux|site_login|substack
+    description: str = Field(sa_column=Column(String(length=200), nullable=False))
     data: Dict = Field(default_factory=dict, sa_column=Column(JSON))
     owner_user_id: Optional[str] = Field(default=None, index=True)
 
