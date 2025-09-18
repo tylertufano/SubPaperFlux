@@ -285,7 +285,7 @@ Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
   - `site_login`: `{ "username": "...", "password": "..." }`
   - `miniflux`: `{ "miniflux_url": "...", "api_key": "..." }`
-  - `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }`
+- `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }` (populate via the `/credentials/instapaper/login` onboarding flow; see `docs/instapaper-onboarding.md`)
   - `instapaper_app` (global or user): `{ "consumer_key": "...", "consumer_secret": "..." }`
 - Handlers prefer DB credentials by `id` (or by `kind` for `instapaper_app`), and fall back to file templates if not found.
 - API responses mask sensitive values (e.g., tokens, passwords). Stored values are encrypted at rest using AES‑GCM with `CREDENTIALS_ENC_KEY`.

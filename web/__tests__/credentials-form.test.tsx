@@ -8,6 +8,7 @@ import Credentials from '../pages/credentials'
 const openApiSpies = vi.hoisted(() => ({
   listCredentials: vi.fn(),
   createCredential: vi.fn(),
+  createInstapaperFromLogin: vi.fn(),
   deleteCredential: vi.fn(),
   updateCredential: vi.fn(),
   getCredential: vi.fn(),
@@ -46,10 +47,12 @@ vi.mock('../lib/openapi', () => ({
     getCredentialCredentialsCredIdGet: openApiSpies.getCredential,
     updateCredentialCredentialsCredIdPut: openApiSpies.updateCredential,
   },
+  createInstapaperCredentialFromLogin: openApiSpies.createInstapaperFromLogin,
 }))
 
 export const listCredentialsMock = openApiSpies.listCredentials
 export const createCredentialMock = openApiSpies.createCredential
+export const createInstapaperFromLoginMock = openApiSpies.createInstapaperFromLogin
 export const deleteCredentialMock = openApiSpies.deleteCredential
 export const updateCredentialMock = openApiSpies.updateCredential
 export const getCredentialMock = openApiSpies.getCredential
@@ -70,6 +73,8 @@ export type CredentialFormControls = {
   description: HTMLInputElement | null
   username: HTMLInputElement | null
   password: HTMLInputElement | null
+  instapaperUsername: HTMLInputElement | null
+  instapaperPassword: HTMLInputElement | null
   minifluxUrl: HTMLInputElement | null
   apiKey: HTMLInputElement | null
   oauthToken: HTMLInputElement | null
@@ -120,6 +125,8 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
     description: findInput('Description'),
     username: findInput('Username'),
     password: findInput('Password'),
+    instapaperUsername: findInput(/Instapaper username/i),
+    instapaperPassword: findInput(/Instapaper password/i),
     minifluxUrl: findInput('Miniflux URL'),
     apiKey: findInput('API Key'),
     oauthToken: findInput('OAuth Token'),
@@ -169,16 +176,16 @@ describe('credential editing', () => {
   }
 
   async function openEditForm() {
-    const idCell = await screen.findByRole('cell', { name: existingCredential.id })
-    const row = idCell.closest('tr')
+    const descriptionNode = await screen.findByText(existingCredential.description)
+    const row = descriptionNode.closest('tr')
     if (!row) {
       throw new Error('credential row not found')
     }
     const editButton = within(row).getByRole('button', { name: 'Edit' })
     fireEvent.click(editButton)
     await waitFor(() => expect(getCredentialMock).toHaveBeenCalledWith({ credId: existingCredential.id }))
-    const form = await screen.findByRole('form', { name: `Edit Credential ${existingCredential.id}` })
-    return form
+    const dialog = await screen.findByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })
+    return dialog
   }
 
   it('omits masked values when saving and resets state on success', async () => {
@@ -188,11 +195,11 @@ describe('credential editing', () => {
       getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
       updateCredentialMock.mockResolvedValueOnce({})
 
-      const editForm = await openEditForm()
-      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
+      const editDialog = await openEditForm()
+      const usernameInput = within(editDialog).getByLabelText('Username') as HTMLInputElement
       expect(usernameInput).toHaveValue('alice')
 
-      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
+      const descriptionInput = within(editDialog).getByLabelText('Description') as HTMLInputElement
       expect(descriptionInput).toHaveValue('Existing credential')
 
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
@@ -201,7 +208,7 @@ describe('credential editing', () => {
       fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
       expect(descriptionInput).toHaveValue('Updated credential')
 
-      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
+      const saveButton = within(editDialog).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
 
       await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
@@ -217,7 +224,7 @@ describe('credential editing', () => {
       const successMessage = await screen.findByText('Credential updated')
       expect(successMessage.closest('[role="status"]')).toBeInTheDocument()
       await waitFor(() =>
-        expect(screen.queryByRole('form', { name: `Edit Credential ${existingCredential.id}` })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })).not.toBeInTheDocument(),
       )
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
     } finally {
@@ -232,21 +239,21 @@ describe('credential editing', () => {
       getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
       updateCredentialMock.mockRejectedValueOnce(new Error('Update failed'))
 
-      const editForm = await openEditForm()
-      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
+      const editDialog = await openEditForm()
+      const usernameInput = within(editDialog).getByLabelText('Username') as HTMLInputElement
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
 
-      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
+      const descriptionInput = within(editDialog).getByLabelText('Description') as HTMLInputElement
       fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
 
-      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
+      const saveButton = within(editDialog).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
 
       await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
       const errorMessage = await screen.findByText('Update failed')
       expect(errorMessage.closest('[role="alert"]')).toBeInTheDocument()
 
-      expect(screen.getByRole('form', { name: `Edit Credential ${existingCredential.id}` })).toBeInTheDocument()
+      expect(screen.getByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })).toBeInTheDocument()
       expect(mutate).not.toHaveBeenCalled()
     } finally {
       unmount()
@@ -334,5 +341,40 @@ describe('credential creation form', () => {
     const banner = await screen.findByRole('alert')
     expect(banner).toHaveTextContent(error.message)
     expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('submits instapaper login credentials via the onboarding endpoint', async () => {
+    const { withinForm, inputs, mutate } = await setup()
+
+    createInstapaperFromLoginMock.mockResolvedValueOnce({})
+
+    const descriptionInput = inputs.description
+    const kindSelect = inputs.kind
+    if (!descriptionInput) throw new Error('description input not rendered')
+
+    fireEvent.change(descriptionInput, { target: { value: 'Instapaper credential' } })
+    fireEvent.change(kindSelect, { target: { value: 'instapaper' } })
+
+    const usernameInput = withinForm.getByLabelText('Instapaper username or email') as HTMLInputElement
+    const passwordInput = withinForm.getByLabelText('Instapaper password') as HTMLInputElement
+
+    fireEvent.change(usernameInput, { target: { value: 'alice@example.com' } })
+    fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
+
+    const submitButton = withinForm.getByRole('button', { name: 'Create' })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => expect(createInstapaperFromLoginMock).toHaveBeenCalledTimes(1))
+    expect(createInstapaperFromLoginMock).toHaveBeenCalledWith({
+      description: 'Instapaper credential',
+      username: 'alice@example.com',
+      password: 'correct horse battery staple',
+      scope_global: false,
+    })
+
+    const bannerMessage = await screen.findByText('Credential created')
+    expect(bannerMessage.closest('[role="status"]')).toBeInTheDocument()
+    await waitFor(() => expect(mutate).toHaveBeenCalled())
+    expect(createCredentialMock).not.toHaveBeenCalled()
   })
 })

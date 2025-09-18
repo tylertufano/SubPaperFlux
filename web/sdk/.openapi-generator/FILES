@@ -1,5 +1,6 @@
 .gitignore
 .npmignore
+.openapi-generator-ignore
 README.md
 package.json
 src/apis/AdminApi.ts
@@ -36,6 +37,7 @@ src/models/FolderCreate.ts
 src/models/FolderOut.ts
 src/models/FolderUpdate.ts
 src/models/HTTPValidationError.ts
+src/models/InstapaperLoginRequest.ts
 src/models/JobOut.ts
 src/models/JobRequest.ts
 src/models/JobsPage.ts
@@ -51,6 +53,7 @@ src/models/TagCreate.ts
 src/models/TagOut.ts
 src/models/TagUpdate.ts
 src/models/ValidationError.ts
+src/models/ValidationErrorLocInner.ts
 src/models/index.ts
 src/runtime.ts
 tsconfig.esm.json

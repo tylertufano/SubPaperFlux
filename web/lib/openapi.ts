@@ -152,6 +152,21 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
   return response.json() as Promise<T>
 }
 
+export type InstapaperOnboardingRequest = {
+  description: string
+  username: string
+  password: string
+  scope_global?: boolean
+}
+
+export async function createInstapaperCredentialFromLogin(payload: InstapaperOnboardingRequest) {
+  return authorizedRequest('/credentials/instapaper/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 export type AuditLogEntry = {
   id: string
   entity_type: string

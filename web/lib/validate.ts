@@ -6,26 +6,36 @@ export function parseJsonSafe<T = any>(value: string): { ok: true; data: T } | {
   try { return { ok: true, data: JSON.parse(value) } } catch (e: any) { return { ok: false, error: e?.message || 'Invalid JSON' } }
 }
 
-export function validateCredential(kind: string, data: any): string | null {
+export function validateCredential(kind: string, data: any, description?: string): string | null {
+  const trimmedDescription = typeof description === 'string' ? description.trim() : ''
+  if (!trimmedDescription) return 'description is required'
   if (!data || typeof data !== 'object') return 'Data must be a JSON object'
   if (kind === 'site_login') {
-    if (!data.username) return 'username is required'
-    if (!data.password) return 'password is required'
+    const username = typeof data.username === 'string' ? data.username.trim() : ''
+    const password = typeof data.password === 'string' ? data.password.trim() : ''
+    if (!username) return 'username is required'
+    if (!password) return 'password is required'
     return null
   }
   if (kind === 'miniflux') {
-    if (!data.miniflux_url || !isValidUrl(data.miniflux_url)) return 'miniflux_url is invalid'
-    if (!data.api_key) return 'api_key is required'
+    const url = typeof data.miniflux_url === 'string' ? data.miniflux_url.trim() : ''
+    const apiKey = typeof data.api_key === 'string' ? data.api_key.trim() : ''
+    if (!url || !isValidUrl(url)) return 'miniflux_url is invalid'
+    if (!apiKey) return 'api_key is required'
     return null
   }
   if (kind === 'instapaper') {
-    if (!data.oauth_token) return 'oauth_token is required'
-    if (!data.oauth_token_secret) return 'oauth_token_secret is required'
+    const username = typeof data.username === 'string' ? data.username.trim() : ''
+    const password = typeof data.password === 'string' ? data.password.trim() : ''
+    if (!username) return 'username is required'
+    if (!password) return 'password is required'
     return null
   }
   if (kind === 'instapaper_app') {
-    if (!data.consumer_key) return 'consumer_key is required'
-    if (!data.consumer_secret) return 'consumer_secret is required'
+    const consumerKey = typeof data.consumer_key === 'string' ? data.consumer_key.trim() : ''
+    const consumerSecret = typeof data.consumer_secret === 'string' ? data.consumer_secret.trim() : ''
+    if (!consumerKey) return 'consumer_key is required'
+    if (!consumerSecret) return 'consumer_secret is required'
     return null
   }
   return null

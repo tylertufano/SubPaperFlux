@@ -42,7 +42,7 @@ describe('streamBulkPublish', () => {
     const events: BulkPublishEvent[] = []
     const summary = await streamBulkPublish({ requestBody: {}, onEvent: (evt) => events.push(evt) })
     expect(summary).toEqual({ success: 1, failed: 1 })
-    expect(events.map((e) => e.type)).toEqual(['start', 'item', 'item', 'item', 'item', 'item', 'complete'])
+    expect(events.map((e) => e.type)).toEqual(['start', 'item', 'item', 'item', 'item', 'item', 'item', 'complete'])
     expect(events.filter((e): e is Extract<BulkPublishEvent, { type: 'item' }> => e.type === 'item')).toEqual([
       { type: 'item', id: '1', status: 'pending' },
       { type: 'item', id: '1', status: 'running' },
