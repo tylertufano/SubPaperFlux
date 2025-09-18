@@ -46,5 +46,6 @@
   "admin_roles_delete_confirm": "¿Eliminar rol {name}? ✨",
   "admin_roles_delete_system_disabled": "Los roles del sistema no se pueden borrar ✨",
   "admin_roles_empty_title": "Sin roles ✨",
-  "admin_roles_empty_description": "Crea roles para verlos aquí ✨"
+  "admin_roles_empty_description": "Crea roles para verlos aquí ✨",
+  "name_label": "Nombre ✨"
 }

@@ -322,6 +322,7 @@
   "credentials_table_column_credential": "Credential",
   "credentials_table_id_caption": "ID: {id}",
   "description_label": "Description",
+  "name_label": "Name",
   "kind_label": "Kind",
   "scope_label": "Scope",
   "scope_user": "User",
