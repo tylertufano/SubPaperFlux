@@ -76,6 +76,45 @@ All other roles start with no elevated grants. The `has_permission` helper autom
 
 **Rollback plan:** Disable `user_mgmt_enforce` to return to permissive access while keeping the data model and UI from earlier phases available.
 
+## Mapping Configuration
+
+Role assignments derived from identity provider groups are configured entirely through environment variables so that each tenant can align the UI with their IdP taxonomy without code changes. The backend consumes two knobs when resolving grants:
+
+- `OIDC_GROUP_ROLE_MAP` defines a comma- or newline-separated list of `group=role` pairs. Multiple entries for the same group append additional roles to the set. The parser trims surrounding whitespace and rejects malformed tokens so operators get immediate feedback when a deployment starts (see `app/auth/mapping.py`).
+- `OIDC_GROUP_ROLE_DEFAULTS` lists roles that should be granted to every auto-provisioned account regardless of group membership. These defaults seed the resolved role set before any mapped groups are evaluated (also in `app/auth/mapping.py`).
+
+Auto-provisioning calls `resolve_roles_for_groups()` with the group claims pulled from the OIDC identity payload. That helper normalizes group names, applies the mapping/default configuration, and returns the deduplicated role set used downstream by `sync_user_roles_from_identity()` (see `app/auth/mapping.py` and `app/auth/provisioning.py`).
+
+**Example configuration**
+
+```
+export OIDC_GROUP_ROLE_MAP="admins=admin\nops=publisher\nops=auditor"
+export OIDC_GROUP_ROLE_DEFAULTS="reader"
+```
+
+With the sample above, any user in the `admins` group receives the `admin` role, and users in `ops` inherit both `publisher` and `auditor`. Everyone, including users in unmapped groups, is granted `reader` by default.
+
+Reload application processes after changing either variable so the cached configuration is refreshed.
+
+## Override Storage
+
+Manual overrides let operators fine-tune role assignments when IdP data is incomplete or when they need to temporarily freeze automation. Overrides are persisted on each `User` record inside the JSON `claims` column under the `role_overrides` key. The payload captures three concepts: an `enabled` flag, a list of preserved roles, and a list of suppressed roles (see `app/models.py` and `app/auth/role_overrides.py`).
+
+`RoleOverrides` objects enforce normalization (case-insensitive trimming, deduplication) and serialize back to JSON via `set_user_role_overrides()`. Clearing all fields removes the claim entirely. When identity synchronization runs, overrides alter the merge behavior: preserved roles are never revoked, suppressed roles are removed from IdP-derived grants, and toggling `enabled` prevents the automatic revocation path altogether until operators re-enable synchronization (see `app/auth/role_overrides.py` and `app/auth/provisioning.py`).
+
+Admin APIs expose overrides through `/v1/admin/users/{user_id}/role-overrides` for updates and deletes so the UI and automation can toggle state without direct database access. Audit hooks emit events whenever overrides are changed, preserving traceability for compliance reviews (see `app/routers/admin_users_v1.py`).
+
+## Operator Workflow
+
+The admin UI surfaces overrides and mapping effects so support teams can manage accounts end-to-end once `user_mgmt_ui` is enabled:
+
+1. Navigate to **Admin → Users** and locate the user via search, status, or role filters. Selecting a row opens the management drawer with quotas, roles, and override controls (implemented in `web/pages/admin/users.tsx`).
+2. Review the **Role Overrides** card. The toggle indicates whether automatic revocations are paused, and the list shows preserved roles. Operators can add a preserved role using the inline form, remove entries, or clear the override entirely (see the `Role Overrides` section in `web/pages/admin/users.tsx`).
+3. Saving changes invokes the admin override endpoints, refreshing the drawer state and flashing success or error alerts for immediate feedback. This keeps the UI synchronized with backend assertions and audit logs (see handlers in `web/pages/admin/users.tsx`).
+4. After verifying the user's access, operators should test the IdP-driven mapping by re-running a login or calling the provisioning sync. Overrides ensure emergency access remains intact even if the identity payload changes unexpectedly (see `app/auth/provisioning.py`).
+
+This workflow complements the group mapping configuration: operators rely on the environment-driven defaults for the majority of accounts while using overrides to handle exceptions without blocking the automated rollout.
+
 ## Post-Rollout Tasks
 
 - Expand documentation for tenant onboarding, including role recommendations and least-privilege examples.
