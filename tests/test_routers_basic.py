@@ -162,6 +162,135 @@ def test_credentials_and_siteconfigs(client):
     assert {"id", "entity_type", "action", "created_at"}.issubset(first_entry.keys())
 
 
+def test_instapaper_login_success(monkeypatch, client):
+    from app.db import get_session
+    from app.models import AuditLog, Credential
+    from app.security.crypto import encrypt_dict, decrypt_dict
+    import app.integrations.instapaper as instapaper
+    import app.routers.credentials as credentials_router
+
+    def fake_get_tokens(consumer_key, consumer_secret, username, password):
+        assert consumer_key == "ckey"
+        assert consumer_secret == "csecret"
+        assert username == "reader@example.com"
+        assert password == "pw"
+        return instapaper.InstapaperTokenResponse(
+            success=True,
+            oauth_token="tok123456789",
+            oauth_token_secret="sec987654321",
+            status_code=200,
+        )
+
+    monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fake_get_tokens)
+
+    with next(get_session()) as session:
+        app_cred = Credential(
+            kind="instapaper_app",
+            description="Instapaper app",
+            data=encrypt_dict({"consumer_key": "ckey", "consumer_secret": "csecret"}),
+            owner_user_id=None,
+        )
+        session.add(app_cred)
+        session.commit()
+
+    resp = client.post(
+        "/credentials/instapaper/login",
+        json={
+            "description": "My Instapaper",
+            "username": "reader@example.com",
+            "password": "pw",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["kind"] == "instapaper"
+    assert body["description"] == "My Instapaper"
+    assert body["owner_user_id"] == "u1"
+    assert body["data"]["username"] == "reader@example.com"
+    assert "***" in body["data"]["oauth_token"]
+    assert body["data"]["oauth_token"] != "tok123456789"
+    assert body["data"]["oauth_token_secret"] != "sec987654321"
+
+    with next(get_session()) as session:
+        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).first()
+        assert stored is not None
+        plain = decrypt_dict(stored.data)
+        assert plain["oauth_token"] == "tok123456789"
+        assert plain["oauth_token_secret"] == "sec987654321"
+        assert plain["username"] == "reader@example.com"
+        logs = session.exec(select(AuditLog).where(AuditLog.entity_id == stored.id)).all()
+        assert any(log.action == "create" for log in logs)
+
+
+def test_instapaper_login_missing_app_creds(monkeypatch, client):
+    import app.integrations.instapaper as instapaper
+    import app.routers.credentials as credentials_router
+
+    def fail(*args, **kwargs):  # pragma: no cover - should not be called
+        raise AssertionError("get_instapaper_tokens should not be invoked without app creds")
+
+    monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fail)
+
+    resp = client.post(
+        "/credentials/instapaper/login",
+        json={
+            "description": "Instapaper",
+            "username": "reader@example.com",
+            "password": "pw",
+        },
+    )
+    assert resp.status_code == 400
+    error_body = resp.json()
+    assert error_body["status"] == 400
+    assert error_body["message"] == "Instapaper app credentials are not configured"
+
+
+def test_instapaper_login_bad_password(monkeypatch, client):
+    from app.db import get_session
+    from app.models import Credential
+    from app.security.crypto import encrypt_dict
+    import app.integrations.instapaper as instapaper
+    import app.routers.credentials as credentials_router
+
+    with next(get_session()) as session:
+        session.add(
+            Credential(
+                kind="instapaper_app",
+                description="app",
+                data=encrypt_dict({"consumer_key": "ckey", "consumer_secret": "csecret"}),
+                owner_user_id=None,
+            )
+        )
+        session.commit()
+
+    monkeypatch.setattr(
+        credentials_router,
+        "get_instapaper_tokens",
+        lambda *args, **kwargs: instapaper.InstapaperTokenResponse(
+            success=False,
+            error="invalid",
+            status_code=403,
+        ),
+    )
+
+    resp = client.post(
+        "/credentials/instapaper/login",
+        json={
+            "description": "Instapaper",
+            "username": "reader@example.com",
+            "password": "bad",
+        },
+    )
+    assert resp.status_code == 400
+    error_body = resp.json()
+    assert error_body["status"] == 400
+    assert error_body["message"] == "Invalid Instapaper username or password"
+
+    with next(get_session()) as session:
+        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).first()
+        assert stored is None
+
+
 def test_jobs_validation(client):
     # Missing fields
     r = client.post("/v1/jobs/validate", json={"type": "login", "payload": {}})
