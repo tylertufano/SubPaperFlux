@@ -47,6 +47,16 @@ def _load_json(path: str) -> Dict[str, Any]:
         return json.load(f)
 
 
+def resolve_config_dir(explicit: Optional[str] = None) -> str:
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+    for key in ("SPF_CONFIG_DIR", "SUBPAPERFLUX_CONFIG_DIR", "CONFIG_DIR"):
+        value = os.getenv(key)
+        if value:
+            return value
+    return "."
+
+
 def _compute_expiry_hint(cookies: List[Dict[str, Any]]) -> Optional[float]:
     expiries = []
     for c in cookies:
@@ -327,7 +337,9 @@ def get_instapaper_oauth_session(owner_user_id: Optional[str]):
     )
 
 
-def get_instapaper_oauth_session_for_id(instapaper_cred_id: str, owner_user_id: Optional[str]):
+def get_instapaper_oauth_session_for_id(
+    instapaper_cred_id: str, owner_user_id: Optional[str], config_dir: Optional[str] = None
+):
     """Create OAuth1Session for a specific instapaper credential id (user-scoped)."""
     from requests_oauthlib import OAuth1Session
     with get_session_ctx() as session:
@@ -335,10 +347,20 @@ def get_instapaper_oauth_session_for_id(instapaper_cred_id: str, owner_user_id: 
         app_stmt_user = select(CredentialModel).where((CredentialModel.owner_user_id == owner_user_id) & (CredentialModel.kind == "instapaper_app"))
         app_stmt_global = select(CredentialModel).where((CredentialModel.owner_user_id.is_(None)) & (CredentialModel.kind == "instapaper_app"))
         app = session.exec(app_stmt_user).first() or session.exec(app_stmt_global).first()
-    if not rec or not app or rec.owner_user_id != owner_user_id:
+    if not rec or rec.owner_user_id != owner_user_id:
         return None
     user_data = decrypt_dict(rec.data or {})
-    app_data = decrypt_dict(app.data or {})
+    app_data: Dict[str, Any] = {}
+    if app:
+        try:
+            app_data = decrypt_dict(app.data or {}) or {}
+        except Exception:
+            app_data = {}
+    if not app_data:
+        resolved_dir = resolve_config_dir(config_dir)
+        app_data = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+    if not app_data:
+        return None
     return OAuth1Session(
         app_data.get("consumer_key"),
         client_secret=app_data.get("consumer_secret"),
