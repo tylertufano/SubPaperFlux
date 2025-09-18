@@ -336,6 +336,46 @@ export type RoleGrantRequest = {
   is_system?: boolean | null
 }
 
+export type AdminRoleListItem = {
+  id: string
+  name: string
+  description?: string | null
+  is_system?: boolean
+  created_at: string
+  updated_at: string
+  assigned_user_count?: number
+}
+
+export type AdminRoleDetail = AdminRoleListItem & {
+  metadata?: Record<string, any>
+}
+
+export type AdminRolesPage = {
+  items: AdminRoleListItem[]
+  total: number
+  page: number
+  size: number
+  has_next?: boolean
+  total_pages?: number
+}
+
+type AdminRolesQuery = {
+  page?: number
+  size?: number
+  search?: string
+}
+
+export type AdminRoleCreatePayload = {
+  name: string
+  description?: string | null
+  is_system?: boolean | null
+}
+
+export type AdminRoleUpdatePayload = {
+  name?: string | null
+  description?: string | null
+}
+
 export type ApiToken = {
   id: string
   name: string
@@ -460,6 +500,53 @@ async function revokeAdminUserRole(userId: string, roleName: string, confirm = f
     method: 'DELETE',
     expectJson: false,
     errorMessage: 'Failed to revoke role',
+  })
+}
+
+async function fetchAdminRoles(params: AdminRolesQuery = {}): Promise<AdminRolesPage> {
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.search) query.set('search', params.search)
+
+  const search = query.toString()
+  return authorizedRequest<AdminRolesPage>(`/v1/admin/roles${search ? `?${search}` : ''}`, {
+    errorMessage: 'Failed to load roles',
+  })
+}
+
+async function createAdminRoleRequest(payload: AdminRoleCreatePayload): Promise<AdminRoleDetail> {
+  return authorizedRequest<AdminRoleDetail>('/v1/admin/roles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to create role',
+  })
+}
+
+async function updateAdminRoleRequest(
+  roleId: string,
+  payload: AdminRoleUpdatePayload,
+): Promise<AdminRoleDetail> {
+  return authorizedRequest<AdminRoleDetail>(`/v1/admin/roles/${encodeURIComponent(roleId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to update role',
+  })
+}
+
+async function deleteAdminRoleRequest(roleId: string): Promise<void> {
+  await authorizedRequest(`/v1/admin/roles/${encodeURIComponent(roleId)}`, {
+    method: 'DELETE',
+    expectJson: false,
+    errorMessage: 'Failed to delete role',
+  })
+}
+
+async function fetchAdminRoleDetail(roleId: string): Promise<AdminRoleDetail> {
+  return authorizedRequest<AdminRoleDetail>(`/v1/admin/roles/${encodeURIComponent(roleId)}`, {
+    errorMessage: 'Failed to load role',
   })
 }
 
@@ -626,6 +713,38 @@ export const v1 = {
     roleName: string
     confirm?: boolean
   }) => revokeAdminUserRole(userId, roleName, Boolean(confirm)),
+
+  listAdminRoles: async (p: AdminRolesQuery = {}) => fetchAdminRoles(p),
+  createAdminRole: async ({
+    adminRoleCreate,
+  }: {
+    adminRoleCreate: AdminRoleCreatePayload
+  }) => createAdminRoleRequest(adminRoleCreate),
+  updateAdminRole: async ({
+    roleId,
+    adminRoleUpdate,
+  }: {
+    roleId: string
+    adminRoleUpdate: AdminRoleUpdatePayload
+  }) => updateAdminRoleRequest(roleId, adminRoleUpdate),
+  deleteAdminRole: async ({ roleId }: { roleId: string }) => deleteAdminRoleRequest(roleId),
+  getAdminRole: async ({ roleId }: { roleId: string }) => fetchAdminRoleDetail(roleId),
+
+  listRolesV1AdminRolesGet: async (p: AdminRolesQuery = {}) => fetchAdminRoles(p),
+  createRoleV1AdminRolesPost: async ({
+    adminRoleCreate,
+  }: {
+    adminRoleCreate: AdminRoleCreatePayload
+  }) => createAdminRoleRequest(adminRoleCreate),
+  updateRoleV1AdminRolesRoleIdPatch: async ({
+    roleId,
+    adminRoleUpdate,
+  }: {
+    roleId: string
+    adminRoleUpdate: AdminRoleUpdatePayload
+  }) => updateAdminRoleRequest(roleId, adminRoleUpdate),
+  deleteRoleV1AdminRolesRoleIdDelete: async ({ roleId }: { roleId: string }) => deleteAdminRoleRequest(roleId),
+  getRoleV1AdminRolesRoleIdGet: async ({ roleId }: { roleId: string }) => fetchAdminRoleDetail(roleId),
 
   listJobsV1JobsGet: async (p: any = {}) => (await getClients()).v1.listJobsV1JobsGet(p),
   getJobV1JobsJobIdGet: async ({ jobId }: { jobId: string }) => (await getClients()).v1.getJobV1JobsJobIdGet({ jobId }),
