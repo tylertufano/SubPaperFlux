@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from .auth import ensure_admin_role
 from .auth.oidc import oidc_startup_event, resolve_user_from_token
 from .auth.provisioning import maybe_provision_user
-from .config import is_user_mgmt_core_enabled
+from .config import is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 from .db import get_session_ctx, init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
@@ -43,7 +43,18 @@ def create_app() -> FastAPI:
         {"name": "v1", "description": "Versioned API endpoints"},
     ]
     app = FastAPI(title="SubPaperFlux API", version="0.1.0", openapi_tags=tags_metadata)
-    user_mgmt_core_enabled = is_user_mgmt_core_enabled()
+
+    def cache_user_mgmt_flags() -> None:
+        core_enabled = is_user_mgmt_core_enabled()
+        enforce_enabled = is_user_mgmt_enforce_enabled()
+        app.state.user_mgmt_core_enabled = core_enabled
+        app.state.user_mgmt_enforce_enabled = enforce_enabled
+        app.state.user_mgmt_requires_user_ids = core_enabled or enforce_enabled
+
+    cache_user_mgmt_flags()
+    app.state.cache_user_mgmt_flags = cache_user_mgmt_flags
+
+    user_mgmt_core_enabled = app.state.user_mgmt_core_enabled
 
     # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
     app.add_event_handler("startup", oidc_startup_event)
@@ -99,6 +110,16 @@ def create_app() -> FastAPI:
     async def bind_rls_user(request: Request, call_next):
         ctx_token = None
         try:
+            core_enabled = getattr(request.app.state, "user_mgmt_core_enabled", False)
+            enforce_enabled = getattr(request.app.state, "user_mgmt_enforce_enabled", False)
+            requires_user_ids = getattr(
+                request.app.state,
+                "user_mgmt_requires_user_ids",
+                core_enabled or enforce_enabled,
+            )
+            request.state.user_mgmt_core_enabled = core_enabled
+            request.state.user_mgmt_enforce_enabled = enforce_enabled
+            request.state.user_mgmt_requires_user_ids = requires_user_ids
             auth_header = request.headers.get("authorization")
             bearer_token = None
             if auth_header:
@@ -108,8 +129,8 @@ def create_app() -> FastAPI:
             try:
                 user = resolve_user_from_token(bearer_token)
                 if user:
-                    if user_mgmt_core_enabled:
-                        maybe_provision_user(user)
+                    if requires_user_ids:
+                        maybe_provision_user(user, user_mgmt_enabled=requires_user_ids)
                     increment_user_login()
             except HTTPException:
                 raise
@@ -119,7 +140,8 @@ def create_app() -> FastAPI:
             user_id = user.get("sub") if user else None
             request.state.current_user = user
             request.state.user_id = user_id
-            ctx_token = set_current_user_id(user_id)
+            if requires_user_ids:
+                ctx_token = set_current_user_id(user_id)
             response = await call_next(request)
             return response
         finally:

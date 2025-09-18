@@ -194,6 +194,7 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
     from app.config import is_user_mgmt_enforce_enabled
 
     is_user_mgmt_enforce_enabled.cache_clear()
+    client.app.state.cache_user_mgmt_flags()
     try:
         cred_resp = client.post(
             "/credentials",
@@ -248,6 +249,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
     from app.config import is_user_mgmt_enforce_enabled
 
     is_user_mgmt_enforce_enabled.cache_clear()
+    client.app.state.cache_user_mgmt_flags()
     try:
         cred_resp = client.post(
             "/credentials",

@@ -44,10 +44,12 @@ def _apply_default_role(session: Session, user: User) -> bool:
         return False
 
 
-def maybe_provision_user(identity: Any) -> None:
+def maybe_provision_user(identity: Any, *, user_mgmt_enabled: bool | None = None) -> None:
     """Ensure a :class:`User` exists for ``identity`` when configured."""
 
-    if not is_user_mgmt_core_enabled():
+    if user_mgmt_enabled is None:
+        user_mgmt_enabled = is_user_mgmt_core_enabled()
+    if not user_mgmt_enabled:
         return
     if not _is_enabled():
         return

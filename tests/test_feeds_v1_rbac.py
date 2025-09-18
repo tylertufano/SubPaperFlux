@@ -110,6 +110,7 @@ def test_enforced_request_for_unauthorized_owner_is_forbidden(monkeypatch, clien
     from app.config import is_user_mgmt_enforce_enabled
 
     is_user_mgmt_enforce_enabled.cache_clear()
+    client.app.state.cache_user_mgmt_flags()
 
     try:
         resp = client.get("/v1/feeds", params={"owner_user_ids": "other-1"})
@@ -131,6 +132,7 @@ def test_enforced_request_for_authorized_owner_succeeds(monkeypatch, client):
     from app.db import get_session
 
     is_user_mgmt_enforce_enabled.cache_clear()
+    client.app.state.cache_user_mgmt_flags()
 
     with next(get_session()) as session:
         grant_role(session, "primary", ADMIN_ROLE_NAME, granted_by_user_id="primary")
