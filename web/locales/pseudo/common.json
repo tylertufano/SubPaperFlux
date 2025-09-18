@@ -8,5 +8,16 @@
   "bookmarks_preview_select_prompt": "Elige un marcador para ver su contenido ✨",
   "bulk_actions_selected_count": "{count} seleccionados ✨",
   "bulk_actions_clear": "Borrar selección ✨",
-  "bulk_actions_action_busy": "{label} en progreso ✨"
+  "bulk_actions_action_busy": "{label} en progreso ✨",
+  "admin_users_roles_add_role_label": "Nombre del rol ✨",
+  "admin_users_roles_add_role_placeholder": "Rol exacto ✨",
+  "admin_users_roles_add_description_label": "Descripción (opcional) ✨",
+  "admin_users_roles_add_description_placeholder": "Notas para este rol ✨",
+  "admin_users_roles_add_create_label": "Crear rol si falta ✨",
+  "admin_users_roles_add_submit": "Conceder rol ✨",
+  "admin_users_roles_add_required": "Escribe un rol ✨",
+  "admin_users_roles_add_success": "Concedido {role} a {name} ✨",
+  "admin_users_roles_remove": "Quitar ✨",
+  "admin_users_roles_remove_confirm": "¿Quitar rol {role} de {name}? ✨",
+  "admin_users_roles_remove_success": "Quitado {role} de {name} ✨"
 }

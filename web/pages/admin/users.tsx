@@ -4,7 +4,7 @@ import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../compon
 import { useI18n } from '../../lib/i18n'
 import { useFeatureFlags } from '../../lib/featureFlags'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
-import { v1, type AdminUser, type AdminUsersPage } from '../../lib/openapi'
+import { v1, type AdminUser, type AdminUsersPage, type RoleGrantRequest } from '../../lib/openapi'
 import { buildBreadcrumbs } from '../../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 
@@ -33,6 +33,12 @@ type AdminUserUpdateInput = Partial<Record<QuotaField, number | null>> & {
   confirm?: boolean
 }
 
+type RoleFormState = {
+  role: string
+  description: string
+  createMissing: boolean
+}
+
 const quotaFieldLabelKeys: Record<QuotaField, string> = {
   quota_credentials: 'admin_users_quota_label_credentials',
   quota_site_configs: 'admin_users_quota_label_site_configs',
@@ -53,6 +59,10 @@ function createQuotaFormState(user: AdminUser | null): QuotaFormState {
     quota_feeds: user?.quota_feeds != null ? String(user.quota_feeds) : '',
     quota_api_tokens: user?.quota_api_tokens != null ? String(user.quota_api_tokens) : '',
   }
+}
+
+function createRoleFormState(): RoleFormState {
+  return { role: '', description: '', createMissing: false }
 }
 
 function displayName(user: AdminUser): string {
@@ -82,6 +92,7 @@ export default function AdminUsers() {
   const [selected, setSelected] = useState<AdminUser | null>(null)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [quotaForm, setQuotaForm] = useState<QuotaFormState>(() => createQuotaFormState(null))
+  const [roleForm, setRoleForm] = useState<RoleFormState>(createRoleFormState)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -116,6 +127,10 @@ export default function AdminUsers() {
 
   useEffect(() => {
     setQuotaForm(createQuotaFormState(selected))
+  }, [selected])
+
+  useEffect(() => {
+    setRoleForm(createRoleFormState())
   }, [selected])
 
   const { search: filterSearch, status: filterStatus, role: filterRole } = filters
@@ -263,6 +278,87 @@ export default function AdminUsers() {
 
   const handleQuotaReset = () => {
     setQuotaForm(createQuotaFormState(selected))
+  }
+
+  const handleRoleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selected) {
+      return
+    }
+    const trimmedRole = roleForm.role.trim()
+    if (!trimmedRole) {
+      setFlash({ kind: 'error', message: t('admin_users_roles_add_required') })
+      return
+    }
+    const description = roleForm.description.trim()
+    const payload: RoleGrantRequest | undefined =
+      description || roleForm.createMissing
+        ? {
+            ...(description ? { description } : {}),
+            ...(roleForm.createMissing ? { create_missing: true } : {}),
+          }
+        : undefined
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      const updated = await v1.grantAdminUserRoleV1AdminUsersUserIdRolesRoleNamePost({
+        userId: selected.id,
+        roleName: trimmedRole,
+        roleGrantRequest: payload,
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_roles_add_success', {
+          role: trimmedRole,
+          name: displayName(updated),
+        }),
+      })
+      setSelected(updated)
+      setRoleForm(createRoleFormState())
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleRoleRemove = async (role: string) => {
+    if (!selected) {
+      return
+    }
+    const user = selected
+    const confirmed = window.confirm(
+      t('admin_users_roles_remove_confirm', { role, name: displayName(user) }),
+    )
+    if (!confirmed) {
+      return
+    }
+    setPendingUserId(user.id)
+    setFlash(null)
+    try {
+      await v1.revokeAdminUserRoleV1AdminUsersUserIdRolesRoleNameDelete({
+        userId: user.id,
+        roleName: role,
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_roles_remove_success', { role, name: displayName(user) }),
+      })
+      setSelected((prev) => {
+        if (!prev || prev.id !== user.id) {
+          return prev
+        }
+        return { ...prev, roles: prev.roles.filter((existing) => existing !== role) }
+      })
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
   }
 
   if (!flagsLoaded) {
@@ -601,30 +697,96 @@ export default function AdminUsers() {
                 </dl>
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_details_roles')}</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {selected.roles.length === 0 && (
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                        {t('admin_users_roles_empty')}
-                      </span>
-                    )}
-                    {selected.roles.map((role) => (
-                      <button
-                        key={role}
-                        type="button"
-                        className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onClick={() => {
-                          applyRoleFilter(role)
-                          setSelected(null)
-                        }}
-                      >
-                        {role}
-                      </button>
-                    ))}
-                    {selected.is_admin && (
-                      <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
-                        {t('admin_users_role_admin_badge')}
-                      </span>
-                    )}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-1">
+                      {selected.roles.length === 0 && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                          {t('admin_users_roles_empty')}
+                        </span>
+                      )}
+                      {selected.roles.map((role) => (
+                        <div key={role} className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={() => {
+                              applyRoleFilter(role)
+                              setSelected(null)
+                            }}
+                          >
+                            {role}
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            onClick={() => handleRoleRemove(role)}
+                            disabled={pendingUserId === selected.id}
+                          >
+                            {t('admin_users_roles_remove')}
+                          </button>
+                        </div>
+                      ))}
+                      {selected.is_admin && (
+                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
+                          {t('admin_users_role_admin_badge')}
+                        </span>
+                      )}
+                    </div>
+                    <form className="space-y-3" onSubmit={handleRoleSubmit}>
+                      <div className="grid gap-3">
+                        <label
+                          className="block text-sm font-medium text-gray-700"
+                          htmlFor="admin-user-role-name"
+                        >
+                          {t('admin_users_roles_add_role_label')}
+                          <input
+                            id="admin-user-role-name"
+                            className="input mt-1 w-full"
+                            type="text"
+                            value={roleForm.role}
+                            placeholder={t('admin_users_roles_add_role_placeholder')}
+                            onChange={(event) =>
+                              setRoleForm((prev) => ({ ...prev, role: event.target.value }))
+                            }
+                            disabled={pendingUserId === selected.id}
+                          />
+                        </label>
+                        <label
+                          className="block text-sm font-medium text-gray-700"
+                          htmlFor="admin-user-role-description"
+                        >
+                          {t('admin_users_roles_add_description_label')}
+                          <input
+                            id="admin-user-role-description"
+                            className="input mt-1 w-full"
+                            type="text"
+                            value={roleForm.description}
+                            placeholder={t('admin_users_roles_add_description_placeholder')}
+                            onChange={(event) =>
+                              setRoleForm((prev) => ({ ...prev, description: event.target.value }))
+                            }
+                            disabled={pendingUserId === selected.id}
+                          />
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={roleForm.createMissing}
+                            onChange={(event) =>
+                              setRoleForm((prev) => ({ ...prev, createMissing: event.target.checked }))
+                            }
+                            disabled={pendingUserId === selected.id}
+                          />
+                          <span>{t('admin_users_roles_add_create_label')}</span>
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="submit" className="btn" disabled={pendingUserId === selected.id}>
+                          {t('admin_users_roles_add_submit')}
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
                 <div>
