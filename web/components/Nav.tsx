@@ -185,16 +185,18 @@ export default function Nav() {
   const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
     `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
-  const accountItems = [
-    { href: '/me', label: t('nav_profile') },
-    { href: '/me/tokens', label: t('nav_tokens') },
-    ...(userMgmtCore && userMgmtUi
+  const adminAccountItems =
+    userMgmtCore && userMgmtUi
       ? [
           { href: '/admin/users', label: t('nav_users') },
           { href: '/admin/roles', label: t('nav_roles') },
           { href: '/admin/audit', label: t('nav_audit') },
         ]
-      : []),
+      : []
+  const accountItems = [
+    { href: '/me', label: t('nav_profile') },
+    { href: '/me/tokens', label: t('nav_tokens') },
+    ...adminAccountItems,
     { href: '/admin', label: t('nav_admin') },
     { label: t('btn_sign_out'), onClick: () => signOut() },
   ]
