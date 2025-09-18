@@ -11,7 +11,7 @@ from pydantic import BaseModel, constr
 
 from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
-from ..auth import (
+from ..auth.permissions import (
     PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
     PERMISSION_READ_GLOBAL_CREDENTIALS,
     has_permission,
@@ -94,12 +94,14 @@ def list_credentials(current_user=Depends(get_current_user), session=Depends(get
     user_id = current_user["sub"]
     stmt = select(CredentialModel).where(CredentialModel.owner_user_id == user_id)
     records = session.exec(stmt).all()
+    include_global_records = False
     if include_global:
-        _ensure_permission(
+        include_global_records = _ensure_permission(
             session,
             current_user,
             PERMISSION_READ_GLOBAL_CREDENTIALS,
         )
+    if include_global_records:
         stmt2 = select(CredentialModel).where(CredentialModel.owner_user_id.is_(None))
         records += session.exec(stmt2).all()
     # Build masked response without mutating DB objects
@@ -197,17 +199,17 @@ def create_instapaper_credential_from_login(
     description = body.description.strip()
     username = body.username.strip()
 
+    owner: Optional[str] = user_id
     if body.scope_global:
         allowed_global = _ensure_permission(
             session,
             current_user,
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
         )
-        if not allowed_global:
-            raise HTTPException(status_code=403, detail="Not authorized to create global credentials")
-        owner: Optional[str] = None
-    else:
-        owner = user_id
+        if allowed_global:
+            owner = None
+
+    if owner is not None:
         enforce_user_quota(
             session,
             owner,
@@ -274,24 +276,23 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
     if not model:
         raise HTTPException(status_code=404, detail="Not found")
 
-    is_owner = model.owner_user_id == current_user["sub"]
     if model.owner_user_id is None:
         allowed_global = _ensure_permission(
             session,
             current_user,
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
         )
-        if not (is_owner or allowed_global):
-            raise HTTPException(status_code=404, detail="Not found")
+        if not allowed_global:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
+        allowed_cross = has_permission(
             session,
             current_user,
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
             owner_id=model.owner_user_id,
         )
         if not allowed_cross:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     record_audit_log(
         session,
         entity_type="credential",
@@ -313,20 +314,22 @@ def get_credential(cred_id: str, current_user=Depends(get_current_user), session
         raise HTTPException(status_code=404, detail="Not found")
     # Allow if owner is user, or record is global (owner_user_id None)
     if model.owner_user_id is None:
-        _ensure_permission(
+        allowed_global = _ensure_permission(
             session,
             current_user,
             PERMISSION_READ_GLOBAL_CREDENTIALS,
         )
+        if not allowed_global:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
+        allowed_cross = has_permission(
             session,
             current_user,
             PERMISSION_READ_GLOBAL_CREDENTIALS,
             owner_id=model.owner_user_id,
         )
         if not allowed_cross:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     plain = decrypt_dict(model.data or {})
     return CredentialSchema(
         id=model.id,
@@ -350,16 +353,16 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
         )
         if not allowed_global:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
+        allowed_cross = has_permission(
             session,
             current_user,
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
             owner_id=model.owner_user_id,
         )
         if not allowed_cross:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     incoming = body.data or {}
     previous_kind = model.kind
     previous_description = model.description
