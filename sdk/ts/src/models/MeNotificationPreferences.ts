@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,25 +21,23 @@ import { exists, mapValues } from '../runtime';
 export interface MeNotificationPreferences {
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof MeNotificationPreferences
      */
-    emailJobUpdates?: any | null;
+    emailJobUpdates?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof MeNotificationPreferences
      */
-    emailDigest?: any | null;
+    emailDigest?: boolean;
 }
 
 /**
  * Check if a given object implements the MeNotificationPreferences interface.
  */
-export function instanceOfMeNotificationPreferences(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfMeNotificationPreferences(value: object): value is MeNotificationPreferences {
+    return true;
 }
 
 export function MeNotificationPreferencesFromJSON(json: any): MeNotificationPreferences {
@@ -47,27 +45,29 @@ export function MeNotificationPreferencesFromJSON(json: any): MeNotificationPref
 }
 
 export function MeNotificationPreferencesFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeNotificationPreferences {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'emailJobUpdates': !exists(json, 'email_job_updates') ? undefined : json['email_job_updates'],
-        'emailDigest': !exists(json, 'email_digest') ? undefined : json['email_digest'],
+        'emailJobUpdates': json['email_job_updates'] == null ? undefined : json['email_job_updates'],
+        'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
     };
 }
 
-export function MeNotificationPreferencesToJSON(value?: MeNotificationPreferences | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MeNotificationPreferencesToJSON(json: any): MeNotificationPreferences {
+    return MeNotificationPreferencesToJSONTyped(json, false);
+}
+
+export function MeNotificationPreferencesToJSONTyped(value?: MeNotificationPreferences | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'email_job_updates': value.emailJobUpdates,
-        'email_digest': value.emailDigest,
+        'email_job_updates': value['emailJobUpdates'],
+        'email_digest': value['emailDigest'],
     };
 }
 
