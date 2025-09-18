@@ -9,7 +9,7 @@ The Next.js workspace uses Vitest for component-level regression coverage and Pl
 - `web/__tests__/bookmarks-preview-navigation.test.tsx` guards keyboard navigation and preview loading for bookmarks, ensuring shortcuts and preview hydrations keep working when the layout changes.
 
 ### Form validation flows
-- `web/__tests__/credentials-form.test.tsx` seeds mocked OpenAPI handlers and verifies credential creation, validation messaging, credential testing, and CRUD flows for Instapaper/Miniflux entries.
+- `web/__tests__/credentials-form.test.tsx` seeds mocked OpenAPI handlers and verifies credential creation, validation messaging, credential testing, and CRUD flows for Instapaper/Miniflux entries. Coverage includes the Instapaper onboarding UI requirement for a description plus username/password exchange, ensuring the client posts to `/credentials/instapaper/login` with the expected payload instead of accepting pasted OAuth tokens.
 - `web/__tests__/site-configs-form.test.tsx` covers site configuration forms, including selector validation, success banners, and SWR mutations for listing and persisting login recipes.
 
 ### Accessibility smoke checks
