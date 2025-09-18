@@ -191,6 +191,7 @@ export default function Nav() {
     ...(userMgmtCore && userMgmtUi
       ? [
           { href: '/admin/users', label: t('nav_users') },
+          { href: '/admin/roles', label: t('nav_roles') },
           { href: '/admin/audit', label: t('nav_audit') },
         ]
       : []),
