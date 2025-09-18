@@ -18,9 +18,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from requests_oauthlib import OAuth1Session
-from oauthlib.oauth1 import Client as OAuth1Client
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
+
+from app.integrations.instapaper import get_instapaper_tokens
 
 try:
     import feedparser
@@ -76,7 +77,6 @@ except Exception as e:
 
 # --- Instapaper API Constants ---
 INSTAPAPER_ADD_URL = "https://www.instapaper.com/api/1.1/bookmarks/add"
-INSTAPAPER_OAUTH_TOKEN_URL = "https://www.instapaper.com/api/1/oauth/access_token"
 INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
 INSTAPAPER_FOLDERS_ADD_URL = "https://www.instapaper.com/api/1.1/folders/add"
 INSTAPAPER_BOOKMARKS_LIST_URL = "https://www.instapaper.com/api/1.1/bookmarks/list"
@@ -344,60 +344,6 @@ def update_miniflux_feed_with_cookies(miniflux_config_json, cookies, config_name
             logging.error(f"Error updating Miniflux feed {feed_id}: {e}")
             if 'response' in locals():
                 logging.debug(f"Miniflux API Response Text: {response.text}")
-
-def get_instapaper_tokens(consumer_key, consumer_secret, username, password):
-    """
-    Obtains OAuth access tokens for Instapaper using username and password.
-    Returns a dictionary with 'oauth_token' and 'oauth_token_secret' on success.
-    """
-    logging.info("Attempting to obtain Instapaper OAuth tokens...")
-    logging.debug(f"Using consumer_key: {consumer_key}")
-    logging.debug(f"Using username: {username}")
-
-    try:
-        oauth = OAuth1Client(consumer_key, client_secret=consumer_secret, signature_method='HMAC-SHA1')
-
-        body_params = {
-            'x_auth_username': username,
-            'x_auth_password': password,
-            'x_auth_mode': 'client_auth'
-        }
-
-        uri, headers, body = oauth.sign(
-            uri=INSTAPAPER_OAUTH_TOKEN_URL,
-            http_method='POST',
-            body=body_params,
-            headers={'Content-Type': 'application/x-www-form-urlencoded'}
-        )
-
-        logging.debug(f"Signed request URI: {uri}")
-        logging.debug(f"Signed request headers: {headers}")
-        logging.debug(f"Request body parameters: {body_params}")
-
-        response = requests.post(uri, headers=headers, data=body_params, timeout=30)
-        response.raise_for_status()
-
-        logging.debug(f"Raw response from Instapaper: {response.text}")
-
-        token_data = dict(re.findall(r'(\w+)=([^&]+)', response.text))
-
-        if 'oauth_token' in token_data and 'oauth_token_secret' in token_data:
-            logging.info("Successfully obtained Instapaper tokens.")
-            logging.debug(f"Obtained tokens: {token_data}")
-            return token_data
-        else:
-            logging.error("Failed to get tokens. Response format was not as expected.")
-            logging.debug(f"Final parsed token data: {token_data}")
-            return None
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error obtaining Instapaper tokens: {e}")
-        if 'response' in locals():
-            logging.debug(f"Instapaper API Response Text: {response.text}")
-        return None
-    except Exception as e:
-        logging.error(f"An unexpected error occurred while getting tokens: {e}")
-        return None
 
 def get_article_html_with_cookies(url, cookies):
     """
@@ -1404,7 +1350,14 @@ def main():
                     password = config['INSTAPAPER_LOGIN']['password']
 
                     if instapaper_app_creds:
-                        tokens = get_instapaper_tokens(instapaper_app_creds.get('consumer_key'), instapaper_app_creds.get('consumer_secret'), username, password)
+                        token_result = get_instapaper_tokens(
+                            instapaper_app_creds.get('consumer_key'),
+                            instapaper_app_creds.get('consumer_secret'),
+                            username,
+                            password,
+                        )
+
+                        tokens = token_result.tokens() if token_result.success else None
 
                         if tokens:
                             all_external_configs[instapaper_id]['oauth_token'] = tokens['oauth_token']
@@ -1417,7 +1370,12 @@ def main():
 
                             logging.info(f"Successfully migrated Instapaper credentials for '{os.path.basename(config_file)}' and cleaned up INI file.")
                         else:
-                            logging.error(f"Failed to generate Instapaper tokens for '{os.path.basename(config_file)}'. Please check INI credentials and consumer keys.")
+                            logging.error(
+                                "Failed to generate Instapaper tokens for '%s'. "
+                                "Please check INI credentials and consumer keys. Error: %s",
+                                os.path.basename(config_file),
+                                token_result.error,
+                            )
                     else:
                         logging.error(f"Instapaper application credentials not found. Cannot generate tokens.")
                 else:

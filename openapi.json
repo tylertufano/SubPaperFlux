@@ -521,6 +521,70 @@
         }
       }
     },
+    "/credentials/instapaper/login": {
+      "post": {
+        "tags": [
+          "credentials"
+        ],
+        "summary": "Create Instapaper Credential From Login",
+        "operationId": "create_instapaper_credential_from_login_credentials_instapaper_login_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstapaperLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credential"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/credentials/{cred_id}": {
       "delete": {
         "tags": [
@@ -9226,6 +9290,38 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InstapaperLoginRequest": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Password"
+          },
+          "scope_global": {
+            "type": "boolean",
+            "title": "Scope Global",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "description",
+          "username",
+          "password"
+        ],
+        "title": "InstapaperLoginRequest"
       },
       "JobOut": {
         "properties": {

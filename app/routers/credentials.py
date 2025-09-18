@@ -1,7 +1,13 @@
-from typing import List
+import json
+import logging
+from pathlib import Path
+from typing import List, Optional
+
 from sqlalchemy import func
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlmodel import select
+
+from pydantic import BaseModel, constr
 
 from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
@@ -12,6 +18,11 @@ from ..models import Credential as CredentialModel
 from ..security.crypto import encrypt_dict, decrypt_dict, is_encrypted
 from ..security.csrf import csrf_protect
 from ..util.quotas import enforce_user_quota
+from ..integrations.instapaper import (
+    InstapaperTokenResponse,
+    get_instapaper_tokens,
+)
+from ..jobs.util_subpaperflux import _get_db_credential_by_kind, resolve_config_dir
 
 
 router = APIRouter()
@@ -37,6 +48,33 @@ def _mask_credential(kind: str, data: dict) -> dict:
         if key in masked and isinstance(masked[key], str):
             masked[key] = _mask_value(masked[key])
     return masked
+
+
+class InstapaperLoginRequest(BaseModel):
+    description: constr(strip_whitespace=True, min_length=1, max_length=200)
+    username: constr(strip_whitespace=True, min_length=1)
+    password: constr(min_length=1)
+    scope_global: bool = False
+
+
+def _load_instapaper_app_creds_from_file(config_dir: Optional[str] = None) -> dict:
+    resolved_dir = resolve_config_dir(config_dir)
+    path = Path(resolved_dir) / "instapaper_app_creds.json"
+    if not path.exists():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as fp:
+            return json.load(fp)
+    except (OSError, json.JSONDecodeError):
+        logging.exception("Failed to load instapaper_app_creds.json from %s", path)
+        return {}
+
+
+def _map_instapaper_error(result: InstapaperTokenResponse) -> HTTPException:
+    status_code = result.status_code
+    if status_code is not None and 400 <= status_code < 500:
+        return HTTPException(status_code=400, detail="Invalid Instapaper username or password")
+    return HTTPException(status_code=502, detail="Instapaper API error")
 
 
 @router.get("/", response_model=List[CredentialSchema])
@@ -112,6 +150,87 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
     session.refresh(model)
     # Return masked plaintext view
     plain = decrypt_dict(model.data or {})
+    return CredentialSchema(
+        id=model.id,
+        kind=model.kind,
+        description=model.description,
+        data=_mask_credential(model.kind, plain),
+        owner_user_id=model.owner_user_id,
+    )
+
+
+@router.post(
+    "/instapaper/login",
+    response_model=CredentialSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
+)
+def create_instapaper_credential_from_login(
+    body: InstapaperLoginRequest,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    user_id = current_user["sub"]
+    description = body.description.strip()
+    username = body.username.strip()
+
+    if body.scope_global:
+        if not can_manage_global_credentials(current_user):
+            raise HTTPException(status_code=403, detail="Not authorized to create global credentials")
+        owner: Optional[str] = None
+    else:
+        owner = user_id
+        enforce_user_quota(
+            session,
+            owner,
+            quota_field="quota_credentials",
+            resource_name="Credential",
+            count_stmt=select(func.count()).select_from(CredentialModel).where(
+                CredentialModel.owner_user_id == owner
+            ),
+        )
+
+    app_creds = _get_db_credential_by_kind("instapaper_app", user_id) or _load_instapaper_app_creds_from_file()
+    consumer_key = (app_creds or {}).get("consumer_key")
+    consumer_secret = (app_creds or {}).get("consumer_secret")
+    if not consumer_key or not consumer_secret:
+        raise HTTPException(status_code=400, detail="Instapaper app credentials are not configured")
+
+    token_result = get_instapaper_tokens(consumer_key, consumer_secret, username, body.password)
+    if not token_result.success:
+        raise _map_instapaper_error(token_result)
+
+    plain = {
+        "username": username,
+        "oauth_token": token_result.oauth_token,
+        "oauth_token_secret": token_result.oauth_token_secret,
+    }
+    encrypted = encrypt_dict(plain)
+
+    model = CredentialModel(
+        kind="instapaper",
+        description=description,
+        data=encrypted,
+        owner_user_id=owner,
+    )
+    session.add(model)
+    record_audit_log(
+        session,
+        entity_type="credential",
+        entity_id=model.id,
+        action="create",
+        owner_user_id=model.owner_user_id,
+        actor_user_id=user_id,
+        details={
+            "kind": model.kind,
+            "description": model.description,
+            "scope_global": model.owner_user_id is None,
+            "data_keys": sorted(plain.keys()),
+        },
+    )
+    session.commit()
+    session.refresh(model)
+
     return CredentialSchema(
         id=model.id,
         kind=model.kind,
