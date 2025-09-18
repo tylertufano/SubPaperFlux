@@ -6,7 +6,12 @@ from typing import Optional, Dict, Any
 
 from sqlmodel import select
 
-from .db import get_engine
+from .config import is_user_mgmt_enforce_enabled
+from .db import (
+    get_session_ctx as db_session_ctx,
+    reset_current_user_id,
+    set_current_user_id,
+)
 from .models import Job
 from .jobs import get_handler  # import registry
 from .observability.logging import bind_job_id
@@ -28,10 +33,21 @@ def _backoff_base(job_type: str) -> float:
 
 @contextmanager
 def session_ctx():
-    from sqlmodel import Session
-
-    with Session(get_engine()) as session:
+    with db_session_ctx() as session:
         yield session
+
+
+@contextmanager
+def job_owner_ctx(owner_user_id: Optional[str]):
+    if not is_user_mgmt_enforce_enabled():
+        yield
+        return
+
+    token = set_current_user_id(owner_user_id)
+    try:
+        yield
+    finally:
+        reset_current_user_id(token)
 
 
 def fetch_next_job() -> Optional[Job]:
@@ -115,12 +131,13 @@ def run_forever():
             if not job:
                 time.sleep(POLL_INTERVAL)
                 continue
-            try:
-                details = process_job(job)
-                mark_done(job, details)
-            except Exception as e:  # noqa: BLE001
-                logging.exception("Job %s failed: %s", job.id, e)
-                mark_failed(job, str(e))
+            with job_owner_ctx(job.owner_user_id):
+                try:
+                    details = process_job(job)
+                    mark_done(job, details)
+                except Exception as e:  # noqa: BLE001
+                    logging.exception("Job %s failed: %s", job.id, e)
+                    mark_failed(job, str(e))
     except KeyboardInterrupt:
         logging.info("Worker stopped by user")
 
