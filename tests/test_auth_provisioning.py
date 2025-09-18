@@ -142,6 +142,43 @@ def test_sync_user_roles_respects_overrides(monkeypatch):
         assert roles == {"manual-role"}
 
 
+def test_sync_user_roles_skips_revokes_when_overrides_enabled(monkeypatch):
+    from app.auth import get_user_roles, grant_role
+    from app.auth.provisioning import sync_user_roles_from_identity
+    from app.auth.role_overrides import RoleOverrides, set_user_role_overrides
+    from app.db import get_session, init_db
+    from app.models import User
+
+    init_db()
+    monkeypatch.setenv("OIDC_GROUP_ROLE_MAP", "team-auto=auto-role")
+    monkeypatch.setenv("OIDC_GROUP_ROLE_DEFAULTS", "")
+
+    with next(get_session()) as session:
+        user = User(id="override-enabled")
+        session.add(user)
+        session.commit()
+
+        user = session.get(User, user.id)
+        grant_role(session, user.id, "auto-role", create_missing=True)
+        grant_role(session, user.id, "manual-role", create_missing=True)
+        session.commit()
+
+        user = session.get(User, user.id)
+        overrides = RoleOverrides.from_iterables(preserve=["manual-role"], enabled=True)
+        set_user_role_overrides(user, overrides=overrides)
+        session.add(user)
+        session.commit()
+
+        changed = sync_user_roles_from_identity(session, user, {"groups": []})
+        # No roles should be revoked when overrides are enabled
+        assert changed is False
+        session.commit()
+
+    with next(get_session()) as session:
+        roles = set(get_user_roles(session, "override-enabled"))
+        assert roles == {"auto-role", "manual-role"}
+
+
 def test_ensure_user_from_identity_preserves_role_overrides(monkeypatch):
     from app.auth.role_overrides import RoleOverrides, get_user_role_overrides, set_user_role_overrides
     from app.auth.users import ensure_user_from_identity

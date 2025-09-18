@@ -11,10 +11,22 @@ from sqlmodel import Session, select
 
 from ..audit import record_audit_log
 from ..auth import ADMIN_ROLE_NAME, get_user_roles, grant_role, revoke_role
+from ..auth.role_overrides import (
+    RoleOverrides,
+    get_user_role_overrides,
+    set_user_role_overrides,
+)
 from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..models import Role, User, UserRole
-from ..schemas import AdminUserOut, AdminUserUpdate, AdminUsersPage, RoleGrantRequest
+from ..schemas import (
+    AdminUserOut,
+    AdminUserRoleOverrides,
+    AdminUserRoleOverridesUpdate,
+    AdminUserUpdate,
+    AdminUsersPage,
+    RoleGrantRequest,
+)
 from .admin import _require_admin, _record_admin_action_metric
 
 
@@ -39,6 +51,7 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
     roles = get_user_roles(session, user.id)
     groups = _normalize_groups(user)
     is_admin_flag = ADMIN_ROLE_NAME in roles
+    overrides = get_user_role_overrides(user)
     return AdminUserOut(
         id=user.id,
         email=user.email,
@@ -55,6 +68,11 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
         quota_site_configs=user.quota_site_configs,
         quota_feeds=user.quota_feeds,
         quota_api_tokens=user.quota_api_tokens,
+        role_overrides=AdminUserRoleOverrides(
+            enabled=overrides.enabled,
+            preserve=sorted(overrides.preserve),
+            suppress=sorted(overrides.suppress),
+        ),
     )
 
 
@@ -217,6 +235,122 @@ def update_user(
     session.refresh(user)
     result = _serialize_user(session, user)
     _record_admin_action_metric("update_user")
+    return result
+
+
+@router.patch(
+    "/{user_id}/role-overrides",
+    response_model=AdminUserOut,
+    summary="Update user role overrides",
+)
+def update_user_role_overrides(
+    *,
+    user_id: str = Path(..., min_length=1),
+    payload: AdminUserRoleOverridesUpdate = Body(...),
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    actor_id = _require_admin(session, current_user)
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    updates = payload.model_dump(exclude_unset=True)
+    existing = get_user_role_overrides(user)
+    if not updates:
+        result = _serialize_user(session, user)
+        _record_admin_action_metric("update_user_role_overrides")
+        return result
+
+    preserve_values = updates.get("preserve", existing.preserve)
+    if "preserve" in updates and preserve_values is None:
+        preserve_values = []
+    suppress_values = updates.get("suppress", existing.suppress)
+    if "suppress" in updates and suppress_values is None:
+        suppress_values = []
+    enabled_flag = updates.get("enabled", existing.enabled)
+
+    overrides = RoleOverrides.from_iterables(
+        preserve=preserve_values,
+        suppress=suppress_values,
+        enabled=enabled_flag,
+    )
+
+    if overrides == existing:
+        result = _serialize_user(session, user)
+        _record_admin_action_metric("update_user_role_overrides")
+        return result
+
+    previous = existing.to_jsonable()
+    set_user_role_overrides(user, overrides=overrides)
+    now = datetime.now(timezone.utc)
+    user.updated_at = now
+    session.add(user)
+
+    record_audit_log(
+        session,
+        entity_type="user_role_overrides",
+        entity_id=user.id,
+        action="update",
+        owner_user_id=user.id,
+        actor_user_id=actor_id,
+        details={
+            "previous": previous,
+            "current": overrides.to_jsonable(),
+        },
+    )
+
+    session.commit()
+    session.refresh(user)
+
+    result = _serialize_user(session, user)
+    _record_admin_action_metric("update_user_role_overrides")
+    return result
+
+
+@router.delete(
+    "/{user_id}/role-overrides",
+    response_model=AdminUserOut,
+    summary="Clear user role overrides",
+)
+def clear_user_role_overrides(
+    *,
+    user_id: str = Path(..., min_length=1),
+    current_user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    actor_id = _require_admin(session, current_user)
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing = get_user_role_overrides(user)
+    if existing.is_empty():
+        result = _serialize_user(session, user)
+        _record_admin_action_metric("clear_user_role_overrides")
+        return result
+
+    previous = existing.to_jsonable()
+    set_user_role_overrides(user, overrides=RoleOverrides())
+    now = datetime.now(timezone.utc)
+    user.updated_at = now
+    session.add(user)
+
+    record_audit_log(
+        session,
+        entity_type="user_role_overrides",
+        entity_id=user.id,
+        action="clear",
+        owner_user_id=user.id,
+        actor_user_id=actor_id,
+        details={"previous": previous},
+    )
+
+    session.commit()
+    session.refresh(user)
+
+    result = _serialize_user(session, user)
+    _record_admin_action_metric("clear_user_role_overrides")
     return result
 
 

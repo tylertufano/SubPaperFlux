@@ -93,6 +93,7 @@ export default function AdminUsers() {
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [quotaForm, setQuotaForm] = useState<QuotaFormState>(() => createQuotaFormState(null))
   const [roleForm, setRoleForm] = useState<RoleFormState>(createRoleFormState)
+  const [overrideInput, setOverrideInput] = useState('')
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -131,6 +132,10 @@ export default function AdminUsers() {
 
   useEffect(() => {
     setRoleForm(createRoleFormState())
+  }, [selected])
+
+  useEffect(() => {
+    setOverrideInput('')
   }, [selected])
 
   const { search: filterSearch, status: filterStatus, role: filterRole } = filters
@@ -352,6 +357,142 @@ export default function AdminUsers() {
         }
         return { ...prev, roles: prev.roles.filter((existing) => existing !== role) }
       })
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleOverrideToggle = async (user: AdminUser, nextEnabled: boolean) => {
+    setPendingUserId(user.id)
+    setFlash(null)
+    try {
+      const updated = await v1.updateAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch({
+        userId: user.id,
+        adminUserRoleOverridesUpdate: { enabled: nextEnabled },
+      })
+      setFlash({
+        kind: 'success',
+        message: nextEnabled
+          ? t('admin_users_overrides_enabled_success', { name: displayName(updated) })
+          : t('admin_users_overrides_disabled_success', { name: displayName(updated) }),
+      })
+      if (selected?.id === updated.id) {
+        setSelected(updated)
+      }
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleOverrideAdd = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selected) {
+      return
+    }
+    const trimmed = overrideInput.trim()
+    if (!trimmed) {
+      setFlash({ kind: 'error', message: t('admin_users_overrides_add_required') })
+      return
+    }
+    const existing = selected.role_overrides?.preserve ?? []
+    const normalized = new Set(existing.map((value) => value.toLowerCase()))
+    if (normalized.has(trimmed.toLowerCase())) {
+      setFlash({ kind: 'error', message: t('admin_users_overrides_add_exists') })
+      return
+    }
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      const updated = await v1.updateAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch({
+        userId: selected.id,
+        adminUserRoleOverridesUpdate: { preserve: [...existing, trimmed] },
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_overrides_add_success', {
+          role: trimmed,
+          name: displayName(updated),
+        }),
+      })
+      setOverrideInput('')
+      setSelected(updated)
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleOverrideRemove = async (role: string) => {
+    if (!selected) {
+      return
+    }
+    const existing = selected.role_overrides?.preserve ?? []
+    if (!existing.includes(role)) {
+      return
+    }
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      const updated = await v1.updateAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch({
+        userId: selected.id,
+        adminUserRoleOverridesUpdate: { preserve: existing.filter((value) => value !== role) },
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_overrides_remove_success', {
+          role,
+          name: displayName(updated),
+        }),
+      })
+      setSelected(updated)
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleOverrideClear = async () => {
+    if (!selected) {
+      return
+    }
+    const overrides = selected.role_overrides
+    const hasState =
+      overrides.enabled || overrides.preserve.length > 0 || overrides.suppress.length > 0
+    if (!hasState) {
+      return
+    }
+    const confirmed = window.confirm(
+      t('admin_users_overrides_clear_confirm', { name: displayName(selected) }),
+    )
+    if (!confirmed) {
+      return
+    }
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      const updated = await v1.clearAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete({
+        userId: selected.id,
+      })
+      setFlash({
+        kind: 'success',
+        message: t('admin_users_overrides_clear_success', { name: displayName(updated) }),
+      })
+      setOverrideInput('')
+      setSelected(updated)
       await mutate()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -694,6 +835,14 @@ export default function AdminUsers() {
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_last_login')}</dt>
                     <dd className="text-sm text-gray-900">{formatDateTime(selected.last_login_at, t('admin_users_last_login_unknown'))}</dd>
                   </div>
+                  <div>
+                    <dt className="text-sm font-semibold text-gray-600">{t('admin_users_overrides_status_label')}</dt>
+                    <dd className="text-sm text-gray-900">
+                      {selected.role_overrides.enabled
+                        ? t('admin_users_overrides_status_enabled')
+                        : t('admin_users_overrides_status_disabled')}
+                    </dd>
+                  </div>
                 </dl>
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_details_roles')}</h4>
@@ -786,6 +935,78 @@ export default function AdminUsers() {
                           {t('admin_users_roles_add_submit')}
                         </button>
                       </div>
+                    </form>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_overrides_heading')}</h4>
+                  <p className="mb-3 text-sm text-gray-600">{t('admin_users_overrides_description')}</p>
+                  <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={selected.role_overrides.enabled}
+                      onChange={(event) => handleOverrideToggle(selected, event.target.checked)}
+                      disabled={pendingUserId === selected.id}
+                    />
+                    <span>
+                      {selected.role_overrides.enabled
+                        ? t('admin_users_overrides_toggle_enabled')
+                        : t('admin_users_overrides_toggle_disabled')}
+                    </span>
+                  </label>
+                  <div className="mt-3 space-y-3">
+                    <div className="flex flex-wrap gap-1">
+                      {selected.role_overrides.preserve.length === 0 && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                          {t('admin_users_overrides_empty')}
+                        </span>
+                      )}
+                      {selected.role_overrides.preserve.map((role) => (
+                        <div key={role} className="flex items-center gap-1">
+                          <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                            {role}
+                          </span>
+                          <button
+                            type="button"
+                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            onClick={() => handleOverrideRemove(role)}
+                            disabled={pendingUserId === selected.id}
+                          >
+                            {t('admin_users_overrides_remove')}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <form className="flex flex-wrap gap-2" onSubmit={handleOverrideAdd}>
+                      <label className="sr-only" htmlFor="admin-user-override-role">
+                        {t('admin_users_overrides_add_label')}
+                      </label>
+                      <input
+                        id="admin-user-override-role"
+                        className="input w-full md:w-auto"
+                        type="text"
+                        value={overrideInput}
+                        placeholder={t('admin_users_overrides_add_placeholder')}
+                        onChange={(event) => setOverrideInput(event.target.value)}
+                        disabled={pendingUserId === selected.id}
+                      />
+                      <button type="submit" className="btn" disabled={pendingUserId === selected.id}>
+                        {t('admin_users_overrides_add_submit')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={handleOverrideClear}
+                        disabled={
+                          pendingUserId === selected.id ||
+                          (!selected.role_overrides.enabled &&
+                            selected.role_overrides.preserve.length === 0 &&
+                            selected.role_overrides.suppress.length === 0)
+                        }
+                      >
+                        {t('admin_users_overrides_clear')}
+                      </button>
                     </form>
                   </div>
                 </div>

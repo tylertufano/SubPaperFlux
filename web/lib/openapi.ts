@@ -302,6 +302,13 @@ export type AdminUser = {
   quota_site_configs?: number | null
   quota_feeds?: number | null
   quota_api_tokens?: number | null
+  role_overrides: AdminUserRoleOverrides
+}
+
+export type AdminUserRoleOverrides = {
+  enabled: boolean
+  preserve: string[]
+  suppress: string[]
 }
 
 export type AdminUsersPage = {
@@ -328,6 +335,12 @@ type AdminUserUpdatePayload = {
   quota_site_configs?: number | null
   quota_feeds?: number | null
   quota_api_tokens?: number | null
+}
+
+type AdminUserRoleOverridesUpdatePayload = {
+  enabled?: boolean
+  preserve?: string[]
+  suppress?: string[]
 }
 
 export type RoleGrantRequest = {
@@ -476,6 +489,31 @@ async function updateAdminUser(userId: string, payload: AdminUserUpdatePayload):
     body: JSON.stringify(payload ?? {}),
     errorMessage: 'Failed to update user',
   })
+}
+
+async function updateAdminUserRoleOverrides(
+  userId: string,
+  payload: AdminUserRoleOverridesUpdatePayload,
+): Promise<AdminUser> {
+  return authorizedRequest<AdminUser>(
+    `/v1/admin/users/${encodeURIComponent(userId)}/role-overrides`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload ?? {}),
+      errorMessage: 'Failed to update role overrides',
+    },
+  )
+}
+
+async function clearAdminUserRoleOverrides(userId: string): Promise<AdminUser> {
+  return authorizedRequest<AdminUser>(
+    `/v1/admin/users/${encodeURIComponent(userId)}/role-overrides`,
+    {
+      method: 'DELETE',
+      errorMessage: 'Failed to clear role overrides',
+    },
+  )
 }
 
 async function grantAdminUserRole(
@@ -695,6 +733,18 @@ export const v1 = {
     userId: string
     adminUserUpdate: AdminUserUpdatePayload
   }) => updateAdminUser(userId, adminUserUpdate),
+  updateAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch: async ({
+    userId,
+    adminUserRoleOverridesUpdate,
+  }: {
+    userId: string
+    adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdatePayload
+  }) => updateAdminUserRoleOverrides(userId, adminUserRoleOverridesUpdate),
+  clearAdminUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete: async ({
+    userId,
+  }: {
+    userId: string
+  }) => clearAdminUserRoleOverrides(userId),
   grantAdminUserRoleV1AdminUsersUserIdRolesRoleNamePost: async ({
     userId,
     roleName,

@@ -11,6 +11,7 @@ from ..models import User
 ROLE_OVERRIDES_CLAIM = "role_overrides"
 ROLE_OVERRIDE_PRESERVE = "preserve"
 ROLE_OVERRIDE_SUPPRESS = "suppress"
+ROLE_OVERRIDE_ENABLED = "enabled"
 
 
 def _normalize_role_names(values: Iterable[str] | None) -> frozenset[str]:
@@ -29,6 +30,7 @@ class RoleOverrides:
 
     preserve: frozenset[str] = frozenset()
     suppress: frozenset[str] = frozenset()
+    enabled: bool = False
 
     @classmethod
     def from_iterables(
@@ -36,17 +38,21 @@ class RoleOverrides:
         *,
         preserve: Iterable[str] | None = None,
         suppress: Iterable[str] | None = None,
-    ) -> RoleOverrides:
+        enabled: bool | None = None,
+    ) -> "RoleOverrides":
         return cls(
             preserve=_normalize_role_names(preserve),
             suppress=_normalize_role_names(suppress),
+            enabled=bool(enabled) if enabled is not None else False,
         )
 
     def is_empty(self) -> bool:
-        return not self.preserve and not self.suppress
+        return not self.enabled and not self.preserve and not self.suppress
 
-    def to_jsonable(self) -> MutableMapping[str, list[str]]:
-        data: MutableMapping[str, list[str]] = {}
+    def to_jsonable(self) -> MutableMapping[str, Any]:
+        data: MutableMapping[str, Any] = {}
+        if self.enabled:
+            data[ROLE_OVERRIDE_ENABLED] = True
         if self.preserve:
             data[ROLE_OVERRIDE_PRESERVE] = sorted(self.preserve)
         if self.suppress:
@@ -60,11 +66,25 @@ def _claims_mapping(claims: Any) -> Mapping[str, Any]:
     return {}
 
 
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if not text:
+            return False
+        return text in {"1", "true", "yes", "on"}
+    return False
+
+
 def _parse_role_overrides(raw: Any) -> RoleOverrides:
     if not isinstance(raw, Mapping):
         return RoleOverrides()
     preserve = raw.get(ROLE_OVERRIDE_PRESERVE)
     suppress = raw.get(ROLE_OVERRIDE_SUPPRESS)
+    enabled_value = raw.get(ROLE_OVERRIDE_ENABLED)
     preserve_values: Iterable[str] | None
     suppress_values: Iterable[str] | None
     if isinstance(preserve, str):
@@ -82,6 +102,7 @@ def _parse_role_overrides(raw: Any) -> RoleOverrides:
     return RoleOverrides.from_iterables(
         preserve=preserve_values,
         suppress=suppress_values,
+        enabled=_coerce_bool(enabled_value),
     )
 
 
@@ -98,6 +119,7 @@ def set_user_role_overrides(
     *,
     preserve: Iterable[str] | None = None,
     suppress: Iterable[str] | None = None,
+    enabled: bool | None = None,
 ) -> RoleOverrides:
     """Persist ``overrides`` onto ``user.claims``.
 
@@ -105,10 +127,22 @@ def set_user_role_overrides(
     describing the desired state.
     """
 
-    if overrides is not None and (preserve is not None or suppress is not None):
-        raise ValueError("Provide either overrides or preserve/suppress values, not both")
+    if overrides is not None and (
+        preserve is not None or suppress is not None or enabled is not None
+    ):
+        raise ValueError("Provide either overrides or preserve/suppress/enabled values, not both")
     if overrides is None:
-        overrides = RoleOverrides.from_iterables(preserve=preserve, suppress=suppress)
+        overrides = RoleOverrides.from_iterables(
+            preserve=preserve,
+            suppress=suppress,
+            enabled=enabled,
+        )
+    elif enabled is not None and overrides.enabled != bool(enabled):
+        overrides = RoleOverrides(
+            preserve=overrides.preserve,
+            suppress=overrides.suppress,
+            enabled=bool(enabled),
+        )
 
     claims = dict(_claims_mapping(user.claims))
     data = overrides.to_jsonable()
