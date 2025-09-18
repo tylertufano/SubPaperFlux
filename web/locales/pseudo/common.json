@@ -48,6 +48,10 @@
   "admin_roles_empty_title": "Sin roles ✨",
   "admin_roles_empty_description": "Crea roles para verlos aquí ✨",
   "name_label": "Nombre ✨",
+  "credentials_copy_button": "Copiar a mis credenciales ✨",
+  "credentials_copy_success": "Credencial copiada a tu cuenta ✨",
+  "credentials_copy_error": "Error al copiar credencial: {reason} ✨",
+  "credentials_copy_aria_label": "Copiar credencial {description} a tu cuenta ✨",
   "site_configs_copy_button": "Copiar a mis configs ✨",
   "site_configs_copy_success": "Config copiada a tu cuenta ✨",
   "site_configs_copy_error": "Error al copiar config: {reason} ✨"

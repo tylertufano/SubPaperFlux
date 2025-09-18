@@ -17,6 +17,7 @@ export default function Credentials() {
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
+  const [copyingId, setCopyingId] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; kind: string; json: string } | null>(null)
   const [editDescription, setEditDescription] = useState('')
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
@@ -102,6 +103,51 @@ export default function Credentials() {
       } else {
         setBanner({ kind: 'error', message: e.message || String(e) })
       }
+    }
+  }
+
+  async function copyCredToUser(credId: string) {
+    setBanner(null)
+    setCopyingId(credId)
+    try {
+      const copied = await creds.copyCredentialToUser({ credId })
+      const appendCredential = (candidate: any) => {
+        const list = Array.isArray(candidate) ? candidate : []
+        const exists = list.some((item: any) => item?.id === copied.id)
+        return exists ? { list, added: false } : { list: [...list, copied], added: true }
+      }
+      const applyToPage = (page: any) => {
+        if (!page || typeof page !== 'object') return page
+        const { list, added } = appendCredential(page.items)
+        if (!added) return page
+        const nextTotal = typeof page.total === 'number' ? page.total + 1 : page.total
+        return { ...page, items: list, total: nextTotal }
+      }
+      await mutate((current: any) => {
+        if (Array.isArray(current)) {
+          const { list, added } = appendCredential(current)
+          return added ? list : current
+        }
+        if (current && typeof current === 'object') {
+          return applyToPage(current)
+        }
+        if (current == null) {
+          if (Array.isArray(data)) {
+            const { list, added } = appendCredential(data)
+            return added ? list : data
+          }
+          if (data && typeof data === 'object') {
+            return applyToPage(data)
+          }
+        }
+        return current
+      }, { revalidate: false })
+      setBanner({ kind: 'success', message: t('credentials_copy_success') })
+    } catch (e: any) {
+      const reason = e?.message || String(e)
+      setBanner({ kind: 'error', message: t('credentials_copy_error', { reason }) })
+    } finally {
+      setCopyingId(null)
     }
   }
 
@@ -405,6 +451,19 @@ export default function Credentials() {
                       <td className="td">{c.kind}</td>
                       <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                       <td className="td flex flex-wrap gap-2">
+                        {!c.ownerUserId && (
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => copyCredToUser(c.id)}
+                            disabled={copyingId === c.id}
+                            aria-busy={copyingId === c.id}
+                            aria-label={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
+                            title={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
+                          >
+                            {t('credentials_copy_button')}
+                          </button>
+                        )}
                         {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                           <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
                         )}
