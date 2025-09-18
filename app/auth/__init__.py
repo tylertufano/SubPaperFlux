@@ -25,6 +25,8 @@ __all__ = [
     "grant_roles",
     "revoke_role",
     "user_has_role",
+    "has_permission",
+    "require_permission",
 ]
 
 
@@ -213,3 +215,6 @@ def user_has_role(session: Session, user_id: str, role_name: str) -> bool:
         .limit(1)
     )
     return session.exec(stmt).first() is not None
+
+
+from .permissions import has_permission, require_permission
