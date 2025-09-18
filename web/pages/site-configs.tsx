@@ -16,6 +16,7 @@ export default function SiteConfigs() {
   const [createErrors, setCreateErrors] = useState<Record<string,string>>({})
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
+  const [copyingId, setCopyingId] = useState<string | null>(null)
   const [editing, setEditing] = useState<any | null>(null)
   const [editErrors, setEditErrors] = useState<Record<string,string>>({})
 
@@ -45,6 +46,51 @@ export default function SiteConfigs() {
       mutate()
     } catch (e: any) {
       setBanner({ kind: 'error', message: e.message || String(e) })
+    }
+  }
+
+  async function copyToUser(configId: string) {
+    setBanner(null)
+    setCopyingId(configId)
+    try {
+      const copied = await site.copySiteConfigToUser({ configId })
+      const appendConfig = (candidate: any) => {
+        const list = Array.isArray(candidate) ? candidate : []
+        const exists = list.some((item: any) => item?.id === copied.id)
+        return exists ? { list, added: false } : { list: [...list, copied], added: true }
+      }
+      const applyToPage = (page: any) => {
+        if (!page || typeof page !== 'object') return page
+        const { list, added } = appendConfig(page.items)
+        if (!added) return page
+        const nextTotal = typeof page.total === 'number' ? page.total + 1 : page.total
+        return { ...page, items: list, total: nextTotal }
+      }
+      await mutate((current: any) => {
+        if (Array.isArray(current)) {
+          const { list, added } = appendConfig(current)
+          return added ? list : current
+        }
+        if (current && typeof current === 'object') {
+          return applyToPage(current)
+        }
+        if (current == null) {
+          if (Array.isArray(data)) {
+            const { list, added } = appendConfig(data)
+            return added ? list : data
+          }
+          if (data && typeof data === 'object') {
+            return applyToPage(data)
+          }
+        }
+        return current
+      }, { revalidate: false })
+      setBanner({ kind: 'success', message: t('site_configs_copy_success') })
+    } catch (e: any) {
+      const reason = e?.message || String(e)
+      setBanner({ kind: 'error', message: t('site_configs_copy_error', { reason }) })
+    } finally {
+      setCopyingId(null)
     }
   }
   return (
@@ -189,6 +235,17 @@ export default function SiteConfigs() {
                     <td className="td">{sc.site_url}</td>
                     <td className="td">{sc.owner_user_id ? t('scope_user') : t('scope_global')}</td>
                     <td className="td flex gap-2">
+                      {!sc.owner_user_id && (
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => copyToUser(sc.id)}
+                          disabled={copyingId === sc.id}
+                          aria-busy={copyingId === sc.id}
+                        >
+                          {t('site_configs_copy_button')}
+                        </button>
+                      )}
                       <button type="button" className="btn" onClick={async () => { try { const r = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id }); setBanner({ kind: r.ok ? 'success' : 'error', message: t('site_configs_test_result', { result: JSON.stringify(r) }) }) } catch (e: any) { setBanner({ kind: 'error', message: e.message || String(e) }) } }}>{t('site_configs_test_button')}</button>
                       <button type="button" className="btn" onClick={() => setEditing({ ...sc, cookies_to_store: (sc.cookies_to_store || []).join(',') })}>{t('btn_edit')}</button>
                       <button type="button" className="btn" onClick={() => del(sc.id)}>{t('btn_delete')}</button>

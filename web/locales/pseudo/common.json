@@ -47,5 +47,8 @@
   "admin_roles_delete_system_disabled": "Los roles del sistema no se pueden borrar ✨",
   "admin_roles_empty_title": "Sin roles ✨",
   "admin_roles_empty_description": "Crea roles para verlos aquí ✨",
-  "name_label": "Nombre ✨"
+  "name_label": "Nombre ✨",
+  "site_configs_copy_button": "Copiar a mis configs ✨",
+  "site_configs_copy_success": "Config copiada a tu cuenta ✨",
+  "site_configs_copy_error": "Error al copiar config: {reason} ✨"
 }
