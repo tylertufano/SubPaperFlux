@@ -56,14 +56,37 @@ def _env(monkeypatch):
 @pytest.fixture
 def client(monkeypatch) -> TestClient:
     identity = _make_identity()
-    from app.db import init_db
+    from app.auth import ADMIN_ROLE_NAME, ensure_admin_role, grant_role
+    from app.db import get_session, init_db
     from app.main import create_app
+    from app.models import User
 
     init_db()
     monkeypatch.setattr("app.auth.oidc.resolve_user_from_token", lambda token: identity)
     monkeypatch.setattr("app.main.resolve_user_from_token", lambda token: identity)
     app = create_app()
     with TestClient(app) as test_client:
+        with next(get_session()) as session:
+            ensure_admin_role(session)
+            session.commit()
+            admin_user = session.get(User, identity["sub"])
+            if admin_user is None:
+                admin_user = User(
+                    id=identity["sub"],
+                    email=identity.get("email"),
+                    full_name=identity.get("name"),
+                    claims=identity.get("claims", {}),
+                )
+            if session.get(User, identity["sub"]) is None:
+                session.add(admin_user)
+                session.commit()
+            grant_role(
+                session,
+                identity["sub"],
+                ADMIN_ROLE_NAME,
+                granted_by_user_id=identity["sub"],
+            )
+            session.commit()
         yield test_client
 
 

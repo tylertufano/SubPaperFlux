@@ -11,7 +11,10 @@ from pydantic import BaseModel, constr
 
 from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
-from ..auth.rbac import can_manage_global_credentials
+from ..auth import (
+    PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+    has_permission,
+)
 from ..schemas import Credential as CredentialSchema
 from ..db import get_session
 from ..models import Credential as CredentialModel
@@ -114,7 +117,9 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         data = encrypt_dict(data)
     description = body.description.strip()
     owner = body.owner_user_id
-    if owner is None and not can_manage_global_credentials(current_user):
+    if owner is None and not has_permission(
+        session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
+    ):
         owner = current_user["sub"]
     if owner is not None:
         enforce_user_quota(
@@ -175,7 +180,9 @@ def create_instapaper_credential_from_login(
     username = body.username.strip()
 
     if body.scope_global:
-        if not can_manage_global_credentials(current_user):
+        if not has_permission(
+            session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
+        ):
             raise HTTPException(status_code=403, detail="Not authorized to create global credentials")
         owner: Optional[str] = None
     else:
@@ -247,7 +254,9 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
         raise HTTPException(status_code=404, detail="Not found")
 
     is_owner = model.owner_user_id == current_user["sub"]
-    can_delete_global = model.owner_user_id is None and can_manage_global_credentials(current_user)
+    can_delete_global = model.owner_user_id is None and has_permission(
+        session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
+    )
     if not (is_owner or can_delete_global):
         raise HTTPException(status_code=404, detail="Not found")
     record_audit_log(

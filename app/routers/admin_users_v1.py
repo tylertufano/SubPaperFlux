@@ -12,7 +12,6 @@ from sqlmodel import Session, select
 from ..audit import record_audit_log
 from ..auth import ADMIN_ROLE_NAME, get_user_roles, grant_role, revoke_role
 from ..auth.oidc import get_current_user
-from ..auth.rbac import is_admin
 from ..db import get_session
 from ..models import Role, User, UserRole
 from ..schemas import AdminUserOut, AdminUserUpdate, AdminUsersPage, RoleGrantRequest
@@ -39,7 +38,7 @@ def _normalize_groups(user: User) -> List[str]:
 def _serialize_user(session: Session, user: User) -> AdminUserOut:
     roles = get_user_roles(session, user.id)
     groups = _normalize_groups(user)
-    is_admin_flag = ADMIN_ROLE_NAME in roles or is_admin({"groups": groups})
+    is_admin_flag = ADMIN_ROLE_NAME in roles
     return AdminUserOut(
         id=user.id,
         email=user.email,
