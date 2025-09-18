@@ -1,8 +1,17 @@
 from typing import Optional, List, Dict
 from uuid import uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, UniqueConstraint, String
-from sqlmodel import SQLModel, Field, Column
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlmodel import SQLModel, Field, Column, Relationship
 from datetime import datetime, timezone
 
 
@@ -50,6 +59,80 @@ class User(SQLModel, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+    organization_memberships: List["OrganizationMembership"] = Relationship(
+        back_populates="user"
+    )
+
+    @property
+    def organizations(self) -> List["Organization"]:
+        return [
+            membership.organization
+            for membership in self.organization_memberships
+            if membership.organization is not None
+        ]
+
+
+class Organization(SQLModel, table=True):
+    __tablename__ = "organizations"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_organizations_slug"),
+        UniqueConstraint("name", name="uq_organizations_name"),
+    )
+
+    id: str = Field(default_factory=lambda: gen_id("org"), primary_key=True)
+    slug: str = Field(sa_column=Column(String(length=255), nullable=False), index=True)
+    name: str = Field(sa_column=Column(String(length=255), nullable=False), index=True)
+    description: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
+    )
+    is_default: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False),
+        index=True,
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    memberships: List["OrganizationMembership"] = Relationship(
+        back_populates="organization"
+    )
+
+
+class OrganizationMembership(SQLModel, table=True):
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "user_id",
+            name="uq_organization_memberships_org_user",
+        ),
+    )
+
+    organization_id: str = Field(
+        sa_column=Column(
+            ForeignKey("organizations.id", ondelete="CASCADE"),
+            primary_key=True,
+        )
+    )
+    user_id: str = Field(
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="CASCADE"),
+            primary_key=True,
+            index=True,
+        )
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    organization: Optional[Organization] = Relationship(back_populates="memberships")
+    user: Optional[User] = Relationship(back_populates="organization_memberships")
 
 
 class Role(SQLModel, table=True):
@@ -276,3 +359,25 @@ class AuditLog(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
     )
+
+
+__all__ = [
+    "gen_id",
+    "User",
+    "Organization",
+    "OrganizationMembership",
+    "Role",
+    "UserRole",
+    "ApiToken",
+    "SiteConfig",
+    "Feed",
+    "Credential",
+    "Job",
+    "Cookie",
+    "Bookmark",
+    "Tag",
+    "Folder",
+    "BookmarkTagLink",
+    "BookmarkFolderLink",
+    "AuditLog",
+]
