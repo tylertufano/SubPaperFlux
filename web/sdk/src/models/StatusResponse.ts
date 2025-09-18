@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,25 +21,23 @@ import { exists, mapValues } from '../runtime';
 export interface StatusResponse {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof StatusResponse
      */
-    status?: any | null;
+    status?: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof StatusResponse
      */
-    version?: any | null;
+    version?: string;
 }
 
 /**
  * Check if a given object implements the StatusResponse interface.
  */
-export function instanceOfStatusResponse(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfStatusResponse(value: object): value is StatusResponse {
+    return true;
 }
 
 export function StatusResponseFromJSON(json: any): StatusResponse {
@@ -47,27 +45,29 @@ export function StatusResponseFromJSON(json: any): StatusResponse {
 }
 
 export function StatusResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): StatusResponse {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'status': !exists(json, 'status') ? undefined : json['status'],
-        'version': !exists(json, 'version') ? undefined : json['version'],
+        'status': json['status'] == null ? undefined : json['status'],
+        'version': json['version'] == null ? undefined : json['version'],
     };
 }
 
-export function StatusResponseToJSON(value?: StatusResponse | null): any {
-    if (value === undefined) {
-        return undefined;
+export function StatusResponseToJSON(json: any): StatusResponse {
+    return StatusResponseToJSONTyped(json, false);
+}
+
+export function StatusResponseToJSONTyped(value?: StatusResponse | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'status': value.status,
-        'version': value.version,
+        'status': value['status'],
+        'version': value['version'],
     };
 }
 

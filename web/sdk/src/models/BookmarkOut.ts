@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,57 +21,55 @@ import { exists, mapValues } from '../runtime';
 export interface BookmarkOut {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    id: any | null;
+    id: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    instapaperBookmarkId: any | null;
+    instapaperBookmarkId: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    title?: any | null;
+    title?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    url?: any | null;
+    url?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    contentLocation?: any | null;
+    contentLocation?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    feedId?: any | null;
+    feedId?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkOut
      */
-    publishedAt?: any | null;
+    publishedAt?: string | null;
 }
 
 /**
  * Check if a given object implements the BookmarkOut interface.
  */
-export function instanceOfBookmarkOut(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "instapaperBookmarkId" in value;
-
-    return isInstance;
+export function instanceOfBookmarkOut(value: object): value is BookmarkOut {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('instapaperBookmarkId' in value) || value['instapaperBookmarkId'] === undefined) return false;
+    return true;
 }
 
 export function BookmarkOutFromJSON(json: any): BookmarkOut {
@@ -79,37 +77,39 @@ export function BookmarkOutFromJSON(json: any): BookmarkOut {
 }
 
 export function BookmarkOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkOut {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'id': json['id'],
         'instapaperBookmarkId': json['instapaper_bookmark_id'],
-        'title': !exists(json, 'title') ? undefined : json['title'],
-        'url': !exists(json, 'url') ? undefined : json['url'],
-        'contentLocation': !exists(json, 'content_location') ? undefined : json['content_location'],
-        'feedId': !exists(json, 'feed_id') ? undefined : json['feed_id'],
-        'publishedAt': !exists(json, 'published_at') ? undefined : json['published_at'],
+        'title': json['title'] == null ? undefined : json['title'],
+        'url': json['url'] == null ? undefined : json['url'],
+        'contentLocation': json['content_location'] == null ? undefined : json['content_location'],
+        'feedId': json['feed_id'] == null ? undefined : json['feed_id'],
+        'publishedAt': json['published_at'] == null ? undefined : json['published_at'],
     };
 }
 
-export function BookmarkOutToJSON(value?: BookmarkOut | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BookmarkOutToJSON(json: any): BookmarkOut {
+    return BookmarkOutToJSONTyped(json, false);
+}
+
+export function BookmarkOutToJSONTyped(value?: BookmarkOut | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'instapaper_bookmark_id': value.instapaperBookmarkId,
-        'title': value.title,
-        'url': value.url,
-        'content_location': value.contentLocation,
-        'feed_id': value.feedId,
-        'published_at': value.publishedAt,
+        'id': value['id'],
+        'instapaper_bookmark_id': value['instapaperBookmarkId'],
+        'title': value['title'],
+        'url': value['url'],
+        'content_location': value['contentLocation'],
+        'feed_id': value['feedId'],
+        'published_at': value['publishedAt'],
     };
 }
 

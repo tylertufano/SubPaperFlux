@@ -86,6 +86,7 @@ test.describe('smoke flows', () => {
         await page.goto('/credentials', { waitUntil: 'networkidle' })
         await expect(page.getByRole('heading', { name: 'Credentials' })).toBeVisible()
 
+        await page.fill('#create-credential-description', `Miniflux credential ${uniqueSlug}`)
         await page.selectOption('#credential-kind-select', 'miniflux')
         await page.fill('#create-credential-miniflux-url', `${minifluxUrl}`)
         await page.fill('#create-credential-api-key', apiKey)

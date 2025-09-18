@@ -1,6 +1,6 @@
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
-import { v1, creds } from '../lib/openapi'
+import { v1, creds, createInstapaperCredentialFromLogin } from '../lib/openapi'
 import { useMemo, useState } from 'react'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
@@ -41,10 +41,6 @@ export default function Credentials() {
   }
 
   async function createCred() {
-    const parsed = parseJsonSafe(jsonData)
-    if (!parsed.ok) { setBanner({ kind: 'error', message: parsed.error }); return }
-    const err = validateCredential(kind, parsed.data)
-    if (err) { setBanner({ kind: 'error', message: err }); return }
     const trimmedDescription = description.trim()
     if (!trimmedDescription) {
       const message = t('credentials_error_description_required')
@@ -52,15 +48,38 @@ export default function Credentials() {
       setBanner({ kind: 'error', message })
       return
     }
+
+    const parsed = parseJsonSafe(jsonData)
+    if (!parsed.ok) {
+      setBanner({ kind: 'error', message: parsed.error })
+      return
+    }
+
+    const err = validateCredential(kind, parsed.data, trimmedDescription)
+    if (err) {
+      setBanner({ kind: 'error', message: err })
+      return
+    }
+
     try {
-      await creds.createCredentialCredentialsPost({
-        credential: {
-          kind,
+      if (kind === 'instapaper') {
+        await createInstapaperCredentialFromLogin({
           description: trimmedDescription,
-          data: parsed.data,
-          ownerUserId: scopeGlobal ? null : undefined,
-        },
-      })
+          username: parsed.data.username,
+          password: parsed.data.password,
+          scope_global: scopeGlobal,
+        })
+      } else {
+        await creds.createCredentialCredentialsPost({
+          credential: {
+            kind,
+            description: trimmedDescription,
+            data: parsed.data,
+            ownerUserId: scopeGlobal ? null : undefined,
+          },
+        })
+      }
+
       setJsonData('')
       setDescription('')
       setCreateErrors({})
@@ -251,29 +270,54 @@ export default function Credentials() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
                   <input
-                    id="create-credential-oauth-token"
+                    id="create-credential-instapaper-username"
                     className="input"
-                    placeholder={t('credentials_field_oauth_token_placeholder')}
-                    aria-label={t('credentials_field_oauth_token_placeholder')}
-                    aria-invalid={Boolean(createErrors.oauth_token)}
-                    aria-describedby={createErrors.oauth_token ? 'create-credential-oauth-token-error' : undefined}
-                    value={createObj.oauth_token || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ oauth_token: v, oauth_token_secret: createObj.oauth_token_secret || '' })); setCreateErrors(prev=>({ ...prev, oauth_token: v.trim()? '' : t('credentials_error_required') })) }}
+                    placeholder={t('credentials_field_instapaper_username_placeholder')}
+                    aria-label={t('credentials_field_instapaper_username_placeholder')}
+                    aria-invalid={Boolean(createErrors.username)}
+                    aria-describedby={createErrors.username ? 'create-credential-instapaper-username-error' : undefined}
+                    autoComplete="username"
+                    value={createObj.username || ''}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setJsonData(JSON.stringify({ username: v, password: createObj.password || '' }))
+                      setCreateErrors((prev) => ({
+                        ...prev,
+                        username: v.trim() ? '' : t('credentials_error_username_required'),
+                      }))
+                    }}
                   />
-                  {createErrors.oauth_token && <div id="create-credential-oauth-token-error" className="text-sm text-red-600">{createErrors.oauth_token}</div>}
+                  {createErrors.username && (
+                    <div id="create-credential-instapaper-username-error" className="text-sm text-red-600">
+                      {createErrors.username}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <input
-                    id="create-credential-oauth-secret"
+                    id="create-credential-instapaper-password"
                     className="input"
-                    placeholder={t('credentials_field_oauth_secret_placeholder')}
-                    aria-label={t('credentials_field_oauth_secret_placeholder')}
-                    aria-invalid={Boolean(createErrors.oauth_token_secret)}
-                    aria-describedby={createErrors.oauth_token_secret ? 'create-credential-oauth-secret-error' : undefined}
-                    value={createObj.oauth_token_secret || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ oauth_token: createObj.oauth_token || '', oauth_token_secret: v })); setCreateErrors(prev=>({ ...prev, oauth_token_secret: v.trim()? '' : t('credentials_error_required') })) }}
+                    placeholder={t('credentials_field_instapaper_password_placeholder')}
+                    aria-label={t('credentials_field_instapaper_password_placeholder')}
+                    type="password"
+                    aria-invalid={Boolean(createErrors.password)}
+                    aria-describedby={createErrors.password ? 'create-credential-instapaper-password-error' : undefined}
+                    autoComplete="current-password"
+                    value={createObj.password || ''}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setJsonData(JSON.stringify({ username: createObj.username || '', password: v }))
+                      setCreateErrors((prev) => ({
+                        ...prev,
+                        password: v.trim() ? '' : t('credentials_error_password_required'),
+                      }))
+                    }}
                   />
-                  {createErrors.oauth_token_secret && <div id="create-credential-oauth-secret-error" className="text-sm text-red-600">{createErrors.oauth_token_secret}</div>}
+                  {createErrors.password && (
+                    <div id="create-credential-instapaper-password-error" className="text-sm text-red-600">
+                      {createErrors.password}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -317,7 +361,7 @@ export default function Credentials() {
                     (
                       (kind === 'site_login' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
                       (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
-                      (kind === 'instapaper' && !!(createObj.oauth_token?.trim() && createObj.oauth_token_secret?.trim())) ||
+                      (kind === 'instapaper' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
                       (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
                     )
                   )
@@ -342,203 +386,220 @@ export default function Credentials() {
                 />
               </div>
             ) : (
-            <table className="table" role="table" aria-label={t('credentials_table_label')}>
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="th" scope="col">{t('id_label')}</th>
-                  <th className="th" scope="col">{t('description_label')}</th>
-                  <th className="th" scope="col">{t('kind_label')}</th>
-                  <th className="th" scope="col">{t('scope_label')}</th>
-                  <th className="th" scope="col">{t('actions_label')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.items ?? data).map((c: any) => (
-                  <tr key={c.id} className="odd:bg-white even:bg-gray-50">
-                    <td className="td">{c.id}</td>
-                    <td className="td">{c.description}</td>
-                    <td className="td">{c.kind}</td>
-                    <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
-                    <td className="td flex gap-2">
-                      {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
-                        <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
-                      )}
-                      <button type="button" className="btn" onClick={() => startEdit(c.id, c.kind)}>{t('btn_edit')}</button>
-                      <button type="button" className="btn" onClick={() => deleteCred(c.id)}>{t('btn_delete')}</button>
-                    </td>
+              <table className="table" role="table" aria-label={t('credentials_table_label')}>
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="th" scope="col">{t('credentials_table_column_credential')}</th>
+                    <th className="th" scope="col">{t('kind_label')}</th>
+                    <th className="th" scope="col">{t('scope_label')}</th>
+                    <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(data.items ?? data).map((c: any) => (
+                    <tr key={c.id} className="odd:bg-white even:bg-gray-50">
+                      <td className="td">
+                        <div className="font-medium text-gray-900">{c.description}</div>
+                        <div className="text-sm text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
+                      </td>
+                      <td className="td">{c.kind}</td>
+                      <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
+                      <td className="td flex flex-wrap gap-2">
+                        {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
+                          <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
+                        )}
+                        <button type="button" className="btn" onClick={() => startEdit(c.id, c.kind)}>{t('btn_edit')}</button>
+                        <button type="button" className="btn" onClick={() => deleteCred(c.id)}>{t('btn_delete')}</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
           {editing && (
-            <div className="card p-4 mt-3" role="form" aria-labelledby="edit-credential-heading">
-              <h3 id="edit-credential-heading" className="font-semibold mb-2">{t('credentials_edit_heading', { id: editing.id })}</h3>
-              <div className="mb-2 text-sm text-gray-700">{t('credentials_kind_display', { kind: editing.kind })}</div>
-              <div className="mb-2">
-                <input
-                  id="edit-credential-description"
-                  className="input"
-                  placeholder={t('credentials_field_description_placeholder')}
-                  aria-label={t('credentials_field_description_placeholder')}
-                  aria-invalid={Boolean(editErrors.description)}
-                  aria-describedby={editErrors.description ? 'edit-credential-description-error' : undefined}
-                  value={editDescription}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    setEditDescription(v)
-                    setEditErrors((prev) => ({
-                      ...prev,
-                      description: v.trim() ? '' : t('credentials_error_description_required'),
-                    }))
-                  }}
-                />
-                {editErrors.description && (
-                  <div id="edit-credential-description-error" className="text-sm text-red-600">
-                    {editErrors.description}
+            <div
+              className="card p-4 mt-3 md:ml-auto md:max-w-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-credential-heading"
+            >
+              <form
+                role="form"
+                aria-labelledby="edit-credential-heading"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  saveEdit()
+                }}
+                className="space-y-3"
+              >
+                <h3 id="edit-credential-heading" className="font-semibold">
+                  {t('credentials_edit_heading', { id: editing.id })}
+                </h3>
+                <div className="text-sm text-gray-700">{t('credentials_kind_display', { kind: editing.kind })}</div>
+                <div>
+                  <input
+                    id="edit-credential-description"
+                    className="input"
+                    placeholder={t('credentials_field_description_placeholder')}
+                    aria-label={t('credentials_field_description_placeholder')}
+                    aria-invalid={Boolean(editErrors.description)}
+                    aria-describedby={editErrors.description ? 'edit-credential-description-error' : undefined}
+                    value={editDescription}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setEditDescription(v)
+                      setEditErrors((prev) => ({
+                        ...prev,
+                        description: v.trim() ? '' : t('credentials_error_description_required'),
+                      }))
+                    }}
+                  />
+                  {editErrors.description && (
+                    <div id="edit-credential-description-error" className="text-sm text-red-600">
+                      {editErrors.description}
+                    </div>
+                  )}
+                </div>
+                {editing.kind === 'site_login' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        id="edit-credential-username"
+                        className="input"
+                        placeholder={editingObj?.username || t('credentials_field_username_placeholder')}
+                        aria-label={t('credentials_field_username_placeholder')}
+                        aria-invalid={Boolean(editErrors.username)}
+                        aria-describedby={editErrors.username ? 'edit-credential-username-error' : undefined}
+                        value={editingObj?.username ? (editingObj.username.includes('*') ? '' : editingObj.username) : ''}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), username: v }) }); setEditErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
+                      />
+                      {editErrors.username && <div id="edit-credential-username-error" className="text-sm text-red-600">{editErrors.username}</div>}
+                    </div>
+                    <div>
+                      <input
+                        id="edit-credential-password"
+                        className="input"
+                        placeholder={(editingObj?.password && editingObj.password.includes('*')) ? '••••' : t('credentials_field_password_keep_placeholder')}
+                        type="password"
+                        aria-label={t('credentials_field_password_keep_placeholder')}
+                        value={(editingObj?.password && editingObj.password.includes('*')) ? '' : (editingObj?.password || '')}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), password: v }) }) }}
+                      />
+                    </div>
                   </div>
                 )}
-              </div>
-              {editing.kind === 'site_login' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <input
-                      id="edit-credential-username"
-                      className="input"
-                      placeholder={editingObj?.username || t('credentials_field_username_placeholder')}
-                      aria-label={t('credentials_field_username_placeholder')}
-                      aria-invalid={Boolean(editErrors.username)}
-                      aria-describedby={editErrors.username ? 'edit-credential-username-error' : undefined}
-                      value={editingObj?.username ? (editingObj.username.includes('*') ? '' : editingObj.username) : ''}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), username: v }) }); setEditErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
-                    />
-                    {editErrors.username && <div id="edit-credential-username-error" className="text-sm text-red-600">{editErrors.username}</div>}
+                {editing.kind === 'miniflux' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        id="edit-credential-miniflux-url"
+                        className="input"
+                        placeholder={editingObj?.miniflux_url || t('credentials_field_miniflux_url_placeholder')}
+                        aria-label={t('credentials_field_miniflux_url_placeholder')}
+                        aria-invalid={Boolean(editErrors.miniflux_url)}
+                        aria-describedby={editErrors.miniflux_url ? 'edit-credential-miniflux-url-error' : undefined}
+                        value={editingObj?.miniflux_url || ''}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), miniflux_url: v }) }); setEditErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : t('credentials_error_miniflux_url_invalid') })) }}
+                      />
+                      {editErrors.miniflux_url && <div id="edit-credential-miniflux-url-error" className="text-sm text-red-600">{editErrors.miniflux_url}</div>}
+                    </div>
+                    <div>
+                      <input
+                        id="edit-credential-api-key"
+                        className="input"
+                        placeholder={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '••••' : t('credentials_field_api_key_keep_placeholder')}
+                        aria-label={t('credentials_field_api_key_keep_placeholder')}
+                        value={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '' : (editingObj?.api_key || '')}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), api_key: v }) }) }}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <input
-                      id="edit-credential-password"
-                      className="input"
-                      placeholder={(editingObj?.password && editingObj.password.includes('*')) ? '••••' : t('credentials_field_password_keep_placeholder')}
-                      type="password"
-                      aria-label={t('credentials_field_password_keep_placeholder')}
-                      value={(editingObj?.password && editingObj.password.includes('*')) ? '' : (editingObj?.password || '')}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), password: v }) }) }}
-                    />
+                )}
+                {editing.kind === 'instapaper' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        id="edit-credential-oauth-token"
+                        className="input"
+                        placeholder={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '••••' : t('credentials_field_oauth_token_keep_placeholder')}
+                        aria-label={t('credentials_field_oauth_token_keep_placeholder')}
+                        value={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '' : (editingObj?.oauth_token || '')}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token: v }) }) }}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        id="edit-credential-oauth-secret"
+                        className="input"
+                        placeholder={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '••••' : t('credentials_field_oauth_secret_keep_placeholder')}
+                        aria-label={t('credentials_field_oauth_secret_keep_placeholder')}
+                        value={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '' : (editingObj?.oauth_token_secret || '')}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token_secret: v }) }) }}
+                      />
+                    </div>
                   </div>
+                )}
+                {editing.kind === 'instapaper_app' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        id="edit-credential-consumer-key"
+                        className="input"
+                        placeholder={editingObj?.consumer_key || t('credentials_field_consumer_key_placeholder')}
+                        aria-label={t('credentials_field_consumer_key_placeholder')}
+                        aria-invalid={Boolean(editErrors.consumer_key)}
+                        aria-describedby={editErrors.consumer_key ? 'edit-credential-consumer-key-error' : undefined}
+                        value={editingObj?.consumer_key || ''}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_key: v }) }); setEditErrors(prev=>({ ...prev, consumer_key: v.trim()? '' : t('credentials_error_required') })) }}
+                      />
+                      {editErrors.consumer_key && <div id="edit-credential-consumer-key-error" className="text-sm text-red-600">{editErrors.consumer_key}</div>}
+                    </div>
+                    <div>
+                      <input
+                        id="edit-credential-consumer-secret"
+                        className="input"
+                        placeholder={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '••••' : t('credentials_field_consumer_secret_keep_placeholder')}
+                        aria-label={t('credentials_field_consumer_secret_keep_placeholder')}
+                        value={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '' : (editingObj?.consumer_secret || '')}
+                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_secret: v }) }) }}
+                      />
+                    </div>
                   </div>
-              )}
-              {editing.kind === 'miniflux' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <input
-                      id="edit-credential-miniflux-url"
-                      className="input"
-                      placeholder={editingObj?.miniflux_url || t('credentials_field_miniflux_url_placeholder')}
-                      aria-label={t('credentials_field_miniflux_url_placeholder')}
-                      aria-invalid={Boolean(editErrors.miniflux_url)}
-                      aria-describedby={editErrors.miniflux_url ? 'edit-credential-miniflux-url-error' : undefined}
-                      value={editingObj?.miniflux_url || ''}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), miniflux_url: v }) }); setEditErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : t('credentials_error_miniflux_url_invalid') })) }}
-                    />
-                    {editErrors.miniflux_url && <div id="edit-credential-miniflux-url-error" className="text-sm text-red-600">{editErrors.miniflux_url}</div>}
-                  </div>
-                  <div>
-                    <input
-                      id="edit-credential-api-key"
-                      className="input"
-                      placeholder={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '••••' : t('credentials_field_api_key_keep_placeholder')}
-                      aria-label={t('credentials_field_api_key_keep_placeholder')}
-                      value={(editingObj?.api_key && editingObj.api_key.includes('*')) ? '' : (editingObj?.api_key || '')}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), api_key: v }) }) }}
-                    />
-                  </div>
-                </div>
-              )}
-              {editing.kind === 'instapaper' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <input
-                      id="edit-credential-oauth-token"
-                      className="input"
-                      placeholder={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '••••' : t('credentials_field_oauth_token_keep_placeholder')}
-                      aria-label={t('credentials_field_oauth_token_keep_placeholder')}
-                      value={(editingObj?.oauth_token && editingObj.oauth_token.includes('*')) ? '' : (editingObj?.oauth_token || '')}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token: v }) }) }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      id="edit-credential-oauth-secret"
-                      className="input"
-                      placeholder={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '••••' : t('credentials_field_oauth_secret_keep_placeholder')}
-                      aria-label={t('credentials_field_oauth_secret_keep_placeholder')}
-                      value={(editingObj?.oauth_token_secret && editingObj.oauth_token_secret.includes('*')) ? '' : (editingObj?.oauth_token_secret || '')}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), oauth_token_secret: v }) }) }}
-                    />
-                  </div>
-                </div>
-              )}
-              {editing.kind === 'instapaper_app' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <input
-                      id="edit-credential-consumer-key"
-                      className="input"
-                      placeholder={editingObj?.consumer_key || t('credentials_field_consumer_key_placeholder')}
-                      aria-label={t('credentials_field_consumer_key_placeholder')}
-                      aria-invalid={Boolean(editErrors.consumer_key)}
-                      aria-describedby={editErrors.consumer_key ? 'edit-credential-consumer-key-error' : undefined}
-                      value={editingObj?.consumer_key || ''}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_key: v }) }); setEditErrors(prev=>({ ...prev, consumer_key: v.trim()? '' : t('credentials_error_required') })) }}
-                    />
-                    {editErrors.consumer_key && <div id="edit-credential-consumer-key-error" className="text-sm text-red-600">{editErrors.consumer_key}</div>}
-                  </div>
-                  <div>
-                    <input
-                      id="edit-credential-consumer-secret"
-                      className="input"
-                      placeholder={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '••••' : t('credentials_field_consumer_secret_keep_placeholder')}
-                      aria-label={t('credentials_field_consumer_secret_keep_placeholder')}
-                      value={(editingObj?.consumer_secret && editingObj.consumer_secret.includes('*')) ? '' : (editingObj?.consumer_secret || '')}
-                      onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), consumer_secret: v }) }) }}
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="mt-2 flex gap-2">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={
-                    !editing ||
-                    !(
-                      hasEditDescription &&
-                      (
-                        (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
-                        (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
-                        (editing.kind === 'instapaper') ||
-                        (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="btn"
+                    disabled={
+                      !editing ||
+                      !(
+                        hasEditDescription &&
+                        (
+                          (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
+                          (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
+                          (editing.kind === 'instapaper') ||
+                          (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
+                        )
                       )
-                    )
-                  }
-                  title={t('form_fill_required')}
-                  onClick={saveEdit}
-                >
-                  {t('btn_save')}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    setEditing(null)
-                    setEditDescription('')
-                    setEditErrors({})
-                  }}
-                >
-                  {t('btn_cancel')}
-                </button>
-              </div>
+                    }
+                    title={t('form_fill_required')}
+                  >
+                    {t('btn_save')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setEditing(null)
+                      setEditDescription('')
+                      setEditErrors({})
+                    }}
+                  >
+                    {t('btn_cancel')}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
           </>

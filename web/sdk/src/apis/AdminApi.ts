@@ -17,36 +17,36 @@ import * as runtime from '../runtime';
 import type {
   AuditLogsPage,
   HTTPValidationError,
-} from '../models';
+} from '../models/index';
 import {
     AuditLogsPageFromJSON,
     AuditLogsPageToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface ListAuditLogsAdminAuditGetRequest {
-    page?: any;
-    size?: any;
-    entityType?: any;
-    entityId?: any;
-    action?: any;
-    ownerUserId?: any;
-    actorUserId?: any;
-    since?: any;
-    until?: any;
+    page?: number;
+    size?: number;
+    entityType?: string | null;
+    entityId?: string | null;
+    action?: string | null;
+    ownerUserId?: string | null;
+    actorUserId?: string | null;
+    since?: Date | null;
+    until?: Date | null;
 }
 
 export interface ListAuditLogsAdminAuditGet0Request {
-    page?: any;
-    size?: any;
-    entityType?: any;
-    entityId?: any;
-    action?: any;
-    ownerUserId?: any;
-    actorUserId?: any;
-    since?: any;
-    until?: any;
+    page?: number;
+    size?: number;
+    entityType?: string | null;
+    entityId?: string | null;
+    action?: string | null;
+    ownerUserId?: string | null;
+    actorUserId?: string | null;
+    since?: Date | null;
+    until?: Date | null;
 }
 
 /**
@@ -60,40 +60,40 @@ export class AdminApi extends runtime.BaseAPI {
     async listAuditLogsAdminAuditGetRaw(requestParameters: ListAuditLogsAdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
         const queryParameters: any = {};
 
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
         }
 
-        if (requestParameters.entityType !== undefined) {
-            queryParameters['entity_type'] = requestParameters.entityType;
+        if (requestParameters['entityType'] != null) {
+            queryParameters['entity_type'] = requestParameters['entityType'];
         }
 
-        if (requestParameters.entityId !== undefined) {
-            queryParameters['entity_id'] = requestParameters.entityId;
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entity_id'] = requestParameters['entityId'];
         }
 
-        if (requestParameters.action !== undefined) {
-            queryParameters['action'] = requestParameters.action;
+        if (requestParameters['action'] != null) {
+            queryParameters['action'] = requestParameters['action'];
         }
 
-        if (requestParameters.ownerUserId !== undefined) {
-            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
         }
 
-        if (requestParameters.actorUserId !== undefined) {
-            queryParameters['actor_user_id'] = requestParameters.actorUserId;
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actor_user_id'] = requestParameters['actorUserId'];
         }
 
-        if (requestParameters.since !== undefined) {
-            queryParameters['since'] = requestParameters.since;
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = (requestParameters['since'] as any).toISOString();
         }
 
-        if (requestParameters.until !== undefined) {
-            queryParameters['until'] = requestParameters.until;
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = (requestParameters['until'] as any).toISOString();
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -106,8 +106,11 @@ export class AdminApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+
+        let urlPath = `/admin/audit/`;
+
         const response = await this.request({
-            path: `/admin/audit/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -130,40 +133,40 @@ export class AdminApi extends runtime.BaseAPI {
     async listAuditLogsAdminAuditGet_1Raw(requestParameters: ListAuditLogsAdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
         const queryParameters: any = {};
 
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
         }
 
-        if (requestParameters.entityType !== undefined) {
-            queryParameters['entity_type'] = requestParameters.entityType;
+        if (requestParameters['entityType'] != null) {
+            queryParameters['entity_type'] = requestParameters['entityType'];
         }
 
-        if (requestParameters.entityId !== undefined) {
-            queryParameters['entity_id'] = requestParameters.entityId;
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entity_id'] = requestParameters['entityId'];
         }
 
-        if (requestParameters.action !== undefined) {
-            queryParameters['action'] = requestParameters.action;
+        if (requestParameters['action'] != null) {
+            queryParameters['action'] = requestParameters['action'];
         }
 
-        if (requestParameters.ownerUserId !== undefined) {
-            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
         }
 
-        if (requestParameters.actorUserId !== undefined) {
-            queryParameters['actor_user_id'] = requestParameters.actorUserId;
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actor_user_id'] = requestParameters['actorUserId'];
         }
 
-        if (requestParameters.since !== undefined) {
-            queryParameters['since'] = requestParameters.since;
+        if (requestParameters['since'] != null) {
+            queryParameters['since'] = (requestParameters['since'] as any).toISOString();
         }
 
-        if (requestParameters.until !== undefined) {
-            queryParameters['until'] = requestParameters.until;
+        if (requestParameters['until'] != null) {
+            queryParameters['until'] = (requestParameters['until'] as any).toISOString();
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -176,8 +179,11 @@ export class AdminApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+
+        let urlPath = `/admin/audit`;
+
         const response = await this.request({
-            path: `/admin/audit`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -210,8 +216,11 @@ export class AdminApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+
+        let urlPath = `/admin/postgres/enable-rls`;
+
         const response = await this.request({
-            path: `/admin/postgres/enable-rls`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -244,8 +253,11 @@ export class AdminApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+
+        let urlPath = `/admin/postgres/prepare`;
+
         const response = await this.request({
-            path: `/admin/postgres/prepare`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,

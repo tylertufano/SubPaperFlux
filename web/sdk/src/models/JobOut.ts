@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,72 +21,70 @@ import { exists, mapValues } from '../runtime';
 export interface JobOut {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof JobOut
      */
-    id: any | null;
+    id: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof JobOut
      */
-    type: any | null;
+    type: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof JobOut
      */
-    status: any | null;
+    status: string;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof JobOut
      */
-    attempts: any | null;
+    attempts: number;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof JobOut
      */
-    lastError?: any | null;
+    lastError?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof JobOut
      */
-    availableAt?: any | null;
+    availableAt?: number | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof JobOut
      */
-    ownerUserId?: any | null;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof JobOut
-     */
-    payload: { [key: string]: any; } | null;
+    ownerUserId?: string | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof JobOut
      */
-    details?: { [key: string]: any; } | null;
+    payload: { [key: string]: any; };
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof JobOut
+     */
+    details?: { [key: string]: any; };
 }
 
 /**
  * Check if a given object implements the JobOut interface.
  */
-export function instanceOfJobOut(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "type" in value;
-    isInstance = isInstance && "status" in value;
-    isInstance = isInstance && "attempts" in value;
-    isInstance = isInstance && "payload" in value;
-
-    return isInstance;
+export function instanceOfJobOut(value: object): value is JobOut {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
+    if (!('attempts' in value) || value['attempts'] === undefined) return false;
+    if (!('payload' in value) || value['payload'] === undefined) return false;
+    return true;
 }
 
 export function JobOutFromJSON(json: any): JobOut {
@@ -94,7 +92,7 @@ export function JobOutFromJSON(json: any): JobOut {
 }
 
 export function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobOut {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -103,32 +101,34 @@ export function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Jo
         'type': json['type'],
         'status': json['status'],
         'attempts': json['attempts'],
-        'lastError': !exists(json, 'last_error') ? undefined : json['last_error'],
-        'availableAt': !exists(json, 'available_at') ? undefined : json['available_at'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'lastError': json['last_error'] == null ? undefined : json['last_error'],
+        'availableAt': json['available_at'] == null ? undefined : json['available_at'],
+        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
         'payload': json['payload'],
-        'details': !exists(json, 'details') ? undefined : json['details'],
+        'details': json['details'] == null ? undefined : json['details'],
     };
 }
 
-export function JobOutToJSON(value?: JobOut | null): any {
-    if (value === undefined) {
-        return undefined;
+export function JobOutToJSON(json: any): JobOut {
+    return JobOutToJSONTyped(json, false);
+}
+
+export function JobOutToJSONTyped(value?: JobOut | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'type': value.type,
-        'status': value.status,
-        'attempts': value.attempts,
-        'last_error': value.lastError,
-        'available_at': value.availableAt,
-        'owner_user_id': value.ownerUserId,
-        'payload': value.payload,
-        'details': value.details,
+        'id': value['id'],
+        'type': value['type'],
+        'status': value['status'],
+        'attempts': value['attempts'],
+        'last_error': value['lastError'],
+        'available_at': value['availableAt'],
+        'owner_user_id': value['ownerUserId'],
+        'payload': value['payload'],
+        'details': value['details'],
     };
 }
 
