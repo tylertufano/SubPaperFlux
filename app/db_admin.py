@@ -1,15 +1,14 @@
 from typing import Dict
 
 from sqlalchemy import text
-from sqlmodel import select
 
-from .models import Organization
-
-
-DEFAULT_ORGANIZATION_ID = "org_3c05302ebebe"
-DEFAULT_ORGANIZATION_SLUG = "default"
-DEFAULT_ORGANIZATION_NAME = "Default Organization"
-DEFAULT_ORGANIZATION_DESCRIPTION = "Primary organization for legacy users"
+from .organization_defaults import (
+    DEFAULT_ORGANIZATION_DESCRIPTION,
+    DEFAULT_ORGANIZATION_ID,
+    DEFAULT_ORGANIZATION_NAME,
+    DEFAULT_ORGANIZATION_SLUG,
+    ensure_default_organization,
+)
 
 
 def prepare_postgres_search(session) -> Dict:
@@ -62,53 +61,6 @@ def prepare_postgres_search(session) -> Dict:
         # Commit best-effort; caller may be in autocommit
         pass
     return details
-
-
-def ensure_default_organization(
-    session,
-    *,
-    organization_id: str = DEFAULT_ORGANIZATION_ID,
-    slug: str = DEFAULT_ORGANIZATION_SLUG,
-    name: str = DEFAULT_ORGANIZATION_NAME,
-    description: str = DEFAULT_ORGANIZATION_DESCRIPTION,
-) -> Organization:
-    """Ensure the default organization record exists and is marked as default."""
-
-    organization = session.exec(
-        select(Organization).where(Organization.slug == slug)
-    ).first()
-    if organization is None:
-        organization = session.exec(
-            select(Organization).where(Organization.id == organization_id)
-        ).first()
-
-    if organization is None:
-        organization = Organization(
-            id=organization_id,
-            slug=slug,
-            name=name,
-            description=description,
-            is_default=True,
-        )
-        session.add(organization)
-        return organization
-
-    updated = False
-    if organization.slug != slug:
-        organization.slug = slug
-        updated = True
-    if organization.name != name:
-        organization.name = name
-        updated = True
-    if organization.description != description:
-        organization.description = description
-        updated = True
-    if not organization.is_default:
-        organization.is_default = True
-        updated = True
-    if updated:
-        session.add(organization)
-    return organization
 
 
 def enable_rls(session) -> Dict:
