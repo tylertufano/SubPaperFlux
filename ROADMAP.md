@@ -215,7 +215,10 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 - [x] Roles & RBAC with per-resource ownership (UI-061) — see [RBAC enforcement flag rollout notes](docs/user-management-rollout.md#rbac-enforcement-flag)
 - [x] RBAC UI (UI-040)
-- [ ] OIDC group→role mapping with per-user overrides (UI-062)
+- [x] OIDC group→role mapping with per-user overrides (UI-062)
+  - Evidence (backend mapping & sync): `app/auth/mapping.py:1-71`, `app/auth/provisioning.py:55-140`
+  - Evidence (override storage & APIs): `app/auth/role_overrides.py:1-174`, `app/routers/admin_users_v1.py:54-353`
+  - Evidence (admin UI workflow): `web/pages/admin/users.tsx:1-210`, `web/pages/admin/users.tsx:839-1008`
 - [ ] Global Assets (copy to my workspace) (UI-041)
 - [ ] Org Views / user management (if not delegated to IdP) (UI-042)
 - [ ] RLS enforcement: enforce per-table policies and verify `app.user_id` propagation end-to-end (UI-012)
