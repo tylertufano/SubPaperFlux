@@ -289,6 +289,7 @@
   "credentials_create_success": "Credential created",
   "credentials_confirm_delete": "Delete credential?",
   "credentials_delete_success": "Credential deleted",
+  "credentials_delete_forbidden": "Credential not found or access denied",
   "credentials_load_failed": "Credential load failed: {reason}",
   "credentials_update_success": "Credential updated",
   "credentials_create_heading": "Create Credential",
