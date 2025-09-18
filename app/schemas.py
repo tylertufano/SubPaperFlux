@@ -290,6 +290,12 @@ class AdminRoleUpdate(BaseModel):
     description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
 
 
+class AdminUserRoleOverrides(BaseModel):
+    enabled: bool = False
+    preserve: List[str] = Field(default_factory=list)
+    suppress: List[str] = Field(default_factory=list)
+
+
 class AdminUserOut(BaseModel):
     id: str
     email: Optional[str] = None
@@ -306,6 +312,7 @@ class AdminUserOut(BaseModel):
     quota_site_configs: Optional[int] = Field(default=None, ge=0)
     quota_feeds: Optional[int] = Field(default=None, ge=0)
     quota_api_tokens: Optional[int] = Field(default=None, ge=0)
+    role_overrides: AdminUserRoleOverrides = Field(default_factory=AdminUserRoleOverrides)
 
 
 class AdminUsersPage(BaseModel):
@@ -324,6 +331,12 @@ class AdminUserUpdate(BaseModel):
     quota_site_configs: Optional[int] = Field(default=None, ge=0)
     quota_feeds: Optional[int] = Field(default=None, ge=0)
     quota_api_tokens: Optional[int] = Field(default=None, ge=0)
+
+
+class AdminUserRoleOverridesUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    preserve: Optional[List[str]] = None
+    suppress: Optional[List[str]] = None
 
 
 class ApiTokenCreate(BaseModel):

@@ -122,10 +122,12 @@ def sync_user_roles_from_identity(
     if overrides.preserve:
         protected_roles.update(overrides.preserve)
 
-    to_revoke_candidates = current_roles - desired
-    if protected_roles:
-        to_revoke_candidates -= protected_roles
-    to_revoke = sorted(role for role in to_revoke_candidates if role)
+    to_revoke: list[str] = []
+    if not overrides.enabled:
+        to_revoke_candidates = current_roles - desired
+        if protected_roles:
+            to_revoke_candidates -= protected_roles
+        to_revoke = sorted(role for role in to_revoke_candidates if role)
 
     for role_name in to_revoke:
         if revoke_role(session, user.id, role_name):

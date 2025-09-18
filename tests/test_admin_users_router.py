@@ -136,6 +136,11 @@ def test_admin_users_listing_and_role_management(admin_client):
     assert items["user-1"]["quota_site_configs"] is None
     assert items["user-1"]["quota_feeds"] is None
     assert items["user-1"]["quota_api_tokens"] is None
+    assert items["user-1"]["role_overrides"] == {
+        "enabled": False,
+        "preserve": [],
+        "suppress": [],
+    }
     assert items["user-2"]["roles"] == []
     assert items["user-2"]["groups"] == ["managers"]
     assert items["user-2"]["quota_credentials"] is None
@@ -176,6 +181,11 @@ def test_admin_users_listing_and_role_management(admin_client):
     detail_payload = resp_detail.json()
     assert "editor" not in detail_payload["roles"]
     assert detail_payload["quota_credentials"] is None
+    assert detail_payload["role_overrides"] == {
+        "enabled": False,
+        "preserve": [],
+        "suppress": [],
+    }
 
     # Role filter should now yield zero results for the revoked role
     resp_role_after = admin_client.get("/v1/admin/users", params={"role": "editor"})
@@ -189,6 +199,66 @@ def test_admin_users_listing_and_role_management(admin_client):
         actions = [entry.action for entry in audit]
         assert "grant" in actions
         assert "revoke" in actions
+
+
+def test_admin_users_role_override_management(admin_client):
+    from app.auth.role_overrides import ROLE_OVERRIDES_CLAIM
+    from app.db import get_session
+    from app.models import User
+
+    with next(get_session()) as session:
+        user = User(id="override-target", email="override@example.com")
+        session.add(user)
+        session.commit()
+
+    # Enable overrides with a preserve list
+    resp_patch = admin_client.patch(
+        "/v1/admin/users/override-target/role-overrides",
+        json={"enabled": True, "preserve": ["manual-role"]},
+    )
+    assert resp_patch.status_code == 200
+    payload = resp_patch.json()
+    assert payload["role_overrides"] == {
+        "enabled": True,
+        "preserve": ["manual-role"],
+        "suppress": [],
+    }
+
+    # Update overrides to add a suppressed role
+    resp_update = admin_client.patch(
+        "/v1/admin/users/override-target/role-overrides",
+        json={"suppress": ["auto-role"]},
+    )
+    assert resp_update.status_code == 200
+    updated_payload = resp_update.json()
+    assert updated_payload["role_overrides"] == {
+        "enabled": True,
+        "preserve": ["manual-role"],
+        "suppress": ["auto-role"],
+    }
+
+    with next(get_session()) as session:
+        stored = session.get(User, "override-target")
+        assert stored is not None
+        claim = stored.claims.get(ROLE_OVERRIDES_CLAIM, {})
+        assert claim.get("enabled") is True
+        assert claim.get("preserve") == ["manual-role"]
+        assert claim.get("suppress") == ["auto-role"]
+
+    # Clearing should remove the overrides
+    resp_clear = admin_client.delete("/v1/admin/users/override-target/role-overrides")
+    assert resp_clear.status_code == 200
+    cleared_payload = resp_clear.json()
+    assert cleared_payload["role_overrides"] == {
+        "enabled": False,
+        "preserve": [],
+        "suppress": [],
+    }
+
+    with next(get_session()) as session:
+        stored = session.get(User, "override-target")
+        assert stored is not None
+        assert ROLE_OVERRIDES_CLAIM not in stored.claims
 
 
 def test_admin_users_requires_admin_privileges():
