@@ -5,6 +5,7 @@ import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
+import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
 
 export type UiConfig = {
@@ -126,6 +127,17 @@ async function resolveApiBase(): Promise<string> {
   return config.apiBase
 }
 
+function resolveSessionToken(session: Session | null | undefined): string | undefined {
+  if (!session) return undefined
+  if (typeof session.idToken === 'string' && session.idToken.length > 0) {
+    return session.idToken
+  }
+  if (typeof session.accessToken === 'string' && session.accessToken.length > 0) {
+    return session.accessToken
+  }
+  return undefined
+}
+
 async function getClients() {
   if (!clientsPromise) {
     clientsPromise = (async () => {
@@ -172,7 +184,8 @@ async function getClients() {
         basePath,
         accessToken: async () => {
           const session = await getSession()
-          return (session?.accessToken as string) || ''
+          const token = resolveSessionToken(session)
+          return token ?? ''
         },
         headers: { 'X-CSRF-Token': CSRF },
         middleware: [retry],
@@ -194,6 +207,7 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
   const { errorMessage, expectJson, headers: overrideHeaders, ...rest } = options
   const basePath = await resolveApiBase()
   const session = await getSession()
+  const token = resolveSessionToken(session)
   const headers: Record<string, string> = {
     'X-CSRF-Token': CSRF,
   }
@@ -204,7 +218,6 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
       }
     }
   }
-  const token = session?.accessToken as string | undefined
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
