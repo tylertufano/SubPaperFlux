@@ -142,10 +142,10 @@ export default function Credentials() {
         }
         return current
       }, { revalidate: false })
-      setBanner({ kind: 'success', message: t('credentials_copy_success') })
+      setBanner({ kind: 'success', message: t('copy_to_workspace_success') })
     } catch (e: any) {
       const reason = e?.message || String(e)
-      setBanner({ kind: 'error', message: t('credentials_copy_error', { reason }) })
+      setBanner({ kind: 'error', message: t('copy_to_workspace_error', { reason }) })
     } finally {
       setCopyingId(null)
     }
@@ -461,7 +461,7 @@ export default function Credentials() {
                             aria-label={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
                             title={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
                           >
-                            {t('credentials_copy_button')}
+                            {t('copy_to_workspace')}
                           </button>
                         )}
                         {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
