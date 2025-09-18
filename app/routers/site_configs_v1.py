@@ -1,17 +1,29 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from bs4 import BeautifulSoup
 import httpx
 from sqlmodel import select
 
 from ..auth.oidc import get_current_user
+from ..auth import (
+    PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+    has_permission,
+)
+from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig
 from ..schemas import SiteConfigOut, SiteConfigsPage
 
 
 router = APIRouter(prefix="/v1/site-configs", tags=["v1"])
+
+
+def _ensure_permission(session, current_user, permission: str, *, owner_id: Optional[str] = None) -> bool:
+    allowed = has_permission(session, current_user, permission, owner_id=owner_id)
+    if is_user_mgmt_enforce_enabled() and not allowed:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return allowed
 
 
 @router.get("/", response_model=SiteConfigsPage, summary="List site configs")
@@ -26,6 +38,11 @@ def list_site_configs_v1(
     user_id = current_user["sub"]
     stmt = select(SiteConfig).where(SiteConfig.owner_user_id == user_id)
     if include_global:
+        _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+        )
         # naive union via two queries
         mine = session.exec(stmt).all()
         global_stmt = select(SiteConfig).where(SiteConfig.owner_user_id.is_(None))
@@ -64,6 +81,12 @@ def test_site_config(config_id: str, current_user=Depends(get_current_user), ses
     sc = session.get(SiteConfig, config_id)
     if not sc or sc.owner_user_id not in (current_user["sub"], None):
         return {"ok": False, "error": "not_found"}
+    if sc.owner_user_id is None:
+        _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+        )
     url = sc.site_url
     try:
         with httpx.Client(timeout=10.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:

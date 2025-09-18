@@ -189,6 +189,156 @@ def test_credentials_and_siteconfigs(client):
     assert {"id", "entity_type", "action", "created_at"}.issubset(first_entry.keys())
 
 
+def test_enforced_global_access_requires_permission(monkeypatch, client):
+    monkeypatch.setenv("USER_MGMT_ENFORCE", "1")
+    from app.config import is_user_mgmt_enforce_enabled
+
+    is_user_mgmt_enforce_enabled.cache_clear()
+    try:
+        cred_resp = client.post(
+            "/credentials",
+            json={
+                "kind": "site_login",
+                "description": "Global credential",
+                "data": {"username": "ga", "password": "gp"},
+                "owner_user_id": None,
+            },
+        )
+        assert cred_resp.status_code == 201
+        global_cred = cred_resp.json()
+
+        sc_resp = client.post(
+            "/site-configs",
+            json={
+                "name": "Global Config",
+                "site_url": "https://example.com/global",
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "button",
+                "cookies_to_store": ["sid"],
+            },
+        )
+        assert sc_resp.status_code == 201
+        global_sc = sc_resp.json()
+
+        from app.auth.oidc import get_current_user
+
+        original_override = client.app.dependency_overrides[get_current_user]
+        try:
+            client.app.dependency_overrides[get_current_user] = lambda: {"sub": "tenant", "groups": []}
+            r_creds = client.get("/v1/credentials")
+            assert r_creds.status_code == 403
+
+            r_site_configs = client.get("/v1/site-configs")
+            assert r_site_configs.status_code == 403
+
+            r_cred_detail = client.get(f"/credentials/{global_cred['id']}")
+            assert r_cred_detail.status_code == 403
+
+            r_sc_detail = client.get(f"/site-configs/{global_sc['id']}")
+            assert r_sc_detail.status_code == 403
+        finally:
+            client.app.dependency_overrides[get_current_user] = original_override
+    finally:
+        is_user_mgmt_enforce_enabled.cache_clear()
+
+
+def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
+    monkeypatch.setenv("USER_MGMT_ENFORCE", "1")
+    from app.config import is_user_mgmt_enforce_enabled
+
+    is_user_mgmt_enforce_enabled.cache_clear()
+    try:
+        cred_resp = client.post(
+            "/credentials",
+            json={
+                "kind": "site_login",
+                "description": "Owned credential",
+                "data": {"username": "owner", "password": "secret"},
+                "owner_user_id": "u1",
+            },
+        )
+        assert cred_resp.status_code == 201
+        owned_cred = cred_resp.json()
+
+        sc_resp = client.post(
+            "/site-configs",
+            json={
+                "name": "Owned Config",
+                "site_url": "https://example.com/owned",
+                "username_selector": "#u",
+                "password_selector": "#p",
+                "login_button_selector": "button",
+                "cookies_to_store": ["sid"],
+                "owner_user_id": "u1",
+            },
+        )
+        assert sc_resp.status_code == 201
+        owned_sc = sc_resp.json()
+
+        from app.auth.oidc import get_current_user
+
+        original_override = client.app.dependency_overrides[get_current_user]
+        try:
+            client.app.dependency_overrides[get_current_user] = lambda: {"sub": "tenant", "groups": []}
+            cred_update_payload = {
+                "id": owned_cred["id"],
+                "kind": owned_cred["kind"],
+                "description": "Unauthorized update",
+                "data": {"note": "denied"},
+            }
+            r_cred_update = client.put(f"/credentials/{owned_cred['id']}", json=cred_update_payload)
+            assert r_cred_update.status_code == 403
+
+            sc_update_payload = dict(owned_sc)
+            sc_update_payload["name"] = "Unauthorized"
+            r_sc_update = client.put(f"/site-configs/{owned_sc['id']}", json=sc_update_payload)
+            assert r_sc_update.status_code == 403
+        finally:
+            client.app.dependency_overrides[get_current_user] = original_override
+
+        other_cred_resp = client.post(
+            "/credentials",
+            json={
+                "kind": "site_login",
+                "description": "Tenant credential",
+                "data": {"username": "tenant", "password": "pw"},
+                "owner_user_id": "tenant",
+            },
+        )
+        assert other_cred_resp.status_code == 201
+        tenant_cred = other_cred_resp.json()
+        cred_update_payload = {
+            "id": tenant_cred["id"],
+            "kind": tenant_cred["kind"],
+            "description": "Admin update",
+            "data": {"note": "admin"},
+        }
+        r_admin_cred_update = client.put(f"/credentials/{tenant_cred['id']}", json=cred_update_payload)
+        assert r_admin_cred_update.status_code == 200
+
+        tenant_sc_resp = client.post(
+            "/site-configs",
+            json={
+                "name": "Tenant Config",
+                "site_url": "https://example.com/tenant",
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "button",
+                "cookies_to_store": ["sid"],
+                "owner_user_id": "tenant",
+            },
+        )
+        assert tenant_sc_resp.status_code == 201
+        tenant_sc = tenant_sc_resp.json()
+        sc_update_payload = dict(tenant_sc)
+        sc_update_payload["name"] = "Admin updated"
+        r_admin_sc_update = client.put(f"/site-configs/{tenant_sc['id']}", json=sc_update_payload)
+        assert r_admin_sc_update.status_code == 200
+    finally:
+        is_user_mgmt_enforce_enabled.cache_clear()
+
+
 def test_instapaper_login_success(monkeypatch, client):
     from app.db import get_session
     from app.models import AuditLog, Credential
