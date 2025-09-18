@@ -58,6 +58,22 @@ Each flag can be enabled independently per environment. Turning a flag off shoul
 3. Stage production rollout by enabling enforcement for internal staff first, then gradually for all tenants.
 4. Instrument alerts for permission denials so we can identify missing allow-list entries or misconfigured roles quickly.
 
+### RBAC enforcement flag
+
+`USER_MGMT_ENFORCE` is the process environment variable that controls the Phase C feature flag. The flag defaults to **off** when the variable is unset or contains any value other than `1`, `true`, `yes`, or `on`. When disabled, permission checks still run but API handlers fall back to permissive behavior—for example, global collections that require an admin role simply remain hidden instead of raising a `403`. Setting the variable to one of the truthy values switches the platform into enforcement mode so that every call to `has_permission`/`require_permission` will block unauthorized access with an HTTP 403 and surface audit events for denied actions.
+
+The flag is evaluated lazily and cached via `app.config.is_user_mgmt_enforce_enabled()`, so remember to restart application processes after toggling it in long-running environments.
+
+### Role to permission matrix
+
+The default permission assignments live in [`app/auth/permissions.py`](../app/auth/permissions.py) and can be expanded without modifying callers. The matrix currently includes:
+
+| Role | Permissions | Notes |
+| --- | --- | --- |
+| `admin` (`ADMIN_ROLE_NAME`) | `site_configs:read`, `site_configs:manage`, `credentials:read`, `credentials:manage`, `bookmarks:read`, `bookmarks:manage` | Grants every permission enumerated in `ALL_PERMISSIONS` and therefore full access to global resources. |
+
+All other roles start with no elevated grants. The `has_permission` helper automatically allows users to manage resources they own (matching `owner_id`) even without explicit roles. To introduce a new role, add an entry to `ROLE_PERMISSIONS` that maps the role name to the set of permission constants to keep enforcement logic centralized.
+
 **Rollback plan:** Disable `user_mgmt_enforce` to return to permissive access while keeping the data model and UI from earlier phases available.
 
 ## Post-Rollout Tasks
