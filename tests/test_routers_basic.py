@@ -112,14 +112,14 @@ def test_credentials_and_siteconfigs(client):
     assert global_cred["owner_user_id"] is None
     assert global_cred["description"] == "Global credential"
 
-    # Regular users should receive 404 when trying to delete a global credential
+    # Regular users should receive 403 when trying to delete a global credential
     from app.auth.oidc import get_current_user
 
     original_override = client.app.dependency_overrides[get_current_user]
     try:
         client.app.dependency_overrides[get_current_user] = lambda: {"sub": "u2", "groups": []}
         r_forbidden_delete = client.delete(f"/credentials/{global_cred['id']}")
-        assert r_forbidden_delete.status_code == 404
+        assert r_forbidden_delete.status_code == 403
     finally:
         client.app.dependency_overrides[get_current_user] = original_override
 
@@ -288,7 +288,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
                 "data": {"note": "denied"},
             }
             r_cred_update = client.put(f"/credentials/{owned_cred['id']}", json=cred_update_payload)
-            assert r_cred_update.status_code == 403
+            assert r_cred_update.status_code == 404
 
             sc_update_payload = dict(owned_sc)
             sc_update_payload["name"] = "Unauthorized"
