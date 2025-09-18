@@ -13,6 +13,7 @@ const breadcrumbKeyMap: Record<string, string> = {
   '/site-configs': 'site_configs_title',
   '/admin': 'nav_admin',
   '/admin/users': 'nav_users',
+  '/admin/roles': 'nav_roles',
   '/admin/audit': 'nav_audit',
   '/me': 'nav_profile',
   '/me/tokens': 'nav_tokens',
