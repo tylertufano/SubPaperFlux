@@ -58,7 +58,11 @@ export default function Credentials() {
       setBanner({ kind: 'success', message: t('credentials_delete_success') })
       mutate()
     } catch (e: any) {
-      setBanner({ kind: 'error', message: e.message || String(e) })
+      if (e?.response?.status === 404) {
+        setBanner({ kind: 'error', message: t('credentials_delete_forbidden') })
+      } else {
+        setBanner({ kind: 'error', message: e.message || String(e) })
+      }
     }
   }
 

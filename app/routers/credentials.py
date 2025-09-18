@@ -100,8 +100,13 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
 @router.delete("/{cred_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
 def delete_credential(cred_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
     model = session.get(CredentialModel, cred_id)
-    if not model or model.owner_user_id != current_user["sub"]:
-        return None
+    if not model:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    is_owner = model.owner_user_id == current_user["sub"]
+    can_delete_global = model.owner_user_id is None and can_manage_global_credentials(current_user)
+    if not (is_owner or can_delete_global):
+        raise HTTPException(status_code=404, detail="Not found")
     record_audit_log(
         session,
         entity_type="credential",

@@ -57,6 +57,36 @@ def test_credentials_and_siteconfigs(client):
     assert r2_after.status_code == 200
     assert r2_after.json()["total"] == 0
 
+    # Create a global credential as admin
+    r_global_create = client.post(
+        "/credentials",
+        json={"kind": "site_login", "data": {"username": "ga", "password": "gp"}, "owner_user_id": None},
+    )
+    assert r_global_create.status_code == 201
+    global_cred = r_global_create.json()
+    assert global_cred["owner_user_id"] is None
+
+    # Regular users should receive 404 when trying to delete a global credential
+    from app.auth.oidc import get_current_user
+
+    original_override = client.app.dependency_overrides[get_current_user]
+    try:
+        client.app.dependency_overrides[get_current_user] = lambda: {"sub": "u2", "groups": []}
+        r_forbidden_delete = client.delete(f"/credentials/{global_cred['id']}")
+        assert r_forbidden_delete.status_code == 404
+    finally:
+        client.app.dependency_overrides[get_current_user] = original_override
+
+    # Ensure the credential still exists and admin can delete it
+    r_global_detail = client.get(f"/credentials/{global_cred['id']}")
+    assert r_global_detail.status_code == 200
+
+    r_global_delete = client.delete(f"/credentials/{global_cred['id']}")
+    assert r_global_delete.status_code == 204
+
+    r_global_missing = client.get(f"/credentials/{global_cred['id']}")
+    assert r_global_missing.status_code == 404
+
     # Create a site config
     payload = {
         "name": "Demo",
@@ -97,7 +127,7 @@ def test_credentials_and_siteconfigs(client):
             select(AuditLog).where(AuditLog.entity_type == "credential").order_by(AuditLog.created_at)
         ).all()
         actions = [log.action for log in cred_logs]
-        assert actions == ["create", "update", "delete"]
+        assert actions == ["create", "update", "delete", "create", "delete"]
         setting_logs = session.exec(
             select(AuditLog).where(AuditLog.entity_type == "setting").order_by(AuditLog.created_at)
         ).all()
