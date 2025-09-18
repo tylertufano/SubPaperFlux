@@ -1,4 +1,8 @@
-"""Application-level helpers for managing RBAC roles and assignments."""
+"""Application-level helpers for managing RBAC roles, assignments, and permissions.
+
+The :mod:`app.auth.permissions` module contains the default permission constants
+and helpers that complement the role utilities provided here.
+"""
 
 from __future__ import annotations
 
@@ -17,13 +21,21 @@ ADMIN_ROLE_DESCRIPTION = (
 __all__ = [
     "ADMIN_ROLE_NAME",
     "ADMIN_ROLE_DESCRIPTION",
+    "ALL_PERMISSIONS",
     "ensure_role",
     "ensure_admin_role",
     "get_role_by_name",
     "get_user_roles",
     "grant_role",
     "grant_roles",
+    "PERMISSION_MANAGE_BOOKMARKS",
+    "PERMISSION_MANAGE_GLOBAL_CREDENTIALS",
+    "PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS",
+    "PERMISSION_READ_BOOKMARKS",
+    "PERMISSION_READ_GLOBAL_CREDENTIALS",
+    "PERMISSION_READ_GLOBAL_SITE_CONFIGS",
     "revoke_role",
+    "ROLE_PERMISSIONS",
     "user_has_role",
     "has_permission",
     "require_permission",
@@ -217,4 +229,15 @@ def user_has_role(session: Session, user_id: str, role_name: str) -> bool:
     return session.exec(stmt).first() is not None
 
 
-from .permissions import has_permission, require_permission
+from .permissions import (
+    ALL_PERMISSIONS,
+    PERMISSION_MANAGE_BOOKMARKS,
+    PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+    PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
+    PERMISSION_READ_BOOKMARKS,
+    PERMISSION_READ_GLOBAL_CREDENTIALS,
+    PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+    ROLE_PERMISSIONS,
+    has_permission,
+    require_permission,
+)
