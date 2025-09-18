@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { useI18n } from '../lib/i18n'
+import { useFeatureFlags } from '../lib/featureFlags'
 import React from 'react'
 import DropdownMenu from './DropdownMenu'
 
@@ -180,9 +181,22 @@ export default function Nav() {
   const { data: session, status } = useSession()
   const { t, locale, setLocale, locales } = useI18n()
   const { pathname } = useRouter()
+  const { userMgmtCore, userMgmtUi } = useFeatureFlags()
   const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
     `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
+  const accountItems = [
+    { href: '/me', label: t('nav_profile') },
+    { href: '/me/tokens', label: t('nav_tokens') },
+    ...(userMgmtCore && userMgmtUi
+      ? [
+          { href: '/admin/users', label: t('nav_users') },
+          { href: '/admin/audit', label: t('nav_audit') },
+        ]
+      : []),
+    { href: '/admin', label: t('nav_admin') },
+    { label: t('btn_sign_out'), onClick: () => signOut() },
+  ]
   return (
     <nav className="bg-white border-b border-gray-200" role="navigation" aria-label={t('nav_main_label')}>
       <div className="container py-3 flex items-center gap-4">
@@ -244,14 +258,7 @@ export default function Nav() {
               label={session?.user?.name ? String(session.user.name) : t('nav_account_fallback')}
               baseHref={pathname}
               currentPath={pathname}
-              items={[
-                { href: '/me', label: t('nav_profile') },
-                { href: '/me/tokens', label: t('nav_tokens') },
-                { href: '/admin/users', label: t('nav_users') },
-                { href: '/admin/audit', label: t('nav_audit') },
-                { href: '/admin', label: t('nav_admin') },
-                { label: t('btn_sign_out'), onClick: () => signOut() },
-              ]}
+              items={accountItems}
             />
           ) : (
             <DropdownMenu

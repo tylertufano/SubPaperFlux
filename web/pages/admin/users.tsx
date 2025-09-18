@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../components'
 import { useI18n } from '../../lib/i18n'
+import { useFeatureFlags } from '../../lib/featureFlags'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
 import { v1, type AdminUser, type AdminUsersPage } from '../../lib/openapi'
 import { buildBreadcrumbs } from '../../lib/breadcrumbs'
@@ -12,6 +13,15 @@ type FilterState = {
   status: 'all' | 'active' | 'inactive'
   role: string
 }
+
+type UsersKey = [
+  '/v1/admin/users',
+  number,
+  number,
+  string,
+  FilterState['status'],
+  string,
+]
 
 const quotaFields = ['quota_credentials', 'quota_site_configs', 'quota_feeds', 'quota_api_tokens'] as const
 type QuotaField = (typeof quotaFields)[number]
@@ -58,6 +68,8 @@ function statusBadge(user: AdminUser, t: ReturnType<typeof useI18n>['t']): { lab
 
 export default function AdminUsers() {
   const { t } = useI18n()
+  const { userMgmtCore, userMgmtUi, isLoaded: flagsLoaded } = useFeatureFlags()
+  const userMgmtEnabled = userMgmtCore && userMgmtUi
   const router = useRouter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
@@ -106,28 +118,26 @@ export default function AdminUsers() {
     setQuotaForm(createQuotaFormState(selected))
   }, [selected])
 
-  const swrKey = useMemo(
+  const { search: filterSearch, status: filterStatus, role: filterRole } = filters
+  const canFetch = flagsLoaded && userMgmtEnabled
+
+  const swrKey = useMemo<UsersKey | null>(
     () =>
-      [
-        '/v1/admin/users',
-        page,
-        size,
-        filters.search,
-        filters.status,
-        filters.role,
-      ] as const,
-    [page, size, filters],
+      canFetch
+        ? ['/v1/admin/users', page, size, filterSearch, filterStatus, filterRole]
+        : null,
+    [canFetch, page, size, filterSearch, filterStatus, filterRole],
   )
 
-  const { data, error, isLoading, mutate } = useSWR<AdminUsersPage, Error, typeof swrKey>(
+  const { data, error, isLoading, mutate } = useSWR<AdminUsersPage, Error, UsersKey | null>(
     swrKey,
-    ([, currentPage, pageSize, search, status, role]) =>
+    ([, currentPage, pageSize, search, statusValue, role]) =>
       v1.listAdminUsersV1AdminUsersGet({
         page: currentPage,
         size: pageSize,
         search: search ? search.trim() : undefined,
         role: role ? role.trim() : undefined,
-        isActive: status === 'all' ? undefined : status === 'active',
+        isActive: statusValue === 'all' ? undefined : statusValue === 'active',
       }),
   )
 
@@ -253,6 +263,40 @@ export default function AdminUsers() {
 
   const handleQuotaReset = () => {
     setQuotaForm(createQuotaFormState(selected))
+  }
+
+  if (!flagsLoaded) {
+    return (
+      <ErrorBoundary>
+        <div>
+          <Nav />
+          <Breadcrumbs items={breadcrumbs} />
+          <main className="container py-6">
+            <h2 id="admin-users-heading" className="text-xl font-semibold mb-1">
+              {t('nav_users')}
+            </h2>
+            <p className="text-gray-600 mb-4">{t('loading_text')}</p>
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
+  if (!userMgmtEnabled) {
+    return (
+      <ErrorBoundary>
+        <div>
+          <Nav />
+          <Breadcrumbs items={breadcrumbs} />
+          <main className="container py-6">
+            <h2 id="admin-users-heading" className="text-xl font-semibold mb-4">
+              {t('nav_users')}
+            </h2>
+            <Alert kind="info" message={t('admin_users_disabled_message')} />
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
   }
 
   return (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../components'
 import { useI18n } from '../../lib/i18n'
+import { useFeatureFlags } from '../../lib/featureFlags'
 import { v1, type AuditLogEntry, type AuditLogsPage } from '../../lib/openapi'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
 import { buildBreadcrumbs } from '../../lib/breadcrumbs'
@@ -16,6 +17,19 @@ type FilterState = {
   since: string
   until: string
 }
+
+type AuditKey = [
+  '/v1/admin/audit',
+  number,
+  number,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+  string,
+]
 
 function createEmptyFilters(): FilterState {
   return {
@@ -37,6 +51,8 @@ function toIsoString(input: string): string | undefined {
 
 export default function AdminAudit() {
   const { t } = useI18n()
+  const { userMgmtCore, userMgmtUi, isLoaded: flagsLoaded } = useFeatureFlags()
+  const auditEnabled = userMgmtCore && userMgmtUi
   const router = useRouter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
@@ -70,24 +86,48 @@ export default function AdminAudit() {
     setSelected(null)
   }, [page, filters])
 
-  const swrKey = useMemo(
+  const {
+    entityType: filterEntityType,
+    entityId: filterEntityId,
+    action: filterAction,
+    ownerUserId: filterOwnerUserId,
+    actorUserId: filterActorUserId,
+    since: filterSince,
+    until: filterUntil,
+  } = filters
+  const canFetch = flagsLoaded && auditEnabled
+
+  const swrKey = useMemo<AuditKey | null>(
     () =>
-      [
-        '/v1/admin/audit',
-        page,
-        size,
-        filters.entityType,
-        filters.entityId,
-        filters.action,
-        filters.ownerUserId,
-        filters.actorUserId,
-        filters.since,
-        filters.until,
-      ] as const,
-    [page, size, filters],
+      canFetch
+        ? [
+            '/v1/admin/audit',
+            page,
+            size,
+            filterEntityType,
+            filterEntityId,
+            filterAction,
+            filterOwnerUserId,
+            filterActorUserId,
+            filterSince,
+            filterUntil,
+          ]
+        : null,
+    [
+      canFetch,
+      page,
+      size,
+      filterEntityType,
+      filterEntityId,
+      filterAction,
+      filterOwnerUserId,
+      filterActorUserId,
+      filterSince,
+      filterUntil,
+    ],
   )
 
-  const { data, error, isLoading } = useSWR<AuditLogsPage, Error, typeof swrKey>(
+  const { data, error, isLoading } = useSWR<AuditLogsPage, Error, AuditKey | null>(
     swrKey,
     ([
       ,
@@ -139,6 +179,40 @@ export default function AdminAudit() {
   const totalPages = data ? data.total_pages ?? Math.max(1, Math.ceil(data.total / Math.max(1, data.size))) : 1
   const hasPrev = Boolean(data && data.page > 1)
   const hasNext = Boolean(data && (data.has_next ?? data.page < totalPages))
+
+  if (!flagsLoaded) {
+    return (
+      <ErrorBoundary>
+        <div>
+          <Nav />
+          <Breadcrumbs items={breadcrumbs} />
+          <main className="container py-6">
+            <h2 id="audit-heading" className="text-xl font-semibold mb-1">
+              {t('nav_audit')}
+            </h2>
+            <p className="text-gray-600 mb-4">{t('loading_text')}</p>
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
+  if (!auditEnabled) {
+    return (
+      <ErrorBoundary>
+        <div>
+          <Nav />
+          <Breadcrumbs items={breadcrumbs} />
+          <main className="container py-6">
+            <h2 id="audit-heading" className="text-xl font-semibold mb-4">
+              {t('nav_audit')}
+            </h2>
+            <Alert kind="info" message={t('admin_audit_disabled_message')} />
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
+  }
 
   return (
     <ErrorBoundary>
