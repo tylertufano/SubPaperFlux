@@ -11,6 +11,7 @@ const openApiSpies = vi.hoisted(() => ({
   deleteSiteConfig: vi.fn(),
   testSiteConfig: vi.fn(),
   updateSiteConfig: vi.fn(),
+  copySiteConfigToUser: vi.fn(),
 }))
 
 vi.mock('next/router', () => ({
@@ -50,6 +51,7 @@ vi.mock('../lib/openapi', () => ({
     createSiteConfigSiteConfigsPost: openApiSpies.createSiteConfig,
     deleteSiteConfigSiteConfigsConfigIdDelete: openApiSpies.deleteSiteConfig,
     updateSiteConfigSiteConfigsConfigIdPut: openApiSpies.updateSiteConfig,
+    copySiteConfigToUser: openApiSpies.copySiteConfigToUser,
   },
 }))
 
@@ -58,6 +60,7 @@ export const createSiteConfigMock = openApiSpies.createSiteConfig
 export const deleteSiteConfigMock = openApiSpies.deleteSiteConfig
 export const testSiteConfigMock = openApiSpies.testSiteConfig
 export const updateSiteConfigMock = openApiSpies.updateSiteConfig
+export const copySiteConfigToUserMock = openApiSpies.copySiteConfigToUser
 
 export const defaultSiteConfigsResponse = {
   items: [
@@ -105,10 +108,29 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
   Object.values(openApiSpies).forEach((spy) => spy.mockReset())
   openApiSpies.listSiteConfigs.mockResolvedValue(data)
 
-  const mutate = vi.fn()
+  let currentData: typeof data = data
+
+  const mutate = vi.fn(async (updater?: any) => {
+    let resolved = currentData
+    if (typeof updater === 'function') {
+      resolved = updater(currentData)
+    } else if (updater !== undefined) {
+      resolved = updater
+    }
+
+    if (resolved instanceof Promise) {
+      resolved = await resolved
+    }
+
+    if (resolved !== undefined) {
+      currentData = resolved
+    }
+
+    return currentData
+  })
   const baseHandler = {
     matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/site-configs',
-    value: makeSWRSuccess(data, { mutate }),
+    value: () => makeSWRSuccess(currentData, { mutate }),
   }
   const handlers = [baseHandler, ...(swr?.handlers ?? [])]
   const swrConfig: RenderWithSWROptions['swr'] = {
@@ -310,6 +332,95 @@ describe('site configs creation success path', () => {
       const secondSuccess = await screen.findByText('Site config created')
       expect(secondSuccess.closest('[role="status"]')).toBeInTheDocument()
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
+    } finally {
+      unmount()
+    }
+  })
+})
+
+describe('site configs copy to user scope', () => {
+  function buildConfig(overrides: Record<string, any> = {}) {
+    return {
+      id: 'config-global',
+      name: 'Global Workspace Config',
+      site_url: 'https://global.example/login',
+      username_selector: '#user',
+      password_selector: '#pass',
+      login_button_selector: 'button[type="submit"]',
+      cookies_to_store: ['session'],
+      owner_user_id: null,
+      ...overrides,
+    }
+  }
+
+  it('renders copy controls for global rows and updates the table after copying', async () => {
+    const globalConfig = buildConfig()
+    const userConfig = buildConfig({
+      id: 'config-user-owned',
+      name: 'Already User Owned',
+      site_url: 'https://owned.example/login',
+      owner_user_id: 'user-123',
+    })
+    const copiedConfig = buildConfig({
+      id: 'config-copied',
+      name: 'Global Workspace Config (personal)',
+      owner_user_id: 'user-123',
+      cookies_to_store: ['session', 'remember'],
+    })
+
+    const { mutate, unmount } = await setup({
+      data: {
+        items: [globalConfig, userConfig],
+      },
+    })
+
+    copySiteConfigToUserMock.mockResolvedValueOnce(copiedConfig)
+
+    try {
+      const globalRow = (await screen.findByText(globalConfig.name)).closest('tr') as HTMLElement
+      const userRow = (await screen.findByText(userConfig.name)).closest('tr') as HTMLElement
+
+      expect(within(globalRow).getByRole('button', { name: 'Copy to my workspace' })).toBeInTheDocument()
+      expect(within(userRow).queryByRole('button', { name: 'Copy to my workspace' })).not.toBeInTheDocument()
+
+      fireEvent.click(within(globalRow).getByRole('button', { name: 'Copy to my workspace' }))
+
+      await waitFor(() => expect(copySiteConfigToUserMock).toHaveBeenCalledTimes(1))
+      expect(copySiteConfigToUserMock).toHaveBeenLastCalledWith({ configId: globalConfig.id })
+
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+      const mutateCall = mutate.mock.calls[0]
+      expect(typeof mutateCall[0]).toBe('function')
+      expect(mutateCall[1]).toEqual({ revalidate: false })
+
+      const copiedRow = (await screen.findByText(copiedConfig.name)).closest('tr') as HTMLElement
+      expect(within(copiedRow).getByText('User')).toBeInTheDocument()
+    } finally {
+      unmount()
+    }
+  })
+
+  it('surfaces helper failures with the translated error banner', async () => {
+    const globalConfig = buildConfig({ id: 'config-error' })
+    const { mutate, withinBanner, unmount } = await setup({
+      data: {
+        items: [globalConfig],
+      },
+    })
+
+    copySiteConfigToUserMock.mockRejectedValueOnce(new Error('Copy failed'))
+
+    try {
+      const button = await screen.findByRole('button', { name: 'Copy to my workspace' })
+      fireEvent.click(button)
+
+      await waitFor(() => expect(copySiteConfigToUserMock).toHaveBeenCalledTimes(1))
+
+      const banner = await screen.findByRole('alert')
+      expect(banner).toBeInTheDocument()
+      const bannerUtils = withinBanner()
+      expect(bannerUtils?.getByText("Couldn't copy to workspace: Copy failed")).toBeInTheDocument()
+      expect(mutate).not.toHaveBeenCalled()
     } finally {
       unmount()
     }
