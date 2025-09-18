@@ -61,13 +61,21 @@ def test_credential_quota_enforced(quota_client):
 
     resp_ok = quota_client.post(
         "/credentials",
-        json={"kind": "instapaper", "data": {"oauth_token": "one"}},
+        json={
+            "kind": "instapaper",
+            "description": "First credential",
+            "data": {"oauth_token": "one"},
+        },
     )
     assert resp_ok.status_code == 201
 
     resp_blocked = quota_client.post(
         "/credentials",
-        json={"kind": "instapaper", "data": {"oauth_token": "two"}},
+        json={
+            "kind": "instapaper",
+            "description": "Second credential",
+            "data": {"oauth_token": "two"},
+        },
     )
     assert resp_blocked.status_code == 403
     assert resp_blocked.status_code == 403

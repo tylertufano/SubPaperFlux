@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,69 +21,71 @@ import { mapValues } from '../runtime';
 export interface ApiTokenOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    scopes?: Array<string>;
+    scopes?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    lastUsedAt?: Date | null;
+    lastUsedAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    expiresAt?: Date | null;
+    expiresAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    revokedAt?: Date | null;
+    revokedAt?: any | null;
 }
 
 /**
  * Check if a given object implements the ApiTokenOut interface.
  */
-export function instanceOfApiTokenOut(value: object): value is ApiTokenOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
-    return true;
+export function instanceOfApiTokenOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+
+    return isInstance;
 }
 
 export function ApiTokenOutFromJSON(json: any): ApiTokenOut {
@@ -91,43 +93,41 @@ export function ApiTokenOutFromJSON(json: any): ApiTokenOut {
 }
 
 export function ApiTokenOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'scopes': json['scopes'] == null ? undefined : json['scopes'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'lastUsedAt': json['last_used_at'] == null ? undefined : (new Date(json['last_used_at'])),
-        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
-        'revokedAt': json['revoked_at'] == null ? undefined : (new Date(json['revoked_at'])),
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'scopes': !exists(json, 'scopes') ? undefined : json['scopes'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'lastUsedAt': !exists(json, 'last_used_at') ? undefined : json['last_used_at'],
+        'expiresAt': !exists(json, 'expires_at') ? undefined : json['expires_at'],
+        'revokedAt': !exists(json, 'revoked_at') ? undefined : json['revoked_at'],
     };
 }
 
-export function ApiTokenOutToJSON(json: any): ApiTokenOut {
-    return ApiTokenOutToJSONTyped(json, false);
-}
-
-export function ApiTokenOutToJSONTyped(value?: ApiTokenOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function ApiTokenOutToJSON(value?: ApiTokenOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'scopes': value['scopes'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'last_used_at': value['lastUsedAt'] === null ? null : ((value['lastUsedAt'] as any)?.toISOString()),
-        'expires_at': value['expiresAt'] === null ? null : ((value['expiresAt'] as any)?.toISOString()),
-        'revoked_at': value['revokedAt'] === null ? null : ((value['revokedAt'] as any)?.toISOString()),
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'scopes': value.scopes,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'last_used_at': value.lastUsedAt,
+        'expires_at': value.expiresAt,
+        'revoked_at': value.revokedAt,
     };
 }
 

@@ -13,14 +13,18 @@ export default function Credentials() {
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
   const [kind, setKind] = useState('site_login')
+  const [description, setDescription] = useState('')
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editing, setEditing] = useState<{ id: string; kind: string; json: string } | null>(null)
+  const [editDescription, setEditDescription] = useState('')
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
   const [editErrors, setEditErrors] = useState<Record<string, string>>({})
   const createObj = (() => { try { return JSON.parse(jsonData || '{}') } catch { return {} } })() as any
   const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
+  const hasDescription = description.trim().length > 0
+  const hasEditDescription = editDescription.trim().length > 0
 
   async function testCred(c: any) {
     try {
@@ -41,9 +45,25 @@ export default function Credentials() {
     if (!parsed.ok) { setBanner({ kind: 'error', message: parsed.error }); return }
     const err = validateCredential(kind, parsed.data)
     if (err) { setBanner({ kind: 'error', message: err }); return }
+    const trimmedDescription = description.trim()
+    if (!trimmedDescription) {
+      const message = t('credentials_error_description_required')
+      setCreateErrors((prev) => ({ ...prev, description: message }))
+      setBanner({ kind: 'error', message })
+      return
+    }
     try {
-      await creds.createCredentialCredentialsPost({ credential: { kind, data: parsed.data, ownerUserId: scopeGlobal ? null : undefined } })
+      await creds.createCredentialCredentialsPost({
+        credential: {
+          kind,
+          description: trimmedDescription,
+          data: parsed.data,
+          ownerUserId: scopeGlobal ? null : undefined,
+        },
+      })
       setJsonData('')
+      setDescription('')
+      setCreateErrors({})
       setBanner({ kind: 'success', message: t('credentials_create_success') })
       mutate()
     } catch (e: any) {
@@ -71,6 +91,8 @@ export default function Credentials() {
       const full = await creds.getCredentialCredentialsCredIdGet({ credId: id })
       const body = full?.data ?? {}
       setEditing({ id, kind, json: JSON.stringify(body, null, 2) })
+      setEditDescription((full?.description ?? '').toString())
+      setEditErrors({})
     } catch (e: any) {
       setBanner({ kind: 'error', message: t('credentials_load_failed', { reason: e?.message || String(e) }) })
     }
@@ -90,9 +112,20 @@ export default function Credentials() {
       }
       (data as any)[k] = v as any
     }
+    const trimmedDescription = editDescription.trim()
+    if (!trimmedDescription) {
+      const message = t('credentials_error_description_required')
+      setEditErrors((prev) => ({ ...prev, description: message }))
+      setBanner({ kind: 'error', message })
+      return
+    }
     try {
-      await creds.updateCredentialCredentialsCredIdPut({ credId: editing.id, credential: { kind: editing.kind, data } })
+      await creds.updateCredentialCredentialsCredIdPut({
+        credId: editing.id,
+        credential: { kind: editing.kind, description: trimmedDescription, data },
+      })
       setEditing(null)
+      setEditDescription('')
       setBanner({ kind: 'success', message: t('credentials_update_success') })
       mutate()
     } catch (e: any) {
@@ -119,6 +152,30 @@ export default function Credentials() {
             onSubmit={(e) => { e.preventDefault(); createCred() }}
           >
             <h3 id="create-credential-heading" className="font-semibold">{t('credentials_create_heading')}</h3>
+            <div>
+              <input
+                id="create-credential-description"
+                className="input"
+                placeholder={t('credentials_field_description_placeholder')}
+                aria-label={t('credentials_field_description_placeholder')}
+                aria-invalid={Boolean(createErrors.description)}
+                aria-describedby={createErrors.description ? 'create-credential-description-error' : undefined}
+                value={description}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setDescription(v)
+                  setCreateErrors((prev) => ({
+                    ...prev,
+                    description: v.trim() ? '' : t('credentials_error_description_required'),
+                  }))
+                }}
+              />
+              {createErrors.description && (
+                <div id="create-credential-description-error" className="text-sm text-red-600">
+                  {createErrors.description}
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2 flex-wrap">
               <label htmlFor="credential-kind-select">{t('credentials_kind_label')} <span className="ml-1 text-gray-500 cursor-help" title={t('credentials_kind_help')}>?</span>:</label>
               <select id="credential-kind-select" className="input" value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -256,10 +313,13 @@ export default function Credentials() {
                 className="btn"
                 disabled={
                   !(
-                    (kind === 'site_login' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
-                    (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
-                    (kind === 'instapaper' && !!(createObj.oauth_token?.trim() && createObj.oauth_token_secret?.trim())) ||
-                    (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
+                    hasDescription &&
+                    (
+                      (kind === 'site_login' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
+                      (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
+                      (kind === 'instapaper' && !!(createObj.oauth_token?.trim() && createObj.oauth_token_secret?.trim())) ||
+                      (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
+                    )
                   )
                 }
                 title={t('form_fill_required')}
@@ -286,6 +346,7 @@ export default function Credentials() {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th" scope="col">{t('id_label')}</th>
+                  <th className="th" scope="col">{t('description_label')}</th>
                   <th className="th" scope="col">{t('kind_label')}</th>
                   <th className="th" scope="col">{t('scope_label')}</th>
                   <th className="th" scope="col">{t('actions_label')}</th>
@@ -295,8 +356,9 @@ export default function Credentials() {
                 {(data.items ?? data).map((c: any) => (
                   <tr key={c.id} className="odd:bg-white even:bg-gray-50">
                     <td className="td">{c.id}</td>
+                    <td className="td">{c.description}</td>
                     <td className="td">{c.kind}</td>
-                  <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
+                    <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                     <td className="td flex gap-2">
                       {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                         <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
@@ -314,6 +376,30 @@ export default function Credentials() {
             <div className="card p-4 mt-3" role="form" aria-labelledby="edit-credential-heading">
               <h3 id="edit-credential-heading" className="font-semibold mb-2">{t('credentials_edit_heading', { id: editing.id })}</h3>
               <div className="mb-2 text-sm text-gray-700">{t('credentials_kind_display', { kind: editing.kind })}</div>
+              <div className="mb-2">
+                <input
+                  id="edit-credential-description"
+                  className="input"
+                  placeholder={t('credentials_field_description_placeholder')}
+                  aria-label={t('credentials_field_description_placeholder')}
+                  aria-invalid={Boolean(editErrors.description)}
+                  aria-describedby={editErrors.description ? 'edit-credential-description-error' : undefined}
+                  value={editDescription}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setEditDescription(v)
+                    setEditErrors((prev) => ({
+                      ...prev,
+                      description: v.trim() ? '' : t('credentials_error_description_required'),
+                    }))
+                  }}
+                />
+                {editErrors.description && (
+                  <div id="edit-credential-description-error" className="text-sm text-red-600">
+                    {editErrors.description}
+                  </div>
+                )}
+              </div>
               {editing.kind === 'site_login' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
@@ -427,10 +513,13 @@ export default function Credentials() {
                   disabled={
                     !editing ||
                     !(
-                      (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
-                      (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
-                      (editing.kind === 'instapaper') ||
-                      (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
+                      hasEditDescription &&
+                      (
+                        (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
+                        (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
+                        (editing.kind === 'instapaper') ||
+                        (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
+                      )
                     )
                   }
                   title={t('form_fill_required')}
@@ -438,7 +527,17 @@ export default function Credentials() {
                 >
                   {t('btn_save')}
                 </button>
-                <button type="button" className="btn" onClick={() => setEditing(null)}>{t('btn_cancel')}</button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setEditing(null)
+                    setEditDescription('')
+                    setEditErrors({})
+                  }}
+                >
+                  {t('btn_cancel')}
+                </button>
               </div>
             </div>
           )}

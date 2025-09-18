@@ -3,6 +3,7 @@ import { test as authTest, expect, type TestUser } from './auth'
 
 type CredentialSeed = {
   kind: string
+  description: string
   data: Record<string, unknown>
   ownerUserId?: string | null
 }
@@ -108,10 +109,11 @@ export const test = authTest.extend<{ api: ApiHelper }>({
       accessToken: tokens.accessToken,
       request: context,
       createCredential: async (input, options) => {
-        const payload: Record<string, unknown> = {
-          kind: input.kind,
-          data: input.data,
-        }
+      const payload: Record<string, unknown> = {
+        kind: input.kind,
+        description: input.description,
+        data: input.data,
+      }
         if (input.ownerUserId !== undefined) {
           payload.owner_user_id = input.ownerUserId
         }

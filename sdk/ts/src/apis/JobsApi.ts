@@ -17,13 +17,13 @@ import * as runtime from '../runtime';
 import type {
   HTTPValidationError,
   JobRequest,
-} from '../models/index';
+} from '../models';
 import {
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
     JobRequestFromJSON,
     JobRequestToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface EnqueueJobJobsPostRequest {
     jobRequest: JobRequest;
@@ -38,11 +38,8 @@ export class JobsApi extends runtime.BaseAPI {
      * Enqueue Job
      */
     async enqueueJobJobsPostRaw(requestParameters: EnqueueJobJobsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['jobRequest'] == null) {
-            throw new runtime.RequiredError(
-                'jobRequest',
-                'Required parameter "jobRequest" was null or undefined when calling enqueueJobJobsPost().'
-            );
+        if (requestParameters.jobRequest === null || requestParameters.jobRequest === undefined) {
+            throw new runtime.RequiredError('jobRequest','Required parameter requestParameters.jobRequest was null or undefined when calling enqueueJobJobsPost.');
         }
 
         const queryParameters: any = {};
@@ -59,15 +56,12 @@ export class JobsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/jobs/`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/jobs/`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: JobRequestToJSON(requestParameters['jobRequest']),
+            body: JobRequestToJSON(requestParameters.jobRequest),
         }, initOverrides);
 
         if (this.isJsonMime(response.headers.get('content-type'))) {

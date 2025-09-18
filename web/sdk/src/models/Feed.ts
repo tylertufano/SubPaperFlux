@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,60 +21,62 @@ import { mapValues } from '../runtime';
 export interface Feed {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    id?: string | null;
+    id?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    url: string;
+    url: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    pollFrequency?: string;
+    pollFrequency?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    initialLookbackPeriod?: string | null;
+    initialLookbackPeriod?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof Feed
      */
-    isPaywalled?: boolean;
+    isPaywalled?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof Feed
      */
-    rssRequiresAuth?: boolean;
+    rssRequiresAuth?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    siteConfigId?: string | null;
+    siteConfigId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
 }
 
 /**
  * Check if a given object implements the Feed interface.
  */
-export function instanceOfFeed(value: object): value is Feed {
-    if (!('url' in value) || value['url'] === undefined) return false;
-    return true;
+export function instanceOfFeed(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "url" in value;
+
+    return isInstance;
 }
 
 export function FeedFromJSON(json: any): Feed {
@@ -82,41 +84,39 @@ export function FeedFromJSON(json: any): Feed {
 }
 
 export function FeedFromJSONTyped(json: any, ignoreDiscriminator: boolean): Feed {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
         'url': json['url'],
-        'pollFrequency': json['poll_frequency'] == null ? undefined : json['poll_frequency'],
-        'initialLookbackPeriod': json['initial_lookback_period'] == null ? undefined : json['initial_lookback_period'],
-        'isPaywalled': json['is_paywalled'] == null ? undefined : json['is_paywalled'],
-        'rssRequiresAuth': json['rss_requires_auth'] == null ? undefined : json['rss_requires_auth'],
-        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'pollFrequency': !exists(json, 'poll_frequency') ? undefined : json['poll_frequency'],
+        'initialLookbackPeriod': !exists(json, 'initial_lookback_period') ? undefined : json['initial_lookback_period'],
+        'isPaywalled': !exists(json, 'is_paywalled') ? undefined : json['is_paywalled'],
+        'rssRequiresAuth': !exists(json, 'rss_requires_auth') ? undefined : json['rss_requires_auth'],
+        'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
     };
 }
 
-export function FeedToJSON(json: any): Feed {
-    return FeedToJSONTyped(json, false);
-}
-
-export function FeedToJSONTyped(value?: Feed | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function FeedToJSON(value?: Feed | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'url': value['url'],
-        'poll_frequency': value['pollFrequency'],
-        'initial_lookback_period': value['initialLookbackPeriod'],
-        'is_paywalled': value['isPaywalled'],
-        'rss_requires_auth': value['rssRequiresAuth'],
-        'site_config_id': value['siteConfigId'],
-        'owner_user_id': value['ownerUserId'],
+        'id': value.id,
+        'url': value.url,
+        'poll_frequency': value.pollFrequency,
+        'initial_lookback_period': value.initialLookbackPeriod,
+        'is_paywalled': value.isPaywalled,
+        'rss_requires_auth': value.rssRequiresAuth,
+        'site_config_id': value.siteConfigId,
+        'owner_user_id': value.ownerUserId,
     };
 }
 

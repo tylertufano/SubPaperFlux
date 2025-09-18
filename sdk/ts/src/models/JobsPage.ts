@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { JobOut } from './JobOut';
-import {
-    JobOutFromJSON,
-    JobOutFromJSONTyped,
-    JobOutToJSON,
-    JobOutToJSONTyped,
-} from './JobOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface JobsPage {
     /**
      * 
-     * @type {Array<JobOut>}
+     * @type {any}
      * @memberof JobsPage
      */
-    items: Array<JobOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof JobsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the JobsPage interface.
  */
-export function instanceOfJobsPage(value: object): value is JobsPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfJobsPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function JobsPageFromJSON(json: any): JobsPage {
@@ -81,37 +75,35 @@ export function JobsPageFromJSON(json: any): JobsPage {
 }
 
 export function JobsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobsPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(JobOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function JobsPageToJSON(json: any): JobsPage {
-    return JobsPageToJSONTyped(json, false);
-}
-
-export function JobsPageToJSONTyped(value?: JobsPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobsPageToJSON(value?: JobsPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(JobOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 

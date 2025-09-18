@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, constr
 
 
 class User(BaseModel):
@@ -62,6 +62,7 @@ class Feed(BaseModel):
 class Credential(BaseModel):
     id: Optional[str] = None
     kind: str  # instapaper|miniflux|site_login|substack
+    description: constr(strip_whitespace=True, min_length=1, max_length=200)
     data: dict  # Placeholder; to be encrypted at rest in a real impl
     owner_user_id: Optional[str] = None
 

@@ -17,22 +17,22 @@ import * as runtime from '../runtime';
 import type {
   HTTPValidationError,
   StatusResponse,
-} from '../models/index';
+} from '../models';
 import {
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
     StatusResponseFromJSON,
     StatusResponseToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface IntegrationsStatusStatusIntegrationsGetRequest {
-    instapaperCredId?: string | null;
-    minifluxCredId?: string | null;
+    instapaperCredId?: any;
+    minifluxCredId?: any;
 }
 
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
-    instapaperCredId?: string | null;
-    minifluxCredId?: string | null;
+    instapaperCredId?: any;
+    minifluxCredId?: any;
 }
 
 /**
@@ -48,11 +48,8 @@ export class StatusApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/status/db`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/status/db`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -77,11 +74,8 @@ export class StatusApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/v1/status/db`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/status/db`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -106,11 +100,8 @@ export class StatusApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/status`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/status`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -135,11 +126,8 @@ export class StatusApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/v1/status`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/status`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -162,12 +150,12 @@ export class StatusApi extends runtime.BaseAPI {
     async integrationsStatusStatusIntegrationsGetRaw(requestParameters: IntegrationsStatusStatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
         const queryParameters: any = {};
 
-        if (requestParameters['instapaperCredId'] != null) {
-            queryParameters['instapaper_cred_id'] = requestParameters['instapaperCredId'];
+        if (requestParameters.instapaperCredId !== undefined) {
+            queryParameters['instapaper_cred_id'] = requestParameters.instapaperCredId;
         }
 
-        if (requestParameters['minifluxCredId'] != null) {
-            queryParameters['miniflux_cred_id'] = requestParameters['minifluxCredId'];
+        if (requestParameters.minifluxCredId !== undefined) {
+            queryParameters['miniflux_cred_id'] = requestParameters.minifluxCredId;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -180,11 +168,8 @@ export class StatusApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/status/integrations`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/status/integrations`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -207,12 +192,12 @@ export class StatusApi extends runtime.BaseAPI {
     async integrationsStatusV1StatusIntegrationsGetRaw(requestParameters: IntegrationsStatusV1StatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
         const queryParameters: any = {};
 
-        if (requestParameters['instapaperCredId'] != null) {
-            queryParameters['instapaper_cred_id'] = requestParameters['instapaperCredId'];
+        if (requestParameters.instapaperCredId !== undefined) {
+            queryParameters['instapaper_cred_id'] = requestParameters.instapaperCredId;
         }
 
-        if (requestParameters['minifluxCredId'] != null) {
-            queryParameters['miniflux_cred_id'] = requestParameters['minifluxCredId'];
+        if (requestParameters.minifluxCredId !== undefined) {
+            queryParameters['miniflux_cred_id'] = requestParameters.minifluxCredId;
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -225,11 +210,8 @@ export class StatusApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/status/integrations`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/status/integrations`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

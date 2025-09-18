@@ -31,7 +31,12 @@ def _create_app_with_credential():
     app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
 
     with next(get_session()) as session:
-        credential = Credential(owner_user_id="u1", kind="instapaper", data={"token": "abc"})
+        credential = Credential(
+            owner_user_id="u1",
+            kind="instapaper",
+            description="Test credential",
+            data={"token": "abc"},
+        )
         session.add(credential)
         session.commit()
         cred_id = credential.id

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,25 +21,27 @@ import { mapValues } from '../runtime';
 export interface JobRequest {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobRequest
      */
-    type: string;
+    type: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof JobRequest
      */
-    payload: { [key: string]: any; };
+    payload: { [key: string]: any; } | null;
 }
 
 /**
  * Check if a given object implements the JobRequest interface.
  */
-export function instanceOfJobRequest(value: object): value is JobRequest {
-    if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('payload' in value) || value['payload'] === undefined) return false;
-    return true;
+export function instanceOfJobRequest(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "type" in value;
+    isInstance = isInstance && "payload" in value;
+
+    return isInstance;
 }
 
 export function JobRequestFromJSON(json: any): JobRequest {
@@ -47,7 +49,7 @@ export function JobRequestFromJSON(json: any): JobRequest {
 }
 
 export function JobRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobRequest {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -57,19 +59,17 @@ export function JobRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function JobRequestToJSON(json: any): JobRequest {
-    return JobRequestToJSONTyped(json, false);
-}
-
-export function JobRequestToJSONTyped(value?: JobRequest | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobRequestToJSON(value?: JobRequest | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'type': value['type'],
-        'payload': value['payload'],
+        'type': value.type,
+        'payload': value.payload,
     };
 }
 

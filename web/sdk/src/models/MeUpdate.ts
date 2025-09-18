@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { MeNotificationPreferencesUpdate } from './MeNotificationPreferencesUpdate';
-import {
-    MeNotificationPreferencesUpdateFromJSON,
-    MeNotificationPreferencesUpdateFromJSONTyped,
-    MeNotificationPreferencesUpdateToJSON,
-    MeNotificationPreferencesUpdateToJSONTyped,
-} from './MeNotificationPreferencesUpdate';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,23 +21,25 @@ import {
 export interface MeUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof MeUpdate
      */
-    locale?: string | null;
+    locale?: any | null;
     /**
      * 
-     * @type {MeNotificationPreferencesUpdate}
+     * @type {any}
      * @memberof MeUpdate
      */
-    notificationPreferences?: MeNotificationPreferencesUpdate | null;
+    notificationPreferences?: any | null;
 }
 
 /**
  * Check if a given object implements the MeUpdate interface.
  */
-export function instanceOfMeUpdate(value: object): value is MeUpdate {
-    return true;
+export function instanceOfMeUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function MeUpdateFromJSON(json: any): MeUpdate {
@@ -53,29 +47,27 @@ export function MeUpdateFromJSON(json: any): MeUpdate {
 }
 
 export function MeUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'locale': json['locale'] == null ? undefined : json['locale'],
-        'notificationPreferences': json['notification_preferences'] == null ? undefined : MeNotificationPreferencesUpdateFromJSON(json['notification_preferences']),
+        'locale': !exists(json, 'locale') ? undefined : json['locale'],
+        'notificationPreferences': !exists(json, 'notification_preferences') ? undefined : json['notification_preferences'],
     };
 }
 
-export function MeUpdateToJSON(json: any): MeUpdate {
-    return MeUpdateToJSONTyped(json, false);
-}
-
-export function MeUpdateToJSONTyped(value?: MeUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function MeUpdateToJSON(value?: MeUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'locale': value['locale'],
-        'notification_preferences': MeNotificationPreferencesUpdateToJSON(value['notificationPreferences']),
+        'locale': value.locale,
+        'notification_preferences': value.notificationPreferences,
     };
 }
 
