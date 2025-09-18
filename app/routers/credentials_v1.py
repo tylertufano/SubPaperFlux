@@ -37,9 +37,22 @@ def list_credentials_v1(
 ):
     user_id = current_user["sub"]
     records = session.exec(select(Credential).where(Credential.owner_user_id == user_id)).all()
+    include_global_records = False
     if include_global:
-        _ensure_permission(session, current_user, PERMISSION_READ_GLOBAL_CREDENTIALS)
+        include_global_records = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+        )
+    if include_global_records:
         records += session.exec(select(Credential).where(Credential.owner_user_id.is_(None))).all()
+    if is_user_mgmt_enforce_enabled():
+        records = [
+            r
+            for r in records
+            if r.owner_user_id == user_id
+            or (r.owner_user_id is None and include_global_records)
+        ]
     if kind:
         records = [r for r in records if r.kind == kind]
     total = len(records)
