@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlmodel import select
 
+from ..audit import record_audit_log
 from ..auth import ADMIN_ROLE_NAME, user_has_role
 from ..auth.oidc import get_current_user
 from ..auth.rbac import is_admin
@@ -43,20 +44,40 @@ def _record_admin_action_metric(action: str) -> None:
 
 @router.post("/postgres/prepare", response_model=dict)
 def postgres_prepare(current_user=Depends(get_current_user), session=Depends(get_session)):
-    _require_admin(session, current_user)
+    actor_id = _require_admin(session, current_user)
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = prepare_postgres_search(session)
+    record_audit_log(
+        session,
+        entity_type="admin_action",
+        entity_id="postgres_prepare",
+        action="postgres_prepare",
+        owner_user_id=actor_id,
+        actor_user_id=actor_id,
+        details=details,
+    )
+    session.commit()
     _record_admin_action_metric("postgres_prepare")
     return {"ok": bool(details.get("ok", True)), "details": details}
 
 
 @router.post("/postgres/enable-rls", response_model=dict)
 def postgres_enable_rls(current_user=Depends(get_current_user), session=Depends(get_session)):
-    _require_admin(session, current_user)
+    actor_id = _require_admin(session, current_user)
     if not is_postgres():
         raise HTTPException(status_code=400, detail="Not using Postgres backend")
     details = enable_rls(session)
+    record_audit_log(
+        session,
+        entity_type="admin_action",
+        entity_id="postgres_enable_rls",
+        action="postgres_enable_rls",
+        owner_user_id=actor_id,
+        actor_user_id=actor_id,
+        details=details,
+    )
+    session.commit()
     _record_admin_action_metric("postgres_enable_rls")
     return {"ok": bool(details.get("ok", True)), "details": details}
 

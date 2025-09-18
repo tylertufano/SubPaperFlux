@@ -63,5 +63,6 @@ Each flag can be enabled independently per environment. Turning a flag off shoul
 ## Post-Rollout Tasks
 
 - Expand documentation for tenant onboarding, including role recommendations and least-privilege examples.
+- ✅ Postgres admin operations now emit audit logs with actor metadata and action details, ensuring infrastructure toggles remain traceable.
 - Evaluate whether feature flags can be removed or replaced with configuration once adoption stabilizes.
 - Schedule a cleanup migration to remove temporary fallbacks in handlers that assume enforcement is disabled.
