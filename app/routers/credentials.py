@@ -13,6 +13,7 @@ from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
 from ..auth import (
     PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+    PERMISSION_READ_GLOBAL_CREDENTIALS,
     has_permission,
 )
 from ..schemas import Credential as CredentialSchema
@@ -26,9 +27,17 @@ from ..integrations.instapaper import (
     get_instapaper_tokens,
 )
 from ..jobs.util_subpaperflux import _get_db_credential_by_kind, resolve_config_dir
+from ..config import is_user_mgmt_enforce_enabled
 
 
 router = APIRouter()
+
+
+def _ensure_permission(session, current_user, permission: str, *, owner_id: Optional[str] = None) -> bool:
+    allowed = has_permission(session, current_user, permission, owner_id=owner_id)
+    if is_user_mgmt_enforce_enabled() and not allowed:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return allowed
 
 
 def _mask_value(value: str) -> str:
@@ -86,6 +95,11 @@ def list_credentials(current_user=Depends(get_current_user), session=Depends(get
     stmt = select(CredentialModel).where(CredentialModel.owner_user_id == user_id)
     records = session.exec(stmt).all()
     if include_global:
+        _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+        )
         stmt2 = select(CredentialModel).where(CredentialModel.owner_user_id.is_(None))
         records += session.exec(stmt2).all()
     # Build masked response without mutating DB objects
@@ -117,10 +131,14 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         data = encrypt_dict(data)
     description = body.description.strip()
     owner = body.owner_user_id
-    if owner is None and not has_permission(
-        session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
-    ):
-        owner = current_user["sub"]
+    if owner is None:
+        allowed_global = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+        )
+        if not allowed_global:
+            owner = current_user["sub"]
     if owner is not None:
         enforce_user_quota(
             session,
@@ -180,9 +198,12 @@ def create_instapaper_credential_from_login(
     username = body.username.strip()
 
     if body.scope_global:
-        if not has_permission(
-            session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
-        ):
+        allowed_global = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+        )
+        if not allowed_global:
             raise HTTPException(status_code=403, detail="Not authorized to create global credentials")
         owner: Optional[str] = None
     else:
@@ -254,11 +275,23 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
         raise HTTPException(status_code=404, detail="Not found")
 
     is_owner = model.owner_user_id == current_user["sub"]
-    can_delete_global = model.owner_user_id is None and has_permission(
-        session, current_user, PERMISSION_MANAGE_GLOBAL_CREDENTIALS
-    )
-    if not (is_owner or can_delete_global):
-        raise HTTPException(status_code=404, detail="Not found")
+    if model.owner_user_id is None:
+        allowed_global = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+        )
+        if not (is_owner or allowed_global):
+            raise HTTPException(status_code=404, detail="Not found")
+    elif model.owner_user_id != current_user["sub"]:
+        allowed_cross = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+            owner_id=model.owner_user_id,
+        )
+        if not allowed_cross:
+            raise HTTPException(status_code=404, detail="Not found")
     record_audit_log(
         session,
         entity_type="credential",
@@ -279,8 +312,21 @@ def get_credential(cred_id: str, current_user=Depends(get_current_user), session
     if not model:
         raise HTTPException(status_code=404, detail="Not found")
     # Allow if owner is user, or record is global (owner_user_id None)
-    if model.owner_user_id not in (current_user["sub"], None):
-        raise HTTPException(status_code=404, detail="Not found")
+    if model.owner_user_id is None:
+        _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+        )
+    elif model.owner_user_id != current_user["sub"]:
+        allowed_cross = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+            owner_id=model.owner_user_id,
+        )
+        if not allowed_cross:
+            raise HTTPException(status_code=404, detail="Not found")
     plain = decrypt_dict(model.data or {})
     return CredentialSchema(
         id=model.id,
@@ -297,8 +343,23 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
     if not model:
         raise HTTPException(status_code=404, detail="Not found")
     # Only owner can update; allow admin to update globals
-    if model.owner_user_id not in (current_user["sub"], None):
-        raise HTTPException(status_code=404, detail="Not found")
+    if model.owner_user_id is None:
+        allowed_global = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+        )
+        if not allowed_global:
+            raise HTTPException(status_code=404, detail="Not found")
+    elif model.owner_user_id != current_user["sub"]:
+        allowed_cross = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+            owner_id=model.owner_user_id,
+        )
+        if not allowed_cross:
+            raise HTTPException(status_code=404, detail="Not found")
     incoming = body.data or {}
     previous_kind = model.kind
     previous_description = model.description

@@ -1,9 +1,14 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import select
 
 from ..auth.oidc import get_current_user
+from ..auth import (
+    PERMISSION_READ_GLOBAL_CREDENTIALS,
+    has_permission,
+)
+from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import Credential
 from ..schemas import CredentialsPage, Credential as CredentialSchema
@@ -11,6 +16,13 @@ from .credentials import _mask_credential
 
 
 router = APIRouter(prefix="/v1/credentials", tags=["v1"])
+
+
+def _ensure_permission(session, current_user, permission: str) -> bool:
+    allowed = has_permission(session, current_user, permission)
+    if is_user_mgmt_enforce_enabled() and not allowed:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return allowed
 
 
 @router.get("", response_model=CredentialsPage, summary="List credentials")
@@ -26,6 +38,7 @@ def list_credentials_v1(
     user_id = current_user["sub"]
     records = session.exec(select(Credential).where(Credential.owner_user_id == user_id)).all()
     if include_global:
+        _ensure_permission(session, current_user, PERMISSION_READ_GLOBAL_CREDENTIALS)
         records += session.exec(select(Credential).where(Credential.owner_user_id.is_(None))).all()
     if kind:
         records = [r for r in records if r.kind == kind]
