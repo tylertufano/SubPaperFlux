@@ -20,7 +20,13 @@ from sqlalchemy import or_, literal
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import delete, func, select
 from ..audit import record_audit_log
+from ..auth import (
+    PERMISSION_MANAGE_BOOKMARKS,
+    PERMISSION_READ_BOOKMARKS,
+    has_permission,
+)
 from ..auth.oidc import get_current_user
+from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..db import is_postgres
 from ..models import (
@@ -118,6 +124,116 @@ _PREVIEW_CLEANER = Cleaner(
     strip=True,
     strip_comments=True,
 )
+
+
+def _get_request_user_id(current_user) -> Optional[str]:
+    if current_user is None:
+        return None
+    if isinstance(current_user, dict):
+        for key in ("sub", "id", "user_id"):
+            value = current_user.get(key)
+            if value:
+                return str(value)
+        return None
+    if isinstance(current_user, str):
+        return current_user or None
+    for attr in ("sub", "id", "user_id"):
+        value = getattr(current_user, attr, None)
+        if value:
+            return str(value)
+    return None
+
+
+def _record_rbac_denial(
+    session,
+    *,
+    entity_type: str,
+    entity_id: str,
+    owner_user_id: Optional[str],
+    actor_user_id: Optional[str],
+    attempted_action: str,
+    permission: str,
+    detail: Optional[str],
+) -> None:
+    payload = {
+        "reason": "rbac_denied",
+        "attempted_action": attempted_action,
+        "required_permission": permission,
+    }
+    if detail:
+        payload["message"] = detail
+    try:  # pragma: no cover - defensive reset before logging
+        session.rollback()
+    except Exception:
+        logging.debug("Failed to rollback before RBAC audit log", exc_info=True)
+    try:
+        record_audit_log(
+            session,
+            entity_type=entity_type,
+            entity_id=str(entity_id),
+            action="deny",
+            owner_user_id=owner_user_id,
+            actor_user_id=actor_user_id,
+            details=payload,
+        )
+        session.commit()
+    except Exception:  # pragma: no cover - defensive logging on failure
+        session.rollback()
+        logging.exception(
+            "Failed to record RBAC denial audit log for %s %s",
+            entity_type,
+            entity_id,
+        )
+
+
+def _require_owner_or_permission(
+    session,
+    current_user,
+    *,
+    owner_user_id: Optional[str],
+    entity_type: str,
+    entity_id: str,
+    attempted_action: str,
+    permission: str,
+    mask_as_not_found: bool = True,
+    not_found_detail: str = "Not found",
+    forbidden_detail: Optional[str] = None,
+) -> None:
+    user_id = _get_request_user_id(current_user)
+    if owner_user_id is None or owner_user_id == user_id:
+        return
+    enforcement_enabled = is_user_mgmt_enforce_enabled()
+    if not enforcement_enabled:
+        if mask_as_not_found:
+            raise HTTPException(status_code=404, detail=not_found_detail)
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail=forbidden_detail or "Forbidden",
+        )
+
+    allowed = has_permission(
+        session,
+        current_user,
+        permission,
+        owner_id=owner_user_id,
+    )
+    if allowed:
+        return
+
+    _record_rbac_denial(
+        session,
+        entity_type=entity_type,
+        entity_id=str(entity_id),
+        owner_user_id=owner_user_id,
+        actor_user_id=user_id,
+        attempted_action=attempted_action,
+        permission=permission,
+        detail=forbidden_detail,
+    )
+    raise HTTPException(
+        status.HTTP_403_FORBIDDEN,
+        detail=forbidden_detail or "Forbidden",
+    )
 
 
 def _normalize_preview_url(url: str) -> Optional[str]:
@@ -409,10 +525,26 @@ def _apply_filters(
     return stmt
 
 
-def _get_bookmark_or_404(session, bookmark_id: str, user_id: str) -> Bookmark:
+def _get_bookmark_or_404(
+    session,
+    bookmark_id: str,
+    current_user,
+    *,
+    permission: str = PERMISSION_MANAGE_BOOKMARKS,
+    attempted_action: str = "access",
+) -> Bookmark:
     bookmark = session.get(Bookmark, bookmark_id)
-    if not bookmark or bookmark.owner_user_id != user_id:
+    if not bookmark:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=bookmark.owner_user_id,
+        entity_type="bookmark",
+        entity_id=bookmark.id,
+        attempted_action=attempted_action,
+        permission=permission,
+    )
     return bookmark
 
 
@@ -535,10 +667,19 @@ def list_bookmarks(
 @router.delete("/{bookmark_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
 def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), session=Depends(get_session), delete_remote: bool = Query(True)):
     bm = session.get(Bookmark, bookmark_id)
-    if not bm or bm.owner_user_id != current_user["sub"]:
+    if not bm:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=bm.owner_user_id,
+        entity_type="bookmark",
+        entity_id=bm.id,
+        attempted_action="delete",
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+    )
     if delete_remote:
-        oauth = get_instapaper_oauth_session(current_user["sub"])
+        oauth = get_instapaper_oauth_session(bm.owner_user_id)
         if oauth:
             try:
                 resp = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data={"bookmark_id": bm.instapaper_bookmark_id})
@@ -552,7 +693,7 @@ def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), se
         entity_id=bm.id,
         action="delete",
         owner_user_id=bm.owner_user_id,
-        actor_user_id=current_user["sub"],
+        actor_user_id=_get_request_user_id(current_user),
         details={
             "instapaper_bookmark_id": bm.instapaper_bookmark_id,
             "delete_remote": bool(delete_remote),
@@ -606,17 +747,26 @@ def update_tag(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
     tag = session.get(Tag, tag_id)
-    if not tag or tag.owner_user_id != user_id:
+    if not tag:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=tag.owner_user_id,
+        entity_type="tag",
+        entity_id=tag.id,
+        attempted_action="update",
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+    )
+    owner_id = tag.owner_user_id
     name = (payload.name or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Tag name is required")
     if name != tag.name:
         exists = session.exec(
             select(Tag).where(
-                (Tag.owner_user_id == user_id) & (Tag.name == name) & (Tag.id != tag_id)
+                (Tag.owner_user_id == owner_id) & (Tag.name == name) & (Tag.id != tag_id)
             )
         ).first()
         if exists:
@@ -625,7 +775,7 @@ def update_tag(
     session.add(tag)
     session.commit()
     session.refresh(tag)
-    counts = _tag_counts(session, user_id)
+    counts = _tag_counts(session, owner_id)
     return _tag_to_out(tag, counts)
 
 
@@ -635,10 +785,18 @@ def update_tag(
     dependencies=[Depends(csrf_protect)],
 )
 def delete_tag(tag_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
-    user_id = current_user["sub"]
     tag = session.get(Tag, tag_id)
-    if not tag or tag.owner_user_id != user_id:
+    if not tag:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=tag.owner_user_id,
+        entity_type="tag",
+        entity_id=tag.id,
+        attempted_action="delete",
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+    )
     session.delete(tag)
     session.commit()
     return None
@@ -700,10 +858,19 @@ def update_folder(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
     folder = session.get(Folder, folder_id)
-    if not folder or folder.owner_user_id != user_id:
+    if not folder:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=folder.owner_user_id,
+        entity_type="folder",
+        entity_id=folder.id,
+        attempted_action="update",
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+    )
+    owner_id = folder.owner_user_id
     data = payload.model_dump(exclude_unset=True)
     if "name" in data:
         name = (data["name"] or "").strip()
@@ -712,7 +879,7 @@ def update_folder(
         if name != folder.name:
             exists = session.exec(
                 select(Folder).where(
-                    (Folder.owner_user_id == user_id)
+                    (Folder.owner_user_id == owner_id)
                     & (Folder.name == name)
                     & (Folder.id != folder_id)
                 )
@@ -728,7 +895,7 @@ def update_folder(
     session.add(folder)
     session.commit()
     session.refresh(folder)
-    counts = _folder_counts(session, user_id)
+    counts = _folder_counts(session, owner_id)
     return _folder_to_out(folder, counts)
 
 
@@ -738,10 +905,18 @@ def update_folder(
     dependencies=[Depends(csrf_protect)],
 )
 def delete_folder(folder_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
-    user_id = current_user["sub"]
     folder = session.get(Folder, folder_id)
-    if not folder or folder.owner_user_id != user_id:
+    if not folder:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=folder.owner_user_id,
+        entity_type="folder",
+        entity_id=folder.id,
+        attempted_action="delete",
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+    )
     session.delete(folder)
     session.commit()
     return None
@@ -753,9 +928,15 @@ def get_bookmark_tags(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
-    _get_bookmark_or_404(session, bookmark_id, user_id)
-    counts = _tag_counts(session, user_id)
+    bookmark = _get_bookmark_or_404(
+        session,
+        bookmark_id,
+        current_user,
+        permission=PERMISSION_READ_BOOKMARKS,
+        attempted_action="list_tags",
+    )
+    owner_id = bookmark.owner_user_id
+    counts = _tag_counts(session, owner_id)
     stmt = (
         select(Tag)
         .join(BookmarkTagLink, BookmarkTagLink.tag_id == Tag.id)
@@ -777,8 +958,14 @@ def update_bookmark_tags(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
-    _get_bookmark_or_404(session, bookmark_id, user_id)
+    bookmark = _get_bookmark_or_404(
+        session,
+        bookmark_id,
+        current_user,
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+        attempted_action="update_tags",
+    )
+    owner_id = bookmark.owner_user_id
     unique: List[str] = []
     seen = set()
     for raw in payload.tags:
@@ -792,12 +979,12 @@ def update_bookmark_tags(
             unique.append(name)
     tag_map: dict[str, Tag] = {}
     if unique:
-        stmt = select(Tag).where((Tag.owner_user_id == user_id) & (Tag.name.in_(unique)))
+        stmt = select(Tag).where((Tag.owner_user_id == owner_id) & (Tag.name.in_(unique)))
         existing = session.exec(stmt).all()
         tag_map = {t.name: t for t in existing}
         for name in unique:
             if name not in tag_map:
-                tag = Tag(owner_user_id=user_id, name=name)
+                tag = Tag(owner_user_id=owner_id, name=name)
                 session.add(tag)
                 tag_map[name] = tag
     session.exec(delete(BookmarkTagLink).where(BookmarkTagLink.bookmark_id == bookmark_id))
@@ -809,17 +996,21 @@ def update_bookmark_tags(
         entity_type="bookmark",
         entity_id=bookmark_id,
         action="update",
-        owner_user_id=user_id,
-        actor_user_id=current_user["sub"],
+        owner_user_id=owner_id,
+        actor_user_id=_get_request_user_id(current_user),
         details={"tags": unique},
     )
     try:
         session.commit()
     except IntegrityError as exc:  # pragma: no cover - defensive
         session.rollback()
-        logging.exception("Failed to update bookmark tags user=%s bookmark=%s", user_id, bookmark_id)
+        logging.exception(
+            "Failed to update bookmark tags user=%s bookmark=%s",
+            owner_id,
+            bookmark_id,
+        )
         raise HTTPException(status_code=400, detail="Could not update bookmark tags") from exc
-    counts = _tag_counts(session, user_id)
+    counts = _tag_counts(session, owner_id)
     tags = [tag_map[name] for name in unique]
     return [_tag_to_out(tag, counts) for tag in tags]
 
@@ -834,7 +1025,7 @@ def bulk_update_bookmark_tags(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
+    actor_id = _get_request_user_id(current_user)
     bookmark_ids = [str(value) for value in payload.bookmark_ids]
     if not bookmark_ids:
         raise HTTPException(status_code=400, detail="bookmark_ids list required")
@@ -860,14 +1051,19 @@ def bulk_update_bookmark_tags(
                 detail="At least one tag is required unless clear is true",
             )
 
-    stmt = select(Bookmark).where(
-        (Bookmark.owner_user_id == user_id) & (Bookmark.id.in_(bookmark_ids))
-    )
+    enforcement_enabled = is_user_mgmt_enforce_enabled()
+    if enforcement_enabled:
+        stmt = select(Bookmark).where(Bookmark.id.in_(bookmark_ids))
+    else:
+        stmt = select(Bookmark).where(
+            (Bookmark.owner_user_id == actor_id) & (Bookmark.id.in_(bookmark_ids))
+        )
     bookmarks = session.exec(stmt).all()
-    if not bookmarks:
-        return []
-
     bookmark_map = {bookmark.id: bookmark for bookmark in bookmarks}
+    missing_ids = [bookmark_id for bookmark_id in bookmark_ids if bookmark_id not in bookmark_map]
+    if missing_ids and enforcement_enabled:
+        raise HTTPException(status_code=404, detail="Bookmark not found")
+
     ordered_bookmarks: List[Bookmark] = []
     seen_bookmarks: set[str] = set()
     for bookmark_id in bookmark_ids:
@@ -878,16 +1074,38 @@ def bulk_update_bookmark_tags(
     if not ordered_bookmarks:
         return []
 
+    if enforcement_enabled:
+        for bookmark in ordered_bookmarks:
+            _require_owner_or_permission(
+                session,
+                current_user,
+                owner_user_id=bookmark.owner_user_id,
+                entity_type="bookmark",
+                entity_id=bookmark.id,
+                attempted_action="update_tags_bulk",
+                permission=PERMISSION_MANAGE_BOOKMARKS,
+                forbidden_detail=f"Forbidden bookmark ID: {bookmark.id}",
+            )
+        owner_ids = {bookmark.owner_user_id for bookmark in ordered_bookmarks}
+        if len(owner_ids) != 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Bookmarks must share the same owner for bulk tag updates",
+            )
+        owner_id = next(iter(owner_ids))
+    else:
+        owner_id = actor_id
+
     tag_map: dict[str, Tag] = {}
     if unique_tags:
         tag_stmt = select(Tag).where(
-            (Tag.owner_user_id == user_id) & (Tag.name.in_(unique_tags))
+            (Tag.owner_user_id == owner_id) & (Tag.name.in_(unique_tags))
         )
         existing = session.exec(tag_stmt).all()
         tag_map = {tag.name: tag for tag in existing}
         for name in unique_tags:
             if name not in tag_map:
-                tag = Tag(owner_user_id=user_id, name=name)
+                tag = Tag(owner_user_id=owner_id, name=name)
                 session.add(tag)
                 tag_map[name] = tag
 
@@ -906,8 +1124,8 @@ def bulk_update_bookmark_tags(
             entity_type="bookmark",
             entity_id=bookmark.id,
             action="update",
-            owner_user_id=user_id,
-            actor_user_id=current_user["sub"],
+            owner_user_id=bookmark.owner_user_id,
+            actor_user_id=actor_id,
             details={
                 "tags": unique_tags,
                 "bulk": True,
@@ -921,14 +1139,14 @@ def bulk_update_bookmark_tags(
         session.rollback()
         logging.exception(
             "Failed to bulk update bookmark tags user=%s bookmark_ids=%s",
-            user_id,
+            owner_id,
             ",".join(updated_ids),
         )
         raise HTTPException(
             status_code=400, detail="Could not update bookmark tags"
         ) from exc
 
-    counts = _tag_counts(session, user_id)
+    counts = _tag_counts(session, owner_id)
     ordered_tags = [tag_map[name] for name in unique_tags]
     summaries: List[BookmarkTagSummary] = []
     for bookmark_id in updated_ids:
@@ -951,7 +1169,7 @@ def bulk_update_bookmark_folders(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
+    actor_id = _get_request_user_id(current_user)
     bookmark_ids = [str(value) for value in payload.bookmark_ids]
     if not bookmark_ids:
         raise HTTPException(status_code=400, detail="bookmark_ids list required")
@@ -973,8 +1191,18 @@ def bulk_update_bookmark_folders(
     folder: Optional[Folder] = None
     if payload.folder_id:
         folder = session.get(Folder, payload.folder_id)
-        if not folder or folder.owner_user_id != user_id:
+        if not folder:
             raise HTTPException(status_code=404, detail="Folder not found")
+        _require_owner_or_permission(
+            session,
+            current_user,
+            owner_user_id=folder.owner_user_id,
+            entity_type="folder",
+            entity_id=folder.id,
+            attempted_action="assign_folder",
+            permission=PERMISSION_MANAGE_BOOKMARKS,
+            not_found_detail="Folder not found",
+        )
     elif instapaper_field_provided and payload.folder_id is None:
         raise HTTPException(status_code=400, detail="instapaper_folder_id requires folder_id")
 
@@ -985,17 +1213,32 @@ def bulk_update_bookmark_folders(
     if missing_ids:
         raise HTTPException(status_code=404, detail="Bookmark not found")
 
-    forbidden_ids = [bookmark_id for bookmark_id in bookmark_ids if bookmark_map[bookmark_id].owner_user_id != user_id]
-    if forbidden_ids:
-        joined = ", ".join(forbidden_ids)
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Forbidden bookmark IDs: {joined}",
-        )
-
     ordered_bookmarks = [bookmark_map[bookmark_id] for bookmark_id in bookmark_ids]
     if not ordered_bookmarks:
         return []
+
+    for bookmark in ordered_bookmarks:
+        _require_owner_or_permission(
+            session,
+            current_user,
+            owner_user_id=bookmark.owner_user_id,
+            entity_type="bookmark",
+            entity_id=bookmark.id,
+            attempted_action="update_folder_bulk",
+            permission=PERMISSION_MANAGE_BOOKMARKS,
+            mask_as_not_found=False,
+            forbidden_detail=f"Forbidden bookmark ID: {bookmark.id}",
+        )
+
+    owner_ids = {bookmark.owner_user_id for bookmark in ordered_bookmarks}
+    if folder is not None:
+        owner_ids.add(folder.owner_user_id)
+    if len(owner_ids) != 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Bookmarks and folder must share the same owner",
+        )
+    owner_id = next(iter(owner_ids))
 
     link_stmt = select(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id.in_(bookmark_ids))
     existing_links = session.exec(link_stmt).all()
@@ -1026,8 +1269,8 @@ def bulk_update_bookmark_folders(
                 entity_type="bookmark",
                 entity_id=bookmark.id,
                 action="update",
-                owner_user_id=user_id,
-                actor_user_id=current_user["sub"],
+                owner_user_id=bookmark.owner_user_id,
+                actor_user_id=actor_id,
                 details=details,
             )
         session.commit()
@@ -1035,7 +1278,7 @@ def bulk_update_bookmark_folders(
         session.rollback()
         logging.exception(
             "Failed to bulk update bookmark folders user=%s bookmark_ids=%s",
-            user_id,
+            owner_id,
             ",".join(bookmark_ids),
         )
         raise HTTPException(status_code=400, detail="Could not update bookmark folders") from exc
@@ -1049,7 +1292,7 @@ def bulk_update_bookmark_folders(
             remote_folder_id = folder.instapaper_folder_id
 
     if folder and remote_folder_id:
-        oauth = get_instapaper_oauth_session(user_id)
+        oauth = get_instapaper_oauth_session(owner_id)
         if oauth:
             for bookmark in ordered_bookmarks:
                 try:
@@ -1065,12 +1308,12 @@ def bulk_update_bookmark_folders(
                 except Exception:
                     logging.warning(
                         "Failed to sync Instapaper folder user=%s bookmark=%s",
-                        user_id,
+                        owner_id,
                         bookmark.id,
                         exc_info=True,
                     )
 
-    counts = _folder_counts(session, user_id)
+    counts = _folder_counts(session, owner_id)
     folder_out = _folder_to_out(folder, counts) if folder else None
     return [
         BookmarkFolderSummary(bookmark_id=bookmark.id, folder=folder_out)
@@ -1084,20 +1327,26 @@ def get_bookmark_folder(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
-    _get_bookmark_or_404(session, bookmark_id, user_id)
+    bookmark = _get_bookmark_or_404(
+        session,
+        bookmark_id,
+        current_user,
+        permission=PERMISSION_READ_BOOKMARKS,
+        attempted_action="get_folder",
+    )
+    owner_id = bookmark.owner_user_id
     stmt = (
         select(Folder)
         .join(BookmarkFolderLink, BookmarkFolderLink.folder_id == Folder.id)
         .where(
             (BookmarkFolderLink.bookmark_id == bookmark_id)
-            & (Folder.owner_user_id == user_id)
+            & (Folder.owner_user_id == owner_id)
         )
     )
     folder = session.exec(stmt).first()
     if not folder:
         return None
-    counts = _folder_counts(session, user_id)
+    counts = _folder_counts(session, owner_id)
     return _folder_to_out(folder, counts)
 
 
@@ -1112,21 +1361,39 @@ def update_bookmark_folder(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
-    _get_bookmark_or_404(session, bookmark_id, user_id)
+    bookmark = _get_bookmark_or_404(
+        session,
+        bookmark_id,
+        current_user,
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+        attempted_action="update_folder",
+    )
+    owner_id = bookmark.owner_user_id
+    actor_id = _get_request_user_id(current_user)
     if payload.folder_id and payload.folder_name:
         raise HTTPException(status_code=400, detail="Provide either folder_id or folder_name")
     folder: Optional[Folder] = None
     if payload.folder_id:
         folder = session.get(Folder, payload.folder_id)
-        if not folder or folder.owner_user_id != user_id:
+        if not folder:
             raise HTTPException(status_code=400, detail="Invalid folder_id")
+        if folder.owner_user_id != owner_id:
+            raise HTTPException(status_code=400, detail="Invalid folder_id")
+        _require_owner_or_permission(
+            session,
+            current_user,
+            owner_user_id=folder.owner_user_id,
+            entity_type="folder",
+            entity_id=folder.id,
+            attempted_action="assign_folder",
+            permission=PERMISSION_MANAGE_BOOKMARKS,
+        )
     elif payload.folder_name:
         name = payload.folder_name.strip()
         if not name:
             raise HTTPException(status_code=400, detail="folder_name must be non-empty")
         folder = session.exec(
-            select(Folder).where((Folder.owner_user_id == user_id) & (Folder.name == name))
+            select(Folder).where((Folder.owner_user_id == owner_id) & (Folder.name == name))
         ).first()
         if not folder:
             instapaper_folder_id = (
@@ -1136,7 +1403,7 @@ def update_bookmark_folder(
                 else None
             )
             folder = Folder(
-                owner_user_id=user_id,
+                owner_user_id=owner_id,
                 name=name,
                 instapaper_folder_id=instapaper_folder_id,
             )
@@ -1150,17 +1417,21 @@ def update_bookmark_folder(
         entity_type="bookmark",
         entity_id=bookmark_id,
         action="update",
-        owner_user_id=user_id,
-        actor_user_id=current_user["sub"],
+        owner_user_id=bookmark.owner_user_id,
+        actor_user_id=actor_id,
         details={"folder_id": folder.id, "folder_name": folder.name},
     )
     try:
         session.commit()
     except IntegrityError as exc:  # pragma: no cover - defensive
         session.rollback()
-        logging.exception("Failed to update bookmark folder user=%s bookmark=%s", user_id, bookmark_id)
+        logging.exception(
+            "Failed to update bookmark folder user=%s bookmark=%s",
+            owner_id,
+            bookmark_id,
+        )
         raise HTTPException(status_code=400, detail="Could not update bookmark folder") from exc
-    counts = _folder_counts(session, user_id)
+    counts = _folder_counts(session, owner_id)
     session.refresh(folder)
     return _folder_to_out(folder, counts)
 
@@ -1175,8 +1446,14 @@ def delete_bookmark_folder(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
 ):
-    user_id = current_user["sub"]
-    _get_bookmark_or_404(session, bookmark_id, user_id)
+    bookmark = _get_bookmark_or_404(
+        session,
+        bookmark_id,
+        current_user,
+        permission=PERMISSION_MANAGE_BOOKMARKS,
+        attempted_action="clear_folder",
+    )
+    actor_id = _get_request_user_id(current_user)
     existing_link = session.exec(
         select(BookmarkFolderLink).where(BookmarkFolderLink.bookmark_id == bookmark_id)
     ).first()
@@ -1187,8 +1464,8 @@ def delete_bookmark_folder(
         entity_type="bookmark",
         entity_id=bookmark_id,
         action="update",
-        owner_user_id=user_id,
-        actor_user_id=current_user["sub"],
+        owner_user_id=bookmark.owner_user_id,
+        actor_user_id=actor_id,
         details={"folder_cleared": True, "previous_folder_id": folder_id},
     )
     session.commit()
@@ -1202,8 +1479,17 @@ def preview_bookmark(
     session=Depends(get_session),
 ):
     bm = session.get(Bookmark, bookmark_id)
-    if not bm or bm.owner_user_id != current_user["sub"]:
+    if not bm:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=bm.owner_user_id,
+        entity_type="bookmark",
+        entity_id=bm.id,
+        attempted_action="preview",
+        permission=PERMISSION_READ_BOOKMARKS,
+    )
     preview_url = _resolve_preview_source(bm)
     if not preview_url:
         raise HTTPException(status_code=404, detail="No content available for preview")
@@ -1231,8 +1517,17 @@ def preview_bookmark(
 @router.get("/{bookmark_id}", response_model=BookmarkOut)
 def get_bookmark(bookmark_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
     bm = session.get(Bookmark, bookmark_id)
-    if not bm or bm.owner_user_id != current_user["sub"]:
+    if not bm:
         raise HTTPException(status_code=404, detail="Not found")
+    _require_owner_or_permission(
+        session,
+        current_user,
+        owner_user_id=bm.owner_user_id,
+        entity_type="bookmark",
+        entity_id=bm.id,
+        attempted_action="read",
+        permission=PERMISSION_READ_BOOKMARKS,
+    )
     return BookmarkOut(
         id=bm.id,
         instapaper_bookmark_id=bm.instapaper_bookmark_id,
@@ -1555,24 +1850,50 @@ def bulk_delete_bookmarks(
     delete_remote = bool(body.get("delete_remote", True))
     if not isinstance(ids, list) or not ids:
         raise HTTPException(status_code=400, detail="ids list required")
-    oauth = get_instapaper_oauth_session(current_user["sub"]) if delete_remote else None
+    actor_id = _get_request_user_id(current_user)
+    enforcement_enabled = is_user_mgmt_enforce_enabled()
+    oauth_cache: dict[str, Optional[object]] = {} if delete_remote else {}
     for bid in ids:
         bm = session.get(Bookmark, str(bid))
-        if not bm or bm.owner_user_id != current_user["sub"]:
+        if not bm:
             continue
-        if oauth:
-            try:
-                resp = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data={"bookmark_id": bm.instapaper_bookmark_id})
-                resp.raise_for_status()
-            except Exception:
-                pass
+        if enforcement_enabled:
+            _require_owner_or_permission(
+                session,
+                current_user,
+                owner_user_id=bm.owner_user_id,
+                entity_type="bookmark",
+                entity_id=bm.id,
+                attempted_action="bulk_delete",
+                permission=PERMISSION_MANAGE_BOOKMARKS,
+                mask_as_not_found=False,
+                forbidden_detail=f"Forbidden bookmark ID: {bm.id}",
+            )
+        elif bm.owner_user_id != actor_id:
+            continue
+
+        oauth = None
+        if delete_remote:
+            oauth = oauth_cache.get(bm.owner_user_id)
+            if bm.owner_user_id not in oauth_cache:
+                oauth = get_instapaper_oauth_session(bm.owner_user_id)
+                oauth_cache[bm.owner_user_id] = oauth
+            if oauth:
+                try:
+                    resp = oauth.post(
+                        INSTAPAPER_BOOKMARKS_DELETE_URL,
+                        data={"bookmark_id": bm.instapaper_bookmark_id},
+                    )
+                    resp.raise_for_status()
+                except Exception:
+                    pass
         record_audit_log(
             session,
             entity_type="bookmark",
             entity_id=bm.id,
             action="delete",
             owner_user_id=bm.owner_user_id,
-            actor_user_id=current_user["sub"],
+            actor_user_id=actor_id,
             details={
                 "instapaper_bookmark_id": bm.instapaper_bookmark_id,
                 "bulk": True,
