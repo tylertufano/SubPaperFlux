@@ -165,6 +165,70 @@ PY
 - Endpoints: `/status`, `/site-configs`, `/credentials`, `/feeds`, `/jobs` (Bearer token required except `/status`)
  - Bookmarks: `/bookmarks` (list with filters/pagination, delete with optional Instapaper removal)
 
+## OIDC Configuration
+
+### Backend settings
+
+- `OIDC_ISSUER`: Point to the base issuer URL from your identity provider (for example, `https://idp.example.com/realms/main`). The API trims a trailing `/.well-known/openid-configuration` segment, so you can supply either the bare issuer or the full discovery document URL.
+- `OIDC_AUDIENCE`: Optional explicit audience used when validating tokens. Provide this when your IdP emits a distinct `aud` claim (for multi-client deployments). If omitted, the API falls back to `OIDC_CLIENT_ID` when present.
+- `OIDC_CLIENT_ID`: Required when you rely on the client ID for the API's `aud` check or when a single value should align with both the frontend and backend. Set this to the client identifier that matches your IdP registration.
+- `OIDC_JWKS_URL`: Optional override that points directly to the signing keys (JWKS) endpoint. Leave unset to let the API discover `jwks_uri` from the issuer's discovery document.
+- `DEV_NO_AUTH`: Set to `1`/`true` to bypass OIDC entirely and issue a synthetic developer identity. Only use this for local development.
+- `DEV_USER_SUB`, `DEV_USER_EMAIL`, `DEV_USER_NAME`, `DEV_USER_GROUPS`: Customize the placeholder identity returned while `DEV_NO_AUTH` is enabled. Groups are provided as a comma-separated list.
+- `USER_MGMT_CORE`: Enable (`1`, `true`, `yes`, `on`) to expose the core user-management APIs. This toggle must be on for any OIDC-driven auto-provisioning.
+- `OIDC_AUTO_PROVISION_USERS`: Enable to automatically create or update `User` records when new identities sign in. Requires `USER_MGMT_CORE` to be active.
+- `OIDC_AUTO_PROVISION_DEFAULT_ROLE`: Optional role name to assign to newly provisioned users. When set, the backend attempts to grant (or create) the role after provisioning succeeds.
+
+### Frontend (NextAuth.js) settings
+
+- `API_BASE` / `NEXT_PUBLIC_API_BASE`: Keep these aligned with where the API is reachable from the Next.js server (SSR) and browser clients respectively.
+- `NEXTAUTH_SECRET`: Secret used by NextAuth for signing/encryption. Generate a strong random string for production.
+- `OIDC_ISSUER`: Must match the backend issuer and the IdP registration.
+- `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET`: The client credentials issued by your IdP. They must match the API's expectations so that the resulting tokens pass the `aud` check.
+- Callback URL: NextAuth handles the OIDC response at `/api/auth/callback/oidc` (see `web/pages/api/auth/[...nextauth].ts`). Ensure this path is included in your IdP client's redirect URIs.
+- Scope and checks: The default provider configuration requests `openid profile email` and enforces PKCE + state. Make sure the IdP client allows those scopes and the authorization code flow.
+
+### Using Authelia as the IdP
+
+1. **Register a client in Authelia.** In `configuration.yml` add an entry under `identity_providers.oidc.clients`:
+
+   ```yaml
+   identity_providers:
+     oidc:
+       # ...global OIDC settings...
+       clients:
+         - id: subpaperflux
+           description: SubPaperFlux UI
+           secret: <generated-client-secret>
+           redirect_uris:
+             - https://app.example.com/api/auth/callback/oidc
+           scopes:
+             - openid
+             - profile
+             - email
+           grant_types:
+             - authorization_code
+           response_types:
+             - code
+           token_endpoint_auth_method: client_secret_post
+           require_pkce: true
+   ```
+
+   Adjust the `id`, `secret`, and redirect URL to match your deployment domain. Authelia enables state handling automatically; `require_pkce: true` keeps it aligned with the NextAuth PKCE check.
+
+2. **Expose the discovery document.** Authelia publishes the issuer metadata at `https://<authelia-host>/.well-known/openid-configuration`. Set `OIDC_ISSUER` on both the API and web app to the base issuer URL (for example, `https://auth.example.com`).
+
+3. **Align audience/client IDs.** Authelia emits the client ID as the `aud` claim by default. Set both `OIDC_CLIENT_ID` values (API and web) to the Authelia client `id`. Only set `OIDC_AUDIENCE` if you configure Authelia to emit a custom audience claim.
+
+4. **JWKS without discovery.** If you disable discovery in Authelia, manually point `OIDC_JWKS_URL` to the JWKS endpoint (typically `https://<authelia-host>/.well-known/jwks.json`). Otherwise, leave it unset so the API discovers the signing keys automatically.
+
+### Verify the setup
+
+- Fetch the issuer metadata (for example, `curl https://auth.example.com/.well-known/openid-configuration`) to ensure discovery works and the JWKS URI is reachable.
+- Sign in through the web app and confirm the API accepts the issued access token (HTTP 200 from a protected endpoint). If validation fails, review `aud`, `iss`, and signature checks against your `OIDC_*` settings.
+- When `OIDC_AUTO_PROVISION_USERS` is enabled, verify that new users appear in the `/v1/admin/users` API (or backing database) after their first login and that any default role assignment succeeds.
+- Optionally, inspect Authelia logs for successful authorization code, token, and JWKS requests to confirm the full round-trip.
+
 Frontend (Next.js) API Base Resolution
 - The web UI discovers the API base at runtime so you can deploy without rebuilds and support different domains/subpaths.
 - Resolution order (client): `NEXT_PUBLIC_API_BASE` (build-time) → `window.__SPF_API_BASE` → `GET /ui-config` (runtime) → relative base `''` (same-origin proxy).
