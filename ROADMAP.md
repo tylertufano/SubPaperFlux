@@ -47,9 +47,10 @@ Status legend: [x] done, [~] in progress, [ ] todo
   - [x] Status filter, list, details flyout with payload/errors: `web/pages/jobs.tsx:1`
   - [x] Backoff timer and dedupe badges
   - [x] Retry and Retry All failed/dead
-- [~] Credentials (UI-056)
+- [x] Credentials (UI-056)
   - [x] List, create, delete
-  - [ ] Collect Instapaper username/password, fetch the OAuth token + secret automatically on the user's behalf, and persist credentials—no manual token pasting
+  - [x] Collect Instapaper username/password, fetch the OAuth token + secret automatically on the user's behalf, and persist credentials—no manual token pasting
+    - Evidence: `app/routers/credentials.py:162-240`, `web/pages/credentials.tsx:64-88`
   - [x] Test Instapaper/Miniflux
   - [x] Update forms with validation and tooltips; merge secrets safely (UI-006)
     - Evidence: `app/routers/credentials.py:1`, `web/pages/credentials.tsx:1`
