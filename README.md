@@ -20,12 +20,12 @@ This repo contains the main service script `subpaperflux.py`, a Dockerfile for a
 Requirements
 - Python 3.11+ (Docker image uses Python 3.12 slim).
 - Google Chrome available (the Docker image installs `google-chrome-stable`).
-- Instapaper app credentials (consumer key/secret) and account tokens.
+- Instapaper app credentials (consumer key/secret) and an Instapaper login that the web UI can exchange for long-lived tokens.
 
 Configuration Overview
 - Put all configuration files in one directory and point the service to either a single `.ini` in that directory or the whole directory.
 - The service expects these files:
-  - `credentials.json`: IDs and secrets for logins, Instapaper, and Miniflux.
+  - `credentials.json`: IDs and secrets for logins, Instapaper, and Miniflux. Instapaper entries should start with placeholders; complete the onboarding flow in the UI to exchange the username/password for tokens and persist them.
   - `site_configs.json`: Site‑specific login selectors and cookie names.
   - `instapaper_app_creds.json`: Instapaper app consumer key/secret.
   - `cookie_state.json`: Automatically managed cache of cookies (created/updated by the service).
@@ -42,8 +42,7 @@ JSON Files
     - username: Site login username/email.
     - password: Site login password.
   - For Instapaper credentials (referenced by `instapaper_id`):
-    - oauth_token: Instapaper OAuth token.
-    - oauth_token_secret: Instapaper OAuth token secret.
+    - oauth_token / oauth_token_secret: Filled in automatically after you create the credential through the UI's Instapaper onboarding (description + username/password exchange).
   - For Miniflux (referenced by `miniflux_id`):
     - miniflux_url: Base URL of your Miniflux instance.
     - api_key: Personal Miniflux API token.
@@ -52,7 +51,7 @@ JSON Files
   ```json
   {
     "my_login": { "username": "user@example.com", "password": "secret" },
-    "my_instapaper": { "oauth_token": "...", "oauth_token_secret": "..." },
+    "my_instapaper": { "oauth_token": "<set via UI onboarding>", "oauth_token_secret": "<set via UI onboarding>" },
     "my_miniflux": { "miniflux_url": "http://miniflux:8080", "api_key": "..." }
   }
   ```
@@ -93,7 +92,7 @@ INI Files
   ```
 
 Notes
-- You can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI to migrate credentials. If the INI references `instapaper_id` and the tokens are missing, the script will attempt to exchange email/password for OAuth tokens, persist them in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
+- Prefer the web UI credential flow (see [docs/instapaper-onboarding.md](docs/instapaper-onboarding.md)) to collect a description, username, and password, exchange them for Instapaper tokens, and persist the encrypted secrets. If you cannot use the UI, you can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI. When the INI references `instapaper_id` and tokens are missing, the script will attempt the exchange, persist the tokens in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
 - Per‑INI state is stored in `your_feed.ctrl`. You can set flags there:
   - force_run: Set to `true` to force a login/poll cycle on next loop.
   - force_sync_and_purge: Set to `true` to trigger Instapaper sync + retention purge.
@@ -132,6 +131,7 @@ Templates
   - `templates/credentials.example.json` → `credentials.json`
   - `templates/site_configs.example.json` → `site_configs.json`
   - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
+- After copying `credentials.json`, run through the Instapaper onboarding flow in the UI so the referenced `instapaper_id` entries receive tokens automatically.
 
 Quickstart
 - mkdir `config/`; copy and rename templates above into `config/`.
@@ -285,7 +285,7 @@ Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
   - `site_login`: `{ "username": "...", "password": "..." }`
   - `miniflux`: `{ "miniflux_url": "...", "api_key": "..." }`
-- `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }` (populate via the `/credentials/instapaper/login` onboarding flow; see `docs/instapaper-onboarding.md`)
+- `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }` (populate via the `/credentials/instapaper/login` onboarding flow that collects a description plus username/password; see `docs/instapaper-onboarding.md`)
   - `instapaper_app` (global or user): `{ "consumer_key": "...", "consumer_secret": "..." }`
 - Handlers prefer DB credentials by `id` (or by `kind` for `instapaper_app`), and fall back to file templates if not found.
 - API responses mask sensitive values (e.g., tokens, passwords). Stored values are encrypted at rest using AES‑GCM with `CREDENTIALS_ENC_KEY`.
