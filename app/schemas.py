@@ -270,6 +270,15 @@ class AdminRoleDetail(AdminRoleListItem):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+class AdminRolesPage(BaseModel):
+    items: List[AdminRoleListItem]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
+
+
 class AdminRoleCreate(BaseModel):
     name: constr(strip_whitespace=True, min_length=2, max_length=64)
     description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
