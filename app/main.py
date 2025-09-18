@@ -9,6 +9,7 @@ from .config import is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 from .db import get_session_ctx, init_db, reset_current_user_id, set_current_user_id
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
+from .routers.admin_roles_v1 import router as admin_roles_v1_router
 from .routers.admin_users_v1 import router as admin_users_v1_router
 from .routers.credentials_v1 import router as credentials_v1_router
 from .routers.feeds_v1 import router as feeds_v1_router
@@ -170,6 +171,7 @@ def create_app() -> FastAPI:
     app.include_router(status.router, prefix="/v1", tags=["v1"])  # v1 status
     if user_mgmt_core_enabled:
         app.include_router(admin_audit_v1_router)
+        app.include_router(admin_roles_v1_router)
         app.include_router(admin_users_v1_router)
     app.include_router(me_v1_router)
     app.include_router(me_tokens_v1_router)
