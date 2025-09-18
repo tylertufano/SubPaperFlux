@@ -7,6 +7,7 @@ from sqlmodel import select
 
 from ..auth.oidc import get_current_user
 from ..auth import (
+    PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
     PERMISSION_READ_GLOBAL_SITE_CONFIGS,
     has_permission,
 )
@@ -85,7 +86,7 @@ def test_site_config(config_id: str, current_user=Depends(get_current_user), ses
         _ensure_permission(
             session,
             current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
         )
     url = sc.site_url
     try:
