@@ -7,8 +7,30 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import { getSession } from 'next-auth/react'
 
+export type UiConfig = {
+  apiBase: string
+  userMgmtCore: boolean
+  userMgmtUi: boolean
+}
+
+const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
+
+export function parseEnvBoolean(value?: string | null): boolean {
+  if (!value) return false
+  return TRUTHY_ENV_VALUES.has(value.trim().toLowerCase())
+}
+
 const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
+const BUILD_USER_MGMT_CORE = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_CORE)
+const BUILD_USER_MGMT_UI = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_UI)
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
+
+type UiConfigWindow = Window & {
+  __SPF_UI_CONFIG?: UiConfig
+  __SPF_API_BASE?: string
+}
+
+let uiConfigPromise: Promise<UiConfig> | null = null
 
 // Warn at runtime if we are on HTTPS but API base is insecure HTTP
 if (typeof window !== 'undefined') {
@@ -18,6 +40,70 @@ if (typeof window !== 'undefined') {
       console.warn('[SubPaperFlux] Insecure NEXT_PUBLIC_API_BASE over HTTPS page:', BUILD_API_BASE)
     }
   } catch {}
+}
+
+export function readUiConfigFromEnv(): UiConfig {
+  return {
+    apiBase: process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || '',
+    userMgmtCore: parseEnvBoolean(process.env.USER_MGMT_CORE),
+    userMgmtUi: parseEnvBoolean(process.env.USER_MGMT_UI ?? process.env.NEXT_PUBLIC_USER_MGMT_UI),
+  }
+}
+
+const BUILD_UI_CONFIG: UiConfig = {
+  apiBase: BUILD_API_BASE,
+  userMgmtCore: BUILD_USER_MGMT_CORE,
+  userMgmtUi: BUILD_USER_MGMT_UI,
+}
+
+function normalizeUiConfig(candidate: unknown, fallback: UiConfig): UiConfig {
+  if (!candidate || typeof candidate !== 'object') {
+    return { ...fallback }
+  }
+  const value = candidate as Partial<Record<keyof UiConfig, unknown>>
+  return {
+    apiBase: typeof value.apiBase === 'string' ? value.apiBase : fallback.apiBase,
+    userMgmtCore: typeof value.userMgmtCore === 'boolean' ? value.userMgmtCore : fallback.userMgmtCore,
+    userMgmtUi: typeof value.userMgmtUi === 'boolean' ? value.userMgmtUi : fallback.userMgmtUi,
+  }
+}
+
+function storeUiConfig(config: UiConfig) {
+  if (typeof window === 'undefined') return
+  const w = window as UiConfigWindow
+  const copy: UiConfig = { ...config }
+  w.__SPF_UI_CONFIG = copy
+  w.__SPF_API_BASE = copy.apiBase
+}
+
+export async function getUiConfig(): Promise<UiConfig> {
+  if (typeof window === 'undefined') {
+    return readUiConfigFromEnv()
+  }
+  const w = window as UiConfigWindow
+  if (w.__SPF_UI_CONFIG) {
+    return w.__SPF_UI_CONFIG
+  }
+  if (!uiConfigPromise) {
+    const fallback = { ...BUILD_UI_CONFIG }
+    uiConfigPromise = (async () => {
+      try {
+        const res = await fetch('/ui-config')
+        if (res.ok) {
+          const data = await res.json()
+          const normalized = normalizeUiConfig(data, fallback)
+          storeUiConfig(normalized)
+          return normalized
+        }
+      } catch {}
+      storeUiConfig(fallback)
+      return fallback
+    })()
+    uiConfigPromise.finally(() => {
+      uiConfigPromise = null
+    })
+  }
+  return uiConfigPromise
 }
 
 let clientsPromise: Promise<{
@@ -36,20 +122,8 @@ type AuthorizedRequestOptions = Omit<RequestInit, 'headers'> & {
 }
 
 async function resolveApiBase(): Promise<string> {
-  if (typeof window === 'undefined') {
-    return process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || ''
-  }
-  if (BUILD_API_BASE) return BUILD_API_BASE
-  const w: any = window as any
-  if (typeof w.__SPF_API_BASE === 'string') return w.__SPF_API_BASE
-  try {
-    const res = await fetch('/ui-config')
-    if (res.ok) {
-      const data = await res.json()
-      if (typeof data.apiBase === 'string') return data.apiBase
-    }
-  } catch {}
-  return ''
+  const config = await getUiConfig()
+  return config.apiBase
 }
 
 async function getClients() {

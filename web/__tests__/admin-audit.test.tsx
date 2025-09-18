@@ -4,8 +4,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithSWR, makeSWRSuccess, useSWRMock } from './helpers/renderWithSWR'
 import AdminAudit from '../pages/admin/audit'
 
+const { useFeatureFlagsMock } = vi.hoisted(() => ({
+  useFeatureFlagsMock: vi.fn(() => ({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })),
+}))
+
 vi.mock('next/router', () => ({
   useRouter: () => ({ pathname: '/admin/audit' }),
+}))
+
+vi.mock('../lib/featureFlags', () => ({
+  __esModule: true,
+  useFeatureFlags: () => useFeatureFlagsMock(),
 }))
 
 vi.mock('../components', async () => {
@@ -32,6 +41,8 @@ vi.mock('../components', async () => {
 describe('AdminAudit page', () => {
   beforeEach(() => {
     useSWRMock.mockReset()
+    useFeatureFlagsMock.mockReset()
+    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })
   })
 
   it('renders audit log entries, details, and filter actions', async () => {
@@ -128,5 +139,16 @@ describe('AdminAudit page', () => {
     const emptyState = screen.getByTestId('empty-state')
     const emptyButton = within(emptyState).getByRole('button', { name: 'Clear Filters' })
     expect(emptyButton).toBeInTheDocument()
+  })
+
+  it('shows informational alert when audit log is disabled', () => {
+    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: false, userMgmtUi: false, isLoaded: true })
+
+    renderWithSWR(<AdminAudit />, { locale: 'en' })
+
+    const alert = screen.getByTestId('alert')
+    expect(alert).toHaveTextContent('Audit logging is currently disabled.')
+    expect(useSWRMock).toHaveBeenCalledTimes(1)
+    expect(useSWRMock.mock.calls[0][0]).toBeNull()
   })
 })

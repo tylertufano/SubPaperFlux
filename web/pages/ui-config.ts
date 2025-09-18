@@ -2,8 +2,16 @@ import type { GetServerSideProps } from 'next'
 
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   const apiBase = process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || ''
+  const truthy = new Set(['1', 'true', 'yes', 'on'])
+  const parseBoolean = (value?: string | null) => {
+    if (!value) return false
+    const normalized = value.trim().toLowerCase()
+    return truthy.has(normalized)
+  }
+  const userMgmtCore = parseBoolean(process.env.USER_MGMT_CORE)
+  const userMgmtUi = parseBoolean(process.env.USER_MGMT_UI ?? process.env.NEXT_PUBLIC_USER_MGMT_UI)
   res.setHeader('Content-Type', 'application/json')
-  res.write(JSON.stringify({ apiBase }))
+  res.write(JSON.stringify({ apiBase, userMgmtCore, userMgmtUi }))
   res.end()
   // Prevent rendering; response already sent
   return { props: {} as any }
