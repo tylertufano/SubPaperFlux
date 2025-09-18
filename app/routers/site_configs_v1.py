@@ -1,10 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from bs4 import BeautifulSoup
 import httpx
+from bs4 import BeautifulSoup
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlmodel import select
 
+from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
 from ..auth import (
     PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
@@ -15,6 +17,7 @@ from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig
 from ..schemas import SiteConfigOut, SiteConfigsPage
+from ..util.quotas import enforce_user_quota
 
 
 router = APIRouter(prefix="/v1/site-configs", tags=["v1"])
@@ -109,3 +112,82 @@ def test_site_config(config_id: str, current_user=Depends(get_current_user), ses
             }
     except httpx.RequestError as e:
         return {"ok": False, "error": str(e)}
+
+
+@router.post("/{config_id}/copy", response_model=SiteConfigOut, status_code=status.HTTP_201_CREATED)
+def copy_site_config_v1(
+    config_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    source = session.get(SiteConfig, config_id)
+    if not source or source.owner_user_id is not None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    try:
+        allowed = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+        )
+    except HTTPException as exc:  # pragma: no cover - defensive branch
+        if exc.status_code == status.HTTP_403_FORBIDDEN:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found") from exc
+        raise
+
+    if not allowed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    user_id = current_user["sub"]
+
+    enforce_user_quota(
+        session,
+        user_id,
+        quota_field="quota_site_configs",
+        resource_name="Site config",
+        count_stmt=select(func.count())
+        .select_from(SiteConfig)
+        .where(SiteConfig.owner_user_id == user_id),
+    )
+
+    clone = SiteConfig(
+        name=source.name,
+        site_url=source.site_url,
+        username_selector=source.username_selector,
+        password_selector=source.password_selector,
+        login_button_selector=source.login_button_selector,
+        post_login_selector=source.post_login_selector,
+        cookies_to_store=list(source.cookies_to_store or []),
+        owner_user_id=user_id,
+    )
+
+    session.add(clone)
+
+    record_audit_log(
+        session,
+        entity_type="setting",
+        entity_id=clone.id,
+        action="copy",
+        owner_user_id=clone.owner_user_id,
+        actor_user_id=user_id,
+        details={
+            "source_config_id": source.id,
+            "name": clone.name,
+            "site_url": clone.site_url,
+        },
+    )
+
+    session.commit()
+    session.refresh(clone)
+
+    return SiteConfigOut(
+        id=clone.id,
+        name=clone.name,
+        site_url=clone.site_url,
+        username_selector=clone.username_selector,
+        password_selector=clone.password_selector,
+        login_button_selector=clone.login_button_selector,
+        post_login_selector=clone.post_login_selector,
+        cookies_to_store=list(clone.cookies_to_store or []),
+        owner_user_id=clone.owner_user_id,
+    )
