@@ -256,6 +256,31 @@ class RoleGrantRequest(BaseModel):
     is_system: Optional[bool] = None
 
 
+class AdminRoleListItem(BaseModel):
+    id: str
+    name: constr(strip_whitespace=True, min_length=2, max_length=64)
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+    is_system: bool = False
+    created_at: datetime
+    updated_at: datetime
+    assigned_user_count: int = Field(default=0, ge=0)
+
+
+class AdminRoleDetail(AdminRoleListItem):
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AdminRoleCreate(BaseModel):
+    name: constr(strip_whitespace=True, min_length=2, max_length=64)
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+    is_system: Optional[bool] = Field(default=None)
+
+
+class AdminRoleUpdate(BaseModel):
+    name: Optional[constr(strip_whitespace=True, min_length=2, max_length=64)] = None
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+
+
 class AdminUserOut(BaseModel):
     id: str
     email: Optional[str] = None
