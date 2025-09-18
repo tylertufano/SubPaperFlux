@@ -9,12 +9,12 @@ Create Date: 2025-10-06
 from alembic import op
 import sqlalchemy as sa
 
-
-# Generated via gen_id('org') so other migrations can reference the same ID.
-DEFAULT_ORGANIZATION_ID = "org_3c05302ebebe"
-DEFAULT_ORGANIZATION_SLUG = "default"
-DEFAULT_ORGANIZATION_NAME = "Default Organization"
-DEFAULT_ORGANIZATION_DESCRIPTION = "Primary organization for legacy users"
+from app.organization_defaults import (
+    DEFAULT_ORGANIZATION_DESCRIPTION,
+    DEFAULT_ORGANIZATION_ID,
+    DEFAULT_ORGANIZATION_NAME,
+    DEFAULT_ORGANIZATION_SLUG,
+)
 
 # revision identifiers, used by Alembic.
 revision = "0018_add_organizations"
