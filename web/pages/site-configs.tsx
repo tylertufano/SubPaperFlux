@@ -85,10 +85,10 @@ export default function SiteConfigs() {
         }
         return current
       }, { revalidate: false })
-      setBanner({ kind: 'success', message: t('site_configs_copy_success') })
+      setBanner({ kind: 'success', message: t('copy_to_workspace_success') })
     } catch (e: any) {
       const reason = e?.message || String(e)
-      setBanner({ kind: 'error', message: t('site_configs_copy_error', { reason }) })
+      setBanner({ kind: 'error', message: t('copy_to_workspace_error', { reason }) })
     } finally {
       setCopyingId(null)
     }
@@ -243,7 +243,7 @@ export default function SiteConfigs() {
                           disabled={copyingId === sc.id}
                           aria-busy={copyingId === sc.id}
                         >
-                          {t('site_configs_copy_button')}
+                          {t('copy_to_workspace')}
                         </button>
                       )}
                       <button type="button" className="btn" onClick={async () => { try { const r = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id }); setBanner({ kind: r.ok ? 'success' : 'error', message: t('site_configs_test_result', { result: JSON.stringify(r) }) }) } catch (e: any) { setBanner({ kind: 'error', message: e.message || String(e) }) } }}>{t('site_configs_test_button')}</button>
