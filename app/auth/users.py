@@ -9,6 +9,7 @@ from typing import Any, Tuple
 from sqlmodel import Session
 
 from ..models import User
+from .role_overrides import merge_claims_with_overrides
 
 
 def _get_identity_mapping(identity: Any) -> Mapping[str, Any]:
@@ -57,9 +58,11 @@ def ensure_user_from_identity(
         if picture and user.picture_url != picture:
             user.picture_url = picture
             updated = True
-        if claims and user.claims != claims:
-            user.claims = claims
-            updated = True
+        if claims:
+            merged_claims = merge_claims_with_overrides(claims, user.claims)
+            if user.claims != merged_claims:
+                user.claims = merged_claims
+                updated = True
         if update_last_login:
             user.last_login_at = now
             updated = True
