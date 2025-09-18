@@ -2,7 +2,7 @@ import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 
-const wellKnown = process.env.OIDC_ISSUER!
+const issuer = process.env.OIDC_ISSUER!
 
 export const authOptions: NextAuthConfig = {
   providers: [
@@ -10,7 +10,7 @@ export const authOptions: NextAuthConfig = {
       id: 'oidc',
       name: 'OIDC',
       type: 'oidc',
-      wellKnown,
+      issuer,
       clientId: process.env.OIDC_CLIENT_ID,
       clientSecret: process.env.OIDC_CLIENT_SECRET,
       idToken: true,
