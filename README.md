@@ -150,6 +150,12 @@ To run the web workspace tests locally:
 3. Execute the Vitest component and accessibility suites once: `npm run test -- --run`
 4. Point Playwright at a running API (for example, `export API_BASE=http://localhost:8000`) and launch the smoke test: `npm run test:e2e` (add `-- --headless` to mirror CI).
 
+To verify Postgres row-level security policies:
+
+- Start a database (for example, `docker compose -f templates/docker-compose.api.example.yml up -d db`).
+- Export a Postgres DSN, e.g., `export TEST_POSTGRES_URL=postgresql+psycopg2://app:app@localhost:5432/app`.
+- Run the dedicated suite: `pytest tests/test_rls_policies.py -m postgres`.
+
 API (OIDC + DB) — Optional Preview
 - Install API deps: `pip install -r requirements.api.txt`
 - Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
