@@ -10,6 +10,7 @@ _TRUE_VALUES = {"1", "true", "yes", "on"}
 __all__ = [
     "is_user_mgmt_core_enabled",
     "is_user_mgmt_enforce_enabled",
+    "is_rls_enforced",
 ]
 
 
@@ -31,3 +32,17 @@ def is_user_mgmt_enforce_enabled() -> bool:
     if value is None:
         return False
     return value.strip().lower() in _TRUE_VALUES
+
+
+@lru_cache(maxsize=1)
+def is_rls_enforced() -> bool:
+    """Return ``True`` when row-level security enforcement should run.
+
+    Prefers the dedicated ``USER_MGMT_RLS_ENFORCE`` flag when set, otherwise
+    falls back to ``USER_MGMT_ENFORCE`` for backwards compatibility.
+    """
+
+    value = os.getenv("USER_MGMT_RLS_ENFORCE")
+    if value is not None:
+        return value.strip().lower() in _TRUE_VALUES
+    return is_user_mgmt_enforce_enabled()
