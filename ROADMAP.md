@@ -221,7 +221,8 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
   - Evidence (admin UI workflow): `web/pages/admin/users.tsx:1-210`, `web/pages/admin/users.tsx:839-1008`
 - [x] Global Assets (copy to my workspace) (UI-041)
   - Evidence: `app/routers/credentials_v1.py:82-139`, `app/routers/site_configs_v1.py:117-190`, `tests/test_copy_global_assets.py:1-220`
-- [ ] Org Views / user management (if not delegated to IdP) (UI-042)
+- [x] Org Views / user management (if not delegated to IdP) (UI-042)
+  - Evidence: `app/routers/admin_orgs_v1.py:1`, `web/pages/admin/orgs.tsx:1`, `docs/user-management-rollout.md#organization-management`
 - [ ] RLS enforcement: enforce per-table policies and verify `app.user_id` propagation end-to-end (UI-012)
 - [ ] RLS: Enable/disable with warnings; doc links (UI-046)
 
