@@ -1,131 +1,145 @@
-# User Management Rollout Plan
+# User Management Deployment Guide
 
-This document outlines how to introduce granular user and role management without disrupting existing operators. The rollout is split into three phases with explicit feature flag guardrails and a defined migration order so that we can stage risk and quickly revert if necessary.
+This document explains how the user-management stack is shipped, configured, and
+operated now that all related capabilities are enabled by default. The APIs,
+UI, and enforcement paths are always available unless operators explicitly opt
+out via environment overrides. Use this guide as a runbook for deployments,
+emergency toggles, and day-to-day administration.
 
 ## Dependencies
 
-Before entering Phase A ensure the following foundational work has landed in production deployments:
+Ensure the following foundational work is in place before rolling out a new
+build that includes user-management changes:
 
-- Users/roles data model (new tables, associations, and seed data for the default operator role).
-- Session variable middleware that populates `current_user_id`, `current_role`, and audit context on every request.
-- Organizations and membership data model (`alembic` revision `0018_add_organizations`) seeded with a default tenant for legacy users.
+- Users/roles data model (new tables, associations, and seed data for the
+  default operator role).
+- Session variable middleware that populates `current_user_id`,
+  `current_role`, and audit context on every request.
+- Organizations and membership data model (`alembic` revision
+  `0018_add_organizations`) seeded with a default tenant for legacy users.
 
-## Feature Flags
+## Default configuration and overrides
 
-| Flag | Default | Purpose |
+Leaving the deployment environment unconfigured exposes the entire
+user-management surface area. Admin routers, enforcement helpers, and the React
+interface boot with user management enabled and assume access should be
+restricted according to the RBAC ruleset.
+
+The flags remain available for staged rollbacks or selective disablement. They
+are parsed with the helper in `app/config.py`, which treats `1`, `true`, `yes`,
+`on` (case-insensitive) as truthy and falls back to the defaults in the table
+below when a variable is unset or empty:
+
+| Setting | Default | Purpose |
 | --- | --- | --- |
-| `user_mgmt_core` (`USER_MGMT_CORE`) | `off` | Enables persistence and API endpoints for managing users and role assignments.
-| `user_mgmt_ui` | `off` | Surfaces the management UI (list, create, assign roles) in the admin area.
-| `user_mgmt_enforce` | `off` | Enforces role-based access control (RBAC) checks on protected endpoints.
+| `user_mgmt_core` (`USER_MGMT_CORE`) | `on` | Exposes the `/v1/admin/users` and `/v1/admin/audit` routers, enables persistence for user and role records, and allows OIDC auto-provisioning. Set to a non-truthy value to hide the endpoints and skip provisioning. |
+| `user_mgmt_ui` (`USER_MGMT_UI` / `NEXT_PUBLIC_USER_MGMT_UI`) | `on` | Surfaces the management UI (navigation, list/detail screens, role assignment flows) in the admin area. Set to `0`/`false` to hide the pages while leaving the backend reachable. |
+| `user_mgmt_enforce` (`USER_MGMT_ENFORCE`) | `on` | Enforces role-based access control (RBAC) checks on protected endpoints. Disable to temporarily fall back to permissive behavior while leaving the UI/API available. |
+| `user_mgmt_rls_enforce` (`USER_MGMT_RLS_ENFORCE`) | inherits from enforcement | Controls the automatic Postgres row-level security (RLS) bootstrap. When unset it mirrors `USER_MGMT_ENFORCE`; set explicitly to manage the startup hook independently. |
 
-Each flag can be enabled independently per environment. Turning a flag off should always return the system to the prior behavior.
+When an environment variable is set to `0`, `false`, `no`, or left as an empty
+string, the system interprets it as disabled and immediately reflects the new
+state on the next request (or process restart for cached helpers).
 
-`USER_MGMT_CORE` is read from the process environment. Set it to `1`, `true`, `yes`, or `on` to expose the `/v1/admin/users` and `/v1/admin/audit` routers and to allow OIDC auto-provisioning to run when `OIDC_AUTO_PROVISION_USERS` is also enabled. Leave it unset (or any other value) to keep those endpoints hidden and skip auto-provisioning entirely.
+## Deployment checklist
 
-## Migration Order
+1. Apply any outstanding database migrations, especially those that create or
+   modify the user/role or organization tables.
+2. Deploy the backend and frontend. No feature-flag coordination is required—
+   the routers and UI will be live after the rollout.
+3. Run smoke tests covering the admin APIs and UI surfaces to confirm the
+   deployment picked up the schema and that RBAC enforcement behaves as
+   expected.
+4. If issues surface, use the environment overrides above to disable specific
+   layers (`USER_MGMT_UI=0`, `USER_MGMT_CORE=0`, etc.) while triaging, then
+   remove the override once resolved.
 
-1. **Deploy database migrations** adding the users/roles schema and backfilling a superuser linked to the existing operator account.
-2. **Roll out backend services** with all three feature flags defaulted to `off` to confirm the new schema is read-only compatible.
-3. **Progress through Phases A–C** below, validating telemetry and support feedback before proceeding to the next step.
+## RBAC enforcement
 
-## Phase A — Backend & Data Readiness (`user_mgmt_core`)
-
-**Goal:** Ship the underlying APIs and storage so that we can begin internal testing.
-
-1. Apply any remaining data migrations for role seeds or audit triggers.
-2. Enable `user_mgmt_core` in staging to exercise CRUD endpoints and confirm audit trails via the new session middleware.
-3. Once verified, enable the flag in production but limit use to internal admins via API tokens or scripts.
-4. Monitor logs for migration regressions (foreign key violations, missing session context) for at least one release cycle before moving to Phase B.
-
-**Rollback plan:** Disable `user_mgmt_core` and revert to the pre-rollout API behavior. Existing user records remain dormant until the flag is re-enabled.
-
-## Phase B — Management UI (`user_mgmt_ui`)
-
-**Goal:** Allow trusted operators to manage accounts through the UI while RBAC checks remain permissive.
-
-1. With Phase A stable, enable `user_mgmt_ui` in staging. Validate list pagination, creation flows, and role assignment modals.
-2. Update runbooks to include UI-driven account provisioning and deactivation steps.
-3. Enable the UI flag for a pilot group in production, keeping `user_mgmt_enforce` disabled so legacy admin actions still succeed.
-4. Collect usability feedback and confirm that audit logs capture UI-triggered changes with the session middleware context.
-
-**Rollback plan:** Toggle `user_mgmt_ui` off to hide the UI while leaving API access from Phase A intact.
-
-## Phase C — RBAC Enforcement (`user_mgmt_enforce`)
-
-**Goal:** Enforce role-based permissions for all user-triggered actions.
-
-1. Confirm role matrices are complete and that every API handler checks the session variables populated by the middleware.
-2. Enable `user_mgmt_enforce` in staging along with automated regression suites that cover critical flows (bookmarks, jobs, credentials).
-3. Stage production rollout by enabling enforcement for internal staff first, then gradually for all tenants.
-4. Instrument alerts for permission denials so we can identify missing allow-list entries or misconfigured roles quickly.
-
-### RBAC enforcement flag
-
-`USER_MGMT_ENFORCE` is the process environment variable that controls the Phase C feature flag. The flag defaults to **off** when the variable is unset or contains any value other than `1`, `true`, `yes`, or `on`. When disabled, permission checks still run but API handlers fall back to permissive behavior—for example, global collections that require an admin role simply remain hidden instead of raising a `403`. Setting the variable to one of the truthy values switches the platform into enforcement mode so that every call to `has_permission`/`require_permission` will block unauthorized access with an HTTP 403 and surface audit events for denied actions.
-
-The flag is evaluated lazily and cached via `app.config.is_user_mgmt_enforce_enabled()`, so remember to restart application processes after toggling it in long-running environments.
+RBAC is now enforced everywhere by default. `is_user_mgmt_enforce_enabled()`
+returns `True` unless `USER_MGMT_ENFORCE` is explicitly set to a falsy value, so
+all calls to `has_permission` / `require_permission` will block unauthorized
+access and emit audit events. Setting `USER_MGMT_ENFORCE=0` reverts the
+application to the previous permissive mode without removing the UI or APIs.
 
 ### Role to permission matrix
 
-The default permission assignments live in [`app/auth/permissions.py`](../app/auth/permissions.py) and can be expanded without modifying callers. The matrix currently includes:
+The default permission assignments live in
+[`app/auth/permissions.py`](../app/auth/permissions.py) and can be expanded
+without modifying callers. The matrix currently includes:
 
 | Role | Permissions | Notes |
 | --- | --- | --- |
 | `admin` (`ADMIN_ROLE_NAME`) | `site_configs:read`, `site_configs:manage`, `credentials:read`, `credentials:manage`, `bookmarks:read`, `bookmarks:manage` | Grants every permission enumerated in `ALL_PERMISSIONS` and therefore full access to global resources. |
 
-All other roles start with no elevated grants. The `has_permission` helper automatically allows users to manage resources they own (matching `owner_id`) even without explicit roles. To introduce a new role, add an entry to `ROLE_PERMISSIONS` that maps the role name to the set of permission constants to keep enforcement logic centralized.
-
-**Rollback plan:** Disable `user_mgmt_enforce` to return to permissive access while keeping the data model and UI from earlier phases available.
+All other roles start with no elevated grants. The `has_permission` helper
+automatically allows users to manage resources they own (matching `owner_id`)
+even without explicit roles. To introduce a new role, add an entry to
+`ROLE_PERMISSIONS` that maps the role name to the set of permission constants to
+keep enforcement logic centralized.
 
 ## Postgres Row-Level Security
 
-Row-level security (RLS) lets Postgres enforce ownership checks directly in the database. The rollout intentionally keeps the
-mechanics separate from the RBAC feature flags so that operators can stage database changes before switching the application
-into enforcement mode.
+Row-level security (RLS) lets Postgres enforce ownership checks directly in the
+database. Because enforcement defaults to enabled, deployments that connect to
+Postgres will automatically attempt to apply the owner policies during startup
+unless explicitly disabled.
 
 ### Prerequisites
 
-- A Postgres deployment. The admin UI hides the bootstrap actions when the `/v1/status/db` backend is not Postgres.
-- Database credentials with permission to run `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and `CREATE POLICY`. Superuser or table
-  owner privileges are required; otherwise Postgres will return `must be owner of relation` or `permission denied` errors.
-- Application middleware that populates the `app.user_id` session variable on every request. The rollout enables this when either
-  `USER_MGMT_CORE`, `USER_MGMT_ENFORCE`, or `USER_MGMT_RLS_ENFORCE` evaluates to `true` (see `app/db.py`).
+- A Postgres deployment. The admin UI hides the bootstrap actions when the
+  `/v1/status/db` backend is not Postgres.
+- Database credentials with permission to run `ALTER TABLE ... ENABLE ROW LEVEL
+  SECURITY` and `CREATE POLICY`. Superuser or table owner privileges are
+  required; otherwise Postgres will return `must be owner of relation` or
+  `permission denied` errors.
+- Application middleware that populates the `app.user_id` session variable on
+  every request. The rollout enables this whenever RLS enforcement is active
+  (see `app/db.py`).
 
-Run the **Prepare Postgres** admin action first when upgrading from an older deployment. It installs the `pg_trgm` extension and
-recommended indexes so that text search continues to work efficiently once RLS is active.
+Run the **Prepare Postgres** admin action first when upgrading from an older
+deployment. It installs the `pg_trgm` extension and recommended indexes so that
+text search continues to work efficiently once RLS is active.
 
-<a id="postgres-rls-enable"></a>
-### Enabling RLS
+### Automatic enablement
 
-Follow these steps to enable owner policies through the admin UI:
+With the defaults in place (`USER_MGMT_RLS_ENFORCE` unset), the FastAPI startup
+hook invokes `enable_rls()` whenever the deployment targets Postgres. The hook
+logs a structured summary for each managed table and downgrades to warnings if
+privileges are missing so production traffic is not blocked.
 
-1. Run the **Prepare Postgres** admin action and confirm the report shows `pg_trgm` enabled with indexes marked `Yes`.
-2. Verify the deployment is using Postgres and that the connected role has superuser or table-owner privileges. The UI disables the button until the `/v1/status/db` check reports `postgres`.
-3. Review the in-product warning, then click **Enable RLS (owner policies)**. The UI prompts for confirmation because rollback requires the manual SQL documented below.
-4. After the action completes, inspect the JSON summary to confirm each table reports `Enabled = Yes` with the expected policies.
+Set `USER_MGMT_RLS_ENFORCE=0` to skip the startup hook while leaving RBAC in
+place. This is useful during database maintenance windows or when staging RLS in
+lower environments without elevated privileges.
 
-There are two supported paths for creating the owner-based policies defined in `app/db_admin.py`:
+### Enabling RLS manually
 
-1. **One-time admin action:** The **Enable RLS** button (or `POST /v1/admin/postgres/enable-rls`) runs `enable_rls()` with the
-   active admin's credentials. The UI streams a JSON report indicating whether each table was altered and whether the `select`,
-   `update`, and `delete` owner policies were created.
-2. **Startup hook:** Setting `USER_MGMT_RLS_ENFORCE=1` (or another truthy value) adds a FastAPI startup handler that calls
-   `enable_rls()` every time the application boots. This keeps policies synchronized across deployments and logs warnings if the
-   database role lacks sufficient privileges. When the flag is not set, the hook is skipped so sqlite or read-only staging
-   environments can continue to run without RLS.
+Two paths remain available for operators who prefer an explicit rollout:
 
-Both paths are idempotent. It is safe to re-run the admin action or restart the application after schema migrations or owner
-changes to ensure policies remain in place. Because the UI cannot disable the policies once applied, read the rollback guidance
-in [Disabling RLS](#postgres-rls-disable) before moving forward in production.
+1. **One-time admin action:** The **Enable RLS** button (or
+   `POST /v1/admin/postgres/enable-rls`) runs `enable_rls()` with the active
+   admin's credentials. The UI streams a JSON report indicating whether each
+   table was altered and whether the `select`, `update`, and `delete` owner
+   policies were created.
+2. **Startup hook:** Re-enable the automatic path by setting
+   `USER_MGMT_RLS_ENFORCE=1` (or any other truthy value) after verifying manual
+   enablement works as expected.
 
-<a id="postgres-rls-disable"></a>
+Both paths are idempotent. It is safe to re-run the admin action or restart the
+application after schema migrations or owner changes to ensure policies remain
+in place. Because the UI cannot disable the policies once applied, read the
+rollback guidance in [Disabling RLS](#disabling-rls-manual-rollback) before
+moving forward in production.
+
 ### Disabling RLS (manual rollback)
 
-Row-level security can only be removed with direct SQL. To revert the owner policies:
+Row-level security can only be removed with direct SQL. To revert the owner
+policies:
 
-1. Stop any processes that set `USER_MGMT_RLS_ENFORCE` so the startup hook does not re-apply policies on boot.
-2. Run `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` for each managed table (`bookmark`, `credential`, `feed`, `job`, `siteconfig`,
-   and `cookie`).
+1. Set `USER_MGMT_RLS_ENFORCE=0` (or unset it along with
+   `USER_MGMT_ENFORCE`) so the startup hook does not re-apply policies on boot.
+2. Run `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` for each managed table
+   (`bookmark`, `credential`, `feed`, `job`, `siteconfig`, and `cookie`).
 3. Drop the RLS policies created by `enable_rls()`:
 
    ```sql
@@ -135,33 +149,55 @@ Row-level security can only be removed with direct SQL. To revert the owner poli
    -- repeat for credential, feed, job, siteconfig, and cookie tables
    ```
 
-4. Rerun the verification queries from the troubleshooting section to confirm `relrowsecurity = false` and that no lingering
-   policies remain in `pg_policies`.
+4. Rerun the verification queries from the troubleshooting section to confirm
+   `relrowsecurity = false` and that no lingering policies remain in
+   `pg_policies`.
 
 ### Troubleshooting
 
-- **Privilege errors:** `permission denied` or `must be owner` responses mean the connected database role cannot alter the table
-  or create policies. Grant the role superuser access, switch to the table owner, or transfer ownership with
+- **Privilege errors:** `permission denied` or `must be owner` responses mean the
+  connected database role cannot alter the table or create policies. Grant the
+  role superuser access, switch to the table owner, or transfer ownership with
   `ALTER TABLE <table> OWNER TO <role>;` before retrying.
 - **Verifying policies:** Inspect current policies with
-  `SELECT schemaname, tablename, policyname, permissive, roles FROM pg_policies WHERE tablename IN ('bookmark','credential','feed','job','siteconfig','cookie');`
+  `SELECT schemaname, tablename, policyname, permissive, roles FROM pg_policies
+  WHERE tablename IN ('bookmark','credential','feed','job','siteconfig','cookie');`
   and confirm `relrowsecurity` is `true` for each table via
-  `SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('bookmark','credential','feed','job','siteconfig','cookie');`.
-- **Session variable checks:** RLS policies rely on `current_setting('app.user_id', true)`. In psql, run
-  `SHOW app.user_id;` (or `SELECT current_setting('app.user_id', true);`) to confirm it is populated for requests that should be
-  scoped. Use `RESET app.user_id;` after debugging sessions to avoid leaking the value between manual queries. The helper
-  functions in `app/db.py` automatically set and reset this variable for API requests.
-- **Unexpected rows returned:** If RLS appears to allow cross-tenant access, verify the `owner_user_id` columns were backfilled
-  correctly and that your query is not running as a superuser (superusers bypass RLS by default).
+  `SELECT relname, relrowsecurity FROM pg_class WHERE relname IN
+  ('bookmark','credential','feed','job','siteconfig','cookie');`.
+- **Session variable checks:** RLS policies rely on
+  `current_setting('app.user_id', true)`. In psql, run `SHOW app.user_id;` (or
+  `SELECT current_setting('app.user_id', true);`) to confirm it is populated for
+  requests that should be scoped. Use `RESET app.user_id;` after debugging
+  sessions to avoid leaking the value between manual queries. The helper
+  functions in `app/db.py` automatically set and reset this variable for API
+  requests.
+- **Unexpected rows returned:** If RLS appears to allow cross-tenant access,
+  verify the `owner_user_id` columns were backfilled correctly and that your
+  query is not running as a superuser (superusers bypass RLS by default).
 
-## Mapping Configuration
+## Mapping configuration
 
-Role assignments derived from identity provider groups are configured entirely through environment variables so that each tenant can align the UI with their IdP taxonomy without code changes. The backend consumes two knobs when resolving grants:
+Role assignments derived from identity provider groups are configured entirely
+through environment variables so that each tenant can align the UI with their
+IdP taxonomy without code changes. The backend consumes two knobs when resolving
+grants:
 
-- `OIDC_GROUP_ROLE_MAP` defines a comma- or newline-separated list of `group=role` pairs. Multiple entries for the same group append additional roles to the set. The parser trims surrounding whitespace and rejects malformed tokens so operators get immediate feedback when a deployment starts (see `app/auth/mapping.py`).
-- `OIDC_GROUP_ROLE_DEFAULTS` lists roles that should be granted to every auto-provisioned account regardless of group membership. These defaults seed the resolved role set before any mapped groups are evaluated (also in `app/auth/mapping.py`).
+- `OIDC_GROUP_ROLE_MAP` defines a comma- or newline-separated list of
+  `group=role` pairs. Multiple entries for the same group append additional
+  roles to the set. The parser trims surrounding whitespace and rejects
+  malformed tokens so operators get immediate feedback when a deployment starts
+  (see `app/auth/mapping.py`).
+- `OIDC_GROUP_ROLE_DEFAULTS` lists roles that should be granted to every
+  auto-provisioned account regardless of group membership. These defaults seed
+  the resolved role set before any mapped groups are evaluated (also in
+  `app/auth/mapping.py`).
 
-Auto-provisioning calls `resolve_roles_for_groups()` with the group claims pulled from the OIDC identity payload. That helper normalizes group names, applies the mapping/default configuration, and returns the deduplicated role set used downstream by `sync_user_roles_from_identity()` (see `app/auth/mapping.py` and `app/auth/provisioning.py`).
+Auto-provisioning calls `resolve_roles_for_groups()` with the group claims pulled
+from the OIDC identity payload. That helper normalizes group names, applies the
+mapping/default configuration, and returns the deduplicated role set used
+downstream by `sync_user_roles_from_identity()` (see `app/auth/mapping.py` and
+`app/auth/provisioning.py`).
 
 **Example configuration**
 
@@ -170,66 +206,138 @@ export OIDC_GROUP_ROLE_MAP="admins=admin\nops=publisher\nops=auditor"
 export OIDC_GROUP_ROLE_DEFAULTS="reader"
 ```
 
-With the sample above, any user in the `admins` group receives the `admin` role, and users in `ops` inherit both `publisher` and `auditor`. Everyone, including users in unmapped groups, is granted `reader` by default.
+With the sample above, any user in the `admins` group receives the `admin` role,
+and users in `ops` inherit both `publisher` and `auditor`. Everyone, including
+users in unmapped groups, is granted `reader` by default.
 
-Reload application processes after changing either variable so the cached configuration is refreshed.
+Reload application processes after changing either variable so the cached
+configuration is refreshed.
 
-## Override Storage
+## Override storage
 
-Manual overrides let operators fine-tune role assignments when IdP data is incomplete or when they need to temporarily freeze automation. Overrides are persisted on each `User` record inside the JSON `claims` column under the `role_overrides` key. The payload captures three concepts: an `enabled` flag, a list of preserved roles, and a list of suppressed roles (see `app/models.py` and `app/auth/role_overrides.py`).
+Manual overrides let operators fine-tune role assignments when IdP data is
+incomplete or when they need to temporarily freeze automation. Overrides are
+persisted on each `User` record inside the JSON `claims` column under the
+`role_overrides` key. The payload captures three concepts: an `enabled` flag, a
+list of preserved roles, and a list of suppressed roles (see `app/models.py` and
+`app/auth/role_overrides.py`).
 
-`RoleOverrides` objects enforce normalization (case-insensitive trimming, deduplication) and serialize back to JSON via `set_user_role_overrides()`. Clearing all fields removes the claim entirely. When identity synchronization runs, overrides alter the merge behavior: preserved roles are never revoked, suppressed roles are removed from IdP-derived grants, and toggling `enabled` prevents the automatic revocation path altogether until operators re-enable synchronization (see `app/auth/role_overrides.py` and `app/auth/provisioning.py`).
+`RoleOverrides` objects enforce normalization (case-insensitive trimming,
+deduplication) and serialize back to JSON via `set_user_role_overrides()`. Clearing
+all fields removes the claim entirely. When identity synchronization runs,
+overrides alter the merge behavior: preserved roles are never revoked, suppressed
+roles are removed from IdP-derived grants, and toggling `enabled` prevents the
+automatic revocation path altogether until operators re-enable synchronization
+(see `app/auth/role_overrides.py` and `app/auth/provisioning.py`).
 
-Admin APIs expose overrides through `/v1/admin/users/{user_id}/role-overrides` for updates and deletes so the UI and automation can toggle state without direct database access. Audit hooks emit events whenever overrides are changed, preserving traceability for compliance reviews (see `app/routers/admin_users_v1.py`).
+Admin APIs expose overrides through `/v1/admin/users/{user_id}/role-overrides`
+for updates and deletes so the UI and automation can toggle state without direct
+database access. Audit hooks emit events whenever overrides are changed,
+preserving traceability for compliance reviews (see
+`app/routers/admin_users_v1.py`).
 
-## Operator Workflow
+## Operator workflow
 
-The admin UI surfaces overrides and mapping effects so support teams can manage accounts end-to-end once `user_mgmt_ui` is enabled:
+The admin UI surfaces overrides and mapping effects so support teams can manage
+accounts end-to-end. Because the feature is enabled by default, no additional
+configuration is required to reach the management screens.
 
-1. Navigate to **Admin → Users** and locate the user via search, status, or role filters. Selecting a row opens the management drawer with quotas, roles, and override controls (implemented in `web/pages/admin/users.tsx`).
-2. Review the **Role Overrides** card. The toggle indicates whether automatic revocations are paused, and the list shows preserved roles. Operators can add a preserved role using the inline form, remove entries, or clear the override entirely (see the `Role Overrides` section in `web/pages/admin/users.tsx`).
-3. Saving changes invokes the admin override endpoints, refreshing the drawer state and flashing success or error alerts for immediate feedback. This keeps the UI synchronized with backend assertions and audit logs (see handlers in `web/pages/admin/users.tsx`).
-4. After verifying the user's access, operators should test the IdP-driven mapping by re-running a login or calling the provisioning sync. Overrides ensure emergency access remains intact even if the identity payload changes unexpectedly (see `app/auth/provisioning.py`).
+1. Navigate to **Admin → Users** and locate the user via search, status, or role
+   filters. Selecting a row opens the management drawer with quotas, roles, and
+   override controls (implemented in `web/pages/admin/users.tsx`).
+2. Review the **Role Overrides** card. The toggle indicates whether automatic
+   revocations are paused, and the list shows preserved roles. Operators can add
+   a preserved role using the inline form, remove entries, or clear the override
+   entirely (see the `Role Overrides` section in `web/pages/admin/users.tsx`).
+3. Saving changes invokes the admin override endpoints, refreshing the drawer
+   state and flashing success or error alerts for immediate feedback. This keeps
+   the UI synchronized with backend assertions and audit logs (see handlers in
+   `web/pages/admin/users.tsx`).
+4. After verifying the user's access, operators should test the IdP-driven
+   mapping by re-running a login or calling the provisioning sync. Overrides
+   ensure emergency access remains intact even if the identity payload changes
+   unexpectedly (see `app/auth/provisioning.py`).
 
-This workflow complements the group mapping configuration: operators rely on the environment-driven defaults for the majority of accounts while using overrides to handle exceptions without blocking the automated rollout.
+This workflow complements the group mapping configuration: operators rely on the
+environment-driven defaults for the majority of accounts while using overrides
+to handle exceptions without blocking the automated rollout.
 
-## Organization Management
+## Organization management
 
-### Feature flags and runtime configuration
+### Runtime configuration
 
-Organizations are controlled by the same feature flags that govern the broader user-management rollout. The backend exposes the `/v1/admin/orgs` API only when `USER_MGMT_CORE` is truthy so deployments can ship the code without surfacing it prematurely (see `app/main.py`). The UI checks both `USER_MGMT_CORE` and `USER_MGMT_UI` via `/ui-config` and the `useFeatureFlags()` helper to hide the Organizations screen until operators intentionally enable it (see `web/lib/openapi.ts`, `web/lib/featureFlags.ts`, and `web/pages/admin/orgs.tsx`). For static deployments, mirror the backend settings using `NEXT_PUBLIC_USER_MGMT_CORE` and `NEXT_PUBLIC_USER_MGMT_UI` so the web bundle resolves the same toggles at build time.
+Organization APIs and UI routes follow the same defaults as the rest of the
+user-management stack. `/v1/admin/orgs` and the **Admin → Organizations** pages
+are available immediately after deployment. If a tenant needs to hide these
+surfaces temporarily, set `USER_MGMT_CORE=0` on the backend and/or
+`USER_MGMT_UI=0` (or `NEXT_PUBLIC_USER_MGMT_UI=0`) on the frontend build.
 
 ### Data model overview
 
-The organizations feature introduces two SQLModel tables defined in `app/models.py`:
+The organizations feature introduces two SQLModel tables defined in
+`app/models.py`:
 
-- `Organization` stores the tenant metadata (`id`, `slug`, `name`, optional `description`) plus an `is_default` flag and timestamps. Slugs and names are unique to avoid operator confusion.
-- `OrganizationMembership` links users to organizations through a composite primary key on `(organization_id, user_id)` and cascades deletes so memberships follow their parent records.
+- `Organization` stores the tenant metadata (`id`, `slug`, `name`, optional
+  `description`) plus an `is_default` flag and timestamps. Slugs and names are
+  unique to avoid operator confusion.
+- `OrganizationMembership` links users to organizations through a composite
+  primary key on `(organization_id, user_id)` and cascades deletes so memberships
+  follow their parent records.
 
-Relationships on `User` expose `organizations()` and `organization_memberships` collections, letting higher-level APIs serialize memberships without manual joins. Audit helpers (`app/audit.py`) and Prometheus counters (`app/observability/metrics.py`) wrap mutating operations to keep compliance and observability aligned with other admin surfaces.
+Relationships on `User` expose `organizations()` and `organization_memberships`
+collections, letting higher-level APIs serialize memberships without manual
+joins. Audit helpers (`app/audit.py`) and Prometheus counters
+(`app/observability/metrics.py`) wrap mutating operations to keep compliance and
+observability aligned with other admin surfaces.
 
 ### Migration and rollout order
 
-Apply Alembic revision `0018_add_organizations` after the credential description migration (`0017_credential_description`). The migration creates both tables, seeds the default organization, and backfills memberships for every existing user so they retain access after row-level security is tightened. Follow the same order in lower environments to ensure schema drift is avoided: database migration → backend deploy with `USER_MGMT_CORE=0` → enable the flag in staging once smoke tests pass.
+Apply Alembic revision `0018_add_organizations` after the credential description
+migration (`0017_credential_description`). The migration creates both tables,
+seeds the default organization, and backfills memberships for every existing
+user so they retain access after row-level security is tightened. Because the
+APIs are now live by default, coordinate deployments carefully—run migrations
+before rolling out application pods or temporarily set `USER_MGMT_CORE=0` during
+the rollout window if you need to stage the schema change ahead of the new
+binary.
 
 ### Default-organization backfill and guardrails
 
-Revision `0018_add_organizations` seeds the default organization using the constants in `app/organization_defaults.py`, then enrolls all users in that tenant. Runtime helpers such as `ensure_default_organization()` and `ensure_default_organization_membership()` keep the default slug, name, and membership intact during seeding or ad-hoc scripts (`app/seed.py`). Operators can re-run these helpers if configuration drift occurs without manually crafting SQL.
+Revision `0018_add_organizations` seeds the default organization using the
+constants in `app/organization_defaults.py`, then enrolls all users in that
+tenant. Runtime helpers such as `ensure_default_organization()` and
+`ensure_default_organization_membership()` keep the default slug, name, and
+membership intact during seeding or ad-hoc scripts (`app/seed.py`). Operators can
+re-run these helpers if configuration drift occurs without manually crafting
+SQL.
 
 ### Operator UI workflow
 
-Once both feature flags are enabled, the admin sidebar exposes **Admin → Organizations**. From there operators can:
+The admin sidebar exposes **Admin → Organizations** alongside other management
+surfaces. From there operators can:
 
-1. Search and filter organizations, open the detail drawer, and review membership counts (`web/pages/admin/orgs.tsx`).
-2. Update metadata or delete non-default tenants via the drawer actions, with audit events and metrics emitted automatically (`app/routers/admin_orgs_v1.py`).
-3. Add or remove members by submitting user IDs or email addresses; the UI will refresh membership lists and toast results for confirmation (`web/pages/admin/orgs.tsx`).
-4. Use **Admin → Users** to confirm per-user memberships, adjust assignments inline, or clear organization links entirely while reviewing other account context (`web/pages/admin/users.tsx`).
+1. Search and filter organizations, open the detail drawer, and review membership
+   counts (`web/pages/admin/orgs.tsx`).
+2. Update metadata or delete non-default tenants via the drawer actions, with
+   audit events and metrics emitted automatically (`app/routers/admin_orgs_v1.py`).
+3. Add or remove members by submitting user IDs or email addresses; the UI will
+   refresh membership lists and toast results for confirmation
+   (`web/pages/admin/orgs.tsx`).
+4. Use **Admin → Users** to confirm per-user memberships, adjust assignments
+   inline, or clear organization links entirely while reviewing other account
+   context (`web/pages/admin/users.tsx`).
 
-This workflow keeps organization lifecycle management in the same surfaces admins already use for roles and overrides, minimizing training overhead during rollout.
+This workflow keeps organization lifecycle management in the same surfaces admins
+already use for roles and overrides, minimizing training overhead during
+rollouts.
 
-## Post-Rollout Tasks
+## Post-rollout tasks
 
-- Expand documentation for tenant onboarding, including role recommendations and least-privilege examples.
-- ✅ Postgres admin operations now emit audit logs with actor metadata and action details, ensuring infrastructure toggles remain traceable.
-- Evaluate whether feature flags can be removed or replaced with configuration once adoption stabilizes.
-- Schedule a cleanup migration to remove temporary fallbacks in handlers that assume enforcement is disabled.
+- Expand documentation for tenant onboarding, including role recommendations and
+  least-privilege examples.
+- Monitor audit and observability dashboards after each deployment to confirm
+  enforcement remains healthy.
+- Capture incident-response steps for using the environment overrides so on-call
+  engineers can quickly disable individual layers if a regression is detected.
+- Schedule periodic reviews of role mappings, overrides, and organization
+  memberships to ensure they reflect current business requirements.

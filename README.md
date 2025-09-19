@@ -160,7 +160,7 @@ API (OIDC + DB) — Optional Preview
 - Install API deps: `pip install -r requirements.api.txt`
 - Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
 - Set DB URL (defaults to SQLite): `DATABASE_URL=sqlite:///./dev.db`
-- Toggle the core user-management APIs: set `USER_MGMT_CORE=1` (accepted values: `1`, `true`, `yes`, `on`) to expose `/v1/admin/users` and `/v1/admin/audit` and to permit OIDC auto-provisioning when `OIDC_AUTO_PROVISION_USERS` is also enabled.
+- User-management APIs are exposed by default. Set `USER_MGMT_CORE=0` (or any non-truthy value) if you need to temporarily disable `/v1/admin/users`, `/v1/admin/audit`, or OIDC auto-provisioning.
 - Set encryption key for secrets (32-byte base64 urlsafe):
   - `export CREDENTIALS_ENC_KEY=$(python - <<'PY'
 import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())
@@ -181,7 +181,7 @@ PY
 - `OIDC_JWKS_URL`: Optional override that points directly to the signing keys (JWKS) endpoint. Leave unset to let the API discover `jwks_uri` from the issuer's discovery document.
 - `DEV_NO_AUTH`: Set to `1`/`true` to bypass OIDC entirely and issue a synthetic developer identity. Only use this for local development.
 - `DEV_USER_SUB`, `DEV_USER_EMAIL`, `DEV_USER_NAME`, `DEV_USER_GROUPS`: Customize the placeholder identity returned while `DEV_NO_AUTH` is enabled. Groups are provided as a comma-separated list.
-- `USER_MGMT_CORE`: Enable (`1`, `true`, `yes`, `on`) to expose the core user-management APIs. This toggle must be on for any OIDC-driven auto-provisioning.
+- `USER_MGMT_CORE`: Enabled by default to expose the core user-management APIs. Set to `0`, `false`, `no`, or leave an empty string to opt out while keeping the rest of the stack online.
 - `OIDC_AUTO_PROVISION_USERS`: Enable to automatically create or update `User` records when new identities sign in. Requires `USER_MGMT_CORE` to be active.
 - `OIDC_AUTO_PROVISION_DEFAULT_ROLE`: Optional role name to assign to newly provisioned users. When set, the backend attempts to grant (or create) the role after provisioning succeeds.
 
