@@ -803,13 +803,14 @@ async function updateMeProfile(payload: MeUpdatePayload): Promise<MeProfile> {
 export async function bulkPublishBookmarksStream({ requestBody, signal }: { requestBody: any; signal?: AbortSignal }) {
   const basePath = await resolveApiBase()
   const session = await loadSession()
+  const token = resolveSessionToken(session)
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-CSRF-Token': CSRF,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
-  const token = resolveSessionToken(session)
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  return fetch(`${basePath}/v1/bookmarks/bulk-publish`, {
+  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
+  return fetch(`${normalizedBase}/v1/bookmarks/bulk-publish`, {
     method: 'POST',
     headers,
     body: JSON.stringify(requestBody ?? {}),
