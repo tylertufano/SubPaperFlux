@@ -116,6 +116,40 @@ The admin UI surfaces overrides and mapping effects so support teams can manage 
 
 This workflow complements the group mapping configuration: operators rely on the environment-driven defaults for the majority of accounts while using overrides to handle exceptions without blocking the automated rollout.
 
+## Organization Management
+
+### Feature flags and runtime configuration
+
+Organizations are controlled by the same feature flags that govern the broader user-management rollout. The backend exposes the `/v1/admin/orgs` API only when `USER_MGMT_CORE` is truthy so deployments can ship the code without surfacing it prematurely (see `app/main.py`). The UI checks both `USER_MGMT_CORE` and `USER_MGMT_UI` via `/ui-config` and the `useFeatureFlags()` helper to hide the Organizations screen until operators intentionally enable it (see `web/lib/openapi.ts`, `web/lib/featureFlags.ts`, and `web/pages/admin/orgs.tsx`). For static deployments, mirror the backend settings using `NEXT_PUBLIC_USER_MGMT_CORE` and `NEXT_PUBLIC_USER_MGMT_UI` so the web bundle resolves the same toggles at build time.
+
+### Data model overview
+
+The organizations feature introduces two SQLModel tables defined in `app/models.py`:
+
+- `Organization` stores the tenant metadata (`id`, `slug`, `name`, optional `description`) plus an `is_default` flag and timestamps. Slugs and names are unique to avoid operator confusion.
+- `OrganizationMembership` links users to organizations through a composite primary key on `(organization_id, user_id)` and cascades deletes so memberships follow their parent records.
+
+Relationships on `User` expose `organizations()` and `organization_memberships` collections, letting higher-level APIs serialize memberships without manual joins. Audit helpers (`app/audit.py`) and Prometheus counters (`app/observability/metrics.py`) wrap mutating operations to keep compliance and observability aligned with other admin surfaces.
+
+### Migration and rollout order
+
+Apply Alembic revision `0018_add_organizations` after the credential description migration (`0017_credential_description`). The migration creates both tables, seeds the default organization, and backfills memberships for every existing user so they retain access after row-level security is tightened. Follow the same order in lower environments to ensure schema drift is avoided: database migration → backend deploy with `USER_MGMT_CORE=0` → enable the flag in staging once smoke tests pass.
+
+### Default-organization backfill and guardrails
+
+Revision `0018_add_organizations` seeds the default organization using the constants in `app/organization_defaults.py`, then enrolls all users in that tenant. Runtime helpers such as `ensure_default_organization()` and `ensure_default_organization_membership()` keep the default slug, name, and membership intact during seeding or ad-hoc scripts (`app/seed.py`). Operators can re-run these helpers if configuration drift occurs without manually crafting SQL.
+
+### Operator UI workflow
+
+Once both feature flags are enabled, the admin sidebar exposes **Admin → Organizations**. From there operators can:
+
+1. Search and filter organizations, open the detail drawer, and review membership counts (`web/pages/admin/orgs.tsx`).
+2. Update metadata or delete non-default tenants via the drawer actions, with audit events and metrics emitted automatically (`app/routers/admin_orgs_v1.py`).
+3. Add or remove members by submitting user IDs or email addresses; the UI will refresh membership lists and toast results for confirmation (`web/pages/admin/orgs.tsx`).
+4. Use **Admin → Users** to confirm per-user memberships, adjust assignments inline, or clear organization links entirely while reviewing other account context (`web/pages/admin/users.tsx`).
+
+This workflow keeps organization lifecycle management in the same surfaces admins already use for roles and overrides, minimizing training overhead during rollout.
+
 ## Post-Rollout Tasks
 
 - Expand documentation for tenant onboarding, including role recommendations and least-privilege examples.
