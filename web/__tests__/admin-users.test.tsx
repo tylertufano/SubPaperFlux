@@ -9,6 +9,10 @@ const openApiSpies = vi.hoisted(() => ({
   updateAdminUser: vi.fn(),
   grantRole: vi.fn(),
   revokeRole: vi.fn(),
+  listOrganizations: vi.fn(),
+  addOrganizationMember: vi.fn(),
+  removeOrganizationMember: vi.fn(),
+  getAdminUser: vi.fn(),
 }))
 
 const { useFeatureFlagsMock } = vi.hoisted(() => ({
@@ -42,6 +46,11 @@ vi.mock('../lib/openapi', () => ({
     updateAdminUserV1AdminUsersUserIdPatch: openApiSpies.updateAdminUser,
     grantAdminUserRoleV1AdminUsersUserIdRolesRoleNamePost: openApiSpies.grantRole,
     revokeAdminUserRoleV1AdminUsersUserIdRolesRoleNameDelete: openApiSpies.revokeRole,
+    listAdminOrganizationsV1AdminOrgsGet: openApiSpies.listOrganizations,
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost: openApiSpies.addOrganizationMember,
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete:
+      openApiSpies.removeOrganizationMember,
+    getAdminUserV1AdminUsersUserIdGet: openApiSpies.getAdminUser,
   },
 }))
 
@@ -54,16 +63,68 @@ const defaultUsersPage = {
   total_pages: 1,
 }
 
+const defaultOrganizationsPage = {
+  items: [],
+  total: 0,
+  page: 1,
+  size: 20,
+  has_next: false,
+  total_pages: 1,
+}
+
+const exampleUserOrganization = {
+  id: 'org-1',
+  slug: 'acme',
+  name: 'Acme Inc.',
+  description: 'Acme organization',
+  is_default: true,
+  joined_at: '2024-01-01T00:00:00Z',
+}
+
+const exampleOrganizationMembership = {
+  organization_id: 'org-1',
+  organization_slug: 'acme',
+  organization_name: 'Acme Inc.',
+  organization_description: 'Acme organization',
+  organization_is_default: true,
+  joined_at: '2024-01-01T00:00:00Z',
+}
+
+const exampleOrganizationSuggestion = {
+  id: 'org-2',
+  slug: 'beta',
+  name: 'Beta Org',
+  description: 'Beta organization',
+  is_default: false,
+  created_at: '2024-02-01T00:00:00Z',
+  updated_at: '2024-02-02T00:00:00Z',
+}
+
 type RenderOptions = {
   data?: typeof defaultUsersPage
   mutate?: ReturnType<typeof vi.fn>
+  organizations?: typeof defaultOrganizationsPage
 }
 
-function renderPage({ data = defaultUsersPage, mutate = vi.fn().mockResolvedValue(undefined) }: RenderOptions = {}) {
+function renderPage({
+  data = defaultUsersPage,
+  mutate = vi.fn().mockResolvedValue(undefined),
+  organizations = defaultOrganizationsPage,
+}: RenderOptions = {}) {
   const handlers = [
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/admin/users',
       value: makeSWRSuccess(data, { mutate }),
+    },
+    {
+      matcher: (key: any, fetcher?: any) =>
+        Array.isArray(key) && key[0] === '/v1/admin/orgs/search',
+      value: (key: any, fetcher?: any) => {
+        if (fetcher) {
+          fetcher(key)
+        }
+        return makeSWRSuccess(organizations)
+      },
     },
   ]
   renderWithSWR(<AdminUsers />, {
@@ -82,6 +143,10 @@ describe('AdminUsers page', () => {
     openApiSpies.updateAdminUser.mockResolvedValue(undefined)
     openApiSpies.grantRole.mockResolvedValue(undefined)
     openApiSpies.revokeRole.mockResolvedValue(undefined)
+    openApiSpies.listOrganizations.mockResolvedValue(defaultOrganizationsPage)
+    openApiSpies.addOrganizationMember.mockResolvedValue(undefined)
+    openApiSpies.removeOrganizationMember.mockResolvedValue(undefined)
+    openApiSpies.getAdminUser.mockResolvedValue(undefined)
     useFeatureFlagsMock.mockReset()
     useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })
   })
@@ -92,6 +157,45 @@ describe('AdminUsers page', () => {
     const searchForm = screen.getByRole('search')
     expect(within(searchForm).getByLabelText('Search')).toBeInTheDocument()
     expect(useSWRMock).toHaveBeenCalled()
+  })
+
+  it('displays organizations in the table and drawer', async () => {
+    const user = {
+      id: 'user-3',
+      email: 'viewer@example.com',
+      full_name: 'Viewer Example',
+      picture_url: null,
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
+      last_login_at: '2024-01-03T00:00:00Z',
+      groups: [],
+      roles: ['viewer'],
+      is_admin: false,
+      quota_credentials: null,
+      quota_site_configs: null,
+      quota_feeds: null,
+      quota_api_tokens: null,
+      role_overrides: { enabled: false, preserve: [], suppress: [] },
+      organizations: [exampleUserOrganization],
+      organization_ids: ['org-1'],
+      organization_memberships: [exampleOrganizationMembership],
+    }
+
+    renderPage({
+      data: { ...defaultUsersPage, items: [user], total: 1 },
+    })
+
+    await screen.findByText('Acme Inc.')
+
+    const viewDetailsButtons = await screen.findAllByRole('button', { name: 'View details' })
+    fireEvent.click(viewDetailsButtons[viewDetailsButtons.length - 1])
+
+    const organizationHeading = await screen.findByText('Organizations', { selector: 'h4' })
+    const organizationSection = organizationHeading.parentElement as HTMLElement
+    expect(within(organizationSection).getByText('Acme Inc.')).toBeInTheDocument()
+    const organizationInput = within(organizationSection).getByLabelText('Assign organization') as HTMLInputElement
+    expect(organizationInput.value).toBe('acme')
   })
 
   it('shows informational alert when user management UI is disabled', () => {
@@ -105,6 +209,84 @@ describe('AdminUsers page', () => {
     for (const [key] of useSWRMock.mock.calls) {
       expect(key).toBeNull()
     }
+  })
+
+  it('reassigns organizations through membership endpoints', async () => {
+    const user = {
+      id: 'user-4',
+      email: 'member@example.com',
+      full_name: 'Member Example',
+      picture_url: null,
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
+      last_login_at: '2024-01-03T00:00:00Z',
+      groups: [],
+      roles: ['viewer'],
+      is_admin: false,
+      quota_credentials: null,
+      quota_site_configs: null,
+      quota_feeds: null,
+      quota_api_tokens: null,
+      role_overrides: { enabled: false, preserve: [], suppress: [] },
+      organizations: [exampleUserOrganization],
+      organization_ids: ['org-1'],
+      organization_memberships: [exampleOrganizationMembership],
+    }
+    const updatedUser = {
+      ...user,
+      organizations: [
+        {
+          id: 'org-2',
+          slug: 'beta',
+          name: 'Beta Org',
+          description: 'Beta organization',
+          is_default: false,
+          joined_at: '2024-02-03T00:00:00Z',
+        },
+      ],
+      organization_ids: ['org-2'],
+      organization_memberships: [
+        {
+          organization_id: 'org-2',
+          organization_slug: 'beta',
+          organization_name: 'Beta Org',
+          organization_description: 'Beta organization',
+          organization_is_default: false,
+          joined_at: '2024-02-03T00:00:00Z',
+        },
+      ],
+    }
+    const mutate = vi.fn().mockResolvedValue(undefined)
+    openApiSpies.getAdminUser.mockResolvedValue(updatedUser)
+
+    renderPage({
+      data: { ...defaultUsersPage, items: [user], total: 1 },
+      mutate,
+      organizations: { ...defaultOrganizationsPage, items: [exampleOrganizationSuggestion] },
+    })
+
+    const viewDetailsButtons = await screen.findAllByRole('button', { name: 'View details' })
+    fireEvent.click(viewDetailsButtons[viewDetailsButtons.length - 1])
+
+    const organizationInput = await screen.findByLabelText('Assign organization')
+    fireEvent.change(organizationInput, { target: { value: 'beta' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update organization' }))
+
+    await waitFor(() => expect(openApiSpies.removeOrganizationMember).toHaveBeenCalled())
+    expect(openApiSpies.removeOrganizationMember).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      userId: 'user-4',
+    })
+    await waitFor(() => expect(openApiSpies.addOrganizationMember).toHaveBeenCalled())
+    expect(openApiSpies.addOrganizationMember).toHaveBeenCalledWith({
+      organizationId: 'org-2',
+      adminOrganizationMembershipChange: { user_id: 'user-4' },
+    })
+    await waitFor(() => expect(openApiSpies.getAdminUser).toHaveBeenCalledWith({ userId: 'user-4' }))
+    await screen.findByText('Assigned Member Example to Beta Org.')
+    expect(mutate).toHaveBeenCalled()
   })
 
   it('grants a role and refreshes data', async () => {
@@ -124,6 +306,10 @@ describe('AdminUsers page', () => {
       quota_site_configs: null,
       quota_feeds: null,
       quota_api_tokens: null,
+      role_overrides: { enabled: false, preserve: [], suppress: [] },
+      organizations: [],
+      organization_ids: [],
+      organization_memberships: [],
     }
     const updatedUser = { ...user, roles: ['viewer', 'managers'] }
     openApiSpies.grantRole.mockResolvedValue(updatedUser)
@@ -176,6 +362,10 @@ describe('AdminUsers page', () => {
       quota_site_configs: null,
       quota_feeds: null,
       quota_api_tokens: null,
+      role_overrides: { enabled: false, preserve: [], suppress: [] },
+      organizations: [],
+      organization_ids: [],
+      organization_memberships: [],
     }
     const mutate = vi.fn().mockResolvedValue(undefined)
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
