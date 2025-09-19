@@ -48,6 +48,12 @@ ADMIN_ACTIONS_COUNTER = Counter(
     ["action"],
 )
 
+ORGANIZATION_MUTATIONS_COUNTER = Counter(
+    "admin_organization_mutations_total",
+    "Administrative organization mutation operations processed",
+    ["action"],
+)
+
 API_TOKENS_ISSUED_COUNTER = Counter(
     "api_tokens_issued_total",
     "API tokens issued",
@@ -60,6 +66,10 @@ def increment_user_login() -> None:
 
 def increment_admin_action(action: str) -> None:
     ADMIN_ACTIONS_COUNTER.labels(action=action).inc()
+
+
+def increment_organization_mutation(action: str) -> None:
+    ORGANIZATION_MUTATIONS_COUNTER.labels(action=action).inc()
 
 
 def increment_api_tokens_issued() -> None:
