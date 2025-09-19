@@ -5,8 +5,15 @@ from fastapi import FastAPI, HTTPException, Request
 from .auth import ensure_admin_role
 from .auth.oidc import oidc_startup_event, resolve_user_from_token
 from .auth.provisioning import maybe_provision_user
-from .config import is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
-from .db import get_session_ctx, init_db, reset_current_user_id, set_current_user_id
+from .config import is_rls_enforced, is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
+from .db import (
+    get_session_ctx,
+    init_db,
+    is_postgres,
+    reset_current_user_id,
+    set_current_user_id,
+)
+from .db_admin import enable_rls
 from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
 from .routers.admin_orgs_v1 import router as admin_orgs_v1_router
@@ -49,18 +56,101 @@ def create_app() -> FastAPI:
     def cache_user_mgmt_flags() -> None:
         core_enabled = is_user_mgmt_core_enabled()
         enforce_enabled = is_user_mgmt_enforce_enabled()
+        rls_enforced = is_rls_enforced()
         app.state.user_mgmt_core_enabled = core_enabled
         app.state.user_mgmt_enforce_enabled = enforce_enabled
-        app.state.user_mgmt_requires_user_ids = core_enabled or enforce_enabled
+        app.state.rls_enforced = rls_enforced
+        app.state.user_mgmt_requires_user_ids = core_enabled or enforce_enabled or rls_enforced
 
     cache_user_mgmt_flags()
     app.state.cache_user_mgmt_flags = cache_user_mgmt_flags
 
     user_mgmt_core_enabled = app.state.user_mgmt_core_enabled
+    rls_enforced = getattr(app.state, "rls_enforced", False)
 
     # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
     app.add_event_handler("startup", oidc_startup_event)
     app.add_event_handler("startup", init_db)
+    using_postgres = is_postgres()
+    if rls_enforced and not using_postgres:
+        logger.warning(
+            "USER_MGMT_RLS_ENFORCE is set but the database is not Postgres; skipping RLS bootstrap.",
+        )
+    if rls_enforced and using_postgres:
+
+        def ensure_rls_startup_task() -> None:
+            with get_session_ctx() as session:
+                try:
+                    details = enable_rls(session)
+                except Exception:  # noqa: BLE001
+                    session.rollback()
+                    logger.exception(
+                        "Failed to ensure Postgres row-level security during startup; continuing without blocking",
+                    )
+                    return
+
+                if not isinstance(details, dict):
+                    logger.warning("Unexpected response while enabling RLS policies: %r", details)
+                    return
+
+                tables = details.get("tables", {})
+                issues_found = False
+
+                for table_name, table_details in tables.items():
+                    error = table_details.get("error")
+                    hint = table_details.get("hint")
+                    if error:
+                        issues_found = True
+                        if hint:
+                            logger.error(
+                                "RLS enablement error for table '%s': %s (hint: %s)",
+                                table_name,
+                                error,
+                                hint,
+                            )
+                        else:
+                            logger.error(
+                                "RLS enablement error for table '%s': %s",
+                                table_name,
+                                error,
+                            )
+                        continue
+
+                    if not table_details.get("enabled"):
+                        issues_found = True
+                        logger.warning(
+                            "RLS remains disabled for table '%s'; ensure the application has the required privileges.",
+                            table_name,
+                        )
+
+                    missing_policies = [
+                        policy
+                        for policy, ok in table_details.get("policies", {}).items()
+                        if not ok
+                    ]
+                    if missing_policies:
+                        issues_found = True
+                        logger.warning(
+                            "Missing RLS policies for table '%s': %s",
+                            table_name,
+                            ", ".join(missing_policies),
+                        )
+
+                if not tables:
+                    logger.warning("No table details returned while enabling RLS policies; verify database privileges.")
+                elif issues_found:
+                    logger.warning(
+                        "Postgres row-level security enforcement is incomplete; review the prior log messages for details.",
+                    )
+                elif details.get("ok"):
+                    logger.info("Postgres row-level security policies ensured during startup")
+                else:
+                    logger.warning(
+                        "Postgres row-level security enablement returned an unexpected status: %s",
+                        details,
+                    )
+
+        app.add_event_handler("startup", ensure_rls_startup_task)
     if user_mgmt_core_enabled:
 
         def ensure_admin_role_startup_task() -> None:
@@ -114,13 +204,15 @@ def create_app() -> FastAPI:
         try:
             core_enabled = getattr(request.app.state, "user_mgmt_core_enabled", False)
             enforce_enabled = getattr(request.app.state, "user_mgmt_enforce_enabled", False)
+            rls_enforced = getattr(request.app.state, "rls_enforced", False)
             requires_user_ids = getattr(
                 request.app.state,
                 "user_mgmt_requires_user_ids",
-                core_enabled or enforce_enabled,
+                core_enabled or enforce_enabled or rls_enforced,
             )
             request.state.user_mgmt_core_enabled = core_enabled
             request.state.user_mgmt_enforce_enabled = enforce_enabled
+            request.state.rls_enforced = rls_enforced
             request.state.user_mgmt_requires_user_ids = requires_user_ids
             auth_header = request.headers.get("authorization")
             bearer_token = None
