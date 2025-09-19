@@ -4,7 +4,15 @@ import { Alert, Breadcrumbs, EmptyState, ErrorBoundary, Nav } from '../../compon
 import { useI18n } from '../../lib/i18n'
 import { useFeatureFlags } from '../../lib/featureFlags'
 import { useFormatDateTime, useNumberFormatter } from '../../lib/format'
-import { v1, type AdminUser, type AdminUsersPage, type RoleGrantRequest } from '../../lib/openapi'
+import {
+  v1,
+  type AdminOrganization,
+  type AdminOrganizationsPage,
+  type AdminUser,
+  type AdminUserOrganization,
+  type AdminUsersPage,
+  type RoleGrantRequest,
+} from '../../lib/openapi'
 import { buildBreadcrumbs } from '../../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 
@@ -12,6 +20,7 @@ type FilterState = {
   search: string
   status: 'all' | 'active' | 'inactive'
   role: string
+  organization: string
 }
 
 type UsersKey = [
@@ -21,7 +30,10 @@ type UsersKey = [
   string,
   FilterState['status'],
   string,
+  string,
 ]
+
+type OrganizationSearchKey = ['/v1/admin/orgs/search', string]
 
 const quotaFields = ['quota_credentials', 'quota_site_configs', 'quota_feeds', 'quota_api_tokens'] as const
 type QuotaField = (typeof quotaFields)[number]
@@ -49,7 +61,7 @@ const quotaFieldLabelKeys: Record<QuotaField, string> = {
 type FlashMessage = { kind: 'success' | 'error'; message: string }
 
 function createEmptyFilters(): FilterState {
-  return { search: '', status: 'all', role: '' }
+  return { search: '', status: 'all', role: '', organization: '' }
 }
 
 function createQuotaFormState(user: AdminUser | null): QuotaFormState {
@@ -76,6 +88,77 @@ function statusBadge(user: AdminUser, t: ReturnType<typeof useI18n>['t']): { lab
   return { label: t('admin_users_status_inactive_badge'), className: 'bg-red-100 text-red-800' }
 }
 
+function organizationDisplayNameFromRecord(record: {
+  id: string
+  slug?: string | null
+  name?: string | null
+}): string {
+  if (record.name && record.name.trim().length > 0) {
+    return record.name
+  }
+  if (record.slug && record.slug.trim().length > 0) {
+    return record.slug
+  }
+  return record.id
+}
+
+function sortUserOrganizations(orgs: AdminUserOrganization[] | undefined): AdminUserOrganization[] {
+  if (!orgs || orgs.length === 0) {
+    return []
+  }
+  return [...orgs].sort((a, b) => {
+    const aDefault = Boolean(a.is_default)
+    const bDefault = Boolean(b.is_default)
+    if (aDefault !== bDefault) {
+      return aDefault ? -1 : 1
+    }
+    if (a.joined_at !== b.joined_at) {
+      return a.joined_at < b.joined_at ? -1 : 1
+    }
+    const aName = organizationDisplayNameFromRecord(a)
+    const bName = organizationDisplayNameFromRecord(b)
+    return aName.localeCompare(bName)
+  })
+}
+
+function findOrganizationMatch(
+  value: string,
+  suggestions: AdminOrganization[],
+  existing: AdminUserOrganization[],
+  memberships: AdminUser['organization_memberships'],
+): { id: string; name: string } | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const lower = trimmed.toLowerCase()
+
+  const search = <T,>(items: T[], resolver: (item: T) => { id: string; slug?: string | null; name?: string | null }) => {
+    for (const item of items) {
+      const { id, slug, name } = resolver(item)
+      const display = organizationDisplayNameFromRecord({ id, slug, name })
+      if (id === trimmed || id.toLowerCase() === lower) {
+        return { id, name: display }
+      }
+      if (slug && (slug === trimmed || slug.toLowerCase() === lower)) {
+        return { id, name: display }
+      }
+      if (name && (name === trimmed || name.toLowerCase() === lower)) {
+        return { id, name: display }
+      }
+    }
+    return null
+  }
+
+  return (
+    search(suggestions, (org) => ({ id: org.id, slug: org.slug, name: org.name })) ??
+    search(existing, (org) => ({ id: org.id, slug: org.slug, name: org.name })) ??
+    search(memberships, (membership) => ({
+      id: membership.organization_id,
+      slug: membership.organization_slug,
+      name: membership.organization_name,
+    }))
+  )
+}
+
 export default function AdminUsers() {
   const { t } = useI18n()
   const { userMgmtCore, userMgmtUi, isLoaded: flagsLoaded } = useFeatureFlags()
@@ -93,6 +176,7 @@ export default function AdminUsers() {
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [quotaForm, setQuotaForm] = useState<QuotaFormState>(() => createQuotaFormState(null))
   const [roleForm, setRoleForm] = useState<RoleFormState>(createRoleFormState)
+  const [organizationInput, setOrganizationInput] = useState('')
   const [overrideInput, setOverrideInput] = useState('')
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
@@ -135,31 +219,76 @@ export default function AdminUsers() {
   }, [selected])
 
   useEffect(() => {
+    if (!selected) {
+      setOrganizationInput('')
+      return
+    }
+    const sorted = sortUserOrganizations(selected.organizations)
+    if (sorted.length > 0) {
+      const primary = sorted[0]
+      setOrganizationInput(primary.slug || organizationDisplayNameFromRecord(primary))
+    } else {
+      setOrganizationInput('')
+    }
+  }, [selected])
+
+  useEffect(() => {
     setOverrideInput('')
   }, [selected])
 
-  const { search: filterSearch, status: filterStatus, role: filterRole } = filters
+  const { search: filterSearch, status: filterStatus, role: filterRole, organization: filterOrganization } = filters
   const canFetch = flagsLoaded && userMgmtEnabled
 
   const swrKey = useMemo<UsersKey | null>(
     () =>
       canFetch
-        ? ['/v1/admin/users', page, size, filterSearch, filterStatus, filterRole]
+        ? [
+            '/v1/admin/users',
+            page,
+            size,
+            filterSearch,
+            filterStatus,
+            filterRole,
+            filterOrganization,
+          ]
         : null,
-    [canFetch, page, size, filterSearch, filterStatus, filterRole],
+    [canFetch, page, size, filterSearch, filterStatus, filterRole, filterOrganization],
   )
 
   const { data, error, isLoading, mutate } = useSWR<AdminUsersPage, Error, UsersKey | null>(
     swrKey,
-    ([, currentPage, pageSize, search, statusValue, role]) =>
+    ([, currentPage, pageSize, search, statusValue, role, organization]) =>
       v1.listAdminUsersV1AdminUsersGet({
         page: currentPage,
         size: pageSize,
         search: search ? search.trim() : undefined,
         role: role ? role.trim() : undefined,
+        organization_id: organization ? organization.trim() : undefined,
         isActive: statusValue === 'all' ? undefined : statusValue === 'active',
       }),
   )
+
+  const trimmedOrganizationInput = organizationInput.trim()
+  const organizationSearchKey = useMemo<OrganizationSearchKey | null>(
+    () => (selected ? ['/v1/admin/orgs/search', trimmedOrganizationInput] : null),
+    [selected, trimmedOrganizationInput],
+  )
+
+  const { data: organizationSearchResults } = useSWR<
+    AdminOrganizationsPage,
+    Error,
+    OrganizationSearchKey | null
+  >(
+    organizationSearchKey,
+    ([, search]) =>
+      v1.listAdminOrganizationsV1AdminOrgsGet({
+        page: 1,
+        size: 20,
+        search: search ? search.trim() : undefined,
+      }),
+  )
+
+  const organizationSuggestions = organizationSearchResults?.items ?? []
 
   const totalPages = data ? data.total_pages ?? Math.max(1, Math.ceil(data.total / Math.max(1, data.size))) : 1
   const hasPrev = Boolean(data && data.page > 1)
@@ -172,6 +301,7 @@ export default function AdminUsers() {
       search: formState.search.trim(),
       status: formState.status,
       role: formState.role.trim(),
+      organization: formState.organization.trim(),
     })
   }
 
@@ -357,6 +487,96 @@ export default function AdminUsers() {
         }
         return { ...prev, roles: prev.roles.filter((existing) => existing !== role) }
       })
+      await mutate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFlash({ kind: 'error', message })
+    } finally {
+      setPendingUserId(null)
+    }
+  }
+
+  const handleOrganizationSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selected) {
+      return
+    }
+    const trimmed = organizationInput.trim()
+    const match =
+      findOrganizationMatch(
+        trimmed,
+        organizationSuggestions,
+        selected.organizations,
+        selected.organization_memberships,
+      ) ?? null
+    const targetId = match?.id ?? trimmed
+    const memberships = selected.organization_memberships
+    const removalTargets = targetId
+      ? memberships.filter((membership) => membership.organization_id !== targetId)
+      : memberships
+    const hasTargetMembership = Boolean(
+      targetId && memberships.some((membership) => membership.organization_id === targetId),
+    )
+    const shouldAdd = Boolean(targetId && !hasTargetMembership)
+    if (removalTargets.length === 0 && !shouldAdd) {
+      setFlash({ kind: 'error', message: t('admin_users_organization_no_changes') })
+      return
+    }
+    setPendingUserId(selected.id)
+    setFlash(null)
+    try {
+      for (const membership of removalTargets) {
+        await v1.removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete({
+          organizationId: membership.organization_id,
+          userId: selected.id,
+        })
+      }
+      if (shouldAdd && targetId) {
+        await v1.addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost({
+          organizationId: targetId,
+          adminOrganizationMembershipChange: { user_id: selected.id },
+        })
+      }
+      const updated = await v1.getAdminUserV1AdminUsersUserIdGet({ userId: selected.id })
+      setSelected(updated)
+      const userName = displayName(updated)
+      let message: string
+      if (targetId && (shouldAdd || removalTargets.length > 0)) {
+        const updatedMatch =
+          findOrganizationMatch(
+            targetId,
+            organizationSuggestions,
+            updated.organizations,
+            updated.organization_memberships,
+          ) ?? {
+            id: targetId,
+            name: match?.name ?? organizationDisplayNameFromRecord({
+              id: targetId,
+              slug: trimmed,
+              name: match?.name,
+            }),
+          }
+        message = t('admin_users_organization_assign_success', {
+          name: userName,
+          organization: updatedMatch.name ?? updatedMatch.id,
+        })
+      } else if (removalTargets.length > 1) {
+        message = t('admin_users_organization_remove_all_success', { name: userName })
+      } else if (removalTargets.length === 1) {
+        const removed = removalTargets[0]
+        const removedName = organizationDisplayNameFromRecord({
+          id: removed.organization_id,
+          slug: removed.organization_slug,
+          name: removed.organization_name,
+        })
+        message = t('admin_users_organization_remove_success', {
+          name: userName,
+          organization: removedName,
+        })
+      } else {
+        message = t('admin_users_organization_update_success', { name: userName })
+      }
+      setFlash({ kind: 'success', message })
       await mutate()
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -573,6 +793,19 @@ export default function AdminUsers() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, role: event.target.value }))}
                 />
               </label>
+              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-organization">
+                {t('admin_users_organization_filter_label')}
+                <input
+                  id="admin-users-organization"
+                  className="input mt-1 w-full"
+                  type="text"
+                  value={formState.organization}
+                  placeholder={t('admin_users_organization_placeholder')}
+                  onChange={(event) =>
+                    setFormState((prev) => ({ ...prev, organization: event.target.value }))
+                  }
+                />
+              </label>
               <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-status">
                 {t('admin_users_status_filter_label')}
                 <select
@@ -641,6 +874,7 @@ export default function AdminUsers() {
                         <th className="th" scope="col">{t('admin_users_column_identity')}</th>
                         <th className="th" scope="col">{t('admin_users_column_roles')}</th>
                         <th className="th" scope="col">{t('admin_users_column_groups')}</th>
+                        <th className="th" scope="col">{t('admin_users_column_organizations')}</th>
                         <th className="th" scope="col">{t('admin_users_column_status')}</th>
                         <th className="th" scope="col">{t('admin_users_column_last_login')}</th>
                         <th className="th" scope="col">{t('actions_label')}</th>
@@ -708,6 +942,23 @@ export default function AdminUsers() {
                                     className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
                                   >
                                     {group}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="td align-top">
+                              <div className="flex flex-wrap gap-1">
+                                {user.organizations.length === 0 && (
+                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                                    {t('admin_users_organizations_empty')}
+                                  </span>
+                                )}
+                                {sortUserOrganizations(user.organizations).map((organization) => (
+                                  <span
+                                    key={organization.id}
+                                    className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                                  >
+                                    {organizationDisplayNameFromRecord(organization)}
                                   </span>
                                 ))}
                               </div>
@@ -803,12 +1054,19 @@ export default function AdminUsers() {
               className="h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl"
             >
               <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
-                <div>
-                  <h3 id="admin-user-drawer-title" className="text-lg font-semibold text-gray-900">
-                    {displayName(selected)}
-                  </h3>
-                  <p className="text-sm text-gray-600">{selected.email || t('admin_users_email_unknown')}</p>
-                </div>
+              <div>
+                <h3 id="admin-user-drawer-title" className="text-lg font-semibold text-gray-900">
+                  {displayName(selected)}
+                </h3>
+                <p className="text-sm text-gray-600">{selected.email || t('admin_users_email_unknown')}</p>
+                {selected.organizations.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {sortUserOrganizations(selected.organizations)
+                      .map((org) => organizationDisplayNameFromRecord(org))
+                      .join(', ')}
+                  </p>
+                )}
+              </div>
                 <button type="button" className="btn" onClick={() => setSelected(null)} ref={closeButtonRef}>
                   {t('btn_close')}
                 </button>
@@ -844,6 +1102,73 @@ export default function AdminUsers() {
                     </dd>
                   </div>
                 </dl>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-gray-600">
+                    {t('admin_users_details_organizations')}
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-1">
+                      {selected.organizations.length === 0 && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                          {t('admin_users_organizations_empty')}
+                        </span>
+                      )}
+                      {sortUserOrganizations(selected.organizations).map((organization) => (
+                        <span
+                          key={organization.id}
+                          className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                        >
+                          {organizationDisplayNameFromRecord(organization)}
+                        </span>
+                      ))}
+                    </div>
+                    <form className="space-y-3" onSubmit={handleOrganizationSubmit}>
+                      <label
+                        className="block text-sm font-medium text-gray-700"
+                        htmlFor="admin-user-organization-input"
+                      >
+                        {t('admin_users_organization_input_label')}
+                        <input
+                          id="admin-user-organization-input"
+                          className="input mt-1 w-full"
+                          type="text"
+                          value={organizationInput}
+                          placeholder={t('admin_users_organization_input_placeholder')}
+                          onChange={(event) => setOrganizationInput(event.target.value)}
+                          list="admin-user-organization-options"
+                          disabled={pendingUserId === selected.id}
+                        />
+                      </label>
+                      <datalist id="admin-user-organization-options">
+                        {organizationSuggestions.map((organization) => {
+                          const optionValue = organization.slug || organization.id
+                          const label = organization.name
+                            ? organization.slug
+                              ? `${organization.name} (${organization.slug})`
+                              : organization.name
+                            : optionValue
+                          return <option key={organization.id} value={optionValue} label={label} />
+                        })}
+                      </datalist>
+                      <p className="text-xs text-gray-500">
+                        {t('admin_users_organization_input_hint')}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="submit" className="btn" disabled={pendingUserId === selected.id}>
+                          {t('admin_users_organization_update_button')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => setOrganizationInput('')}
+                          disabled={pendingUserId === selected.id}
+                        >
+                          {t('admin_users_organization_clear_button')}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_details_roles')}</h4>
                   <div className="space-y-3">

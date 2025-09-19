@@ -288,6 +288,24 @@ type AuditLogQuery = {
   until?: string
 }
 
+export type AdminUserOrganization = {
+  id: string
+  slug: string
+  name: string
+  description?: string | null
+  is_default?: boolean
+  joined_at: string
+}
+
+export type AdminUserOrganizationMembership = {
+  organization_id: string
+  organization_slug: string
+  organization_name: string
+  organization_description?: string | null
+  organization_is_default?: boolean
+  joined_at: string
+}
+
 export type AdminUser = {
   id: string
   email?: string | null
@@ -305,6 +323,9 @@ export type AdminUser = {
   quota_feeds?: number | null
   quota_api_tokens?: number | null
   role_overrides: AdminUserRoleOverrides
+  organization_ids: string[]
+  organization_memberships: AdminUserOrganizationMembership[]
+  organizations: AdminUserOrganization[]
 }
 
 export type AdminUserRoleOverrides = {
@@ -328,6 +349,7 @@ type AdminUsersQuery = {
   search?: string
   isActive?: boolean
   role?: string
+  organization_id?: string
 }
 
 type AdminUserUpdatePayload = {
@@ -527,6 +549,7 @@ async function listAdminUsers(params: AdminUsersQuery = {}): Promise<AdminUsersP
   if (params.size !== undefined) query.set('size', String(params.size))
   if (params.search) query.set('search', params.search)
   if (params.role) query.set('role', params.role)
+  if (params.organization_id) query.set('organization_id', params.organization_id)
   if (params.isActive !== undefined) query.set('is_active', String(params.isActive))
 
   const search = query.toString()
