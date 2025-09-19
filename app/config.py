@@ -7,6 +7,18 @@ from functools import lru_cache
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 
+
+def _read_flag(name: str) -> bool | None:
+    """Return the parsed boolean value for ``name`` if explicitly set."""
+
+    value = os.getenv(name)
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    return normalized.lower() in _TRUE_VALUES
+
 __all__ = [
     "is_user_mgmt_core_enabled",
     "is_user_mgmt_enforce_enabled",
@@ -18,20 +30,20 @@ __all__ = [
 def is_user_mgmt_core_enabled() -> bool:
     """Return ``True`` when the core user-management features are enabled."""
 
-    value = os.getenv("USER_MGMT_CORE")
-    if value is None:
-        return False
-    return value.strip().lower() in _TRUE_VALUES
+    flag = _read_flag("USER_MGMT_CORE")
+    if flag is None:
+        return True
+    return flag
 
 
 @lru_cache(maxsize=1)
 def is_user_mgmt_enforce_enabled() -> bool:
     """Return ``True`` when user-management enforcement is enabled."""
 
-    value = os.getenv("USER_MGMT_ENFORCE")
-    if value is None:
-        return False
-    return value.strip().lower() in _TRUE_VALUES
+    flag = _read_flag("USER_MGMT_ENFORCE")
+    if flag is None:
+        return True
+    return flag
 
 
 @lru_cache(maxsize=1)
@@ -42,7 +54,7 @@ def is_rls_enforced() -> bool:
     falls back to ``USER_MGMT_ENFORCE`` for backwards compatibility.
     """
 
-    value = os.getenv("USER_MGMT_RLS_ENFORCE")
-    if value is not None:
-        return value.strip().lower() in _TRUE_VALUES
+    flag = _read_flag("USER_MGMT_RLS_ENFORCE")
+    if flag is not None:
+        return flag
     return is_user_mgmt_enforce_enabled()

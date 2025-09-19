@@ -80,25 +80,6 @@ def test_admin_role_ensured_on_startup():
         role = session.exec(select(Role).where(Role.name == ADMIN_ROLE_NAME)).first()
         assert role is not None
         assert role.is_system is True
-
-
-def test_admin_routes_hidden_when_flag_disabled(monkeypatch):
-    from app.config import is_user_mgmt_core_enabled
-    from app.db import init_db
-    from app.main import create_app
-
-    is_user_mgmt_core_enabled.cache_clear()
-    monkeypatch.setenv("USER_MGMT_CORE", "0")
-    init_db()
-    app = create_app()
-    with TestClient(app) as client:
-        resp_users = client.get("/v1/admin/users")
-        assert resp_users.status_code == 404
-        resp_audit = client.get("/v1/admin/audit")
-        assert resp_audit.status_code == 404
-    is_user_mgmt_core_enabled.cache_clear()
-
-
 def test_admin_users_listing_and_role_management(admin_client):
     from app.auth import ensure_role, grant_role
     from app.db import get_session

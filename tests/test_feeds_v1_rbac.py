@@ -13,7 +13,7 @@ def _env(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     monkeypatch.setenv("USER_MGMT_CORE", "1")
-    monkeypatch.delenv("USER_MGMT_ENFORCE", raising=False)
+    monkeypatch.setenv("USER_MGMT_ENFORCE", "0")
 
     from app.config import is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 

@@ -54,18 +54,13 @@ def create_app() -> FastAPI:
     app = FastAPI(title="SubPaperFlux API", version="0.1.0", openapi_tags=tags_metadata)
 
     def cache_user_mgmt_flags() -> None:
-        core_enabled = is_user_mgmt_core_enabled()
-        enforce_enabled = is_user_mgmt_enforce_enabled()
-        rls_enforced = is_rls_enforced()
-        app.state.user_mgmt_core_enabled = core_enabled
-        app.state.user_mgmt_enforce_enabled = enforce_enabled
-        app.state.rls_enforced = rls_enforced
-        app.state.user_mgmt_requires_user_ids = core_enabled or enforce_enabled or rls_enforced
+        app.state.user_mgmt_core_enabled = is_user_mgmt_core_enabled()
+        app.state.user_mgmt_enforce_enabled = is_user_mgmt_enforce_enabled()
+        app.state.rls_enforced = is_rls_enforced()
 
     cache_user_mgmt_flags()
     app.state.cache_user_mgmt_flags = cache_user_mgmt_flags
 
-    user_mgmt_core_enabled = app.state.user_mgmt_core_enabled
     rls_enforced = getattr(app.state, "rls_enforced", False)
 
     # OIDC discovery/JWKS prefetch (optional, lazy fetch also works)
@@ -151,22 +146,20 @@ def create_app() -> FastAPI:
                     )
 
         app.add_event_handler("startup", ensure_rls_startup_task)
-    if user_mgmt_core_enabled:
+    def ensure_admin_role_startup_task() -> None:
+        with get_session_ctx() as session:
+            try:
+                ensure_admin_role(session)
+                session.commit()
+            except Exception:  # noqa: BLE001
+                session.rollback()
+                logger.exception(
+                    "Failed to ensure admin role during startup; continuing without blocking",
+                )
+            else:
+                logger.info("Admin role ensured during startup")
 
-        def ensure_admin_role_startup_task() -> None:
-            with get_session_ctx() as session:
-                try:
-                    ensure_admin_role(session)
-                    session.commit()
-                except Exception:  # noqa: BLE001
-                    session.rollback()
-                    logger.exception(
-                        "Failed to ensure admin role during startup; continuing without blocking",
-                    )
-                else:
-                    logger.info("Admin role ensured during startup")
-
-        app.add_event_handler("startup", ensure_admin_role_startup_task)
+    app.add_event_handler("startup", ensure_admin_role_startup_task)
     register_error_handlers(app)
     setup_logging()
     init_sentry(app)
@@ -202,14 +195,22 @@ def create_app() -> FastAPI:
     async def bind_rls_user(request: Request, call_next):
         ctx_token = None
         try:
-            core_enabled = getattr(request.app.state, "user_mgmt_core_enabled", False)
-            enforce_enabled = getattr(request.app.state, "user_mgmt_enforce_enabled", False)
-            rls_enforced = getattr(request.app.state, "rls_enforced", False)
-            requires_user_ids = getattr(
+            core_enabled = getattr(
                 request.app.state,
-                "user_mgmt_requires_user_ids",
-                core_enabled or enforce_enabled or rls_enforced,
+                "user_mgmt_core_enabled",
+                is_user_mgmt_core_enabled(),
             )
+            enforce_enabled = getattr(
+                request.app.state,
+                "user_mgmt_enforce_enabled",
+                is_user_mgmt_enforce_enabled(),
+            )
+            rls_enforced = getattr(
+                request.app.state,
+                "rls_enforced",
+                is_rls_enforced(),
+            )
+            requires_user_ids = core_enabled or enforce_enabled or rls_enforced
             request.state.user_mgmt_core_enabled = core_enabled
             request.state.user_mgmt_enforce_enabled = enforce_enabled
             request.state.rls_enforced = rls_enforced
@@ -223,8 +224,7 @@ def create_app() -> FastAPI:
             try:
                 user = resolve_user_from_token(bearer_token)
                 if user:
-                    if requires_user_ids:
-                        maybe_provision_user(user, user_mgmt_enabled=requires_user_ids)
+                    maybe_provision_user(user)
                     increment_user_login()
             except HTTPException:
                 raise
@@ -262,11 +262,10 @@ def create_app() -> FastAPI:
     app.include_router(jobs_v1_router)  # list + detail under /v1/jobs
     app.include_router(bookmarks.router, prefix="/v1", tags=["v1"])  # /v1/bookmarks, etc.
     app.include_router(status.router, prefix="/v1", tags=["v1"])  # v1 status
-    if user_mgmt_core_enabled:
-        app.include_router(admin_audit_v1_router)
-        app.include_router(admin_orgs_v1_router)
-        app.include_router(admin_roles_v1_router)
-        app.include_router(admin_users_v1_router)
+    app.include_router(admin_audit_v1_router)
+    app.include_router(admin_orgs_v1_router)
+    app.include_router(admin_roles_v1_router)
+    app.include_router(admin_users_v1_router)
     app.include_router(me_v1_router)
     app.include_router(me_tokens_v1_router)
     app.include_router(integrations_router)

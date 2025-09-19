@@ -65,27 +65,6 @@ def admin_client():
     finally:
         app.dependency_overrides.clear()
         client.close()
-
-
-def test_admin_roles_routes_hidden_when_flag_disabled(monkeypatch):
-    from app.config import is_user_mgmt_core_enabled
-    from app.db import init_db
-    from app.main import create_app
-
-    is_user_mgmt_core_enabled.cache_clear()
-    monkeypatch.setenv("USER_MGMT_CORE", "0")
-    init_db()
-    app = create_app()
-
-    with TestClient(app) as client:
-        resp_list = client.get("/v1/admin/roles")
-        assert resp_list.status_code == 404
-        resp_create = client.post("/v1/admin/roles", json={"name": "test"})
-        assert resp_create.status_code == 404
-
-    is_user_mgmt_core_enabled.cache_clear()
-
-
 def test_admin_roles_requires_admin_privileges():
     from app.auth.oidc import get_current_user
     from app.db import init_db
