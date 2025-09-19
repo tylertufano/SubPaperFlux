@@ -20,8 +20,10 @@ export type UiConfig = {
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
 
 export function parseEnvBoolean(value?: string | null): boolean {
-  if (!value) return false
-  return TRUTHY_ENV_VALUES.has(value.trim().toLowerCase())
+  if (value == null) return true
+  const normalized = value.trim().toLowerCase()
+  if (normalized.length === 0) return true
+  return TRUTHY_ENV_VALUES.has(normalized)
 }
 
 const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''

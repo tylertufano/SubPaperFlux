@@ -10,6 +10,8 @@ function pickFlags(config: UiConfig): FeatureFlags {
   }
 }
 
+const DEFAULT_FLAGS: FeatureFlags = { userMgmtCore: true, userMgmtUi: true }
+
 const initialFlags: FeatureFlags | null =
   typeof window === 'undefined' ? pickFlags(readUiConfigFromEnv()) : null
 
@@ -17,7 +19,15 @@ let cachedFlags: FeatureFlags | null = initialFlags
 let flagsPromise: Promise<FeatureFlags> | null = null
 
 export function getCachedFeatureFlags(): FeatureFlags | null {
-  return cachedFlags
+  if (cachedFlags) {
+    return cachedFlags
+  }
+  if (typeof window === 'undefined') {
+    const flags = pickFlags(readUiConfigFromEnv())
+    cachedFlags = flags
+    return flags
+  }
+  return { ...DEFAULT_FLAGS }
 }
 
 export async function loadFeatureFlags(): Promise<FeatureFlags> {
@@ -50,7 +60,7 @@ export function useFeatureFlags(): FeatureFlagsState {
       cachedFlags = flags
       return { ...flags, isLoaded: true }
     }
-    return { userMgmtCore: false, userMgmtUi: false, isLoaded: false }
+    return { ...DEFAULT_FLAGS, isLoaded: false }
   })
 
   useEffect(() => {
