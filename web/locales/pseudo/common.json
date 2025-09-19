@@ -92,5 +92,12 @@
   "copy_to_workspace": "Copiar a mi espacio de trabajo ✨",
   "copy_to_workspace_success": "Copiado a tu espacio de trabajo ✨",
   "copy_to_workspace_error": "No se pudo copiar al espacio: {reason} ✨",
-  "credentials_copy_aria_label": "Copiar credencial {description} a tu espacio de trabajo ✨"
+  "credentials_copy_aria_label": "Copiar credencial {description} a tu espacio de trabajo ✨",
+  "admin_actions_enable_rls_tooltip": "Habilitar RLS no tiene reversión sin SQL manual ✨",
+  "admin_actions_enable_rls_confirm": "¿Activar seguridad de filas en Postgres? Asegúrate de usar Postgres con acceso de superusuario. No se puede deshacer en la UI ✨",
+  "admin_actions_enable_rls_docs_button": "Abrir docs de RLS ✨",
+  "admin_actions_enable_rls_warning_prefix": "Requiere Postgres y credenciales de superusuario ✨",
+  "admin_actions_enable_rls_warning_enable_link": "Ver pasos de habilitación ✨",
+  "admin_actions_enable_rls_warning_disable_link": "Ver reversión manual ✨",
+  "admin_actions_enable_rls_warning_suffix": "antes de activar la seguridad de nivel de fila ✨"
 }

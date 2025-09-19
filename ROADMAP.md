@@ -226,7 +226,7 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 - [x] RLS enforcement: enforce per-table policies and verify `app.user_id` propagation end-to-end (UI-012)
   - Evidence: `app/db_admin.py:66-114`, `app/main.py:71-153`, `app/db.py:53-127`, `tests/test_rls_policies.py:212-354`
 - [x] RLS: Enable/disable with warnings; doc links (UI-046)
-  - Evidence: `app/main.py:71-153`, `web/pages/admin.tsx:82-158`, `web/locales/en/common.json:375-393`, `docs/user-management-rollout.md:80-126`
+  - Evidence: `app/main.py:71-153`, `web/pages/admin.tsx:82-196`, `web/locales/en/common.json:375-392`, `docs/user-management-rollout.md:80-144`
 
 ### Integrations
 

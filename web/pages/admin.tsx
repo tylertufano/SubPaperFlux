@@ -17,6 +17,8 @@ export default function Admin() {
   const [prep, setPrep] = useState<any | null>(null)
   const [rls, setRls] = useState<any | null>(null)
   const isPg = (db?.details?.backend || '').toLowerCase() === 'postgres'
+  const rlsEnableHref = '/docs/user-management-rollout#postgres-rls-enable'
+  const rlsDisableHref = '/docs/user-management-rollout#postgres-rls-disable'
   const handleRetry = () => {
     void refreshStatus()
     void refreshDb()
@@ -64,50 +66,79 @@ export default function Admin() {
                   {t('admin_actions_postgres_required', { backend: db?.details?.backend || t('admin_actions_backend_unknown') })}
                 </div>
               )}
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!isPg}
-                  title={!isPg ? t('admin_actions_requires_postgres') : ''}
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={!isPg}
+                    title={!isPg ? t('admin_actions_requires_postgres') : ''}
                   onClick={async () => {
                     const r = await v1.postgresPrepareV1AdminPostgresPreparePost()
                     setPrep(r)
                     setMsg(JSON.stringify(r, null, 2))
                   }}
-                >
-                  {t('admin_actions_prepare_postgres')}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!isPg}
-                  title={!isPg ? t('admin_actions_requires_postgres') : ''}
-                  onClick={async () => {
-                    const r = await v1.postgresEnableRlsV1AdminPostgresEnableRlsPost()
-                    setRls(r)
-                    setMsg(JSON.stringify(r, null, 2))
-                  }}
-                >
-                  {t('admin_actions_enable_rls')}
-                </button>
-              </div>
-              {isPg && (
-                <div className="mt-2 text-xs text-gray-600 space-y-1">
-                  <p>
-                    <Link
-                      href="/docs/user-management-rollout#postgres-row-level-security"
-                      className="text-blue-600 hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {t('admin_actions_enable_rls_help_link')}
-                    </Link>{' '}
-                    {t('admin_actions_enable_rls_help_description')}
-                  </p>
-                  <p>{t('admin_actions_enable_rls_help_expectations')}</p>
+                  >
+                    {t('admin_actions_prepare_postgres')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={!isPg}
+                    title={!isPg ? t('admin_actions_requires_postgres') : t('admin_actions_enable_rls_tooltip')}
+                    onClick={async () => {
+                      if (!isPg) {
+                        return
+                      }
+                      if (!window.confirm(t('admin_actions_enable_rls_confirm'))) {
+                        return
+                      }
+                      const r = await v1.postgresEnableRlsV1AdminPostgresEnableRlsPost()
+                      setRls(r)
+                      setMsg(JSON.stringify(r, null, 2))
+                    }}
+                  >
+                    {t('admin_actions_enable_rls')}
+                  </button>
+                  <Link
+                    href={rlsEnableHref}
+                    className="btn"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('admin_actions_enable_rls_docs_button')}
+                  </Link>
                 </div>
-              )}
+                {isPg && (
+                  <Alert
+                    kind="warning"
+                    message={
+                      <span>
+                        {t('admin_actions_enable_rls_warning_prefix')}{' '}
+                        <a
+                          href={rlsEnableHref}
+                          className="underline text-blue-700 hover:text-blue-800"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t('admin_actions_enable_rls_warning_enable_link')}
+                        </a>
+                        {' · '}
+                        <a
+                          href={rlsDisableHref}
+                          className="underline text-blue-700 hover:text-blue-800"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t('admin_actions_enable_rls_warning_disable_link')}
+                        </a>
+                        {' '}
+                        {t('admin_actions_enable_rls_warning_suffix')}
+                      </span>
+                    }
+                  />
+                )}
+              </div>
             </div>
           </div>
           {prep && (
