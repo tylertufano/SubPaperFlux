@@ -96,6 +96,8 @@ services:
       OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-replace_me}
+      # Optional: choose which claim provides the UI display name
+      OIDC_DISPLAY_NAME_CLAIM: ${OIDC_DISPLAY_NAME_CLAIM:-}
     ports:
       - "3000:3000"
     depends_on:

@@ -213,6 +213,12 @@ users in unmapped groups, is granted `reader` by default.
 Reload application processes after changing either variable so the cached
 configuration is refreshed.
 
+The frontend can also pull human-friendly display names from the same identity
+payload. Set `OIDC_DISPLAY_NAME_CLAIM` on the web deployment to the claim that
+should populate the account menu (for example, `name` or a custom namespaced
+attribute). When left unset the UI checks for common `display_name`
+representations and falls back to the base profile name.
+
 ## Override storage
 
 Manual overrides let operators fine-tune role assignments when IdP data is

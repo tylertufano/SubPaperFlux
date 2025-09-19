@@ -7,6 +7,40 @@ import DropdownMenu from './DropdownMenu'
 
 type AdminCandidate = Record<string, unknown>
 
+type SessionUser = {
+  displayName?: string | null
+  name?: string | null
+}
+
+function extractFirstName(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return null
+  }
+  const commaIndex = trimmed.indexOf(',')
+  const base = commaIndex >= 0 ? trimmed.slice(commaIndex + 1) : trimmed
+  const normalized = base.trim()
+  if (!normalized) {
+    return null
+  }
+  const [first] = normalized.split(/\s+/)
+  return first || null
+}
+
+function accountLabelFromUser(user: SessionUser | null | undefined): string | null {
+  if (!user) {
+    return null
+  }
+  const fromDisplayName = extractFirstName(user.displayName)
+  if (fromDisplayName) {
+    return fromDisplayName
+  }
+  return extractFirstName(user.name)
+}
+
 function includesAdminRole(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((entry) => typeof entry === 'string' && entry.toLowerCase() === 'admin')
@@ -60,6 +94,8 @@ export default function Nav() {
     { label: t('btn_sign_out'), onClick: () => signOut() },
   ]
 
+  const accountLabel = accountLabelFromUser(session?.user) ?? t('nav_account_fallback')
+
   return (
     <nav className="bg-white border-b border-gray-200" role="navigation" aria-label={t('nav_main_label')}>
       <div className="container py-3 flex items-center gap-4">
@@ -102,7 +138,7 @@ export default function Nav() {
         <div className="ml-auto flex items-center gap-2">
           {status === 'authenticated' ? (
             <DropdownMenu
-              label={session?.user?.name ? String(session.user.name) : t('nav_account_fallback')}
+              label={accountLabel}
               baseHref={pathname}
               currentPath={pathname}
               items={accountItems}

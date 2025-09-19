@@ -10,7 +10,7 @@ const { useFeatureFlagsMock } = vi.hoisted(() => ({
 
 const { useSessionMock } = vi.hoisted(() => ({
   useSessionMock: vi.fn(() => ({
-    data: { user: { name: 'Test User', roles: ['admin'] } },
+    data: { user: { name: 'Test User', displayName: 'Test User', roles: ['admin'] } },
     status: 'authenticated' as const,
   })),
 }))
@@ -55,13 +55,13 @@ describe('Nav component', () => {
     useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
-      data: { user: { name: 'Test User', roles: ['admin'] } },
+      data: { user: { name: 'Test User', displayName: 'Test User', roles: ['admin'] } },
       status: 'authenticated' as const,
     })
   })
 
   function getAccountDropdowns() {
-    return screen.getAllByTestId('dropdown-Test User')
+    return screen.getAllByTestId('dropdown-Test')
   }
 
   it('shows admin navigation inside the account dropdown by default', () => {
@@ -85,7 +85,7 @@ describe('Nav component', () => {
 
   it('hides admin links for users without admin privileges', () => {
     useSessionMock.mockReturnValue({
-      data: { user: { name: 'Test User', roles: [] } },
+      data: { user: { name: 'Test User', displayName: 'Test User', roles: [] } },
       status: 'authenticated' as const,
     })
 
