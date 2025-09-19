@@ -92,6 +92,22 @@ export default function Admin() {
                   {t('admin_actions_enable_rls')}
                 </button>
               </div>
+              {isPg && (
+                <div className="mt-2 text-xs text-gray-600 space-y-1">
+                  <p>
+                    <Link
+                      href="/docs/user-management-rollout#postgres-row-level-security"
+                      className="text-blue-600 hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t('admin_actions_enable_rls_help_link')}
+                    </Link>{' '}
+                    {t('admin_actions_enable_rls_help_description')}
+                  </p>
+                  <p>{t('admin_actions_enable_rls_help_expectations')}</p>
+                </div>
+              )}
             </div>
           </div>
           {prep && (

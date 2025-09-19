@@ -77,6 +77,54 @@ All other roles start with no elevated grants. The `has_permission` helper autom
 
 **Rollback plan:** Disable `user_mgmt_enforce` to return to permissive access while keeping the data model and UI from earlier phases available.
 
+## Postgres Row-Level Security
+
+Row-level security (RLS) lets Postgres enforce ownership checks directly in the database. The rollout intentionally keeps the
+mechanics separate from the RBAC feature flags so that operators can stage database changes before switching the application
+into enforcement mode.
+
+### Prerequisites
+
+- A Postgres deployment. The admin UI hides the bootstrap actions when the `/v1/status/db` backend is not Postgres.
+- Database credentials with permission to run `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and `CREATE POLICY`. Superuser or table
+  owner privileges are required; otherwise Postgres will return `must be owner of relation` or `permission denied` errors.
+- Application middleware that populates the `app.user_id` session variable on every request. The rollout enables this when either
+  `USER_MGMT_CORE`, `USER_MGMT_ENFORCE`, or `USER_MGMT_RLS_ENFORCE` evaluates to `true` (see `app/db.py`).
+
+Run the **Prepare Postgres** admin action first when upgrading from an older deployment. It installs the `pg_trgm` extension and
+recommended indexes so that text search continues to work efficiently once RLS is active.
+
+### Enabling RLS
+
+There are two supported paths for creating the owner-based policies defined in `app/db_admin.py`:
+
+1. **One-time admin action:** The **Enable RLS** button (or `POST /v1/admin/postgres/enable-rls`) runs `enable_rls()` with the
+   active admin's credentials. The UI streams a JSON report indicating whether each table was altered and whether the `select`,
+   `update`, and `delete` owner policies were created.
+2. **Startup hook:** Setting `USER_MGMT_RLS_ENFORCE=1` (or another truthy value) adds a FastAPI startup handler that calls
+   `enable_rls()` every time the application boots. This keeps policies synchronized across deployments and logs warnings if the
+   database role lacks sufficient privileges. When the flag is not set, the hook is skipped so sqlite or read-only staging
+   environments can continue to run without RLS.
+
+Both paths are idempotent. It is safe to re-run the admin action or restart the application after schema migrations or owner
+changes to ensure policies remain in place.
+
+### Troubleshooting
+
+- **Privilege errors:** `permission denied` or `must be owner` responses mean the connected database role cannot alter the table
+  or create policies. Grant the role superuser access, switch to the table owner, or transfer ownership with
+  `ALTER TABLE <table> OWNER TO <role>;` before retrying.
+- **Verifying policies:** Inspect current policies with
+  `SELECT schemaname, tablename, policyname, permissive, roles FROM pg_policies WHERE tablename IN ('bookmark','credential','feed','job','siteconfig','cookie');`
+  and confirm `relrowsecurity` is `true` for each table via
+  `SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('bookmark','credential','feed','job','siteconfig','cookie');`.
+- **Session variable checks:** RLS policies rely on `current_setting('app.user_id', true)`. In psql, run
+  `SHOW app.user_id;` (or `SELECT current_setting('app.user_id', true);`) to confirm it is populated for requests that should be
+  scoped. Use `RESET app.user_id;` after debugging sessions to avoid leaking the value between manual queries. The helper
+  functions in `app/db.py` automatically set and reset this variable for API requests.
+- **Unexpected rows returned:** If RLS appears to allow cross-tenant access, verify the `owner_user_id` columns were backfilled
+  correctly and that your query is not running as a superuser (superusers bypass RLS by default).
+
 ## Mapping Configuration
 
 Role assignments derived from identity provider groups are configured entirely through environment variables so that each tenant can align the UI with their IdP taxonomy without code changes. The backend consumes two knobs when resolving grants:
