@@ -5,11 +5,11 @@ from fastapi.responses import StreamingResponse
 import asyncio
 import json
 import time
-from sqlmodel import select, desc, Session
+from sqlmodel import select
 from ..jobs.validation import validate_job
 
 from ..auth.oidc import get_current_user
-from ..db import get_session, get_engine
+from ..db import get_session, get_session_ctx
 from ..models import Job
 from ..schemas import JobsPage, JobOut
 
@@ -85,7 +85,7 @@ async def stream_jobs(
     async def event_generator():
         while True:
             def fetch():
-                with Session(get_engine()) as session:
+                with get_session_ctx() as session:
                     return list_jobs(
                         current_user=current_user,
                         session=session,
