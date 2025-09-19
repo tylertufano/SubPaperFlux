@@ -80,16 +80,19 @@ class Organization(SQLModel, table=True):
     )
 
     id: str = Field(default_factory=lambda: gen_id("org"), primary_key=True)
-    slug: str = Field(sa_column=Column(String(length=255), nullable=False), index=True)
-    name: str = Field(sa_column=Column(String(length=255), nullable=False), index=True)
+    slug: str = Field(
+        sa_column=Column(String(length=255), nullable=False, index=True)
+    )
+    name: str = Field(
+        sa_column=Column(String(length=255), nullable=False, index=True)
+    )
     description: Optional[str] = Field(
         default=None,
         sa_column=Column(Text, nullable=True),
     )
     is_default: bool = Field(
         default=False,
-        sa_column=Column(Boolean, nullable=False),
-        index=True,
+        sa_column=Column(Boolean, nullable=False, index=True),
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

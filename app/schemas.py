@@ -290,6 +290,68 @@ class AdminRoleUpdate(BaseModel):
     description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
 
 
+class AdminOrganization(BaseModel):
+    id: str
+    slug: constr(strip_whitespace=True, min_length=2, max_length=255)
+    name: constr(strip_whitespace=True, min_length=2, max_length=255)
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    is_default: bool = False
+    created_at: datetime
+    updated_at: datetime
+    member_count: int = Field(default=0, ge=0)
+
+
+class AdminOrganizationMember(BaseModel):
+    id: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    is_active: Optional[bool] = None
+    joined_at: datetime
+
+
+class AdminOrganizationDetail(AdminOrganization):
+    members: List[AdminOrganizationMember] = Field(default_factory=list)
+
+
+class AdminOrganizationsPage(BaseModel):
+    items: List[AdminOrganization]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
+
+
+class AdminOrganizationCreate(BaseModel):
+    slug: constr(
+        strip_whitespace=True,
+        min_length=2,
+        max_length=255,
+        pattern=r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+    )
+    name: constr(strip_whitespace=True, min_length=2, max_length=255)
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    is_default: Optional[bool] = None
+
+
+class AdminOrganizationUpdate(BaseModel):
+    slug: Optional[
+        constr(
+            strip_whitespace=True,
+            min_length=2,
+            max_length=255,
+            pattern=r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
+        )
+    ] = None
+    name: Optional[constr(strip_whitespace=True, min_length=2, max_length=255)] = None
+    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    is_default: Optional[bool] = None
+
+
+class AdminOrganizationMembershipChange(BaseModel):
+    user_id: constr(strip_whitespace=True, min_length=1, max_length=255)
+
+
 class AdminUserRoleOverrides(BaseModel):
     enabled: bool = False
     preserve: List[str] = Field(default_factory=list)
