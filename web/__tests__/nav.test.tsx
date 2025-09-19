@@ -10,7 +10,7 @@ const { useFeatureFlagsMock } = vi.hoisted(() => ({
 
 const { useSessionMock } = vi.hoisted(() => ({
   useSessionMock: vi.fn(() => ({
-    data: { user: { name: 'Test User' } },
+    data: { user: { name: 'Test User', roles: ['admin'] } },
     status: 'authenticated' as const,
   })),
 }))
@@ -55,7 +55,7 @@ describe('Nav component', () => {
     useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
-      data: { user: { name: 'Test User' } },
+      data: { user: { name: 'Test User', roles: ['admin'] } },
       status: 'authenticated' as const,
     })
   })
@@ -64,10 +64,11 @@ describe('Nav component', () => {
     return screen.getAllByTestId('dropdown-Test User')
   }
 
-  it('shows user management links by default', () => {
+  it('shows admin navigation inside the account dropdown by default', () => {
     renderWithSWR(<Nav />, { locale: 'en' })
 
     const accountDropdowns = getAccountDropdowns()
+    expect(screen.queryByRole('link', { name: 'Admin' })).toBeNull()
     expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Users')),
     ).toBe(true)
@@ -76,6 +77,26 @@ describe('Nav component', () => {
     ).toBe(true)
     expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Audit Log')),
+    ).toBe(true)
+    expect(
+      accountDropdowns.some((dropdown) => within(dropdown).queryByText('Admin')),
+    ).toBe(true)
+  })
+
+  it('hides admin links for users without admin privileges', () => {
+    useSessionMock.mockReturnValue({
+      data: { user: { name: 'Test User', roles: [] } },
+      status: 'authenticated' as const,
+    })
+
+    renderWithSWR(<Nav />, { locale: 'en' })
+
+    const accountDropdowns = getAccountDropdowns()
+    expect(
+      accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Admin')),
+    ).toBe(true)
+    expect(
+      accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Users')),
     ).toBe(true)
   })
 })
