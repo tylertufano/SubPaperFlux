@@ -10,11 +10,20 @@ from fastapi.testclient import TestClient
 def _env(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
+    monkeypatch.setenv("USER_MGMT_ENFORCE", "0")
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
     monkeypatch.setenv(
         "CREDENTIALS_ENC_KEY",
         base64.urlsafe_b64encode(os.urandom(32)).decode(),
     )
+
+    from app.config import is_user_mgmt_enforce_enabled
+
+    is_user_mgmt_enforce_enabled.cache_clear()
+    try:
+        yield
+    finally:
+        is_user_mgmt_enforce_enabled.cache_clear()
 
 
 @pytest.fixture()

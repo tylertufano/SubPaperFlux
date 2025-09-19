@@ -32,7 +32,7 @@ pytestmark = pytest.mark.postgres
 
 
 @pytest.fixture(scope="module")
-def postgres_rls(monkeypatch):
+def postgres_rls():
     """Provision an isolated Postgres database with owner and app roles.
 
     The fixture creates unique roles and a throwaway database owned by the
@@ -143,9 +143,10 @@ def postgres_rls(monkeypatch):
     owner_dsn = owner_url.render_as_string(hide_password=False)
     app_dsn = app_url.render_as_string(hide_password=False)
 
-    monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
-    monkeypatch.setenv("USER_MGMT_RLS_ENFORCE", "1")
-    monkeypatch.setenv("DATABASE_URL", owner_dsn)
+    patcher = pytest.MonkeyPatch()
+    patcher.setenv("SQLMODEL_CREATE_ALL", "1")
+    patcher.setenv("USER_MGMT_RLS_ENFORCE", "1")
+    patcher.setenv("DATABASE_URL", owner_dsn)
 
     from app import db as db_module
 
@@ -157,11 +158,12 @@ def postgres_rls(monkeypatch):
     SQLModel.metadata.create_all(owner_engine)
 
     # Switch default session to the app role for test operations.
-    monkeypatch.setenv("DATABASE_URL", app_dsn)
+    patcher.setenv("DATABASE_URL", app_dsn)
     db_module._engine = None  # type: ignore[attr-defined]
     db_module._engine_url = None  # type: ignore[attr-defined]
 
-    yield {
+    try:
+        yield {
         "db": db_module,
         "owner_engine": owner_engine,
         "owner_url": owner_dsn,
@@ -174,16 +176,18 @@ def postgres_rls(monkeypatch):
         "admin_db": admin_db,
         "admin_user": admin_user,
         "admin_password": admin_password,
-    }
+        }
+    finally:
+        patcher.undo()
 
-    try:
-        db_module.get_engine().dispose()
-    except Exception:
-        pass
-    try:
-        owner_engine.dispose()
-    except Exception:
-        pass
+        try:
+            db_module.get_engine().dispose()
+        except Exception:
+            pass
+        try:
+            owner_engine.dispose()
+        except Exception:
+            pass
 
     admin_conn = psycopg2.connect(
         dbname=admin_db,

@@ -322,10 +322,10 @@ def test_bulk_tags_success_and_audit_logging():
     assert all(clear_logs[i].details.get("clear") is True for i in (-1, -2))
 
 
-def test_bulk_tags_skips_foreign_bookmarks():
+def test_bulk_tags_rejects_foreign_bookmarks():
     from app.db import init_db, get_session
     from app.main import create_app
-    from app.models import Bookmark, BookmarkTagLink
+    from app.models import Bookmark
     from app.auth.oidc import get_current_user
 
     app = create_app()
@@ -350,15 +350,9 @@ def test_bulk_tags_skips_foreign_bookmarks():
             "clear": False,
         },
     )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert [item["bookmark_id"] for item in data] == [owned_id]
-
-    with next(get_session()) as session:
-        foreign_links = session.exec(
-            select(BookmarkTagLink).where(BookmarkTagLink.bookmark_id == foreign_id)
-        ).all()
-    assert foreign_links == []
+    assert resp.status_code == 403
+    body = resp.json()
+    assert str(foreign_id) in body["message"]
 
 
 def test_bulk_tags_validation_errors():
@@ -493,13 +487,15 @@ def test_bulk_folders_returns_404_for_missing_folder():
     app.dependency_overrides[get_current_user] = lambda: {"sub": "folders"}
 
     with next(get_session()) as session:
-        folder = Folder(owner_user_id="other", name="Elsewhere")
+        folder = Folder(owner_user_id="folders", name="Elsewhere")
         bm = Bookmark(id=str(uuid4()), owner_user_id="folders", instapaper_bookmark_id="410")
         session.add(folder)
         session.add(bm)
         session.commit()
         bookmark_id = bm.id
         folder_id = folder.id
+        session.delete(folder)
+        session.commit()
 
     client = TestClient(app)
     resp = client.post(
