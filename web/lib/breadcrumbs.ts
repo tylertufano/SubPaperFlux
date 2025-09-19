@@ -16,6 +16,7 @@ const breadcrumbKeyMap: Record<string, string> = {
   '/admin': 'nav_admin',
   '/admin/users': 'nav_users',
   '/admin/roles': 'nav_roles',
+  '/admin/orgs': 'nav_orgs',
   '/admin/audit': 'nav_audit',
   '/me': 'nav_profile',
   '/me/tokens': 'nav_tokens',
