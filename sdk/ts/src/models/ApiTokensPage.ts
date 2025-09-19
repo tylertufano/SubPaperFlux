@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { ApiTokenOut } from './ApiTokenOut';
+import {
+    ApiTokenOutFromJSON,
+    ApiTokenOutFromJSONTyped,
+    ApiTokenOutToJSON,
+    ApiTokenOutToJSONTyped,
+} from './ApiTokenOut';
+
 /**
  * 
  * @export
@@ -21,53 +29,51 @@ import { exists, mapValues } from '../runtime';
 export interface ApiTokensPage {
     /**
      * 
-     * @type {any}
+     * @type {Array<ApiTokenOut>}
      * @memberof ApiTokensPage
      */
-    items: any | null;
+    items: Array<ApiTokenOut>;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof ApiTokensPage
      */
-    total: any | null;
+    total: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof ApiTokensPage
      */
-    page: any | null;
+    page: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof ApiTokensPage
      */
-    size: any | null;
+    size: number;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof ApiTokensPage
      */
-    hasNext?: any | null;
+    hasNext?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof ApiTokensPage
      */
-    totalPages?: any | null;
+    totalPages?: number;
 }
 
 /**
  * Check if a given object implements the ApiTokensPage interface.
  */
-export function instanceOfApiTokensPage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "items" in value;
-    isInstance = isInstance && "total" in value;
-    isInstance = isInstance && "page" in value;
-    isInstance = isInstance && "size" in value;
-
-    return isInstance;
+export function instanceOfApiTokensPage(value: object): value is ApiTokensPage {
+    if (!('items' in value) || value['items'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
+    if (!('page' in value) || value['page'] === undefined) return false;
+    if (!('size' in value) || value['size'] === undefined) return false;
+    return true;
 }
 
 export function ApiTokensPageFromJSON(json: any): ApiTokensPage {
@@ -75,35 +81,37 @@ export function ApiTokensPageFromJSON(json: any): ApiTokensPage {
 }
 
 export function ApiTokensPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokensPage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'items': json['items'],
+        'items': ((json['items'] as Array<any>).map(ApiTokenOutFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
-        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
+        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
+        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
 
-export function ApiTokensPageToJSON(value?: ApiTokensPage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ApiTokensPageToJSON(json: any): ApiTokensPage {
+    return ApiTokensPageToJSONTyped(json, false);
+}
+
+export function ApiTokensPageToJSONTyped(value?: ApiTokensPage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'items': value.items,
-        'total': value.total,
-        'page': value.page,
-        'size': value.size,
-        'has_next': value.hasNext,
-        'total_pages': value.totalPages,
+        'items': ((value['items'] as Array<any>).map(ApiTokenOutToJSON)),
+        'total': value['total'],
+        'page': value['page'],
+        'size': value['size'],
+        'has_next': value['hasNext'],
+        'total_pages': value['totalPages'],
     };
 }
 

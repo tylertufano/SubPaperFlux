@@ -21,6 +21,7 @@ from ..db import get_session
 from ..models import Organization, OrganizationMembership, Role, User, UserRole
 from ..schemas import (
     AdminUserOrganization,
+    AdminUserOrganizationMembership,
     AdminUserOut,
     AdminUserRoleOverrides,
     AdminUserRoleOverridesUpdate,
@@ -48,7 +49,9 @@ def _normalize_groups(user: User) -> List[str]:
     return groups
 
 
-def _load_user_organizations(session: Session, user_id: str) -> List[AdminUserOrganization]:
+def _load_user_organization_memberships(
+    session: Session, user_id: str
+) -> tuple[List[AdminUserOrganization], List[AdminUserOrganizationMembership]]:
     stmt = (
         select(OrganizationMembership, Organization)
         .join(Organization, Organization.id == OrganizationMembership.organization_id, isouter=True)
@@ -57,6 +60,7 @@ def _load_user_organizations(session: Session, user_id: str) -> List[AdminUserOr
     )
     rows = session.exec(stmt).all()
     organizations: List[AdminUserOrganization] = []
+    memberships: List[AdminUserOrganizationMembership] = []
     for membership, organization in rows:
         if organization is None:
             continue
@@ -70,7 +74,17 @@ def _load_user_organizations(session: Session, user_id: str) -> List[AdminUserOr
                 joined_at=membership.created_at,
             )
         )
-    return organizations
+        memberships.append(
+            AdminUserOrganizationMembership(
+                organization_id=organization.id,
+                organization_slug=organization.slug,
+                organization_name=organization.name,
+                organization_description=organization.description,
+                organization_is_default=organization.is_default,
+                joined_at=membership.created_at,
+            )
+        )
+    return organizations, memberships
 
 
 def _serialize_user(session: Session, user: User) -> AdminUserOut:
@@ -78,6 +92,9 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
     groups = _normalize_groups(user)
     is_admin_flag = ADMIN_ROLE_NAME in roles
     overrides = get_user_role_overrides(user)
+    organizations, organization_memberships = _load_user_organization_memberships(
+        session, user.id
+    )
     return AdminUserOut(
         id=user.id,
         email=user.email,
@@ -99,7 +116,9 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
             preserve=sorted(overrides.preserve),
             suppress=sorted(overrides.suppress),
         ),
-        organizations=_load_user_organizations(session, user.id),
+        organization_ids=[membership.organization_id for membership in organization_memberships],
+        organization_memberships=organization_memberships,
+        organizations=organizations,
     )
 
 
@@ -107,13 +126,28 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
 def list_users(
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=200),
-    search: Optional[str] = Query(None, description="Filter by email, name, or id"),
-    is_active: Optional[bool] = Query(None),
-    role: Optional[str] = Query(None, description="Filter by assigned role name"),
+    page: int = Query(1, ge=1, description="Page number starting at 1"),
+    size: int = Query(
+        20,
+        ge=1,
+        le=200,
+        description="Maximum number of items to return per page (1-200)",
+    ),
+    search: Optional[str] = Query(
+        None,
+        min_length=1,
+        description="Filter by email address, full name, or user id",
+    ),
+    is_active: Optional[bool] = Query(
+        None, description="Filter by whether the user account is active"
+    ),
+    role: Optional[str] = Query(
+        None, min_length=1, description="Filter by assigned role name"
+    ),
     organization_id: Optional[str] = Query(
-        None, description="Filter by organization membership"
+        None,
+        min_length=1,
+        description="Filter users who belong to the specified organization",
     ),
 ):
     _require_admin(session, current_user)
@@ -184,7 +218,7 @@ def list_users(
 
 @router.get("/{user_id}", response_model=AdminUserOut, summary="Get a user")
 def get_user(
-    user_id: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -192,6 +226,7 @@ def get_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    session.refresh(user)
     result = _serialize_user(session, user)
     _record_admin_action_metric("get_user")
     return result
@@ -204,7 +239,7 @@ def get_user(
 )
 def update_user(
     *,
-    user_id: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
     payload: AdminUserUpdate = Body(...),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -285,7 +320,7 @@ def update_user(
 )
 def update_user_role_overrides(
     *,
-    user_id: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
     payload: AdminUserRoleOverridesUpdate = Body(...),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -355,7 +390,7 @@ def update_user_role_overrides(
 )
 def clear_user_role_overrides(
     *,
-    user_id: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -401,8 +436,8 @@ def clear_user_role_overrides(
 )
 def grant_user_role(
     *,
-    user_id: str = Path(..., min_length=1),
-    role_name: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
+    role_name: str = Path(..., min_length=1, description="Role name to grant"),
     payload: Optional[RoleGrantRequest] = Body(None),
     current_user=Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -451,8 +486,8 @@ def grant_user_role(
 )
 def revoke_user_role(
     *,
-    user_id: str = Path(..., min_length=1),
-    role_name: str = Path(..., min_length=1),
+    user_id: str = Path(..., min_length=1, description="Unique user identifier"),
+    role_name: str = Path(..., min_length=1, description="Role name to revoke"),
     confirm: bool = Query(
         False,
         description="Set to true to confirm revoking the specified role assignment.",

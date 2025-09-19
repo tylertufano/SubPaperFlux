@@ -361,6 +361,17 @@ class AdminUserOrganization(BaseModel):
     joined_at: datetime
 
 
+class AdminUserOrganizationMembership(BaseModel):
+    organization_id: str
+    organization_slug: constr(strip_whitespace=True, min_length=2, max_length=255)
+    organization_name: constr(strip_whitespace=True, min_length=2, max_length=255)
+    organization_description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=4096)
+    ] = None
+    organization_is_default: bool = False
+    joined_at: datetime
+
+
 class AdminUserRoleOverrides(BaseModel):
     enabled: bool = False
     preserve: List[str] = Field(default_factory=list)
@@ -384,6 +395,10 @@ class AdminUserOut(BaseModel):
     quota_feeds: Optional[int] = Field(default=None, ge=0)
     quota_api_tokens: Optional[int] = Field(default=None, ge=0)
     role_overrides: AdminUserRoleOverrides = Field(default_factory=AdminUserRoleOverrides)
+    organization_ids: List[str] = Field(default_factory=list)
+    organization_memberships: List[AdminUserOrganizationMembership] = Field(
+        default_factory=list
+    )
     organizations: List[AdminUserOrganization] = Field(default_factory=list)
 
 

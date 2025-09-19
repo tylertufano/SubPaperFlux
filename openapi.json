@@ -8910,9 +8910,11 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
+              "description": "Page number starting at 1",
               "default": 1,
               "title": "Page"
-            }
+            },
+            "description": "Page number starting at 1"
           },
           {
             "name": "size",
@@ -8922,9 +8924,11 @@
               "type": "integer",
               "maximum": 200,
               "minimum": 1,
+              "description": "Maximum number of items to return per page (1-200)",
               "default": 20,
               "title": "Size"
-            }
+            },
+            "description": "Maximum number of items to return per page (1-200)"
           },
           {
             "name": "search",
@@ -8933,16 +8937,17 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Filter by email, name, or id",
+              "description": "Filter by email address, full name, or user id",
               "title": "Search"
             },
-            "description": "Filter by email, name, or id"
+            "description": "Filter by email address, full name, or user id"
           },
           {
             "name": "is_active",
@@ -8957,8 +8962,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Filter by whether the user account is active",
               "title": "Is Active"
-            }
+            },
+            "description": "Filter by whether the user account is active"
           },
           {
             "name": "role",
@@ -8967,7 +8974,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1
                 },
                 {
                   "type": "null"
@@ -8977,6 +8985,25 @@
               "title": "Role"
             },
             "description": "Filter by assigned role name"
+          },
+          {
+            "name": "organization_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter users who belong to the specified organization",
+              "title": "Organization Id"
+            },
+            "description": "Filter users who belong to the specified organization"
           }
         ],
         "responses": {
@@ -9024,8 +9051,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           }
         ],
         "responses": {
@@ -9071,8 +9100,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           }
         ],
         "requestBody": {
@@ -9130,8 +9161,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           }
         ],
         "requestBody": {
@@ -9187,8 +9220,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           }
         ],
         "responses": {
@@ -9236,8 +9271,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           },
           {
             "name": "role_name",
@@ -9246,8 +9283,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Role name to grant",
               "title": "Role Name"
-            }
+            },
+            "description": "Role name to grant"
           }
         ],
         "requestBody": {
@@ -9310,8 +9349,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Unique user identifier",
               "title": "User Id"
-            }
+            },
+            "description": "Unique user identifier"
           },
           {
             "name": "role_name",
@@ -9320,8 +9361,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
+              "description": "Role name to revoke",
               "title": "Role Name"
-            }
+            },
+            "description": "Role name to revoke"
           },
           {
             "name": "confirm",
@@ -10308,6 +10351,108 @@
         ],
         "title": "AdminRolesPage"
       },
+      "AdminUserOrganization": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "joined_at"
+        ],
+        "title": "AdminUserOrganization"
+      },
+      "AdminUserOrganizationMembership": {
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "title": "Organization Id"
+          },
+          "organization_slug": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Organization Slug"
+          },
+          "organization_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Organization Name"
+          },
+          "organization_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization Description"
+          },
+          "organization_is_default": {
+            "type": "boolean",
+            "title": "Organization Is Default",
+            "default": false
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Joined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organization_id",
+          "organization_slug",
+          "organization_name",
+          "joined_at"
+        ],
+        "title": "AdminUserOrganizationMembership"
+      },
       "AdminUserOut": {
         "properties": {
           "id": {
@@ -10442,6 +10587,27 @@
           },
           "role_overrides": {
             "$ref": "#/components/schemas/AdminUserRoleOverrides"
+          },
+          "organization_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Organization Ids"
+          },
+          "organization_memberships": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserOrganizationMembership"
+            },
+            "type": "array",
+            "title": "Organization Memberships"
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserOrganization"
+            },
+            "type": "array",
+            "title": "Organizations"
           }
         },
         "type": "object",

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,64 +21,62 @@ import { exists, mapValues } from '../runtime';
 export interface FeedOut {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    id: any | null;
+    id: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    url: any | null;
+    url: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    pollFrequency: any | null;
+    pollFrequency: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    initialLookbackPeriod?: any | null;
+    initialLookbackPeriod?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof FeedOut
      */
-    isPaywalled?: any | null;
+    isPaywalled?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof FeedOut
      */
-    rssRequiresAuth?: any | null;
+    rssRequiresAuth?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    siteConfigId?: any | null;
+    siteConfigId?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FeedOut
      */
-    ownerUserId?: any | null;
+    ownerUserId?: string | null;
 }
 
 /**
  * Check if a given object implements the FeedOut interface.
  */
-export function instanceOfFeedOut(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "url" in value;
-    isInstance = isInstance && "pollFrequency" in value;
-
-    return isInstance;
+export function instanceOfFeedOut(value: object): value is FeedOut {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('url' in value) || value['url'] === undefined) return false;
+    if (!('pollFrequency' in value) || value['pollFrequency'] === undefined) return false;
+    return true;
 }
 
 export function FeedOutFromJSON(json: any): FeedOut {
@@ -86,7 +84,7 @@ export function FeedOutFromJSON(json: any): FeedOut {
 }
 
 export function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): FeedOut {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -94,31 +92,33 @@ export function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): F
         'id': json['id'],
         'url': json['url'],
         'pollFrequency': json['poll_frequency'],
-        'initialLookbackPeriod': !exists(json, 'initial_lookback_period') ? undefined : json['initial_lookback_period'],
-        'isPaywalled': !exists(json, 'is_paywalled') ? undefined : json['is_paywalled'],
-        'rssRequiresAuth': !exists(json, 'rss_requires_auth') ? undefined : json['rss_requires_auth'],
-        'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'initialLookbackPeriod': json['initial_lookback_period'] == null ? undefined : json['initial_lookback_period'],
+        'isPaywalled': json['is_paywalled'] == null ? undefined : json['is_paywalled'],
+        'rssRequiresAuth': json['rss_requires_auth'] == null ? undefined : json['rss_requires_auth'],
+        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
+        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
     };
 }
 
-export function FeedOutToJSON(value?: FeedOut | null): any {
-    if (value === undefined) {
-        return undefined;
+export function FeedOutToJSON(json: any): FeedOut {
+    return FeedOutToJSONTyped(json, false);
+}
+
+export function FeedOutToJSONTyped(value?: FeedOut | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'url': value.url,
-        'poll_frequency': value.pollFrequency,
-        'initial_lookback_period': value.initialLookbackPeriod,
-        'is_paywalled': value.isPaywalled,
-        'rss_requires_auth': value.rssRequiresAuth,
-        'site_config_id': value.siteConfigId,
-        'owner_user_id': value.ownerUserId,
+        'id': value['id'],
+        'url': value['url'],
+        'poll_frequency': value['pollFrequency'],
+        'initial_lookback_period': value['initialLookbackPeriod'],
+        'is_paywalled': value['isPaywalled'],
+        'rss_requires_auth': value['rssRequiresAuth'],
+        'site_config_id': value['siteConfigId'],
+        'owner_user_id': value['ownerUserId'],
     };
 }
 

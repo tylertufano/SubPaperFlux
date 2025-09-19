@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,32 +21,30 @@ import { exists, mapValues } from '../runtime';
 export interface BulkBookmarkFolderUpdate {
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof BulkBookmarkFolderUpdate
      */
-    bookmarkIds: any | null;
+    bookmarkIds: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BulkBookmarkFolderUpdate
      */
-    folderId?: any | null;
+    folderId?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BulkBookmarkFolderUpdate
      */
-    instapaperFolderId?: any | null;
+    instapaperFolderId?: string | null;
 }
 
 /**
  * Check if a given object implements the BulkBookmarkFolderUpdate interface.
  */
-export function instanceOfBulkBookmarkFolderUpdate(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "bookmarkIds" in value;
-
-    return isInstance;
+export function instanceOfBulkBookmarkFolderUpdate(value: object): value is BulkBookmarkFolderUpdate {
+    if (!('bookmarkIds' in value) || value['bookmarkIds'] === undefined) return false;
+    return true;
 }
 
 export function BulkBookmarkFolderUpdateFromJSON(json: any): BulkBookmarkFolderUpdate {
@@ -54,29 +52,31 @@ export function BulkBookmarkFolderUpdateFromJSON(json: any): BulkBookmarkFolderU
 }
 
 export function BulkBookmarkFolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BulkBookmarkFolderUpdate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'bookmarkIds': json['bookmark_ids'],
-        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
-        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
+        'folderId': json['folder_id'] == null ? undefined : json['folder_id'],
+        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
 
-export function BulkBookmarkFolderUpdateToJSON(value?: BulkBookmarkFolderUpdate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BulkBookmarkFolderUpdateToJSON(json: any): BulkBookmarkFolderUpdate {
+    return BulkBookmarkFolderUpdateToJSONTyped(json, false);
+}
+
+export function BulkBookmarkFolderUpdateToJSONTyped(value?: BulkBookmarkFolderUpdate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'bookmark_ids': value.bookmarkIds,
-        'folder_id': value.folderId,
-        'instapaper_folder_id': value.instapaperFolderId,
+        'bookmark_ids': value['bookmarkIds'],
+        'folder_id': value['folderId'],
+        'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
 

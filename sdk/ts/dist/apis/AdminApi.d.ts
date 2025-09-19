@@ -10,12 +10,28 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserUpdate, AdminUsersPage, AuditLogsPage, RoleGrantRequest } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, AuditLogsPage, RoleGrantRequest } from '../models/index';
+export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
+    organizationId: string;
+    adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
+}
+export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
+    userId: string;
+}
+export interface CreateOrganizationV1AdminOrgsPostRequest {
+    adminOrganizationCreate: AdminOrganizationCreate;
+}
 export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
 }
+export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
+    organizationId: string;
+}
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
     roleId: string;
+}
+export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
+    organizationId: string;
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
     roleId: string;
@@ -61,6 +77,12 @@ export interface ListAuditLogsV1AdminAuditGetRequest {
     since?: Date | null;
     until?: Date | null;
 }
+export interface ListOrganizationsV1AdminOrgsGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    isDefault?: boolean | null;
+}
 export interface ListRolesV1AdminRolesGetRequest {
     page?: number;
     size?: number;
@@ -72,15 +94,28 @@ export interface ListUsersV1AdminUsersGetRequest {
     search?: string | null;
     isActive?: boolean | null;
     role?: string | null;
+    organizationId?: string | null;
+}
+export interface RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest {
+    organizationId: string;
+    userId: string;
 }
 export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
     userId: string;
     roleName: string;
     confirm?: boolean;
 }
+export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
+    organizationId: string;
+    adminOrganizationUpdate: AdminOrganizationUpdate;
+}
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: string;
     adminRoleUpdate: AdminRoleUpdate;
+}
+export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest {
+    userId: string;
+    adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdate;
 }
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
     userId: string;
@@ -91,6 +126,30 @@ export interface UpdateUserV1AdminUsersUserIdPatchRequest {
  */
 export declare class AdminApi extends runtime.BaseAPI {
     /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPostRaw(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPost(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
      * Create a role
      */
     createRoleV1AdminRolesPostRaw(requestParameters: CreateRoleV1AdminRolesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminRoleDetail>>;
@@ -99,6 +158,14 @@ export declare class AdminApi extends runtime.BaseAPI {
      */
     createRoleV1AdminRolesPost(requestParameters: CreateRoleV1AdminRolesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
     /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDelete(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
      * Delete a role
      */
     deleteRoleV1AdminRolesRoleIdDeleteRaw(requestParameters: DeleteRoleV1AdminRolesRoleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
@@ -106,6 +173,14 @@ export declare class AdminApi extends runtime.BaseAPI {
      * Delete a role
      */
     deleteRoleV1AdminRolesRoleIdDelete(requestParameters: DeleteRoleV1AdminRolesRoleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGet(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Get role details
      */
@@ -155,6 +230,14 @@ export declare class AdminApi extends runtime.BaseAPI {
      */
     listAuditLogsV1AdminAuditGet(requestParameters?: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
     /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGetRaw(requestParameters: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationsPage>>;
+    /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGet(requestParameters?: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationsPage>;
+    /**
      * List roles
      */
     listRolesV1AdminRolesGetRaw(requestParameters: ListRolesV1AdminRolesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminRolesPage>>;
@@ -195,6 +278,14 @@ export declare class AdminApi extends runtime.BaseAPI {
         [key: string]: any;
     }>;
     /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
      * Revoke a role from a user
      */
     revokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRaw(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
@@ -203,6 +294,14 @@ export declare class AdminApi extends runtime.BaseAPI {
      */
     revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatch(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminRoleDetail>>;
@@ -210,6 +309,14 @@ export declare class AdminApi extends runtime.BaseAPI {
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatch(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
     /**
      * Update a user
      */
