@@ -90,14 +90,13 @@ def upgrade() -> None:
             INSERT INTO organizations (id, slug, name, description, is_default, created_at, updated_at)
             VALUES (:id, :slug, :name, :description, :is_default, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """
-        ),
-        {
-            "id": DEFAULT_ORGANIZATION_ID,
-            "slug": DEFAULT_ORGANIZATION_SLUG,
-            "name": DEFAULT_ORGANIZATION_NAME,
-            "description": DEFAULT_ORGANIZATION_DESCRIPTION,
-            "is_default": True,
-        },
+        ).bindparams(
+            sa.bindparam("id", value=DEFAULT_ORGANIZATION_ID),
+            sa.bindparam("slug", value=DEFAULT_ORGANIZATION_SLUG),
+            sa.bindparam("name", value=DEFAULT_ORGANIZATION_NAME),
+            sa.bindparam("description", value=DEFAULT_ORGANIZATION_DESCRIPTION),
+            sa.bindparam("is_default", value=True),
+        )
     )
 
     op.execute(
@@ -107,8 +106,9 @@ def upgrade() -> None:
             SELECT :organization_id, id, CURRENT_TIMESTAMP
             FROM users
             """
-        ),
-        {"organization_id": DEFAULT_ORGANIZATION_ID},
+        ).bindparams(
+            sa.bindparam("organization_id", value=DEFAULT_ORGANIZATION_ID)
+        )
     )
 
 
