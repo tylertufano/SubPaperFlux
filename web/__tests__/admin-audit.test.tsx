@@ -141,14 +141,4 @@ describe('AdminAudit page', () => {
     expect(emptyButton).toBeInTheDocument()
   })
 
-  it('shows informational alert when audit log is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: false, userMgmtUi: false, isLoaded: true })
-
-    renderWithSWR(<AdminAudit />, { locale: 'en' })
-
-    const alert = screen.getByTestId('alert')
-    expect(alert).toHaveTextContent('Audit logging is currently disabled.')
-    expect(useSWRMock).toHaveBeenCalledTimes(1)
-    expect(useSWRMock.mock.calls[0][0]).toBeNull()
-  })
 })

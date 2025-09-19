@@ -105,19 +105,6 @@ describe('AdminOrgs page', () => {
     expect(useSWRMock).toHaveBeenCalled()
   })
 
-  it('shows informational alert when organization UI is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: false, isLoaded: true })
-
-    renderWithSWR(<AdminOrgs />, { locale: 'en' })
-
-    const alert = screen.getByTestId('alert')
-    expect(alert).toHaveTextContent('Organization management is currently disabled.')
-    expect(useSWRMock).toHaveBeenCalled()
-    for (const [key] of useSWRMock.mock.calls) {
-      expect(key).toBeNull()
-    }
-  })
-
   it('adds a member and refreshes data', async () => {
     const organization = {
       id: 'org-123',

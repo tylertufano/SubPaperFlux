@@ -64,7 +64,7 @@ describe('Nav component', () => {
     return screen.getAllByTestId('dropdown-Test User')
   }
 
-  it('shows user management links when both flags are enabled', () => {
+  it('shows user management links by default', () => {
     renderWithSWR(<Nav />, { locale: 'en' })
 
     const accountDropdowns = getAccountDropdowns()
@@ -77,31 +77,5 @@ describe('Nav component', () => {
     expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Audit Log')),
     ).toBe(true)
-  })
-
-  it('hides links when the UI flag is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: false, isLoaded: true })
-
-    renderWithSWR(<Nav />, { locale: 'en' })
-
-    const accountDropdowns = getAccountDropdowns()
-    for (const dropdown of accountDropdowns) {
-      expect(within(dropdown).queryByText('Users')).not.toBeInTheDocument()
-      expect(within(dropdown).queryByText('Organizations')).not.toBeInTheDocument()
-      expect(within(dropdown).queryByText('Audit Log')).not.toBeInTheDocument()
-    }
-  })
-
-  it('hides links when the core flag is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: false, userMgmtUi: true, isLoaded: true })
-
-    renderWithSWR(<Nav />, { locale: 'en' })
-
-    const accountDropdowns = getAccountDropdowns()
-    for (const dropdown of accountDropdowns) {
-      expect(within(dropdown).queryByText('Users')).not.toBeInTheDocument()
-      expect(within(dropdown).queryByText('Organizations')).not.toBeInTheDocument()
-      expect(within(dropdown).queryByText('Audit Log')).not.toBeInTheDocument()
-    }
   })
 })

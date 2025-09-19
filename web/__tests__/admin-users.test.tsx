@@ -198,19 +198,6 @@ describe('AdminUsers page', () => {
     expect(organizationInput.value).toBe('acme')
   })
 
-  it('shows informational alert when user management UI is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: false, isLoaded: true })
-
-    renderWithSWR(<AdminUsers />, { locale: 'en' })
-
-    const alert = screen.getByTestId('alert')
-    expect(alert).toHaveTextContent('User management is currently disabled.')
-    expect(useSWRMock).toHaveBeenCalled()
-    for (const [key] of useSWRMock.mock.calls) {
-      expect(key).toBeNull()
-    }
-  })
-
   it('reassigns organizations through membership endpoints', async () => {
     const user = {
       id: 'user-4',

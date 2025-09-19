@@ -4,8 +4,9 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   const apiBase = process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || ''
   const truthy = new Set(['1', 'true', 'yes', 'on'])
   const parseBoolean = (value?: string | null) => {
-    if (!value) return false
+    if (value == null) return true
     const normalized = value.trim().toLowerCase()
+    if (normalized.length === 0) return true
     return truthy.has(normalized)
   }
   const userMgmtCore = parseBoolean(process.env.USER_MGMT_CORE)

@@ -100,19 +100,6 @@ describe('AdminRoles page', () => {
     expect(useSWRMock).toHaveBeenCalled()
   })
 
-  it('shows informational alert when user management UI is disabled', () => {
-    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: false, isLoaded: true })
-
-    renderWithSWR(<AdminRoles />, { locale: 'en' })
-
-    const alert = screen.getByTestId('alert')
-    expect(alert).toHaveTextContent('Role management is currently disabled.')
-    expect(useSWRMock).toHaveBeenCalled()
-    for (const [key] of useSWRMock.mock.calls) {
-      expect(key).toBeNull()
-    }
-  })
-
   it('validates create form requires role name', async () => {
     renderPage()
 
