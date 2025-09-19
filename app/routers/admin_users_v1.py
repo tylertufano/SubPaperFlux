@@ -18,8 +18,9 @@ from ..auth.role_overrides import (
 )
 from ..auth.oidc import get_current_user
 from ..db import get_session
-from ..models import Role, User, UserRole
+from ..models import Organization, OrganizationMembership, Role, User, UserRole
 from ..schemas import (
+    AdminUserOrganization,
     AdminUserOut,
     AdminUserRoleOverrides,
     AdminUserRoleOverridesUpdate,
@@ -45,6 +46,31 @@ def _normalize_groups(user: User) -> List[str]:
             continue
         groups.append(text)
     return groups
+
+
+def _load_user_organizations(session: Session, user_id: str) -> List[AdminUserOrganization]:
+    stmt = (
+        select(OrganizationMembership, Organization)
+        .join(Organization, Organization.id == OrganizationMembership.organization_id, isouter=True)
+        .where(OrganizationMembership.user_id == user_id)
+        .order_by(OrganizationMembership.created_at.asc())
+    )
+    rows = session.exec(stmt).all()
+    organizations: List[AdminUserOrganization] = []
+    for membership, organization in rows:
+        if organization is None:
+            continue
+        organizations.append(
+            AdminUserOrganization(
+                id=organization.id,
+                slug=organization.slug,
+                name=organization.name,
+                description=organization.description,
+                is_default=organization.is_default,
+                joined_at=membership.created_at,
+            )
+        )
+    return organizations
 
 
 def _serialize_user(session: Session, user: User) -> AdminUserOut:
@@ -73,6 +99,7 @@ def _serialize_user(session: Session, user: User) -> AdminUserOut:
             preserve=sorted(overrides.preserve),
             suppress=sorted(overrides.suppress),
         ),
+        organizations=_load_user_organizations(session, user.id),
     )
 
 
@@ -85,6 +112,9 @@ def list_users(
     search: Optional[str] = Query(None, description="Filter by email, name, or id"),
     is_active: Optional[bool] = Query(None),
     role: Optional[str] = Query(None, description="Filter by assigned role name"),
+    organization_id: Optional[str] = Query(
+        None, description="Filter by organization membership"
+    ),
 ):
     _require_admin(session, current_user)
 
@@ -115,6 +145,16 @@ def list_users(
             .join(Role, Role.id == UserRole.role_id)
             .where(Role.name == role)
         )
+
+    if organization_id:
+        stmt = stmt.join(
+            OrganizationMembership,
+            OrganizationMembership.user_id == User.id,
+        ).where(OrganizationMembership.organization_id == organization_id)
+        count_stmt = count_stmt.join(
+            OrganizationMembership,
+            OrganizationMembership.user_id == User.id,
+        ).where(OrganizationMembership.organization_id == organization_id)
 
     if filters:
         stmt = stmt.where(*filters)

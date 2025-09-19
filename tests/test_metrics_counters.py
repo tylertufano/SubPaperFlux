@@ -48,6 +48,7 @@ def _env(monkeypatch):
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     monkeypatch.setenv("OIDC_AUTO_PROVISION_USERS", "1")
     monkeypatch.setenv("USER_MGMT_CORE", "1")
+    monkeypatch.setenv("OIDC_GROUP_ROLE_MAP", "admin=admin")
     from app.config import is_user_mgmt_core_enabled
 
     is_user_mgmt_core_enabled.cache_clear()
