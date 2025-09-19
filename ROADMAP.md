@@ -223,8 +223,10 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
   - Evidence: `app/routers/credentials_v1.py:82-139`, `app/routers/site_configs_v1.py:117-190`, `tests/test_copy_global_assets.py:1-220`
 - [x] Org Views / user management (if not delegated to IdP) (UI-042)
   - Evidence: `app/routers/admin_orgs_v1.py:1`, `web/pages/admin/orgs.tsx:1`, `docs/user-management-rollout.md#organization-management`
-- [ ] RLS enforcement: enforce per-table policies and verify `app.user_id` propagation end-to-end (UI-012)
-- [ ] RLS: Enable/disable with warnings; doc links (UI-046)
+- [x] RLS enforcement: enforce per-table policies and verify `app.user_id` propagation end-to-end (UI-012)
+  - Evidence: `app/db_admin.py:66-114`, `app/main.py:71-153`, `app/db.py:53-127`, `tests/test_rls_policies.py:212-354`
+- [x] RLS: Enable/disable with warnings; doc links (UI-046)
+  - Evidence: `app/main.py:71-153`, `web/pages/admin.tsx:82-158`, `web/locales/en/common.json:375-393`, `docs/user-management-rollout.md:80-126`
 
 ### Integrations
 
