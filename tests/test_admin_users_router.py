@@ -154,12 +154,23 @@ def test_admin_users_listing_and_role_management(admin_client):
         "preserve": [],
         "suppress": [],
     }
+    assert items["user-1"]["organization_ids"] == [alpha_org.id]
     user1_orgs = items["user-1"]["organizations"]
     assert [org["id"] for org in user1_orgs] == [alpha_org.id]
     assert [org["slug"] for org in user1_orgs] == ["alpha-org"]
+    user1_memberships = items["user-1"]["organization_memberships"]
+    assert [membership["organization_id"] for membership in user1_memberships] == [
+        alpha_org.id
+    ]
+    assert user1_memberships[0]["organization_name"] == "Alpha Org"
     assert items["user-2"]["roles"] == []
     assert items["user-2"]["groups"] == ["managers"]
     assert items["user-2"]["quota_credentials"] is None
+    assert items["user-2"]["organization_ids"] == [beta_org.id]
+    assert [
+        membership["organization_slug"]
+        for membership in items["user-2"]["organization_memberships"]
+    ] == ["beta-org"]
     assert [org["id"] for org in items["user-2"]["organizations"]] == [beta_org.id]
 
     # Role filter should match user-1 initially
@@ -212,7 +223,12 @@ def test_admin_users_listing_and_role_management(admin_client):
         "preserve": [],
         "suppress": [],
     }
+    assert detail_payload["organization_ids"] == [alpha_org.id]
     assert any(org["id"] == alpha_org.id for org in detail_payload["organizations"])
+    assert any(
+        membership["organization_id"] == alpha_org.id
+        for membership in detail_payload["organization_memberships"]
+    )
 
     # Role filter should now yield zero results for the revoked role
     resp_role_after = admin_client.get("/v1/admin/users", params={"role": "editor"})

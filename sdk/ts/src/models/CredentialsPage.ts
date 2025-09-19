@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { Credential } from './Credential';
+import {
+    CredentialFromJSON,
+    CredentialFromJSONTyped,
+    CredentialToJSON,
+    CredentialToJSONTyped,
+} from './Credential';
+
 /**
  * 
  * @export
@@ -21,53 +29,51 @@ import { exists, mapValues } from '../runtime';
 export interface CredentialsPage {
     /**
      * 
-     * @type {any}
+     * @type {Array<Credential>}
      * @memberof CredentialsPage
      */
-    items: any | null;
+    items: Array<Credential>;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof CredentialsPage
      */
-    total: any | null;
+    total: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof CredentialsPage
      */
-    page: any | null;
+    page: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof CredentialsPage
      */
-    size: any | null;
+    size: number;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof CredentialsPage
      */
-    hasNext?: any | null;
+    hasNext?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof CredentialsPage
      */
-    totalPages?: any | null;
+    totalPages?: number;
 }
 
 /**
  * Check if a given object implements the CredentialsPage interface.
  */
-export function instanceOfCredentialsPage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "items" in value;
-    isInstance = isInstance && "total" in value;
-    isInstance = isInstance && "page" in value;
-    isInstance = isInstance && "size" in value;
-
-    return isInstance;
+export function instanceOfCredentialsPage(value: object): value is CredentialsPage {
+    if (!('items' in value) || value['items'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
+    if (!('page' in value) || value['page'] === undefined) return false;
+    if (!('size' in value) || value['size'] === undefined) return false;
+    return true;
 }
 
 export function CredentialsPageFromJSON(json: any): CredentialsPage {
@@ -75,35 +81,37 @@ export function CredentialsPageFromJSON(json: any): CredentialsPage {
 }
 
 export function CredentialsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): CredentialsPage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'items': json['items'],
+        'items': ((json['items'] as Array<any>).map(CredentialFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
-        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
+        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
+        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
 
-export function CredentialsPageToJSON(value?: CredentialsPage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CredentialsPageToJSON(json: any): CredentialsPage {
+    return CredentialsPageToJSONTyped(json, false);
+}
+
+export function CredentialsPageToJSONTyped(value?: CredentialsPage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'items': value.items,
-        'total': value.total,
-        'page': value.page,
-        'size': value.size,
-        'has_next': value.hasNext,
-        'total_pages': value.totalPages,
+        'items': ((value['items'] as Array<any>).map(CredentialToJSON)),
+        'total': value['total'],
+        'page': value['page'],
+        'size': value['size'],
+        'has_next': value['hasNext'],
+        'total_pages': value['totalPages'],
     };
 }
 

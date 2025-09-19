@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { AuditLogOut } from './AuditLogOut';
+import {
+    AuditLogOutFromJSON,
+    AuditLogOutFromJSONTyped,
+    AuditLogOutToJSON,
+    AuditLogOutToJSONTyped,
+} from './AuditLogOut';
+
 /**
  * 
  * @export
@@ -21,53 +29,51 @@ import { exists, mapValues } from '../runtime';
 export interface AuditLogsPage {
     /**
      * 
-     * @type {any}
+     * @type {Array<AuditLogOut>}
      * @memberof AuditLogsPage
      */
-    items: any | null;
+    items: Array<AuditLogOut>;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof AuditLogsPage
      */
-    total: any | null;
+    total: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof AuditLogsPage
      */
-    page: any | null;
+    page: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof AuditLogsPage
      */
-    size: any | null;
+    size: number;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof AuditLogsPage
      */
-    hasNext?: any | null;
+    hasNext?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof AuditLogsPage
      */
-    totalPages?: any | null;
+    totalPages?: number;
 }
 
 /**
  * Check if a given object implements the AuditLogsPage interface.
  */
-export function instanceOfAuditLogsPage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "items" in value;
-    isInstance = isInstance && "total" in value;
-    isInstance = isInstance && "page" in value;
-    isInstance = isInstance && "size" in value;
-
-    return isInstance;
+export function instanceOfAuditLogsPage(value: object): value is AuditLogsPage {
+    if (!('items' in value) || value['items'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
+    if (!('page' in value) || value['page'] === undefined) return false;
+    if (!('size' in value) || value['size'] === undefined) return false;
+    return true;
 }
 
 export function AuditLogsPageFromJSON(json: any): AuditLogsPage {
@@ -75,35 +81,37 @@ export function AuditLogsPageFromJSON(json: any): AuditLogsPage {
 }
 
 export function AuditLogsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuditLogsPage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'items': json['items'],
+        'items': ((json['items'] as Array<any>).map(AuditLogOutFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
-        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
+        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
+        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
 
-export function AuditLogsPageToJSON(value?: AuditLogsPage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function AuditLogsPageToJSON(json: any): AuditLogsPage {
+    return AuditLogsPageToJSONTyped(json, false);
+}
+
+export function AuditLogsPageToJSONTyped(value?: AuditLogsPage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'items': value.items,
-        'total': value.total,
-        'page': value.page,
-        'size': value.size,
-        'has_next': value.hasNext,
-        'total_pages': value.totalPages,
+        'items': ((value['items'] as Array<any>).map(AuditLogOutToJSON)),
+        'total': value['total'],
+        'page': value['page'],
+        'size': value['size'],
+        'has_next': value['hasNext'],
+        'total_pages': value['totalPages'],
     };
 }
 

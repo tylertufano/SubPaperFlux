@@ -10,7 +10,11 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobsPage, MeOut, MeUpdate, RoleGrantRequest, SiteConfigsPage, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobsPage, MeOut, MeUpdate, RoleGrantRequest, SiteConfigOut, SiteConfigsPage, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
+    organizationId: string;
+    adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
+}
 export interface BulkDeleteBookmarksV1BookmarksBulkDeletePostRequest {
     requestBody: {
         [key: string]: any;
@@ -31,6 +35,15 @@ export interface BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest {
     bulkBookmarkTagUpdate: BulkBookmarkTagUpdate;
     xCsrfToken?: string | null;
 }
+export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
+    userId: string;
+}
+export interface CopyCredentialV1CredentialsCredIdCopyPostRequest {
+    credId: string;
+}
+export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
+    configId: string;
+}
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: string | null;
     tagId?: string | null;
@@ -48,6 +61,9 @@ export interface CountBookmarksV1BookmarksCountGetRequest {
 export interface CreateFolderV1BookmarksFoldersPostRequest {
     folderCreate: FolderCreate;
     xCsrfToken?: string | null;
+}
+export interface CreateOrganizationV1AdminOrgsPostRequest {
+    adminOrganizationCreate: AdminOrganizationCreate;
 }
 export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
@@ -71,6 +87,9 @@ export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
     folderId: string;
     xCsrfToken?: string | null;
+}
+export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
+    organizationId: string;
 }
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
     roleId: string;
@@ -110,6 +129,9 @@ export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
 }
 export interface GetJobV1JobsJobIdGetRequest {
     jobId: string;
+}
+export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
+    organizationId: string;
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
     roleId: string;
@@ -240,6 +262,12 @@ export interface ListJobsV1JobsGet0Request {
     orderBy?: string;
     orderDir?: string;
 }
+export interface ListOrganizationsV1AdminOrgsGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    isDefault?: boolean | null;
+}
 export interface ListRolesV1AdminRolesGetRequest {
     page?: number;
     size?: number;
@@ -262,9 +290,14 @@ export interface ListUsersV1AdminUsersGetRequest {
     search?: string | null;
     isActive?: boolean | null;
     role?: string | null;
+    organizationId?: string | null;
 }
 export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
     bookmarkId: string;
+}
+export interface RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest {
+    organizationId: string;
+    userId: string;
 }
 export interface RetryAllJobsV1JobsRetryAllPostRequest {
     requestBody: {
@@ -321,6 +354,10 @@ export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
 export interface UpdateMeV1MePatchRequest {
     meUpdate: MeUpdate;
 }
+export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
+    organizationId: string;
+    adminOrganizationUpdate: AdminOrganizationUpdate;
+}
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: string;
     adminRoleUpdate: AdminRoleUpdate;
@@ -329,6 +366,10 @@ export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
     tagId: string;
     tagUpdate: TagUpdate;
     xCsrfToken?: string | null;
+}
+export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest {
+    userId: string;
+    adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdate;
 }
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
     userId: string;
@@ -343,6 +384,14 @@ export interface ValidateJobPayloadV1JobsValidatePostRequest {
  *
  */
 export declare class V1Api extends runtime.BaseAPI {
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Bulk Delete Bookmarks
      */
@@ -376,6 +425,30 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkTagSummary>>;
     /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPostRaw(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPost(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfigOut>>;
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfigOut>;
+    /**
      * Count Bookmarks
      */
     countBookmarksV1BookmarksCountGetRaw(requestParameters: CountBookmarksV1BookmarksCountGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
@@ -395,6 +468,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Create Folder
      */
     createFolderV1BookmarksFoldersPost(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPostRaw(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPost(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Create a role
      */
@@ -455,6 +536,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Delete Folder
      */
     deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDelete(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
      * Delete a role
      */
@@ -529,6 +618,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Get current user profile
      */
     getMeV1MeGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGet(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Get role details
      */
@@ -682,6 +779,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     listJobsV1JobsGet_5(requestParameters?: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage>;
     /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGetRaw(requestParameters: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationsPage>>;
+    /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGet(requestParameters?: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationsPage>;
+    /**
      * List roles
      */
     listRolesV1AdminRolesGetRaw(requestParameters: ListRolesV1AdminRolesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminRolesPage>>;
@@ -729,6 +834,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Preview Bookmark
      */
     previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string>;
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Requeue all failed/dead jobs optionally filtered by type.
      * Retry all jobs
@@ -848,6 +961,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     updateMeV1MePatch(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut>;
     /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatch(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminRoleDetail>>;
@@ -863,6 +984,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Update Tag
      */
     updateTagV1BookmarksTagsTagIdPut(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut>;
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
     /**
      * Update a user
      */

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,46 +21,44 @@ import { exists, mapValues } from '../runtime';
 export interface Credential {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof Credential
      */
-    id?: any | null;
+    id?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof Credential
      */
-    kind: any | null;
+    kind: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof Credential
      */
-    description: any | null;
+    description: string;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof Credential
      */
-    data: { [key: string]: any; } | null;
+    data: { [key: string]: any; };
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof Credential
      */
-    ownerUserId?: any | null;
+    ownerUserId?: string | null;
 }
 
 /**
  * Check if a given object implements the Credential interface.
  */
-export function instanceOfCredential(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "kind" in value;
-    isInstance = isInstance && "description" in value;
-    isInstance = isInstance && "data" in value;
-
-    return isInstance;
+export function instanceOfCredential(value: object): value is Credential {
+    if (!('kind' in value) || value['kind'] === undefined) return false;
+    if (!('description' in value) || value['description'] === undefined) return false;
+    if (!('data' in value) || value['data'] === undefined) return false;
+    return true;
 }
 
 export function CredentialFromJSON(json: any): Credential {
@@ -68,33 +66,35 @@ export function CredentialFromJSON(json: any): Credential {
 }
 
 export function CredentialFromJSONTyped(json: any, ignoreDiscriminator: boolean): Credential {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'kind': json['kind'],
         'description': json['description'],
         'data': json['data'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
     };
 }
 
-export function CredentialToJSON(value?: Credential | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CredentialToJSON(json: any): Credential {
+    return CredentialToJSONTyped(json, false);
+}
+
+export function CredentialToJSONTyped(value?: Credential | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'kind': value.kind,
-        'description': value.description,
-        'data': value.data,
-        'owner_user_id': value.ownerUserId,
+        'id': value['id'],
+        'kind': value['kind'],
+        'description': value['description'],
+        'data': value['data'],
+        'owner_user_id': value['ownerUserId'],
     };
 }
 

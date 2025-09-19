@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { SiteConfigOut } from './SiteConfigOut';
+import {
+    SiteConfigOutFromJSON,
+    SiteConfigOutFromJSONTyped,
+    SiteConfigOutToJSON,
+    SiteConfigOutToJSONTyped,
+} from './SiteConfigOut';
+
 /**
  * 
  * @export
@@ -21,53 +29,51 @@ import { exists, mapValues } from '../runtime';
 export interface SiteConfigsPage {
     /**
      * 
-     * @type {any}
+     * @type {Array<SiteConfigOut>}
      * @memberof SiteConfigsPage
      */
-    items: any | null;
+    items: Array<SiteConfigOut>;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof SiteConfigsPage
      */
-    total: any | null;
+    total: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof SiteConfigsPage
      */
-    page: any | null;
+    page: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof SiteConfigsPage
      */
-    size: any | null;
+    size: number;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof SiteConfigsPage
      */
-    hasNext?: any | null;
+    hasNext?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof SiteConfigsPage
      */
-    totalPages?: any | null;
+    totalPages?: number;
 }
 
 /**
  * Check if a given object implements the SiteConfigsPage interface.
  */
-export function instanceOfSiteConfigsPage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "items" in value;
-    isInstance = isInstance && "total" in value;
-    isInstance = isInstance && "page" in value;
-    isInstance = isInstance && "size" in value;
-
-    return isInstance;
+export function instanceOfSiteConfigsPage(value: object): value is SiteConfigsPage {
+    if (!('items' in value) || value['items'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
+    if (!('page' in value) || value['page'] === undefined) return false;
+    if (!('size' in value) || value['size'] === undefined) return false;
+    return true;
 }
 
 export function SiteConfigsPageFromJSON(json: any): SiteConfigsPage {
@@ -75,35 +81,37 @@ export function SiteConfigsPageFromJSON(json: any): SiteConfigsPage {
 }
 
 export function SiteConfigsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigsPage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'items': json['items'],
+        'items': ((json['items'] as Array<any>).map(SiteConfigOutFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
-        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
+        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
+        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
 
-export function SiteConfigsPageToJSON(value?: SiteConfigsPage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SiteConfigsPageToJSON(json: any): SiteConfigsPage {
+    return SiteConfigsPageToJSONTyped(json, false);
+}
+
+export function SiteConfigsPageToJSONTyped(value?: SiteConfigsPage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'items': value.items,
-        'total': value.total,
-        'page': value.page,
-        'size': value.size,
-        'has_next': value.hasNext,
-        'total_pages': value.totalPages,
+        'items': ((value['items'] as Array<any>).map(SiteConfigOutToJSON)),
+        'total': value['total'],
+        'page': value['page'],
+        'size': value['size'],
+        'has_next': value['hasNext'],
+        'total_pages': value['totalPages'],
     };
 }
 

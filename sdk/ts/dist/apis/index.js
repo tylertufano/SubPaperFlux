@@ -14,7 +14,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.V1Api = void 0;
 /* tslint:disable */
 /* eslint-disable */
 __exportStar(require("./AdminApi"), exports);
@@ -25,5 +24,4 @@ __exportStar(require("./JobsApi"), exports);
 __exportStar(require("./MeApi"), exports);
 __exportStar(require("./SiteConfigsApi"), exports);
 __exportStar(require("./StatusApi"), exports);
-var V1Api_1 = require("./V1Api");
-Object.defineProperty(exports, "V1Api", { enumerable: true, get: function () { return V1Api_1.V1Api; } });
+__exportStar(require("./V1Api"), exports);

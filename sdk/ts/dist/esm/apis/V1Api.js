@@ -21,11 +21,53 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderSummaryFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagSummaryFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialsPageFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, JobOutFromJSON, JobRequestToJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, RoleGrantRequestToJSON, SiteConfigsPageFromJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models/index';
+import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderSummaryFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagSummaryFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialFromJSON, CredentialsPageFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, JobOutFromJSON, JobRequestToJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, RoleGrantRequestToJSON, SiteConfigOutFromJSON, SiteConfigsPageFromJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models/index';
 /**
  *
  */
 export class V1Api extends runtime.BaseAPI {
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['organizationId'] == null) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost().');
+            }
+            if (requestParameters['adminOrganizationMembershipChange'] == null) {
+                throw new runtime.RequiredError('adminOrganizationMembershipChange', 'Required parameter "adminOrganizationMembershipChange" was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs/{organization_id}/members`;
+            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+                body: AdminOrganizationMembershipChangeToJSON(requestParameters['adminOrganizationMembershipChange']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
     /**
      * Bulk Delete Bookmarks
      */
@@ -195,6 +237,117 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['userId'] == null) {
+                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/users/{user_id}/role-overrides`;
+            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'DELETE',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['credId'] == null) {
+                throw new runtime.RequiredError('credId', 'Required parameter "credId" was null or undefined when calling copyCredentialV1CredentialsCredIdCopyPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/credentials/{cred_id}/copy`;
+            urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.copyCredentialV1CredentialsCredIdCopyPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['configId'] == null) {
+                throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling copySiteConfigV1V1SiteConfigsConfigIdCopyPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/site-configs/{config_id}/copy`;
+            urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigOutFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Count Bookmarks
      */
     countBookmarksV1BookmarksCountGetRaw(requestParameters, initOverrides) {
@@ -301,6 +454,44 @@ export class V1Api extends runtime.BaseAPI {
     createFolderV1BookmarksFoldersPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['adminOrganizationCreate'] == null) {
+                throw new runtime.RequiredError('adminOrganizationCreate', 'Required parameter "adminOrganizationCreate" was null or undefined when calling createOrganizationV1AdminOrgsPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+                body: AdminOrganizationCreateToJSON(requestParameters['adminOrganizationCreate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.createOrganizationV1AdminOrgsPostRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -565,6 +756,42 @@ export class V1Api extends runtime.BaseAPI {
     deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides);
+        });
+    }
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['organizationId'] == null) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling deleteOrganizationV1AdminOrgsOrganizationIdDelete().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs/{organization_id}`;
+            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'DELETE',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.VoidApiResponse(response);
+        });
+    }
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDelete(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters, initOverrides);
         });
     }
     /**
@@ -948,6 +1175,43 @@ export class V1Api extends runtime.BaseAPI {
     getMeV1MeGet(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.getMeV1MeGetRaw(initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['organizationId'] == null) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling getOrganizationV1AdminOrgsOrganizationIdGet().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs/{organization_id}`;
+            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGet(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1848,6 +2112,51 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters['page'] != null) {
+                queryParameters['page'] = requestParameters['page'];
+            }
+            if (requestParameters['size'] != null) {
+                queryParameters['size'] = requestParameters['size'];
+            }
+            if (requestParameters['search'] != null) {
+                queryParameters['search'] = requestParameters['search'];
+            }
+            if (requestParameters['isDefault'] != null) {
+                queryParameters['is_default'] = requestParameters['isDefault'];
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationsPageFromJSON(jsonValue));
+        });
+    }
+    /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listOrganizationsV1AdminOrgsGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * List roles
      */
     listRolesV1AdminRolesGetRaw(requestParameters, initOverrides) {
@@ -2030,6 +2339,9 @@ export class V1Api extends runtime.BaseAPI {
             if (requestParameters['role'] != null) {
                 queryParameters['role'] = requestParameters['role'];
             }
+            if (requestParameters['organizationId'] != null) {
+                queryParameters['organization_id'] = requestParameters['organizationId'];
+            }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2096,6 +2408,47 @@ export class V1Api extends runtime.BaseAPI {
     previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['organizationId'] == null) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete().');
+            }
+            if (requestParameters['userId'] == null) {
+                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs/{organization_id}/members/{user_id}`;
+            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
+            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'DELETE',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2602,6 +2955,48 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['organizationId'] == null) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch().');
+            }
+            if (requestParameters['adminOrganizationUpdate'] == null) {
+                throw new runtime.RequiredError('adminOrganizationUpdate', 'Required parameter "adminOrganizationUpdate" was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/orgs/{organization_id}`;
+            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PATCH',
+                headers: headerParameters,
+                query: queryParameters,
+                body: AdminOrganizationUpdateToJSON(requestParameters['adminOrganizationUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatch(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides) {
@@ -2685,6 +3080,48 @@ export class V1Api extends runtime.BaseAPI {
     updateTagV1BookmarksTagsTagIdPut(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateTagV1BookmarksTagsTagIdPutRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['userId'] == null) {
+                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch().');
+            }
+            if (requestParameters['adminUserRoleOverridesUpdate'] == null) {
+                throw new runtime.RequiredError('adminUserRoleOverridesUpdate', 'Required parameter "adminUserRoleOverridesUpdate" was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/admin/users/{user_id}/role-overrides`;
+            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PATCH',
+                headers: headerParameters,
+                query: queryParameters,
+                body: AdminUserRoleOverridesUpdateToJSON(requestParameters['adminUserRoleOverridesUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
+        });
+    }
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

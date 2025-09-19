@@ -13,62 +13,62 @@
  */
 
 import { mapValues } from '../runtime';
-import type { FeedOut } from './FeedOut';
+import type { AdminOrganization } from './AdminOrganization';
 import {
-    FeedOutFromJSON,
-    FeedOutFromJSONTyped,
-    FeedOutToJSON,
-    FeedOutToJSONTyped,
-} from './FeedOut';
+    AdminOrganizationFromJSON,
+    AdminOrganizationFromJSONTyped,
+    AdminOrganizationToJSON,
+    AdminOrganizationToJSONTyped,
+} from './AdminOrganization';
 
 /**
  * 
  * @export
- * @interface FeedsPage
+ * @interface AdminOrganizationsPage
  */
-export interface FeedsPage {
+export interface AdminOrganizationsPage {
     /**
      * 
-     * @type {Array<FeedOut>}
-     * @memberof FeedsPage
+     * @type {Array<AdminOrganization>}
+     * @memberof AdminOrganizationsPage
      */
-    items: Array<FeedOut>;
+    items: Array<AdminOrganization>;
     /**
      * 
      * @type {number}
-     * @memberof FeedsPage
+     * @memberof AdminOrganizationsPage
      */
     total: number;
     /**
      * 
      * @type {number}
-     * @memberof FeedsPage
+     * @memberof AdminOrganizationsPage
      */
     page: number;
     /**
      * 
      * @type {number}
-     * @memberof FeedsPage
+     * @memberof AdminOrganizationsPage
      */
     size: number;
     /**
      * 
      * @type {boolean}
-     * @memberof FeedsPage
+     * @memberof AdminOrganizationsPage
      */
     hasNext?: boolean;
     /**
      * 
      * @type {number}
-     * @memberof FeedsPage
+     * @memberof AdminOrganizationsPage
      */
     totalPages?: number;
 }
 
 /**
- * Check if a given object implements the FeedsPage interface.
+ * Check if a given object implements the AdminOrganizationsPage interface.
  */
-export function instanceOfFeedsPage(value: object): value is FeedsPage {
+export function instanceOfAdminOrganizationsPage(value: object): value is AdminOrganizationsPage {
     if (!('items' in value) || value['items'] === undefined) return false;
     if (!('total' in value) || value['total'] === undefined) return false;
     if (!('page' in value) || value['page'] === undefined) return false;
@@ -76,17 +76,17 @@ export function instanceOfFeedsPage(value: object): value is FeedsPage {
     return true;
 }
 
-export function FeedsPageFromJSON(json: any): FeedsPage {
-    return FeedsPageFromJSONTyped(json, false);
+export function AdminOrganizationsPageFromJSON(json: any): AdminOrganizationsPage {
+    return AdminOrganizationsPageFromJSONTyped(json, false);
 }
 
-export function FeedsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): FeedsPage {
+export function AdminOrganizationsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationsPage {
     if (json == null) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(FeedOutFromJSON)),
+        'items': ((json['items'] as Array<any>).map(AdminOrganizationFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
@@ -95,18 +95,18 @@ export function FeedsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     };
 }
 
-export function FeedsPageToJSON(json: any): FeedsPage {
-    return FeedsPageToJSONTyped(json, false);
+export function AdminOrganizationsPageToJSON(json: any): AdminOrganizationsPage {
+    return AdminOrganizationsPageToJSONTyped(json, false);
 }
 
-export function FeedsPageToJSONTyped(value?: FeedsPage | null, ignoreDiscriminator: boolean = false): any {
+export function AdminOrganizationsPageToJSONTyped(value?: AdminOrganizationsPage | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
 
     return {
         
-        'items': ((value['items'] as Array<any>).map(FeedOutToJSON)),
+        'items': ((value['items'] as Array<any>).map(AdminOrganizationToJSON)),
         'total': value['total'],
         'page': value['page'],
         'size': value['size'],

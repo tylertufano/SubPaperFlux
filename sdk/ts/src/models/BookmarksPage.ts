@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { BookmarkOut } from './BookmarkOut';
+import {
+    BookmarkOutFromJSON,
+    BookmarkOutFromJSONTyped,
+    BookmarkOutToJSON,
+    BookmarkOutToJSONTyped,
+} from './BookmarkOut';
+
 /**
  * 
  * @export
@@ -21,53 +29,51 @@ import { exists, mapValues } from '../runtime';
 export interface BookmarksPage {
     /**
      * 
-     * @type {any}
+     * @type {Array<BookmarkOut>}
      * @memberof BookmarksPage
      */
-    items: any | null;
+    items: Array<BookmarkOut>;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof BookmarksPage
      */
-    total: any | null;
+    total: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof BookmarksPage
      */
-    page: any | null;
+    page: number;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof BookmarksPage
      */
-    size: any | null;
+    size: number;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof BookmarksPage
      */
-    hasNext?: any | null;
+    hasNext?: boolean;
     /**
      * 
-     * @type {any}
+     * @type {number}
      * @memberof BookmarksPage
      */
-    totalPages?: any | null;
+    totalPages?: number;
 }
 
 /**
  * Check if a given object implements the BookmarksPage interface.
  */
-export function instanceOfBookmarksPage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "items" in value;
-    isInstance = isInstance && "total" in value;
-    isInstance = isInstance && "page" in value;
-    isInstance = isInstance && "size" in value;
-
-    return isInstance;
+export function instanceOfBookmarksPage(value: object): value is BookmarksPage {
+    if (!('items' in value) || value['items'] === undefined) return false;
+    if (!('total' in value) || value['total'] === undefined) return false;
+    if (!('page' in value) || value['page'] === undefined) return false;
+    if (!('size' in value) || value['size'] === undefined) return false;
+    return true;
 }
 
 export function BookmarksPageFromJSON(json: any): BookmarksPage {
@@ -75,35 +81,37 @@ export function BookmarksPageFromJSON(json: any): BookmarksPage {
 }
 
 export function BookmarksPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarksPage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'items': json['items'],
+        'items': ((json['items'] as Array<any>).map(BookmarkOutFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
-        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
+        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
+        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
 
-export function BookmarksPageToJSON(value?: BookmarksPage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BookmarksPageToJSON(json: any): BookmarksPage {
+    return BookmarksPageToJSONTyped(json, false);
+}
+
+export function BookmarksPageToJSONTyped(value?: BookmarksPage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'items': value.items,
-        'total': value.total,
-        'page': value.page,
-        'size': value.size,
-        'has_next': value.hasNext,
-        'total_pages': value.totalPages,
+        'items': ((value['items'] as Array<any>).map(BookmarkOutToJSON)),
+        'total': value['total'],
+        'page': value['page'],
+        'size': value['size'],
+        'has_next': value['hasNext'],
+        'total_pages': value['totalPages'],
     };
 }
 

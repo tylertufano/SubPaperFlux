@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,72 +21,70 @@ import { exists, mapValues } from '../runtime';
 export interface SiteConfig {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    id?: any | null;
+    id?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    name: any | null;
+    name: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    siteUrl: any | null;
+    siteUrl: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    usernameSelector: any | null;
+    usernameSelector: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    passwordSelector: any | null;
+    passwordSelector: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    loginButtonSelector: any | null;
+    loginButtonSelector: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    postLoginSelector?: any | null;
+    postLoginSelector?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof SiteConfig
      */
-    cookiesToStore?: any | null;
+    cookiesToStore?: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof SiteConfig
      */
-    ownerUserId?: any | null;
+    ownerUserId?: string | null;
 }
 
 /**
  * Check if a given object implements the SiteConfig interface.
  */
-export function instanceOfSiteConfig(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "siteUrl" in value;
-    isInstance = isInstance && "usernameSelector" in value;
-    isInstance = isInstance && "passwordSelector" in value;
-    isInstance = isInstance && "loginButtonSelector" in value;
-
-    return isInstance;
+export function instanceOfSiteConfig(value: object): value is SiteConfig {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('siteUrl' in value) || value['siteUrl'] === undefined) return false;
+    if (!('usernameSelector' in value) || value['usernameSelector'] === undefined) return false;
+    if (!('passwordSelector' in value) || value['passwordSelector'] === undefined) return false;
+    if (!('loginButtonSelector' in value) || value['loginButtonSelector'] === undefined) return false;
+    return true;
 }
 
 export function SiteConfigFromJSON(json: any): SiteConfig {
@@ -94,41 +92,43 @@ export function SiteConfigFromJSON(json: any): SiteConfig {
 }
 
 export function SiteConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfig {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'name': json['name'],
         'siteUrl': json['site_url'],
         'usernameSelector': json['username_selector'],
         'passwordSelector': json['password_selector'],
         'loginButtonSelector': json['login_button_selector'],
-        'postLoginSelector': !exists(json, 'post_login_selector') ? undefined : json['post_login_selector'],
-        'cookiesToStore': !exists(json, 'cookies_to_store') ? undefined : json['cookies_to_store'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'postLoginSelector': json['post_login_selector'] == null ? undefined : json['post_login_selector'],
+        'cookiesToStore': json['cookies_to_store'] == null ? undefined : json['cookies_to_store'],
+        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
     };
 }
 
-export function SiteConfigToJSON(value?: SiteConfig | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SiteConfigToJSON(json: any): SiteConfig {
+    return SiteConfigToJSONTyped(json, false);
+}
+
+export function SiteConfigToJSONTyped(value?: SiteConfig | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'name': value.name,
-        'site_url': value.siteUrl,
-        'username_selector': value.usernameSelector,
-        'password_selector': value.passwordSelector,
-        'login_button_selector': value.loginButtonSelector,
-        'post_login_selector': value.postLoginSelector,
-        'cookies_to_store': value.cookiesToStore,
-        'owner_user_id': value.ownerUserId,
+        'id': value['id'],
+        'name': value['name'],
+        'site_url': value['siteUrl'],
+        'username_selector': value['usernameSelector'],
+        'password_selector': value['passwordSelector'],
+        'login_button_selector': value['loginButtonSelector'],
+        'post_login_selector': value['postLoginSelector'],
+        'cookies_to_store': value['cookiesToStore'],
+        'owner_user_id': value['ownerUserId'],
     };
 }
 
