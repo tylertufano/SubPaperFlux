@@ -1,4 +1,9 @@
-import os, base64
+import asyncio
+import base64
+import json
+import os
+from contextlib import suppress
+
 from fastapi.testclient import TestClient
 
 
@@ -58,3 +63,114 @@ def test_job_details_and_retry_all(monkeypatch):
         session.delete(session.get(Job, dead_id))
         session.delete(session.get(Job, job_id))
         session.commit()
+
+
+def test_stream_jobs_respects_rls(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("USER_MGMT_RLS_ENFORCE", "1")
+
+    from app import db as db_module
+    from app.routers import jobs_v1 as jobs_router
+    from app.schemas import JobOut, JobsPage
+
+    def fake_configure_rls(session):
+        session.app_user_id = db_module.get_current_user_id()
+        return True
+
+    monkeypatch.setattr(db_module, "_configure_rls", fake_configure_rls)
+
+    captured_calls = []
+
+    def fake_list_jobs(
+        *,
+        current_user,
+        session,
+        status=None,
+        type=None,
+        page=1,
+        size=20,
+        order_by="created",
+        order_dir="desc",
+    ):
+        captured_calls.append(
+            {
+                "status": status,
+                "type": type,
+                "page": page,
+                "size": size,
+                "order_by": order_by,
+                "order_dir": order_dir,
+            }
+        )
+        other_job = JobOut(
+            id="other-job",
+            type="dummy",
+            status="queued",
+            attempts=0,
+            last_error=None,
+            available_at=None,
+            owner_user_id="other-user",
+            payload={},
+            details={},
+        )
+        own_job = JobOut(
+            id="own-job",
+            type="dummy",
+            status="queued",
+            attempts=0,
+            last_error=None,
+            available_at=None,
+            owner_user_id=getattr(session, "app_user_id", None) or current_user["sub"],
+            payload={},
+            details={},
+        )
+        if getattr(session, "app_user_id", None):
+            items = [job for job in (other_job, own_job) if job.owner_user_id == session.app_user_id]
+        else:
+            items = [other_job, own_job]
+        return JobsPage(items=items, total=len(items), page=page, size=size, has_next=False, total_pages=1)
+
+    monkeypatch.setattr(jobs_router, "list_jobs", fake_list_jobs)
+
+    results = {}
+
+    async def exercise() -> None:
+        token = db_module.set_current_user_id("stream-user")
+        iterator = None
+        try:
+            response = await jobs_router.stream_jobs(
+                current_user={"sub": "stream-user", "groups": []},
+                status="queued",
+                type="dummy",
+                page=2,
+                size=7,
+                order_by="available_at",
+                order_dir="asc",
+            )
+            iterator = response.body_iterator
+            first_chunk = await anext(iterator)
+            text = first_chunk.decode() if isinstance(first_chunk, bytes) else first_chunk
+            assert text.startswith("data: ")
+            results["event"] = json.loads(text[len("data: ") :].strip())
+        finally:
+            if iterator is not None and hasattr(iterator, "aclose"):
+                with suppress(Exception):
+                    await iterator.aclose()
+            db_module.reset_current_user_id(token)
+
+    asyncio.run(exercise())
+
+    first_event = results["event"]
+
+    assert len(first_event["items"]) == 1
+    assert first_event["items"][0]["owner_user_id"] == "stream-user"
+    assert captured_calls == [
+        {
+            "status": "queued",
+            "type": "dummy",
+            "page": 2,
+            "size": 7,
+            "order_by": "available_at",
+            "order_dir": "asc",
+        }
+    ]
