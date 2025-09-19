@@ -7,6 +7,7 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
+import { auth } from '../auth'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
 
@@ -129,6 +130,13 @@ async function resolveApiBase(): Promise<string> {
   return config.apiBase
 }
 
+async function loadSession(): Promise<Session | null> {
+  if (typeof window === 'undefined') {
+    return auth()
+  }
+  return getSession()
+}
+
 function resolveSessionToken(session: Session | null | undefined): string | undefined {
   if (!session) return undefined
   if (typeof session.idToken === 'string' && session.idToken.length > 0) {
@@ -185,7 +193,7 @@ async function getClients() {
       const cfg = new Configuration({
         basePath,
         accessToken: async () => {
-          const session = await getSession()
+          const session = await loadSession()
           const token = resolveSessionToken(session)
           return token ?? ''
         },
@@ -208,7 +216,7 @@ async function getClients() {
 async function authorizedRequest<T = any>(path: string, options: AuthorizedRequestOptions = {}): Promise<T> {
   const { errorMessage, expectJson, headers: overrideHeaders, ...rest } = options
   const basePath = await resolveApiBase()
-  const session = await getSession()
+  const session = await loadSession()
   const token = resolveSessionToken(session)
   const headers: Record<string, string> = {
     'X-CSRF-Token': CSRF,
@@ -794,12 +802,12 @@ async function updateMeProfile(payload: MeUpdatePayload): Promise<MeProfile> {
 
 export async function bulkPublishBookmarksStream({ requestBody, signal }: { requestBody: any; signal?: AbortSignal }) {
   const basePath = await resolveApiBase()
-  const session = await getSession()
+  const session = await loadSession()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-CSRF-Token': CSRF,
   }
-  const token = session?.accessToken as string | undefined
+  const token = resolveSessionToken(session)
   if (token) headers['Authorization'] = `Bearer ${token}`
   return fetch(`${basePath}/v1/bookmarks/bulk-publish`, {
     method: 'POST',
@@ -856,11 +864,11 @@ export const v1 = {
     (await getClients()).bookmarks.deleteBookmarkFolderBookmarksBookmarkIdFolderDelete({ bookmarkId, xCsrfToken: CSRF }),
   previewBookmarkV1BookmarksBookmarkIdPreviewGet: async ({ bookmarkId }: { bookmarkId: string }) => {
     const basePath = await resolveApiBase()
-    const session = await getSession()
+    const session = await loadSession()
     const headers: Record<string, string> = {
       'X-CSRF-Token': CSRF,
     }
-    const token = session?.accessToken as string | undefined
+    const token = resolveSessionToken(session)
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
     }
