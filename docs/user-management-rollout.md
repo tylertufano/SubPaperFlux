@@ -94,7 +94,15 @@ into enforcement mode.
 Run the **Prepare Postgres** admin action first when upgrading from an older deployment. It installs the `pg_trgm` extension and
 recommended indexes so that text search continues to work efficiently once RLS is active.
 
+<a id="postgres-rls-enable"></a>
 ### Enabling RLS
+
+Follow these steps to enable owner policies through the admin UI:
+
+1. Run the **Prepare Postgres** admin action and confirm the report shows `pg_trgm` enabled with indexes marked `Yes`.
+2. Verify the deployment is using Postgres and that the connected role has superuser or table-owner privileges. The UI disables the button until the `/v1/status/db` check reports `postgres`.
+3. Review the in-product warning, then click **Enable RLS (owner policies)**. The UI prompts for confirmation because rollback requires the manual SQL documented below.
+4. After the action completes, inspect the JSON summary to confirm each table reports `Enabled = Yes` with the expected policies.
 
 There are two supported paths for creating the owner-based policies defined in `app/db_admin.py`:
 
@@ -107,7 +115,28 @@ There are two supported paths for creating the owner-based policies defined in `
    environments can continue to run without RLS.
 
 Both paths are idempotent. It is safe to re-run the admin action or restart the application after schema migrations or owner
-changes to ensure policies remain in place.
+changes to ensure policies remain in place. Because the UI cannot disable the policies once applied, read the rollback guidance
+in [Disabling RLS](#postgres-rls-disable) before moving forward in production.
+
+<a id="postgres-rls-disable"></a>
+### Disabling RLS (manual rollback)
+
+Row-level security can only be removed with direct SQL. To revert the owner policies:
+
+1. Stop any processes that set `USER_MGMT_RLS_ENFORCE` so the startup hook does not re-apply policies on boot.
+2. Run `ALTER TABLE ... DISABLE ROW LEVEL SECURITY` for each managed table (`bookmark`, `credential`, `feed`, `job`, `siteconfig`,
+   and `cookie`).
+3. Drop the RLS policies created by `enable_rls()`:
+
+   ```sql
+   DROP POLICY IF EXISTS select_owner ON bookmark;
+   DROP POLICY IF EXISTS mod_owner ON bookmark;
+   DROP POLICY IF EXISTS del_owner ON bookmark;
+   -- repeat for credential, feed, job, siteconfig, and cookie tables
+   ```
+
+4. Rerun the verification queries from the troubleshooting section to confirm `relrowsecurity = false` and that no lingering
+   policies remain in `pg_policies`.
 
 ### Troubleshooting
 
