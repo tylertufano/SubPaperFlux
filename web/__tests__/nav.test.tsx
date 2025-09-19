@@ -72,6 +72,9 @@ describe('Nav component', () => {
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Users')),
     ).toBe(true)
     expect(
+      accountDropdowns.some((dropdown) => within(dropdown).queryByText('Organizations')),
+    ).toBe(true)
+    expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Audit Log')),
     ).toBe(true)
   })
@@ -84,6 +87,7 @@ describe('Nav component', () => {
     const accountDropdowns = getAccountDropdowns()
     for (const dropdown of accountDropdowns) {
       expect(within(dropdown).queryByText('Users')).not.toBeInTheDocument()
+      expect(within(dropdown).queryByText('Organizations')).not.toBeInTheDocument()
       expect(within(dropdown).queryByText('Audit Log')).not.toBeInTheDocument()
     }
   })
@@ -96,6 +100,7 @@ describe('Nav component', () => {
     const accountDropdowns = getAccountDropdowns()
     for (const dropdown of accountDropdowns) {
       expect(within(dropdown).queryByText('Users')).not.toBeInTheDocument()
+      expect(within(dropdown).queryByText('Organizations')).not.toBeInTheDocument()
       expect(within(dropdown).queryByText('Audit Log')).not.toBeInTheDocument()
     }
   })

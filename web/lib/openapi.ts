@@ -345,6 +345,63 @@ type AdminUserRoleOverridesUpdatePayload = {
   suppress?: string[]
 }
 
+export type AdminOrganizationMember = {
+  id: string
+  email?: string | null
+  full_name?: string | null
+  is_active?: boolean | null
+  joined_at: string
+}
+
+export type AdminOrganization = {
+  id: string
+  slug: string
+  name: string
+  description?: string | null
+  is_default?: boolean
+  created_at: string
+  updated_at: string
+  member_count?: number
+}
+
+export type AdminOrganizationDetail = AdminOrganization & {
+  members: AdminOrganizationMember[]
+}
+
+export type AdminOrganizationsPage = {
+  items: AdminOrganization[]
+  total: number
+  page: number
+  size: number
+  has_next?: boolean
+  total_pages?: number
+}
+
+type AdminOrganizationsQuery = {
+  page?: number
+  size?: number
+  search?: string
+  is_default?: boolean
+}
+
+export type AdminOrganizationCreatePayload = {
+  slug: string
+  name: string
+  description?: string | null
+  is_default?: boolean | null
+}
+
+export type AdminOrganizationUpdatePayload = {
+  slug?: string | null
+  name?: string | null
+  description?: string | null
+  is_default?: boolean | null
+}
+
+export type AdminOrganizationMembershipChangePayload = {
+  user_id: string
+}
+
 export type RoleGrantRequest = {
   description?: string | null
   create_missing?: boolean
@@ -541,6 +598,84 @@ async function revokeAdminUserRole(userId: string, roleName: string, confirm = f
     expectJson: false,
     errorMessage: 'Failed to revoke role',
   })
+}
+
+async function listAdminOrganizations(params: AdminOrganizationsQuery = {}): Promise<AdminOrganizationsPage> {
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.search) query.set('search', params.search)
+  if (params.is_default !== undefined) query.set('is_default', String(params.is_default))
+
+  const search = query.toString()
+  return authorizedRequest<AdminOrganizationsPage>(`/v1/admin/orgs${search ? `?${search}` : ''}`, {
+    errorMessage: 'Failed to load organizations',
+  })
+}
+
+async function fetchAdminOrganization(organizationId: string): Promise<AdminOrganizationDetail> {
+  return authorizedRequest<AdminOrganizationDetail>(`/v1/admin/orgs/${encodeURIComponent(organizationId)}`, {
+    errorMessage: 'Failed to load organization',
+  })
+}
+
+async function createAdminOrganizationRequest(
+  payload: AdminOrganizationCreatePayload,
+): Promise<AdminOrganizationDetail> {
+  return authorizedRequest<AdminOrganizationDetail>('/v1/admin/orgs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to create organization',
+  })
+}
+
+async function updateAdminOrganizationRequest(
+  organizationId: string,
+  payload: AdminOrganizationUpdatePayload,
+): Promise<AdminOrganizationDetail> {
+  return authorizedRequest<AdminOrganizationDetail>(`/v1/admin/orgs/${encodeURIComponent(organizationId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to update organization',
+  })
+}
+
+async function deleteAdminOrganizationRequest(organizationId: string): Promise<void> {
+  await authorizedRequest(`/v1/admin/orgs/${encodeURIComponent(organizationId)}`, {
+    method: 'DELETE',
+    expectJson: false,
+    errorMessage: 'Failed to delete organization',
+  })
+}
+
+async function addAdminOrganizationMemberRequest(
+  organizationId: string,
+  payload: AdminOrganizationMembershipChangePayload,
+): Promise<AdminOrganizationDetail> {
+  return authorizedRequest<AdminOrganizationDetail>(
+    `/v1/admin/orgs/${encodeURIComponent(organizationId)}/members`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload ?? {}),
+      errorMessage: 'Failed to add member',
+    },
+  )
+}
+
+async function removeAdminOrganizationMemberRequest(
+  organizationId: string,
+  userId: string,
+): Promise<AdminOrganizationDetail> {
+  return authorizedRequest<AdminOrganizationDetail>(
+    `/v1/admin/orgs/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(userId)}`,
+    {
+      method: 'DELETE',
+      errorMessage: 'Failed to remove member',
+    },
+  )
 }
 
 async function fetchAdminRoles(params: AdminRolesQuery = {}): Promise<AdminRolesPage> {
@@ -769,6 +904,45 @@ export const v1 = {
     roleName: string
     confirm?: boolean
   }) => revokeAdminUserRole(userId, roleName, Boolean(confirm)),
+
+  listAdminOrganizationsV1AdminOrgsGet: async (p: AdminOrganizationsQuery = {}) => listAdminOrganizations(p),
+  createOrganizationV1AdminOrgsPost: async ({
+    adminOrganizationCreate,
+  }: {
+    adminOrganizationCreate: AdminOrganizationCreatePayload
+  }) => createAdminOrganizationRequest(adminOrganizationCreate),
+  getOrganizationV1AdminOrgsOrganizationIdGet: async ({
+    organizationId,
+  }: {
+    organizationId: string
+  }) => fetchAdminOrganization(organizationId),
+  updateOrganizationV1AdminOrgsOrganizationIdPatch: async ({
+    organizationId,
+    adminOrganizationUpdate,
+  }: {
+    organizationId: string
+    adminOrganizationUpdate: AdminOrganizationUpdatePayload
+  }) => updateAdminOrganizationRequest(organizationId, adminOrganizationUpdate),
+  deleteOrganizationV1AdminOrgsOrganizationIdDelete: async ({
+    organizationId,
+  }: {
+    organizationId: string
+  }) => deleteAdminOrganizationRequest(organizationId),
+  addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost: async ({
+    organizationId,
+    adminOrganizationMembershipChange,
+  }: {
+    organizationId: string
+    adminOrganizationMembershipChange: AdminOrganizationMembershipChangePayload
+  }) =>
+    addAdminOrganizationMemberRequest(organizationId, adminOrganizationMembershipChange),
+  removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete: async ({
+    organizationId,
+    userId,
+  }: {
+    organizationId: string
+    userId: string
+  }) => removeAdminOrganizationMemberRequest(organizationId, userId),
 
   listAdminRoles: async (p: AdminRolesQuery = {}) => fetchAdminRoles(p),
   createAdminRole: async ({
