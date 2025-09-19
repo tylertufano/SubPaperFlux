@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlmodel import select
 
+from tests.factories import create_organization
+
 
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
@@ -119,6 +121,17 @@ def test_admin_users_listing_and_role_management(admin_client):
         grant_role(session, user1.id, "editor", granted_by_user_id="admin-1")
         session.commit()
 
+    alpha_org = create_organization(
+        slug="alpha-org",
+        name="Alpha Org",
+        member_ids=["user-1"],
+    )
+    beta_org = create_organization(
+        slug="beta-org",
+        name="Beta Org",
+        member_ids=["user-2"],
+    )
+
     resp = admin_client.get("/v1/admin/users")
     assert resp.status_code == 200
     payload = resp.json()
@@ -141,9 +154,13 @@ def test_admin_users_listing_and_role_management(admin_client):
         "preserve": [],
         "suppress": [],
     }
+    user1_orgs = items["user-1"]["organizations"]
+    assert [org["id"] for org in user1_orgs] == [alpha_org.id]
+    assert [org["slug"] for org in user1_orgs] == ["alpha-org"]
     assert items["user-2"]["roles"] == []
     assert items["user-2"]["groups"] == ["managers"]
     assert items["user-2"]["quota_credentials"] is None
+    assert [org["id"] for org in items["user-2"]["organizations"]] == [beta_org.id]
 
     # Role filter should match user-1 initially
     resp_role = admin_client.get("/v1/admin/users", params={"role": "editor"})
@@ -154,6 +171,15 @@ def test_admin_users_listing_and_role_management(admin_client):
     resp_search = admin_client.get("/v1/admin/users", params={"search": "user two"})
     assert resp_search.status_code == 200
     assert resp_search.json()["total"] == 1
+
+    resp_org_filter = admin_client.get(
+        "/v1/admin/users",
+        params={"organization_id": alpha_org.id},
+    )
+    assert resp_org_filter.status_code == 200
+    org_filter_payload = resp_org_filter.json()
+    assert org_filter_payload["total"] == 1
+    assert org_filter_payload["items"][0]["id"] == "user-1"
 
     # Grant a new role to the second user (auto-creating the role)
     resp_grant = admin_client.post(
@@ -186,6 +212,7 @@ def test_admin_users_listing_and_role_management(admin_client):
         "preserve": [],
         "suppress": [],
     }
+    assert any(org["id"] == alpha_org.id for org in detail_payload["organizations"])
 
     # Role filter should now yield zero results for the revoked role
     resp_role_after = admin_client.get("/v1/admin/users", params={"role": "editor"})
