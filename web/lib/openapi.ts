@@ -737,10 +737,41 @@ async function removeAdminOrganizationMemberRequest(
   )
 }
 
+async function requestSiteWelcomeSetting(authenticated: boolean): Promise<SiteWelcomeSettingOut> {
+  if (authenticated) {
+    return authorizedRequest<SiteWelcomeSettingOut>('/v1/site-settings/welcome', {
+      errorMessage: 'Failed to load welcome message',
+    })
+  }
+
+  const basePath = await resolveApiBase()
+  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
+
+  try {
+    const response = await fetch(`${normalizedBase}/v1/site-settings/welcome`, {
+      method: 'GET',
+      headers: { 'X-CSRF-Token': CSRF },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const message = (await response.text())?.trim()
+      throw new Error(message || 'Failed to load welcome message')
+    }
+
+    return (await response.json()) as SiteWelcomeSettingOut
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(message || 'Failed to load welcome message')
+  }
+}
+
 async function fetchSiteWelcomeSetting(): Promise<SiteWelcomeSettingOut> {
-  return authorizedRequest<SiteWelcomeSettingOut>('/v1/site-settings/welcome', {
-    errorMessage: 'Failed to load welcome message',
-  })
+  return requestSiteWelcomeSetting(true)
+}
+
+async function fetchPublicSiteWelcomeSetting(): Promise<SiteWelcomeSettingOut> {
+  return requestSiteWelcomeSetting(false)
 }
 
 async function updateSiteWelcomeSettingRequest(
@@ -946,7 +977,9 @@ export const v1 = {
   }: {
     siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate
   }) => updateSiteWelcomeSettingRequest(siteWelcomeSettingUpdate),
+  getPublicSiteWelcomeSetting: async () => fetchPublicSiteWelcomeSetting(),
   getSiteWelcomeSettingV1SiteSettingsWelcomeGet: async () => fetchSiteWelcomeSetting(),
+  getPublicSiteWelcomeSettingV1SiteSettingsWelcomeGet: async () => fetchPublicSiteWelcomeSetting(),
   updateSiteWelcomeSettingV1SiteSettingsWelcomePut: async ({
     siteWelcomeSettingUpdate,
   }: {

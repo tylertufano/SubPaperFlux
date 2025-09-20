@@ -1,5 +1,6 @@
 {
   "home_welcome": "Welcome. Use the navigation to explore bookmarks, jobs, and admin tools.",
+  "home_welcome_error": "We couldn't load the welcome message. Showing defaults.",
   "breadcrumb_home": "Dashboard",
   "breadcrumb_navigation_label": "Breadcrumb navigation",
   "nav_bookmarks": "Bookmarks",

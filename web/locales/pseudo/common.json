@@ -5,6 +5,7 @@
   "locale_pseudo": "Pseudo (demo)",
   "breadcrumb_home": "Tablero ✨",
   "breadcrumb_navigation_label": "Migas ✨",
+  "home_welcome_error": "No pudimos cargar el mensaje de bienvenida. Mostrando predeterminado ✨",
   "bookmarks_preview_select_prompt": "Elige un marcador para ver su contenido ✨",
   "bulk_actions_selected_count": "{count} seleccionados ✨",
   "bulk_actions_clear": "Borrar selección ✨",

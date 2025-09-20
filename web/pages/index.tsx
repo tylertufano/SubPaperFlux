@@ -2,11 +2,20 @@ import { useMemo } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import { Breadcrumbs, ErrorBoundary, Nav } from '../components'
+import WelcomeContent from '../components/WelcomeContent'
 import { v1 } from '../lib/openapi'
 import { useI18n } from '../lib/i18n'
 import { formatNumberValue, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
+
+type WelcomeKey = ['/v1/site-settings/welcome', 'public']
+type CountKey = ['/v1/bookmarks/count']
+type JobsKey = ['/v1/jobs', string]
+type PageKey = ['/v1/feeds'] | ['/v1/credentials']
+type StatusKey = ['/v1/status']
+type DbStatusKey = ['/v1/status/db']
 
 function StatCard({ title, value, href }: { title: string; value: string | number; href?: string }) {
   const content = (
@@ -21,25 +30,54 @@ function StatCard({ title, value, href }: { title: string; value: string | numbe
 export default function Home() {
   const { t } = useI18n()
   const router = useRouter()
+  const { status } = useSession()
   const numberFormatter = useNumberFormatter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
-  // Bookmarks total (server-side count endpoint)
-  const { data: bmCount, mutate: refreshBookmarks } = useSWR(['/v1/bookmarks/count'], () => v1.countBookmarksV1BookmarksCountGet({}))
+  const isAuthenticated = status === 'authenticated'
+  const shouldLoadProtected = isAuthenticated
+  const shouldLoadWelcome = status === 'unauthenticated'
 
-  // Jobs totals by status (query with small page size; use total field)
-  const { data: jobsAll, mutate: refreshJobsAll } = useSWR(['/v1/jobs', ''], () => v1.listJobsV1JobsGet({ size: 1 }))
-  const { data: jobsFailed, mutate: refreshJobsFailed } = useSWR(['/v1/jobs', 'failed'], () => v1.listJobsV1JobsGet({ status: 'failed', size: 1 }))
-  const { data: jobsDead, mutate: refreshJobsDead } = useSWR(['/v1/jobs', 'dead'], () => v1.listJobsV1JobsGet({ status: 'dead', size: 1 }))
-  const { data: jobsQueued, mutate: refreshJobsQueued } = useSWR(['/v1/jobs', 'queued'], () => v1.listJobsV1JobsGet({ status: 'queued', size: 1 }))
-  const { data: jobsInProg, mutate: refreshJobsInProg } = useSWR(['/v1/jobs', 'in_progress'], () => v1.listJobsV1JobsGet({ status: 'in_progress', size: 1 }))
+  const bookmarksKey: CountKey | null = shouldLoadProtected ? ['/v1/bookmarks/count'] : null
+  const { data: bmCount, mutate: refreshBookmarks } = useSWR(bookmarksKey, () =>
+    v1.countBookmarksV1BookmarksCountGet({}),
+  )
 
-  // Other totals
-  const { data: feedsPage, mutate: refreshFeeds } = useSWR(['/v1/feeds'], () => v1.listFeedsV1V1FeedsGet({ size: 1 }))
-  const { data: credsPage, mutate: refreshCreds } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({ size: 1 }))
+  const jobsAllKey: JobsKey | null = shouldLoadProtected ? ['/v1/jobs', ''] : null
+  const { data: jobsAll, mutate: refreshJobsAll } = useSWR(jobsAllKey, () => v1.listJobsV1JobsGet({ size: 1 }))
+  const jobsFailedKey: JobsKey | null = shouldLoadProtected ? ['/v1/jobs', 'failed'] : null
+  const { data: jobsFailed, mutate: refreshJobsFailed } = useSWR(jobsFailedKey, () =>
+    v1.listJobsV1JobsGet({ status: 'failed', size: 1 }),
+  )
+  const jobsDeadKey: JobsKey | null = shouldLoadProtected ? ['/v1/jobs', 'dead'] : null
+  const { data: jobsDead, mutate: refreshJobsDead } = useSWR(jobsDeadKey, () =>
+    v1.listJobsV1JobsGet({ status: 'dead', size: 1 }),
+  )
+  const jobsQueuedKey: JobsKey | null = shouldLoadProtected ? ['/v1/jobs', 'queued'] : null
+  const { data: jobsQueued, mutate: refreshJobsQueued } = useSWR(jobsQueuedKey, () =>
+    v1.listJobsV1JobsGet({ status: 'queued', size: 1 }),
+  )
+  const jobsInProgressKey: JobsKey | null = shouldLoadProtected ? ['/v1/jobs', 'in_progress'] : null
+  const { data: jobsInProg, mutate: refreshJobsInProg } = useSWR(jobsInProgressKey, () =>
+    v1.listJobsV1JobsGet({ status: 'in_progress', size: 1 }),
+  )
 
-  // Health
-  const { data: status, mutate: refreshStatus } = useSWR(['/v1/status'], () => v1.getStatusV1StatusGet())
-  const { data: db, mutate: refreshDb } = useSWR(['/v1/status/db'], () => v1.dbStatusV1StatusDbGet())
+  const feedsKey: PageKey | null = shouldLoadProtected ? ['/v1/feeds'] : null
+  const credsKey: PageKey | null = shouldLoadProtected ? ['/v1/credentials'] : null
+  const { data: feedsPage, mutate: refreshFeeds } = useSWR(feedsKey, () => v1.listFeedsV1V1FeedsGet({ size: 1 }))
+  const { data: credsPage, mutate: refreshCreds } = useSWR(credsKey, () => v1.listCredentialsV1V1CredentialsGet({ size: 1 }))
+
+  const statusKey: StatusKey | null = shouldLoadProtected ? ['/v1/status'] : null
+  const dbStatusKey: DbStatusKey | null = shouldLoadProtected ? ['/v1/status/db'] : null
+  const { data: statusData, mutate: refreshStatus } = useSWR(statusKey, () => v1.getStatusV1StatusGet())
+  const { data: db, mutate: refreshDb } = useSWR(dbStatusKey, () => v1.dbStatusV1StatusDbGet())
+
+  const welcomeKey: WelcomeKey | null = shouldLoadWelcome ? ['/v1/site-settings/welcome', 'public'] : null
+  const {
+    data: welcomeSetting,
+    mutate: refreshWelcome,
+    error: welcomeError,
+    isLoading: welcomeLoading,
+  } = useSWR(welcomeKey, () => v1.getPublicSiteWelcomeSetting())
 
   const totalBookmarks = formatNumberValue(bmCount?.total, numberFormatter, '—')
   const totalJobs = formatNumberValue(jobsAll?.total, numberFormatter, '—')
@@ -54,21 +92,51 @@ export default function Home() {
   const idxOk = db?.details?.indexes ? Object.values(db.details.indexes).every(Boolean) : undefined
 
   const handleRetry = () => {
-    const refreshers = [
-      refreshBookmarks,
-      refreshJobsAll,
-      refreshJobsFailed,
-      refreshJobsDead,
-      refreshJobsQueued,
-      refreshJobsInProg,
-      refreshFeeds,
-      refreshCreds,
-      refreshStatus,
-      refreshDb,
-    ]
-    for (const refresh of refreshers) {
-      void refresh()
+    if (isAuthenticated) {
+      const refreshers = [
+        refreshBookmarks,
+        refreshJobsAll,
+        refreshJobsFailed,
+        refreshJobsDead,
+        refreshJobsQueued,
+        refreshJobsInProg,
+        refreshFeeds,
+        refreshCreds,
+        refreshStatus,
+        refreshDb,
+      ]
+      for (const refresh of refreshers) {
+        void refresh()
+      }
+      return
     }
+    void refreshWelcome()
+  }
+
+  if (status === 'loading') {
+    return (
+      <ErrorBoundary>
+        <div>
+          <Nav />
+          <main className="container py-12">
+            <p className="text-gray-700">{t('loading_text')}</p>
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <ErrorBoundary onRetry={handleRetry}>
+        <div>
+          <Nav />
+          <main className="container py-12">
+            <WelcomeContent content={welcomeSetting?.value} error={welcomeError ?? null} isLoading={welcomeLoading} />
+          </main>
+        </div>
+      </ErrorBoundary>
+    )
   }
 
   return (
@@ -93,7 +161,9 @@ export default function Home() {
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-lg">{t('dashboard_jobs_status_heading')}</h2>
-                <Link href="/jobs" className="text-blue-600 hover:underline text-sm">{t('dashboard_view_all')}</Link>
+                <Link href="/jobs" className="text-blue-600 hover:underline text-sm">
+                  {t('dashboard_view_all')}
+                </Link>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <StatCard title={t('jobs_status_queued')} value={queuedJobs} />
@@ -106,13 +176,22 @@ export default function Home() {
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-lg">{t('dashboard_database_health_heading')}</h2>
-                <Link href="/admin" className="text-blue-600 hover:underline text-sm">{t('nav_admin')}</Link>
+                <Link href="/admin" className="text-blue-600 hover:underline text-sm">
+                  {t('nav_admin')}
+                </Link>
               </div>
               <ul className="text-sm text-gray-800 space-y-1">
-                <li><span className={dbOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('status_label')}: {dbOk ? t('status_ok') : t('dashboard_db_status_check')}</li>
-                <li><span className={pgTrgm ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_pgtrgm')}</li>
+                <li>
+                  <span className={dbOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('status_label')}:{' '}
+                  {dbOk ? t('status_ok') : t('dashboard_db_status_check')}
+                </li>
+                <li>
+                  <span className={pgTrgm ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_pgtrgm')}
+                </li>
                 {idxOk !== undefined && (
-                  <li><span className={idxOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_indexes')}</li>
+                  <li>
+                    <span className={idxOk ? 'text-green-700' : 'text-red-700'}>•</span> {t('dashboard_db_indexes')}
+                  </li>
                 )}
               </ul>
             </div>
@@ -122,8 +201,12 @@ export default function Home() {
                 <h2 className="font-semibold text-lg">{t('dashboard_service_heading')}</h2>
               </div>
               <ul className="text-sm text-gray-800 space-y-1">
-                <li>{t('dashboard_service_api')}: {status?.status || '—'}</li>
-                <li>{t('dashboard_service_version')}: {status?.version || '—'}</li>
+                <li>
+                  {t('dashboard_service_api')}: {statusData?.status || '—'}
+                </li>
+                <li>
+                  {t('dashboard_service_version')}: {statusData?.version || '—'}
+                </li>
               </ul>
             </div>
           </div>
