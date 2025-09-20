@@ -416,6 +416,32 @@ type AdminOrganizationsQuery = {
   is_default?: boolean
 }
 
+export type SiteWelcomeContent = {
+  headline?: string | null
+  subheadline?: string | null
+  body?: string | null
+  cta_text?: string | null
+  cta_url?: string | null
+  [key: string]: unknown
+}
+
+export type SiteWelcomeSettingOut = {
+  key: string
+  value: SiteWelcomeContent
+  created_at?: string | null
+  updated_at?: string | null
+  updated_by_user_id?: string | null
+}
+
+export type SiteWelcomeSettingUpdate = {
+  headline?: string | null
+  subheadline?: string | null
+  body?: string | null
+  cta_text?: string | null
+  cta_url?: string | null
+  [key: string]: unknown
+}
+
 export type AdminOrganizationCreatePayload = {
   slug: string
   name: string
@@ -711,6 +737,23 @@ async function removeAdminOrganizationMemberRequest(
   )
 }
 
+async function fetchSiteWelcomeSetting(): Promise<SiteWelcomeSettingOut> {
+  return authorizedRequest<SiteWelcomeSettingOut>('/v1/site-settings/welcome', {
+    errorMessage: 'Failed to load welcome message',
+  })
+}
+
+async function updateSiteWelcomeSettingRequest(
+  payload: SiteWelcomeSettingUpdate,
+): Promise<SiteWelcomeSettingOut> {
+  return authorizedRequest<SiteWelcomeSettingOut>('/v1/site-settings/welcome', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to update welcome message',
+  })
+}
+
 async function fetchAdminRoles(params: AdminRolesQuery = {}): Promise<AdminRolesPage> {
   const query = new URLSearchParams()
   if (params.page !== undefined) query.set('page', String(params.page))
@@ -897,6 +940,18 @@ export const v1 = {
     (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
   copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
+  getSiteWelcomeSetting: async () => fetchSiteWelcomeSetting(),
+  updateSiteWelcomeSetting: async ({
+    siteWelcomeSettingUpdate,
+  }: {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate
+  }) => updateSiteWelcomeSettingRequest(siteWelcomeSettingUpdate),
+  getSiteWelcomeSettingV1SiteSettingsWelcomeGet: async () => fetchSiteWelcomeSetting(),
+  updateSiteWelcomeSettingV1SiteSettingsWelcomePut: async ({
+    siteWelcomeSettingUpdate,
+  }: {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate
+  }) => updateSiteWelcomeSettingRequest(siteWelcomeSettingUpdate),
 
   listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
   listAdminUsersV1AdminUsersGet: async (p: AdminUsersQuery = {}) => listAdminUsers(p),

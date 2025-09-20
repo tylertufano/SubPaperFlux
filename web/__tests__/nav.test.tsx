@@ -94,6 +94,9 @@ describe('Nav component', () => {
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Organizations')),
     ).toBe(true)
     expect(
+      accountDropdowns.some((dropdown) => within(dropdown).queryByText('Site settings')),
+    ).toBe(true)
+    expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Audit Log')),
     ).toBe(true)
     expect(
@@ -127,6 +130,9 @@ describe('Nav component', () => {
     ).toBe(true)
     expect(
       accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Users')),
+    ).toBe(true)
+    expect(
+      accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Site settings')),
     ).toBe(true)
 
     const feedsDropdown = getFeedsDropdown()

@@ -14,6 +14,7 @@ const breadcrumbKeyMap: Record<string, string> = {
 
   // Admin navigation
   '/admin': 'nav_admin',
+  '/admin/site-settings': 'nav_site_settings',
   '/admin/users': 'nav_users',
   '/admin/roles': 'nav_roles',
   '/admin/orgs': 'nav_orgs',

@@ -147,6 +147,7 @@ export default function Nav() {
   const adminAccountItems = hasAdminAccess
     ? [
         { href: '/admin', label: t('nav_admin') },
+        { href: '/admin/site-settings', label: t('nav_site_settings') },
         { href: '/admin/users', label: t('nav_users') },
         { href: '/admin/roles', label: t('nav_roles') },
         { href: '/admin/orgs', label: t('nav_orgs') },
