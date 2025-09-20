@@ -226,6 +226,31 @@ class SiteConfig(SQLModel, table=True):
     owner_user_id: Optional[str] = Field(default=None, index=True)  # None => global
 
 
+class SiteSetting(SQLModel, table=True):
+    __tablename__ = "site_settings"
+
+    key: str = Field(
+        sa_column=Column(String(length=255), nullable=False, primary_key=True)
+    )
+    value: Dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
+    )
+    updated_by_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
+
+
 class Feed(SQLModel, table=True):
     __tablename__ = "feed"
     id: str = Field(default_factory=lambda: gen_id("feed"), primary_key=True)
@@ -373,6 +398,7 @@ __all__ = [
     "UserRole",
     "ApiToken",
     "SiteConfig",
+    "SiteSetting",
     "Feed",
     "Credential",
     "Job",
