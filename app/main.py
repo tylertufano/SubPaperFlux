@@ -25,6 +25,7 @@ from .routers.jobs_v1 import router as jobs_v1_router
 from .routers.me_tokens_v1 import router as me_tokens_v1_router
 from .routers.me_v1 import router as me_v1_router
 from .routers.site_configs_v1 import router as site_configs_v1_router
+from .routers.site_settings_v1 import router as site_settings_v1_router
 from .routers.integrations import router as integrations_router
 from .errors import register_error_handlers
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
         {"name": "jobs", "description": "Background jobs queue"},
         {"name": "admin", "description": "Administrative operations"},
         {"name": "v1", "description": "Versioned API endpoints"},
+        {"name": "site-settings", "description": "Operator-configurable site settings"},
     ]
     app = FastAPI(title="SubPaperFlux API", version="0.1.0", openapi_tags=tags_metadata)
 
@@ -269,6 +271,7 @@ def create_app() -> FastAPI:
     app.include_router(me_v1_router)
     app.include_router(me_tokens_v1_router)
     app.include_router(integrations_router)
+    app.include_router(site_settings_v1_router)
 
     return app
 

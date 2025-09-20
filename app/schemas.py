@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, Field, constr
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr
 
 
 class User(BaseModel):
@@ -75,6 +75,34 @@ class JobRequest(BaseModel):
 class StatusResponse(BaseModel):
     status: str = "ok"
     version: str = "0.1.0"
+
+
+class SiteWelcomeContent(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    headline: Optional[str] = None
+    subheadline: Optional[str] = None
+    body: Optional[str] = None
+    cta_text: Optional[str] = None
+    cta_url: Optional[str] = None
+
+
+class SiteWelcomeSettingOut(BaseModel):
+    key: str
+    value: SiteWelcomeContent
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    updated_by_user_id: Optional[str] = None
+
+
+class SiteWelcomeSettingUpdate(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    headline: Optional[str] = None
+    subheadline: Optional[str] = None
+    body: Optional[str] = None
+    cta_text: Optional[str] = None
+    cta_url: Optional[str] = None
 
 
 class BookmarkOut(BaseModel):
