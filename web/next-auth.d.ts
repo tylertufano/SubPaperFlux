@@ -12,11 +12,21 @@ declare module '@auth/core/types' {
   interface Session {
     accessToken?: string
     idToken?: string
-    user?: (DefaultSession['user'] & { displayName?: string | null }) | undefined
+    user?:
+      | (DefaultSession['user'] & {
+          displayName?: string | null
+          groups?: string[]
+          roles?: string[]
+          permissions?: string[]
+        })
+      | undefined
   }
 
   interface User {
     displayName?: string | null
+    groups?: string[]
+    roles?: string[]
+    permissions?: string[]
   }
 }
 
@@ -25,5 +35,7 @@ declare module '@auth/core/jwt' {
     accessToken?: string
     idToken?: string
     displayName?: string
+    groups?: string[]
+    roles?: string[]
   }
 }

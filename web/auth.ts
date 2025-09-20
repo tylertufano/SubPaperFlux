@@ -2,6 +2,8 @@ import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 
+import { derivePermissionsFromRoles, normalizeIdentifierList } from './lib/rbac'
+
 const issuer = process.env.OIDC_ISSUER!
 
 function normalizeClaimKey(key: string): string {
@@ -58,6 +60,64 @@ function resolveDisplayName(profile: unknown): string | undefined {
   return undefined
 }
 
+type ClaimContainer = Record<string, unknown>
+
+function isIterableObject(value: unknown): value is Iterable<unknown> {
+  return typeof value === 'object' && value !== null && typeof (value as any)[Symbol.iterator] === 'function'
+}
+
+function collectClaimValues(
+  source: unknown,
+  normalizedTargets: Set<string>,
+  results: unknown[],
+  visited: Set<unknown>,
+): void {
+  if (source === null || source === undefined) {
+    return
+  }
+  if (typeof source !== 'object') {
+    return
+  }
+  if (visited.has(source)) {
+    return
+  }
+  visited.add(source)
+
+  if (isIterableObject(source)) {
+    for (const entry of source) {
+      collectClaimValues(entry, normalizedTargets, results, visited)
+    }
+    return
+  }
+
+  const record = source as ClaimContainer
+  for (const [key, value] of Object.entries(record)) {
+    const normalizedKey = normalizeClaimKey(key)
+    if (normalizedTargets.has(normalizedKey)) {
+      results.push(value)
+    }
+    collectClaimValues(value, normalizedTargets, results, visited)
+  }
+}
+
+function extractClaimList(profile: unknown, candidateKeys: readonly string[]): string[] {
+  if (!profile || typeof profile !== 'object') {
+    return []
+  }
+  const normalizedTargets = new Set(candidateKeys.map((key) => normalizeClaimKey(key)))
+  const collected: unknown[] = []
+  collectClaimValues(profile, normalizedTargets, collected, new Set())
+  return normalizeIdentifierList(collected)
+}
+
+function extractGroups(profile: unknown): string[] {
+  return extractClaimList(profile, ['groups', 'group'])
+}
+
+function extractRoles(profile: unknown): string[] {
+  return extractClaimList(profile, ['roles', 'role'])
+}
+
 export const authOptions: NextAuthConfig = {
   providers: [
     {
@@ -72,11 +132,17 @@ export const authOptions: NextAuthConfig = {
       authorization: { params: { scope: 'openid profile email' } },
       profile(profile: any) {
         const displayName = resolveDisplayName(profile)
+        const groups = extractGroups(profile)
+        const roles = extractRoles(profile)
+        const permissions = derivePermissionsFromRoles(roles)
         return {
           id: profile.sub,
           name: profile.name || profile.preferred_username || profile.sub,
           email: profile.email,
           displayName: displayName ?? null,
+          groups,
+          roles,
+          permissions,
         }
       },
     } as any,
@@ -87,14 +153,31 @@ export const authOptions: NextAuthConfig = {
         token.accessToken = account.access_token
         token.idToken = account.id_token
       }
-      if (user && typeof user === 'object' && 'displayName' in user) {
-        const displayName = (user as { displayName?: unknown }).displayName
+      if (user && typeof user === 'object') {
+        const candidate = user as {
+          displayName?: unknown
+          groups?: unknown
+          roles?: unknown
+        }
+        const displayName = candidate.displayName
         if (typeof displayName === 'string' && displayName.trim().length > 0) {
           token.displayName = displayName.trim()
         } else {
           delete token.displayName
         }
+        const roles = normalizeIdentifierList(candidate.roles ?? [])
+        const groups = normalizeIdentifierList(candidate.groups ?? [])
+        token.roles = roles
+        token.groups = groups
+        token.permissions = derivePermissionsFromRoles(roles)
       }
+      if (!Array.isArray(token.roles)) {
+        token.roles = []
+      }
+      if (!Array.isArray(token.groups)) {
+        token.groups = []
+      }
+      token.permissions = derivePermissionsFromRoles(token.roles)
       return token
     },
     async session({ session, token }: { session: Session; token: JWT }) {
@@ -106,6 +189,11 @@ export const authOptions: NextAuthConfig = {
         } else {
           delete session.user.displayName
         }
+        session.user.roles = Array.isArray(token.roles) ? [...token.roles] : []
+        session.user.groups = Array.isArray(token.groups) ? [...token.groups] : []
+        session.user.permissions = Array.isArray(token.permissions)
+          ? [...token.permissions]
+          : derivePermissionsFromRoles(token.roles)
       }
       return session
     },
