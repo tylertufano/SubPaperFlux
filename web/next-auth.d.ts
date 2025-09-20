@@ -37,6 +37,5 @@ declare module '@auth/core/jwt' {
     displayName?: string
     groups?: string[]
     roles?: string[]
-    permissions?: string[]
   }
 }
