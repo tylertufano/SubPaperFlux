@@ -21,6 +21,7 @@ const breadcrumbKeyMap: Record<string, string> = {
   '/admin/audit': 'nav_audit',
   '/me': 'nav_profile',
   '/me/tokens': 'nav_tokens',
+  '/me/debug': 'me_debug_title',
 }
 
 function formatSegment(segment: string) {
