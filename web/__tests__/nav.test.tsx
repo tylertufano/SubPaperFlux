@@ -75,7 +75,7 @@ describe('Nav component', () => {
   })
 
   function getAccountDropdowns() {
-    return screen.getAllByTestId('dropdown-Test')
+    return screen.getAllByTestId('dropdown-Test User')
   }
 
   function getFeedsDropdown() {

@@ -77,11 +77,19 @@ function extractFirstName(value: string | null | undefined): string | null {
   return first || null
 }
 
+function normalizeDisplayName(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function accountLabelFromUser(user: SessionUser | null | undefined): string | null {
   if (!user) {
     return null
   }
-  const fromDisplayName = extractFirstName(user.displayName)
+  const fromDisplayName = normalizeDisplayName(user.displayName)
   if (fromDisplayName) {
     return fromDisplayName
   }
