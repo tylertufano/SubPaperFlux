@@ -4,12 +4,59 @@ import { signIn, signOut, useSession } from 'next-auth/react'
 import { useI18n } from '../lib/i18n'
 import { useFeatureFlags } from '../lib/featureFlags'
 import DropdownMenu from './DropdownMenu'
+import {
+  PERMISSION_MANAGE_BOOKMARKS,
+  PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+  PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
+  hasPermission,
+} from '../lib/rbac'
 
 type AdminCandidate = Record<string, unknown>
 
 type SessionUser = {
   displayName?: string | null
   name?: string | null
+}
+
+function isIterable(value: unknown): value is Iterable<unknown> {
+  return typeof value === 'object' && value !== null && typeof (value as any)[Symbol.iterator] === 'function'
+}
+
+function extractPermissionList(user: unknown): string[] {
+  if (!user || typeof user !== 'object') {
+    return []
+  }
+  const record = user as { permissions?: unknown }
+  const { permissions } = record
+  if (!permissions) {
+    return []
+  }
+  const results: string[] = []
+  const add = (value: unknown) => {
+    if (typeof value !== 'string') {
+      return
+    }
+    const trimmed = value.trim()
+    if (trimmed) {
+      results.push(trimmed)
+    }
+  }
+  if (typeof permissions === 'string') {
+    add(permissions)
+    return results
+  }
+  if (Array.isArray(permissions)) {
+    for (const entry of permissions) {
+      add(entry)
+    }
+    return results
+  }
+  if (isIterable(permissions)) {
+    for (const entry of permissions) {
+      add(entry)
+    }
+  }
+  return results
 }
 
 function extractFirstName(value: string | null | undefined): string | null {
@@ -75,7 +122,27 @@ export default function Nav() {
     'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
     `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
-  const hasAdminAccess = Boolean(userMgmtCore && userMgmtUi && userHasAdminAccess(session?.user))
+  const permissions = extractPermissionList(session?.user)
+  const userMgmtEnabled = Boolean(userMgmtCore && userMgmtUi)
+  const isAuthenticated = status === 'authenticated'
+  const isAdminUser = isAuthenticated && userHasAdminAccess(session?.user)
+  const hasAdminAccess = Boolean(userMgmtEnabled && isAdminUser)
+  const canManageFeeds = Boolean(
+    userMgmtEnabled &&
+      isAuthenticated &&
+      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
+  )
+  const canManageCredentials = Boolean(
+    userMgmtEnabled &&
+      isAuthenticated &&
+      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
+  )
+  const canManageSiteConfigs = Boolean(
+    userMgmtEnabled &&
+      isAuthenticated &&
+      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS)),
+  )
+  const shouldShowFeedsMenu = userMgmtEnabled && isAuthenticated
 
   const adminAccountItems = hasAdminAccess
     ? [
@@ -112,29 +179,35 @@ export default function Nav() {
         <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
           {t('nav_jobs')}
         </Link>
-        <DropdownMenu
-          label={t('nav_feeds')}
-          baseHref="/feeds"
-          currentPath={pathname}
-          items={[
-            { href: '/feeds', label: t('nav_feeds_all') },
-            { href: '/feeds#create-feed', label: t('nav_feeds_create') },
-          ]}
-        />
-        <Link
-          href="/credentials"
-          className={linkClass('/credentials')}
-          aria-current={pathname === '/credentials' ? 'page' : undefined}
-        >
-          {t('nav_credentials')}
-        </Link>
-        <Link
-          href="/site-configs"
-          className={linkClass('/site-configs')}
-          aria-current={pathname === '/site-configs' ? 'page' : undefined}
-        >
-          {t('nav_site_configs')}
-        </Link>
+        {shouldShowFeedsMenu ? (
+          <DropdownMenu
+            label={t('nav_feeds')}
+            baseHref="/feeds"
+            currentPath={pathname}
+            items={[
+              { href: '/feeds', label: t('nav_feeds_all') },
+              ...(canManageFeeds ? [{ href: '/feeds#create-feed', label: t('nav_feeds_create') }] : []),
+            ]}
+          />
+        ) : null}
+        {canManageCredentials ? (
+          <Link
+            href="/credentials"
+            className={linkClass('/credentials')}
+            aria-current={pathname === '/credentials' ? 'page' : undefined}
+          >
+            {t('nav_credentials')}
+          </Link>
+        ) : null}
+        {canManageSiteConfigs ? (
+          <Link
+            href="/site-configs"
+            className={linkClass('/site-configs')}
+            aria-current={pathname === '/site-configs' ? 'page' : undefined}
+          >
+            {t('nav_site_configs')}
+          </Link>
+        ) : null}
         <div className="ml-auto flex items-center gap-2">
           {status === 'authenticated' ? (
             <DropdownMenu
