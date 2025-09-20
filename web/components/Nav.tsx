@@ -143,6 +143,8 @@ export default function Nav() {
       (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS)),
   )
   const shouldShowFeedsMenu = userMgmtEnabled && isAuthenticated
+  const shouldShowBookmarksLink = isAuthenticated
+  const shouldShowJobsLink = isAuthenticated
 
   const adminAccountItems = hasAdminAccess
     ? [
@@ -170,16 +172,20 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
-        <Link
-          href="/bookmarks"
-          className={linkClass('/bookmarks')}
-          aria-current={pathname === '/bookmarks' ? 'page' : undefined}
-        >
-          {t('nav_bookmarks')}
-        </Link>
-        <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
-          {t('nav_jobs')}
-        </Link>
+        {shouldShowBookmarksLink ? (
+          <Link
+            href="/bookmarks"
+            className={linkClass('/bookmarks')}
+            aria-current={pathname === '/bookmarks' ? 'page' : undefined}
+          >
+            {t('nav_bookmarks')}
+          </Link>
+        ) : null}
+        {shouldShowJobsLink ? (
+          <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
+            {t('nav_jobs')}
+          </Link>
+        ) : null}
         {shouldShowFeedsMenu ? (
           <DropdownMenu
             label={t('nav_feeds')}
