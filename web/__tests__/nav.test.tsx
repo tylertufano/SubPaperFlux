@@ -10,7 +10,14 @@ const { useFeatureFlagsMock } = vi.hoisted(() => ({
 
 const { useSessionMock } = vi.hoisted(() => ({
   useSessionMock: vi.fn(() => ({
-    data: { user: { name: 'Test User', displayName: 'Test User', roles: ['admin'] } },
+    data: {
+      user: {
+        name: 'Test User',
+        displayName: 'Test User',
+        roles: ['admin'],
+        permissions: ['site_configs:manage', 'credentials:manage', 'bookmarks:manage'],
+      },
+    },
     status: 'authenticated' as const,
   })),
 }))
@@ -55,13 +62,24 @@ describe('Nav component', () => {
     useFeatureFlagsMock.mockReturnValue({ userMgmtCore: true, userMgmtUi: true, isLoaded: true })
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
-      data: { user: { name: 'Test User', displayName: 'Test User', roles: ['admin'] } },
+      data: {
+        user: {
+          name: 'Test User',
+          displayName: 'Test User',
+          roles: ['admin'],
+          permissions: ['site_configs:manage', 'credentials:manage', 'bookmarks:manage'],
+        },
+      },
       status: 'authenticated' as const,
     })
   })
 
   function getAccountDropdowns() {
     return screen.getAllByTestId('dropdown-Test')
+  }
+
+  function getFeedsDropdown() {
+    return screen.getByTestId('dropdown-Feeds')
   }
 
   it('shows admin navigation inside the account dropdown by default', () => {
@@ -81,11 +99,23 @@ describe('Nav component', () => {
     expect(
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Admin')),
     ).toBe(true)
+
+    const feedsDropdown = getFeedsDropdown()
+    expect(within(feedsDropdown).getByText('Create Feed')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Site Configs' })).toBeInTheDocument()
   })
 
   it('hides admin links for users without admin privileges', () => {
     useSessionMock.mockReturnValue({
-      data: { user: { name: 'Test User', displayName: 'Test User', roles: [] } },
+      data: {
+        user: {
+          name: 'Test User',
+          displayName: 'Test User',
+          roles: [],
+          permissions: [],
+        },
+      },
       status: 'authenticated' as const,
     })
 
@@ -98,5 +128,31 @@ describe('Nav component', () => {
     expect(
       accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Users')),
     ).toBe(true)
+
+    const feedsDropdown = getFeedsDropdown()
+    expect(within(feedsDropdown).queryByText('Create Feed')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Credentials' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
+  })
+
+  it('shows partially privileged navigation when users hold specific permissions', () => {
+    useSessionMock.mockReturnValue({
+      data: {
+        user: {
+          name: 'Test User',
+          displayName: 'Test User',
+          roles: [],
+          permissions: ['credentials:manage'],
+        },
+      },
+      status: 'authenticated' as const,
+    })
+
+    renderWithSWR(<Nav />, { locale: 'en' })
+
+    const feedsDropdown = getFeedsDropdown()
+    expect(within(feedsDropdown).queryByText('Create Feed')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
   })
 })
