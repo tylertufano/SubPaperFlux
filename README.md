@@ -133,6 +133,19 @@ Templates
   - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
 - After copying `credentials.json`, run through the Instapaper onboarding flow in the UI so the referenced `instapaper_id` entries receive tokens automatically.
 
+## Web dashboard welcome page
+
+The `/` route now doubles as a public landing page. Signed-in users continue to see the operational dashboard, while anonymous visitors receive a configurable hero block with the product headline, description, and optional call-to-action.
+
+To customize the welcome message:
+
+1. Sign in with an administrator account.
+2. Open **Admin → Site settings**.
+3. Update the headline, subheadline, long-form body (supports Markdown), and optional CTA text/URL.
+4. Save the changes to publish them immediately to the public landing experience.
+
+If any fields are left blank the UI falls back to safe defaults so visitors always see a friendly welcome and sign-in button.
+
 Quickstart
 - mkdir `config/`; copy and rename templates above into `config/`.
 - Edit IDs in `yourfeed.ini` to match keys in your JSON files.
