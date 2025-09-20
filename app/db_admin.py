@@ -77,24 +77,20 @@ def enable_rls(session) -> Dict:
         "cookie",
         "job",
     ]
+    policy_definitions: Dict[str, str] = {
+        "select_owner": "FOR SELECT USING (owner_user_id IS NULL OR owner_user_id = current_setting('app.user_id', true))",
+        "mod_owner": "FOR UPDATE USING (owner_user_id = current_setting('app.user_id', true))",
+        "del_owner": "FOR DELETE USING (owner_user_id = current_setting('app.user_id', true))",
+    }
     all_ok = True
     for tbl in tables_with_owner:
-        tinfo: Dict = {"enabled": False, "policies": {"select_owner": False, "mod_owner": False, "del_owner": False}}
+        tinfo: Dict = {
+            "enabled": False,
+            "policies": {policy: False for policy in policy_definitions},
+        }
         try:
             session.exec(text(f"ALTER TABLE {tbl} ENABLE ROW LEVEL SECURITY;"))
             tinfo["enabled"] = True
-            session.exec(text(
-                f"CREATE POLICY IF NOT EXISTS {tbl}_select_owner ON {tbl} FOR SELECT USING (owner_user_id IS NULL OR owner_user_id = current_setting('app.user_id', true));"
-            ))
-            tinfo["policies"]["select_owner"] = True
-            session.exec(text(
-                f"CREATE POLICY IF NOT EXISTS {tbl}_mod_owner ON {tbl} FOR UPDATE USING (owner_user_id = current_setting('app.user_id', true));"
-            ))
-            tinfo["policies"]["mod_owner"] = True
-            session.exec(text(
-                f"CREATE POLICY IF NOT EXISTS {tbl}_del_owner ON {tbl} FOR DELETE USING (owner_user_id = current_setting('app.user_id', true));"
-            ))
-            tinfo["policies"]["del_owner"] = True
         except Exception as e:  # noqa: BLE001
             err = str(e)
             low = err.lower()
@@ -105,6 +101,35 @@ def enable_rls(session) -> Dict:
             if hint:
                 tinfo["hint"] = hint
             all_ok = False
+            details["tables"][tbl] = tinfo
+            # Unable to enable RLS; skip policy checks for this table.
+            continue
+
+        for policy_key, clause in policy_definitions.items():
+            policy_name = f"{tbl}_{policy_key}"
+            try:
+                exists = session.exec(
+                    text(
+                        "SELECT 1 FROM pg_policies WHERE schemaname = current_schema() "
+                        "AND tablename = :table AND policyname = :policy LIMIT 1"
+                    ).params(table=tbl, policy=policy_name)
+                ).scalar()
+                if not exists:
+                    session.exec(text(f"CREATE POLICY {policy_name} ON {tbl} {clause};"))
+                tinfo["policies"][policy_key] = True
+            except Exception as e:  # noqa: BLE001
+                err = str(e)
+                low = err.lower()
+                hint = None
+                if "permission denied" in low or "must be owner" in low:
+                    hint = "Requires superuser or table owner privileges to enable RLS/policies"
+                tinfo.setdefault("policy_errors", {})[policy_key] = {"error": err, **({"hint": hint} if hint else {})}
+                if "error" not in tinfo:
+                    tinfo["error"] = err
+                if hint and "hint" not in tinfo:
+                    tinfo["hint"] = hint
+                all_ok = False
+
         details["tables"][tbl] = tinfo
     try:
         session.commit()
