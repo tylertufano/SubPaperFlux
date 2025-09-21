@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+
 import { describe, expect, it } from 'vitest'
 
 import { authOptions } from '../auth'
@@ -8,15 +10,23 @@ type OidcProvider = {
   profile: (profile: any) => any
 }
 
-describe('authOptions profile callback', () => {
-  function getOidcProvider(): OidcProvider {
-    const provider = authOptions.providers?.find((entry) => (entry as any).id === 'oidc') as OidcProvider | undefined
-    if (!provider) {
-      throw new Error('OIDC provider not configured for authOptions')
-    }
-    return provider
-  }
+function buildIdToken(payload: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url')
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url')
+  return `${header}.${body}.signature`
+}
 
+function getOidcProvider(): OidcProvider {
+  const provider = authOptions.providers?.find((entry) => (entry as any).id === 'oidc') as
+    | OidcProvider
+    | undefined
+  if (!provider) {
+    throw new Error('OIDC provider not configured for authOptions')
+  }
+  return provider
+}
+
+describe('authOptions profile callback', () => {
   it('normalizes role and group claims from the profile payload', () => {
     const provider = getOidcProvider()
     const result = provider.profile({
@@ -108,5 +118,47 @@ describe('authOptions callbacks', () => {
     const expectedPermissions = derivePermissionsFromRoles(['admin'])
     expect(subsequentToken?.roles).toEqual(['admin'])
     expect(subsequentToken?.permissions).toEqual(expectedPermissions)
+  })
+
+  it('augments JWT and session details from ID token claims when profile data is missing', async () => {
+    const provider = getOidcProvider()
+    const user = provider.profile({
+      sub: 'user-999',
+    })
+    const idToken = buildIdToken({
+      sub: 'user-999',
+      email: 'user999@example.com',
+      name: 'ID Token User',
+      display_name: 'ID Token Display',
+      groups: ['Engineering', 'QA'],
+      roles: ['Admin', 'Auditor'],
+    })
+
+    const token = await authOptions.callbacks?.jwt?.({
+      token: { sub: 'user-999', name: user.name },
+      user,
+      account: { access_token: 'access-token', id_token: idToken } as any,
+    } as any)
+
+    const expectedPermissions = derivePermissionsFromRoles(['admin', 'auditor'])
+    expect(token?.roles).toEqual(['admin', 'auditor'])
+    expect(token?.groups).toEqual(['engineering', 'qa'])
+    expect(token?.permissions).toEqual(expectedPermissions)
+    expect(token?.email).toBe('user999@example.com')
+    expect(token?.name).toBe('ID Token User')
+    expect(token?.displayName).toBe('ID Token Display')
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: token!,
+    } as any)
+
+    expect(session?.user?.id).toBe('user-999')
+    expect(session?.user?.name).toBe('ID Token User')
+    expect(session?.user?.email).toBe('user999@example.com')
+    expect(session?.user?.displayName).toBe('ID Token Display')
+    expect(session?.user?.roles).toEqual(['admin', 'auditor'])
+    expect(session?.user?.groups).toEqual(['engineering', 'qa'])
+    expect(session?.user?.permissions).toEqual(expectedPermissions)
   })
 })
