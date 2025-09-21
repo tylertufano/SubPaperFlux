@@ -1,7 +1,9 @@
 import os
+import re
 import time
+from collections.abc import Iterable, Mapping, Sequence
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import httpx
 from fastapi import Depends, HTTPException, status
@@ -11,6 +13,233 @@ from jose.utils import base64url_decode
 
 
 security = HTTPBearer(auto_error=False)
+
+_NORMALIZE_PATTERN = re.compile(r"[^a-zA-Z0-9]")
+
+_NAME_CLAIM_CANDIDATES: Sequence[str] = (
+    "name",
+    "display_name",
+    "displayName",
+    "cn",
+    "common_name",
+    "commonName",
+)
+_GIVEN_NAME_CANDIDATES: Sequence[str] = ("given_name", "givenName", "first_name", "firstName")
+_FAMILY_NAME_CANDIDATES: Sequence[str] = (
+    "family_name",
+    "familyName",
+    "last_name",
+    "lastName",
+    "surname",
+)
+_USERNAME_CANDIDATES: Sequence[str] = ("preferred_username", "nickname", "preferredName")
+_EMAIL_CANDIDATES: Sequence[str] = (
+    "email",
+    "mail",
+    "emailaddress",
+    "userprincipalname",
+    "upn",
+    "emails",
+    "primaryemail",
+)
+_USER_ID_CANDIDATES: Sequence[str] = ("uid", "user_id", "userid", "id", "oid", "objectid")
+_GROUP_CANDIDATES: Sequence[str] = ("groups", "group")
+_ROLE_CANDIDATES: Sequence[str] = ("roles", "role")
+
+
+def _normalize_claim_key(key: Any) -> str:
+    text = str(key)
+    segments = re.split(r"[/:]", text)
+    last = segments[-1] if segments else text
+    return _NORMALIZE_PATTERN.sub("", last).lower()
+
+
+def _collect_matching_values(
+    source: Any,
+    targets: Set[str],
+    results: List[Any],
+    visited: Set[int],
+) -> None:
+    if isinstance(source, Mapping):
+        identity = id(source)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for key, value in source.items():
+            normalized = _normalize_claim_key(key)
+            if normalized in targets:
+                results.append(value)
+            _collect_matching_values(value, targets, results, visited)
+        return
+
+    if isinstance(source, (list, tuple, set, frozenset)):
+        identity = id(source)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for entry in source:
+            _collect_matching_values(entry, targets, results, visited)
+        return
+
+    if isinstance(source, Iterable) and not isinstance(source, (str, bytes, bytearray)):
+        identity = id(source)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for entry in source:
+            _collect_matching_values(entry, targets, results, visited)
+
+
+def _extract_first_string(value: Any, visited: Set[int]) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    if isinstance(value, (int, float, bool)):
+        text = str(value).strip()
+        return text or None
+
+    if isinstance(value, Mapping):
+        identity = id(value)
+        if identity in visited:
+            return None
+        visited.add(identity)
+        for entry in value.values():
+            result = _extract_first_string(entry, visited)
+            if result:
+                return result
+        return None
+
+    if isinstance(value, (list, tuple, set, frozenset)):
+        identity = id(value)
+        if identity in visited:
+            return None
+        visited.add(identity)
+        for entry in value:
+            result = _extract_first_string(entry, visited)
+            if result:
+                return result
+        return None
+
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes, bytearray)):
+        identity = id(value)
+        if identity in visited:
+            return None
+        visited.add(identity)
+        for entry in value:
+            result = _extract_first_string(entry, visited)
+            if result:
+                return result
+        return None
+
+    return None
+
+
+def _collect_strings(value: Any, results: List[str], visited: Set[int]) -> None:
+    if value is None:
+        return
+    if isinstance(value, str):
+        text = value.strip()
+        if text:
+            results.append(text)
+        return
+    if isinstance(value, (int, float, bool)):
+        text = str(value).strip()
+        if text:
+            results.append(text)
+        return
+
+    if isinstance(value, Mapping):
+        identity = id(value)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for entry in value.values():
+            _collect_strings(entry, results, visited)
+        return
+
+    if isinstance(value, (list, tuple, set, frozenset)):
+        identity = id(value)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for entry in value:
+            _collect_strings(entry, results, visited)
+        return
+
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes, bytearray)):
+        identity = id(value)
+        if identity in visited:
+            return
+        visited.add(identity)
+        for entry in value:
+            _collect_strings(entry, results, visited)
+
+
+def _extract_string_claim(payload: Mapping[str, Any], candidate_keys: Sequence[str]) -> Optional[str]:
+    targets = {_normalize_claim_key(key) for key in candidate_keys}
+    matches: List[Any] = []
+    _collect_matching_values(payload, targets, matches, set())
+    for entry in matches:
+        result = _extract_first_string(entry, set())
+        if result:
+            return result
+    return None
+
+
+def _extract_identifier_list(payload: Mapping[str, Any], candidate_keys: Sequence[str]) -> List[str]:
+    targets = {_normalize_claim_key(key) for key in candidate_keys}
+    matches: List[Any] = []
+    _collect_matching_values(payload, targets, matches, set())
+    results: List[str] = []
+    seen: Set[str] = set()
+    for entry in matches:
+        values: List[str] = []
+        _collect_strings(entry, values, set())
+        for value in values:
+            if value and value not in seen:
+                seen.add(value)
+                results.append(value)
+    return results
+
+
+def _combine_name_parts(*parts: Optional[str]) -> Optional[str]:
+    normalized = [part.strip() for part in parts if isinstance(part, str) and part.strip()]
+    if not normalized:
+        return None
+    return " ".join(normalized)
+
+
+def _resolve_name(payload: Mapping[str, Any]) -> Optional[str]:
+    direct = _extract_string_claim(payload, _NAME_CLAIM_CANDIDATES)
+    if direct:
+        return direct
+    given = _extract_string_claim(payload, _GIVEN_NAME_CANDIDATES)
+    family = _extract_string_claim(payload, _FAMILY_NAME_CANDIDATES)
+    combined = _combine_name_parts(given, family)
+    if combined:
+        return combined
+    preferred = _extract_string_claim(payload, _USERNAME_CANDIDATES)
+    if preferred:
+        return preferred
+    return None
+
+
+def _resolve_email(payload: Mapping[str, Any]) -> Optional[str]:
+    return _extract_string_claim(payload, _EMAIL_CANDIDATES)
+
+
+def _resolve_user_id(payload: Mapping[str, Any]) -> Optional[str]:
+    return _extract_string_claim(payload, _USER_ID_CANDIDATES)
+
+
+def _resolve_groups(payload: Mapping[str, Any]) -> List[str]:
+    return _extract_identifier_list(payload, _GROUP_CANDIDATES)
+
+
+def _resolve_roles(payload: Mapping[str, Any]) -> List[str]:
+    return _extract_identifier_list(payload, _ROLE_CANDIDATES)
 
 
 class OIDCConfig:
@@ -144,13 +373,22 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
 
     cfg = get_oidc_config()
     payload = _verify_jwt(token, cfg)
-    return {
+    claims_mapping: Mapping[str, Any] = payload if isinstance(payload, Mapping) else {}
+    name = _resolve_name(claims_mapping)
+    email = _resolve_email(claims_mapping)
+    user_id = _resolve_user_id(claims_mapping)
+    groups = _resolve_groups(claims_mapping)
+    roles = _resolve_roles(claims_mapping)
+    identity: Dict[str, Any] = {
         "sub": payload.get("sub"),
-        "email": payload.get("email"),
-        "name": payload.get("name"),
-        "groups": payload.get("groups") or payload.get("roles") or [],
+        "email": email,
+        "name": name,
+        "groups": groups or roles or [],
         "claims": payload,
     }
+    if user_id:
+        identity.setdefault("user_id", user_id)
+    return identity
 
 
 def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:

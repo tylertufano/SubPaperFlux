@@ -74,6 +74,22 @@ describe('authOptions profile callback', () => {
     expect(result.groups).toEqual([])
     expect(result.permissions).toEqual([])
   })
+
+  it('derives name and email from alternative claim keys', () => {
+    const provider = getOidcProvider()
+    const result = provider.profile({
+      sub: 'user-654',
+      given_name: 'Taylor',
+      family_name: 'Swift',
+      emails: ['primary@example.com', 'alt@example.com'],
+      'cognito:groups': ['Writers', 'Reviewers'],
+    })
+
+    expect(result.name).toBe('Taylor Swift')
+    expect(result.displayName).toBe('Taylor Swift')
+    expect(result.email).toBe('primary@example.com')
+    expect(result.groups).toEqual(['writers', 'reviewers'])
+  })
 })
 
 describe('authOptions callbacks', () => {
@@ -244,5 +260,43 @@ describe('authOptions callbacks', () => {
     expect(session?.user?.roles).toEqual(['admin', 'auditor'])
     expect(session?.user?.groups).toEqual(['engineering', 'qa'])
     expect(session?.user?.permissions).toEqual(expectedPermissions)
+  })
+
+  it('replaces placeholder identifiers with richer ID token claims', async () => {
+    const provider = getOidcProvider()
+    const user = provider.profile({
+      sub: 'user-202',
+    })
+
+    const idToken = buildIdToken({
+      sub: 'user-202',
+      given_name: 'Jordan',
+      family_name: 'Fischer',
+      emails: ['jordan@example.com'],
+      oid: 'guid-202',
+      groups: ['Engineering', 'QA'],
+    })
+
+    const token = await authOptions.callbacks?.jwt?.({
+      token: { sub: 'user-202', name: '7f3b6bb2-82a8-429b-bc03-b5d43fa7f7a5' },
+      user,
+      account: { access_token: 'access-token', id_token: idToken } as any,
+    } as any)
+
+    expect(token?.name).toBe('Jordan Fischer')
+    expect(token?.email).toBe('jordan@example.com')
+    expect((token as any)?.userId).toBe('guid-202')
+    expect(token?.groups).toEqual(['engineering', 'qa'])
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: token!,
+    } as any)
+
+    expect(session?.user?.id).toBe('guid-202')
+    expect(session?.user?.name).toBe('Jordan Fischer')
+    expect(session?.user?.email).toBe('jordan@example.com')
+    expect(session?.user?.displayName).toBe('Jordan Fischer')
+    expect(session?.user?.groups).toEqual(['engineering', 'qa'])
   })
 })

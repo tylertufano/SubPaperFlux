@@ -26,7 +26,32 @@ const userInfoEndpoint = trimmedUserInfoBase.toLowerCase().endsWith('/userinfo')
   ? trimmedUserInfoBase
   : `${trimmedUserInfoBase}/userinfo`
 
+const NAME_CLAIM_CANDIDATES = ['name', 'display_name', 'displayName', 'cn', 'common_name', 'commonName'] as const
+const GIVEN_NAME_CLAIM_CANDIDATES = ['given_name', 'givenName', 'first_name', 'firstName'] as const
+const FAMILY_NAME_CLAIM_CANDIDATES = ['family_name', 'familyName', 'last_name', 'lastName', 'surname'] as const
+const USERNAME_CLAIM_CANDIDATES = ['preferred_username', 'nickname', 'preferredName'] as const
+const EMAIL_CLAIM_CANDIDATES = [
+  'email',
+  'mail',
+  'emailaddress',
+  'userprincipalname',
+  'upn',
+  'emails',
+  'primaryemail',
+] as const
+const USER_ID_CLAIM_CANDIDATES = ['uid', 'user_id', 'userid', 'id', 'oid', 'objectid'] as const
+
 type ClaimContainer = Record<string, unknown>
+
+function combineNameParts(...parts: (string | undefined)[]): string | undefined {
+  const normalizedParts = parts
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter((part) => part.length > 0)
+  if (normalizedParts.length === 0) {
+    return undefined
+  }
+  return normalizedParts.join(' ')
+}
 
 type MutableToken = JWT & {
   accessToken?: string
@@ -89,7 +114,7 @@ function resolveDisplayName(profile: unknown): string | undefined {
     }
   }
 
-  const candidateClaims = ['display_name', 'displayName']
+  const candidateClaims = ['display_name', 'displayName'] as const
 
   for (const claim of candidateClaims) {
     const raw = record[claim]
@@ -112,6 +137,18 @@ function resolveDisplayName(profile: unknown): string | undefined {
         return trimmed
       }
     }
+  }
+
+  const givenName = extractStringClaim(record, GIVEN_NAME_CLAIM_CANDIDATES)
+  const familyName = extractStringClaim(record, FAMILY_NAME_CLAIM_CANDIDATES)
+  const combinedName = combineNameParts(givenName, familyName)
+  if (combinedName) {
+    return combinedName
+  }
+
+  const resolvedName = resolveName(record)
+  if (resolvedName) {
+    return resolvedName
   }
 
   return undefined
@@ -234,6 +271,34 @@ function extractRoles(profile: unknown): string[] {
   return extractClaimList(profile, ['roles', 'role'])
 }
 
+function resolveName(profile: ClaimContainer): string | undefined {
+  const directName = extractStringClaim(profile, NAME_CLAIM_CANDIDATES)
+  if (directName) {
+    return directName
+  }
+  const givenName = extractStringClaim(profile, GIVEN_NAME_CLAIM_CANDIDATES)
+  const familyName = extractStringClaim(profile, FAMILY_NAME_CLAIM_CANDIDATES)
+  const combined = combineNameParts(givenName, familyName)
+  if (combined) {
+    return combined
+  }
+  const preferredUsername = extractStringClaim(profile, USERNAME_CLAIM_CANDIDATES)
+  if (preferredUsername) {
+    return preferredUsername
+  }
+  return undefined
+}
+
+function resolveEmail(profile: ClaimContainer): string | undefined {
+  const resolved = extractStringClaim(profile, EMAIL_CLAIM_CANDIDATES)
+  return resolved ? resolved.trim() : undefined
+}
+
+function resolveUserId(profile: ClaimContainer): string | undefined {
+  const resolved = extractStringClaim(profile, USER_ID_CLAIM_CANDIDATES)
+  return resolved ? resolved.trim() : undefined
+}
+
 function applyClaimsToToken(token: MutableToken, claims: ClaimContainer): void {
   const claimRoles = extractRoles(claims)
   if (claimRoles.length > 0) {
@@ -250,30 +315,19 @@ function applyClaimsToToken(token: MutableToken, claims: ClaimContainer): void {
     token.displayName = resolvedDisplayName
   }
 
-  const fallbackName =
-    extractStringClaim(claims, ['name', 'preferred_username', 'given_name', 'display_name', 'displayName']) ||
-    resolvedDisplayName
-  if (fallbackName) {
-    const trimmedName = fallbackName.trim()
-    if (!token.name || token.name === token.sub || token.name.toString().trim().length === 0) {
-      token.name = trimmedName
-    }
+  const resolvedName = resolveName(claims)
+  if (resolvedName) {
+    token.name = resolvedName.trim()
   }
 
-  const fallbackEmail = extractStringClaim(claims, ['email', 'mail', 'emailaddress', 'userprincipalname'])
-  if (fallbackEmail) {
-    const trimmedEmail = fallbackEmail.trim()
-    if (trimmedEmail.length > 0) {
-      token.email = trimmedEmail
-    }
+  const resolvedEmail = resolveEmail(claims)
+  if (resolvedEmail) {
+    token.email = resolvedEmail
   }
 
-  const fallbackUserId = extractStringClaim(claims, ['uid', 'user_id', 'userid', 'id'])
-  if (fallbackUserId) {
-    const trimmedUserId = fallbackUserId.trim()
-    if (trimmedUserId.length > 0) {
-      token.userId = trimmedUserId
-    }
+  const resolvedUserId = resolveUserId(claims)
+  if (resolvedUserId) {
+    token.userId = resolvedUserId
   }
 }
 
@@ -332,15 +386,35 @@ export const authOptions: NextAuthConfig = {
       checks: ['pkce', 'state'],
       authorization: { params: { scope: 'openid profile email' } },
       profile(profile: any) {
+        const claimRecord =
+          profile && typeof profile === 'object' ? (profile as ClaimContainer) : ({} as ClaimContainer)
         const displayName = resolveDisplayName(profile)
         const groups = extractGroups(profile)
         const roles = extractRoles(profile)
         const permissions = derivePermissionsFromRoles(roles)
+        const resolvedName = resolveName(claimRecord)
+        const resolvedEmail = resolveEmail(claimRecord)
+        const normalizedResolvedName = resolvedName?.trim()
+        const normalizedProfileName =
+          typeof profile?.name === 'string' ? profile.name.trim() : undefined
+        const normalizedResolvedEmail = resolvedEmail?.trim()
+        const normalizedProfileEmail =
+          typeof profile?.email === 'string' ? profile.email.trim() : undefined
         return {
           id: profile.sub,
-          name: profile.name || profile.preferred_username || profile.sub,
-          email: profile.email,
-          displayName: displayName ?? null,
+          name:
+            (normalizedResolvedName && normalizedResolvedName.length > 0
+              ? normalizedResolvedName
+              : normalizedProfileName && normalizedProfileName.length > 0
+                ? normalizedProfileName
+                : profile.sub),
+          email:
+            (normalizedResolvedEmail && normalizedResolvedEmail.length > 0
+              ? normalizedResolvedEmail
+              : normalizedProfileEmail && normalizedProfileEmail.length > 0
+                ? normalizedProfileEmail
+                : null),
+          displayName: displayName ?? (normalizedResolvedName ?? null),
           groups,
           roles,
           permissions,
