@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -13,6 +14,8 @@ from jose.utils import base64url_decode
 
 
 security = HTTPBearer(auto_error=False)
+
+logger = logging.getLogger(__name__)
 
 _NORMALIZE_PATTERN = re.compile(r"[^a-zA-Z0-9]")
 
@@ -45,6 +48,25 @@ _EMAIL_CANDIDATES: Sequence[str] = (
 _USER_ID_CANDIDATES: Sequence[str] = ("uid", "user_id", "userid", "id", "oid", "objectid")
 _GROUP_CANDIDATES: Sequence[str] = ("groups", "group")
 _ROLE_CANDIDATES: Sequence[str] = ("roles", "role")
+
+
+def _payload_keys_snapshot(payload: Mapping[str, Any]) -> List[str]:
+    try:
+        return sorted(str(key) for key in payload.keys())
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _describe_claim_sources(values: Sequence[Any]) -> List[str]:
+    descriptions: List[str] = []
+    for value in values:
+        if isinstance(value, Mapping):
+            descriptions.append(f"{type(value).__name__}(len={len(value)})")
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            descriptions.append(f"{type(value).__name__}(len={len(value)})")
+        else:
+            descriptions.append(type(value).__name__)
+    return descriptions
 
 
 def _normalize_claim_key(key: Any) -> str:
@@ -181,10 +203,22 @@ def _extract_string_claim(payload: Mapping[str, Any], candidate_keys: Sequence[s
     targets = {_normalize_claim_key(key) for key in candidate_keys}
     matches: List[Any] = []
     _collect_matching_values(payload, targets, matches, set())
+    if not matches:
+        logger.debug(
+            "OIDC claims missing candidates %s; payload keys: %s",
+            list(candidate_keys),
+            _payload_keys_snapshot(payload),
+        )
+        return None
     for entry in matches:
         result = _extract_first_string(entry, set())
         if result:
             return result
+    logger.debug(
+        "OIDC claim candidates %s present but not string-coercible; value types: %s",
+        list(candidate_keys),
+        _describe_claim_sources(matches),
+    )
     return None
 
 
@@ -192,6 +226,13 @@ def _extract_identifier_list(payload: Mapping[str, Any], candidate_keys: Sequenc
     targets = {_normalize_claim_key(key) for key in candidate_keys}
     matches: List[Any] = []
     _collect_matching_values(payload, targets, matches, set())
+    if not matches:
+        logger.debug(
+            "OIDC claims missing identifier candidates %s; payload keys: %s",
+            list(candidate_keys),
+            _payload_keys_snapshot(payload),
+        )
+        return []
     results: List[str] = []
     seen: Set[str] = set()
     for entry in matches:
@@ -201,6 +242,12 @@ def _extract_identifier_list(payload: Mapping[str, Any], candidate_keys: Sequenc
             if value and value not in seen:
                 seen.add(value)
                 results.append(value)
+    if not results:
+        logger.debug(
+            "OIDC identifier candidates %s present but yielded no string values; source types: %s",
+            list(candidate_keys),
+            _describe_claim_sources(matches),
+        )
     return results
 
 
@@ -305,22 +352,59 @@ def _find_key(jwks: Dict[str, Any], kid: str) -> Optional[Dict[str, Any]]:
 
 def _validate_exp(payload: Dict[str, Any]):
     exp = payload.get("exp")
-    if exp is None or time.time() > float(exp):
+    if exp is None:
+        logger.debug("OIDC token for sub=%s missing 'exp' claim", payload.get("sub"))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    try:
+        exp_value = float(exp)
+    except (TypeError, ValueError):
+        logger.debug(
+            "OIDC token for sub=%s has invalid 'exp' claim: %r",
+            payload.get("sub"),
+            exp,
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    now = time.time()
+    if now > exp_value:
+        logger.debug(
+            "OIDC token for sub=%s expired (exp=%s, now=%s)",
+            payload.get("sub"),
+            exp_value,
+            now,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
 
 
 def _validate_iss_aud(payload: Dict[str, Any], cfg: OIDCConfig):
     iss = payload.get("iss")
     if cfg.issuer and iss != cfg.issuer:
+        logger.debug(
+            "OIDC issuer mismatch for sub=%s: expected %s got %s",
+            payload.get("sub"),
+            cfg.issuer,
+            iss,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid issuer")
     aud = payload.get("aud")
     expected = cfg.audience or cfg.client_id
     if expected:
         if isinstance(aud, list):
             if expected not in aud:
+                logger.debug(
+                    "OIDC audience mismatch for sub=%s: expected %s not in %s",
+                    payload.get("sub"),
+                    expected,
+                    aud,
+                )
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid audience")
         else:
             if aud != expected:
+                logger.debug(
+                    "OIDC audience mismatch for sub=%s: expected %s got %s",
+                    payload.get("sub"),
+                    expected,
+                    aud,
+                )
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid audience")
 
 
@@ -330,6 +414,7 @@ def _decode_header(token: str) -> Dict[str, Any]:
         header_data = base64url_decode(header_segment.encode("utf-8"))
         return jwt.json.loads(header_data)
     except Exception:  # noqa: BLE001
+        logger.debug("Failed to decode JWT header", exc_info=True)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token header")
 
 
@@ -337,14 +422,19 @@ def _verify_jwt(token: str, cfg: OIDCConfig) -> Dict[str, Any]:
     header = _decode_header(token)
     kid = header.get("kid")
     if not kid:
+        header_keys = list(header.keys()) if isinstance(header, Mapping) else []
+        logger.debug("JWT header missing 'kid'; header keys: %s", header_keys)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing kid in token")
     jwks = get_jwks()
     key = _find_key(jwks, kid)
     if not key:
+        available = [entry.get("kid") for entry in jwks.get("keys", [])]
+        logger.debug("JWKS did not contain key for kid %s; available kids: %s", kid, available)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown signing key")
     try:
         payload = jwt.decode(token, key, options={"verify_aud": False, "verify_at_hash": False})
     except Exception:  # noqa: BLE001
+        logger.debug("Failed to verify JWT signature for kid %s", kid, exc_info=True)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token signature")
     _validate_exp(payload)
     _validate_iss_aud(payload, cfg)
@@ -366,19 +456,35 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     """Return a user dictionary from a bearer token, or ``None`` if missing."""
 
     if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
+        logger.debug("DEV_NO_AUTH enabled; returning synthetic developer identity")
         return _dev_user()
 
     if not token:
+        logger.debug("No bearer token supplied for OIDC identity resolution")
         return None
 
     cfg = get_oidc_config()
     payload = _verify_jwt(token, cfg)
     claims_mapping: Mapping[str, Any] = payload if isinstance(payload, Mapping) else {}
+    subject = claims_mapping.get("sub") if isinstance(claims_mapping, Mapping) else None
+    logger.debug(
+        "Decoded OIDC token for sub=%s; payload keys: %s",
+        subject,
+        _payload_keys_snapshot(claims_mapping) if claims_mapping else [],
+    )
     name = _resolve_name(claims_mapping)
     email = _resolve_email(claims_mapping)
     user_id = _resolve_user_id(claims_mapping)
     groups = _resolve_groups(claims_mapping)
     roles = _resolve_roles(claims_mapping)
+    if not name:
+        logger.debug("OIDC payload for sub=%s missing recognizable display name claims", subject)
+    if not email:
+        logger.debug("OIDC payload for sub=%s missing email claim", subject)
+    if not user_id:
+        logger.debug("OIDC payload for sub=%s missing explicit user identifier", subject)
+    if not groups and not roles:
+        logger.debug("OIDC payload for sub=%s missing group/role claims", subject)
     identity: Dict[str, Any] = {
         "sub": payload.get("sub"),
         "email": email,
@@ -388,6 +494,14 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     }
     if user_id:
         identity.setdefault("user_id", user_id)
+    logger.debug(
+        "Constructed OIDC identity for sub=%s (has_name=%s, has_email=%s, groups=%d, roles=%d)",
+        identity.get("sub"),
+        bool(name),
+        bool(email),
+        len(groups),
+        len(roles),
+    )
     return identity
 
 
