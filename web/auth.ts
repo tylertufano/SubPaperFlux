@@ -1,10 +1,9 @@
-import { Buffer } from 'node:buffer'
-
 import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 
 import { derivePermissionsFromRoles, normalizeIdentifierList } from './lib/rbac'
+import { decodeBase64UrlSegment } from './lib/base64'
 
 const issuer = process.env.OIDC_ISSUER!
 
@@ -24,8 +23,11 @@ function decodeJwtClaims(token: unknown): ClaimContainer | null {
   if (segments.length < 2) {
     return null
   }
+  const payload = decodeBase64UrlSegment(segments[1]!)
+  if (!payload) {
+    return null
+  }
   try {
-    const payload = Buffer.from(segments[1]!, 'base64url').toString('utf8')
     const parsed = JSON.parse(payload)
     if (parsed && typeof parsed === 'object') {
       return parsed as ClaimContainer
