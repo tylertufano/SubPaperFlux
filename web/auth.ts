@@ -1,4 +1,4 @@
-import { Buffer } from 'node:buffer'
+import { Buffer } from 'buffer'
 
 import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
@@ -41,8 +41,6 @@ type MutableToken = JWT & {
   userId?: string
   userInfoSynced?: boolean
 }
-
-type ClaimContainer = Record<string, unknown>
 
 function normalizeClaimKey(key: string): string {
   const segments = key.split(/[/:]/)
