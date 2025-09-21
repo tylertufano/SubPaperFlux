@@ -232,12 +232,13 @@ export default function Nav() {
               items={accountItems}
             />
           ) : (
-            <DropdownMenu
-              label={t('btn_sign_in')}
-              baseHref={pathname}
-              currentPath={pathname}
-              items={[{ label: t('btn_sign_in'), onClick: () => signIn('oidc') }]}
-            />
+            <button
+              type="button"
+              className={`${baseLinkStyles} text-gray-700 hover:text-gray-900`}
+              onClick={() => signIn('oidc')}
+            >
+              {t('btn_sign_in')}
+            </button>
           )}
         </div>
       </div>
