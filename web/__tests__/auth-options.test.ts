@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { authOptions } from '../auth'
 import { ALL_PERMISSIONS, derivePermissionsFromRoles } from '../lib/rbac'
@@ -9,6 +9,18 @@ type OidcProvider = {
   id: string
   profile: (profile: any) => any
 }
+
+const originalFetch = globalThis.fetch
+
+afterEach(() => {
+  if (originalFetch) {
+    globalThis.fetch = originalFetch
+  } else {
+    delete (globalThis as any).fetch
+  }
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 function buildIdToken(payload: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url')
@@ -157,6 +169,78 @@ describe('authOptions callbacks', () => {
     expect(session?.user?.name).toBe('ID Token User')
     expect(session?.user?.email).toBe('user999@example.com')
     expect(session?.user?.displayName).toBe('ID Token Display')
+    expect(session?.user?.roles).toEqual(['admin', 'auditor'])
+    expect(session?.user?.groups).toEqual(['engineering', 'qa'])
+    expect(session?.user?.permissions).toEqual(expectedPermissions)
+  })
+
+  it('hydrates identity attributes from the userinfo endpoint when ID token claims are insufficient', async () => {
+    const provider = getOidcProvider()
+    const user = provider.profile({
+      sub: 'user-101',
+    })
+
+    const idToken = buildIdToken({
+      sub: 'user-101',
+    })
+
+    const userInfoPayload = {
+      sub: 'user-101',
+      uid: 'internal-user-101',
+      name: 'Userinfo Name',
+      display_name: 'Userinfo Display',
+      email: 'userinfo@example.com',
+      roles: ['Admin', 'Auditor'],
+      groups: ['Engineering', 'QA'],
+    }
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => userInfoPayload,
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const token = await authOptions.callbacks?.jwt?.({
+      token: { sub: 'user-101' },
+      user,
+      account: { access_token: 'access-token', id_token: idToken } as any,
+    } as any)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const userInfoBase = (process.env.OIDC_USERINFO_ENDPOINT ?? process.env.OIDC_ISSUER ?? 'http://localhost/oidc').replace(
+      /\/\.well-known\/openid-configuration$/,
+      '',
+    )
+    const trimmedBase = userInfoBase.replace(/\/+$/, '')
+    const normalizedUserInfoUrl = trimmedBase.toLowerCase().endsWith('/userinfo')
+      ? trimmedBase
+      : `${trimmedBase}/userinfo`
+    expect(fetchMock).toHaveBeenCalledWith(
+      normalizedUserInfoUrl,
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token' }),
+      }),
+    )
+
+    const expectedPermissions = derivePermissionsFromRoles(['admin', 'auditor'])
+    expect(token?.roles).toEqual(['admin', 'auditor'])
+    expect(token?.groups).toEqual(['engineering', 'qa'])
+    expect(token?.permissions).toEqual(expectedPermissions)
+    expect(token?.email).toBe('userinfo@example.com')
+    expect(token?.name).toBe('Userinfo Name')
+    expect((token as any)?.userId).toBe('internal-user-101')
+    expect(token?.displayName).toBe('Userinfo Display')
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: token!,
+    } as any)
+
+    expect(session?.user?.id).toBe('internal-user-101')
+    expect(session?.user?.name).toBe('Userinfo Name')
+    expect(session?.user?.email).toBe('userinfo@example.com')
+    expect(session?.user?.displayName).toBe('Userinfo Display')
     expect(session?.user?.roles).toEqual(['admin', 'auditor'])
     expect(session?.user?.groups).toEqual(['engineering', 'qa'])
     expect(session?.user?.permissions).toEqual(expectedPermissions)

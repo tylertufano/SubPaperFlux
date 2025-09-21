@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+
 import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
@@ -5,7 +7,40 @@ import type { JWT } from 'next-auth/jwt'
 import { derivePermissionsFromRoles, normalizeIdentifierList } from './lib/rbac'
 import { decodeBase64UrlSegment } from './lib/base64'
 
-const issuer = process.env.OIDC_ISSUER!
+const WELL_KNOWN_SUFFIX = '/.well-known/openid-configuration'
+
+function resolveIssuer(rawIssuer: string): string {
+  if (!rawIssuer) {
+    return ''
+  }
+  if (rawIssuer.endsWith(WELL_KNOWN_SUFFIX)) {
+    return rawIssuer.slice(0, -WELL_KNOWN_SUFFIX.length)
+  }
+  return rawIssuer
+}
+
+const issuer = resolveIssuer(process.env.OIDC_ISSUER ?? 'http://localhost/oidc')
+const rawUserInfoBase = process.env.OIDC_USERINFO_ENDPOINT ?? issuer
+const trimmedUserInfoBase = rawUserInfoBase.replace(/\/+$/, '')
+const userInfoEndpoint = trimmedUserInfoBase.toLowerCase().endsWith('/userinfo')
+  ? trimmedUserInfoBase
+  : `${trimmedUserInfoBase}/userinfo`
+
+type ClaimContainer = Record<string, unknown>
+
+type MutableToken = JWT & {
+  accessToken?: string
+  displayName?: string
+  email?: string
+  groups?: string[]
+  idToken?: string
+  name?: string
+  permissions?: string[]
+  roles?: string[]
+  sub?: string
+  userId?: string
+  userInfoSynced?: boolean
+}
 
 type ClaimContainer = Record<string, unknown>
 
@@ -23,11 +58,9 @@ function decodeJwtClaims(token: unknown): ClaimContainer | null {
   if (segments.length < 2) {
     return null
   }
-  const payload = decodeBase64UrlSegment(segments[1]!)
-  if (!payload) {
-    return null
-  }
+
   try {
+    const payload = Buffer.from(segments[1]!, 'base64url').toString('utf8')
     const parsed = JSON.parse(payload)
     if (parsed && typeof parsed === 'object') {
       return parsed as ClaimContainer
@@ -203,6 +236,91 @@ function extractRoles(profile: unknown): string[] {
   return extractClaimList(profile, ['roles', 'role'])
 }
 
+function applyClaimsToToken(token: MutableToken, claims: ClaimContainer): void {
+  const claimRoles = extractRoles(claims)
+  if (claimRoles.length > 0) {
+    token.roles = normalizeIdentifierList([token.roles ?? [], claimRoles])
+  }
+
+  const claimGroups = extractGroups(claims)
+  if (claimGroups.length > 0) {
+    token.groups = normalizeIdentifierList([token.groups ?? [], claimGroups])
+  }
+
+  const resolvedDisplayName = resolveDisplayName(claims)
+  if (resolvedDisplayName && (!token.displayName || token.displayName.trim().length === 0)) {
+    token.displayName = resolvedDisplayName
+  }
+
+  const fallbackName =
+    extractStringClaim(claims, ['name', 'preferred_username', 'given_name', 'display_name', 'displayName']) ||
+    resolvedDisplayName
+  if (fallbackName) {
+    const trimmedName = fallbackName.trim()
+    if (!token.name || token.name === token.sub || token.name.toString().trim().length === 0) {
+      token.name = trimmedName
+    }
+  }
+
+  const fallbackEmail = extractStringClaim(claims, ['email', 'mail', 'emailaddress', 'userprincipalname'])
+  if (fallbackEmail) {
+    const trimmedEmail = fallbackEmail.trim()
+    if (trimmedEmail.length > 0) {
+      token.email = trimmedEmail
+    }
+  }
+
+  const fallbackUserId = extractStringClaim(claims, ['uid', 'user_id', 'userid', 'id'])
+  if (fallbackUserId) {
+    const trimmedUserId = fallbackUserId.trim()
+    if (trimmedUserId.length > 0) {
+      token.userId = trimmedUserId
+    }
+  }
+}
+
+function shouldSyncFromUserInfo(token: MutableToken): boolean {
+  if (token.userInfoSynced) {
+    return false
+  }
+  const missingName = !token.name || token.name === token.sub || token.name.toString().trim().length === 0
+  const missingEmail = !token.email || token.email.toString().trim().length === 0
+  const missingDisplayName = !token.displayName || token.displayName.toString().trim().length === 0
+  const missingRoles = !Array.isArray(token.roles) || token.roles.length === 0
+  const missingGroups = !Array.isArray(token.groups) || token.groups.length === 0
+  const missingUserId = !token.userId || token.userId.toString().trim().length === 0
+  return missingName || missingEmail || missingDisplayName || missingRoles || missingGroups || missingUserId
+}
+
+async function fetchUserInfoClaims(accessToken: unknown): Promise<ClaimContainer | null> {
+  if (typeof accessToken !== 'string') {
+    return null
+  }
+  const trimmedToken = accessToken.trim()
+  if (!trimmedToken) {
+    return null
+  }
+  if (typeof fetch !== 'function') {
+    return null
+  }
+  try {
+    const response = await fetch(userInfoEndpoint, {
+      headers: { Authorization: `Bearer ${trimmedToken}` },
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      return null
+    }
+    const payload = await response.json()
+    if (payload && typeof payload === 'object') {
+      return payload as ClaimContainer
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
 export const authOptions: NextAuthConfig = {
   providers: [
     {
@@ -234,15 +352,21 @@ export const authOptions: NextAuthConfig = {
   ],
   callbacks: {
     async jwt({ token, user, account }: { token: JWT; user?: User | null; account: Account | null | undefined }) {
+      const mutableToken = token as MutableToken
+
       if (account) {
-        token.accessToken = account.access_token
-        token.idToken = account.id_token
+        if (typeof account.access_token === 'string' && account.access_token.trim().length > 0) {
+          mutableToken.accessToken = account.access_token
+        }
+        if (typeof account.id_token === 'string' && account.id_token.trim().length > 0) {
+          mutableToken.idToken = account.id_token
+        }
       }
       const idTokenValue =
         typeof account?.id_token === 'string'
           ? account.id_token
-          : typeof (token as any).idToken === 'string'
-            ? ((token as any).idToken as string)
+          : typeof mutableToken.idToken === 'string'
+            ? mutableToken.idToken
             : undefined
       const idTokenClaims = idTokenValue ? decodeJwtClaims(idTokenValue) : null
       if (user && typeof user === 'object') {
@@ -253,89 +377,76 @@ export const authOptions: NextAuthConfig = {
         }
         const displayName = candidate.displayName
         if (typeof displayName === 'string' && displayName.trim().length > 0) {
-          token.displayName = displayName.trim()
+          mutableToken.displayName = displayName.trim()
         } else {
-          delete token.displayName
+          delete mutableToken.displayName
         }
         const roles = normalizeIdentifierList(candidate.roles ?? [])
         const groups = normalizeIdentifierList(candidate.groups ?? [])
-        token.roles = roles
-        token.groups = groups
-        token.permissions = derivePermissionsFromRoles(roles)
+        mutableToken.roles = roles
+        mutableToken.groups = groups
+        mutableToken.permissions = derivePermissionsFromRoles(roles)
+        if (typeof (user as any).id === 'string' && (user as any).id.trim().length > 0) {
+          mutableToken.userId = (user as any).id.trim()
+        }
       }
-      if (!Array.isArray(token.roles)) {
-        token.roles = []
+      if (!Array.isArray(mutableToken.roles)) {
+        mutableToken.roles = []
       }
-      if (!Array.isArray(token.groups)) {
-        token.groups = []
+      if (!Array.isArray(mutableToken.groups)) {
+        mutableToken.groups = []
       }
       if (idTokenClaims) {
-        const idTokenRoles = extractRoles(idTokenClaims)
-        if (idTokenRoles.length > 0) {
-          token.roles = normalizeIdentifierList([token.roles, idTokenRoles])
-        }
-        const idTokenGroups = extractGroups(idTokenClaims)
-        if (idTokenGroups.length > 0) {
-          token.groups = normalizeIdentifierList([token.groups, idTokenGroups])
-        }
-        if (typeof token.displayName !== 'string' || token.displayName.trim().length === 0) {
-          const resolvedDisplayName = resolveDisplayName(idTokenClaims)
-          if (resolvedDisplayName) {
-            token.displayName = resolvedDisplayName
-          } else {
-            delete token.displayName
-          }
-        }
-        const fallbackName =
-          extractStringClaim(idTokenClaims, [
-            'name',
-            'preferred_username',
-            'given_name',
-            'display_name',
-            'displayName',
-          ]) || resolveDisplayName(idTokenClaims)
-        if (fallbackName) {
-          const trimmedName = fallbackName.trim()
-          if (!token.name || token.name === token.sub || token.name.toString().trim().length === 0) {
-            token.name = trimmedName
-          }
-        }
-        const fallbackEmail = extractStringClaim(idTokenClaims, [
-          'email',
-          'mail',
-          'emailaddress',
-          'userprincipalname',
-        ])
-        if (fallbackEmail) {
-          token.email = fallbackEmail.trim()
+        applyClaimsToToken(mutableToken, idTokenClaims)
+      }
+      const accessTokenValue =
+        typeof account?.access_token === 'string'
+          ? account.access_token
+          : typeof mutableToken.accessToken === 'string'
+            ? mutableToken.accessToken
+            : undefined
+      if (shouldSyncFromUserInfo(mutableToken) && accessTokenValue) {
+        const userInfoClaims = await fetchUserInfoClaims(accessTokenValue)
+        if (userInfoClaims) {
+          applyClaimsToToken(mutableToken, userInfoClaims)
+          mutableToken.userInfoSynced = true
         }
       }
-      token.permissions = derivePermissionsFromRoles(token.roles)
-      return token
+      mutableToken.permissions = derivePermissionsFromRoles(mutableToken.roles)
+      return mutableToken
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       session.accessToken = token.accessToken
       session.idToken = token.idToken
       if (session.user) {
-        if (typeof token.sub === 'string' && token.sub.trim().length > 0) {
-          session.user.id = token.sub.trim()
+        const mutableToken = token as MutableToken
+        const explicitUserId =
+          typeof mutableToken.userId === 'string' && mutableToken.userId.trim().length > 0
+            ? mutableToken.userId.trim()
+            : undefined
+        const fallbackUserId =
+          typeof mutableToken.sub === 'string' && mutableToken.sub.trim().length > 0
+            ? mutableToken.sub.trim()
+            : undefined
+        if (explicitUserId || fallbackUserId) {
+          session.user.id = explicitUserId ?? fallbackUserId
         }
-        if (typeof token.name === 'string' && token.name.trim().length > 0) {
-          session.user.name = token.name.trim()
+        if (typeof mutableToken.name === 'string' && mutableToken.name.trim().length > 0) {
+          session.user.name = mutableToken.name.trim()
         }
-        if (typeof token.email === 'string' && token.email.trim().length > 0) {
-          session.user.email = token.email.trim()
+        if (typeof mutableToken.email === 'string' && mutableToken.email.trim().length > 0) {
+          session.user.email = mutableToken.email.trim()
         }
-        if (typeof token.displayName === 'string' && token.displayName.trim().length > 0) {
-          session.user.displayName = token.displayName
+        if (typeof mutableToken.displayName === 'string' && mutableToken.displayName.trim().length > 0) {
+          session.user.displayName = mutableToken.displayName
         } else {
           delete session.user.displayName
         }
-        session.user.roles = Array.isArray(token.roles) ? [...token.roles] : []
-        session.user.groups = Array.isArray(token.groups) ? [...token.groups] : []
-        session.user.permissions = Array.isArray(token.permissions)
-          ? [...token.permissions]
-          : derivePermissionsFromRoles(token.roles)
+        session.user.roles = Array.isArray(mutableToken.roles) ? [...mutableToken.roles] : []
+        session.user.groups = Array.isArray(mutableToken.groups) ? [...mutableToken.groups] : []
+        session.user.permissions = Array.isArray(mutableToken.permissions)
+          ? [...mutableToken.permissions]
+          : derivePermissionsFromRoles(mutableToken.roles)
       }
       return session
     },
