@@ -5,6 +5,7 @@ import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 
 import { derivePermissionsFromRoles, normalizeIdentifierList } from './lib/rbac'
+import { decodeBase64UrlSegment } from './lib/base64'
 
 const WELL_KNOWN_SUFFIX = '/.well-known/openid-configuration'
 
@@ -41,6 +42,8 @@ type MutableToken = JWT & {
   userInfoSynced?: boolean
 }
 
+type ClaimContainer = Record<string, unknown>
+
 function normalizeClaimKey(key: string): string {
   const segments = key.split(/[/:]/)
   const last = segments[segments.length - 1] ?? key
@@ -55,6 +58,7 @@ function decodeJwtClaims(token: unknown): ClaimContainer | null {
   if (segments.length < 2) {
     return null
   }
+
   try {
     const payload = Buffer.from(segments[1]!, 'base64url').toString('utf8')
     const parsed = JSON.parse(payload)
