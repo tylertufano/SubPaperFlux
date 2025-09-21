@@ -210,22 +210,26 @@ PY
 
 ### Using Authelia as the IdP
 
-1. **Register a client in Authelia.** In `configuration.yml` add an entry under `identity_providers.oidc.clients`:
+1. **Register a client in Authelia.** Add a confidential client under `identity_providers.oidc.clients` that mirrors the values SubPaperFlux will use:
 
    ```yaml
    identity_providers:
      oidc:
        # ...global OIDC settings...
        clients:
-         - id: subpaperflux
-           description: SubPaperFlux UI
-           secret: <generated-client-secret>
+         - client_id: subpaperflux
+           client_name: SubPaperFlux UI
+           client_secret: "$pbkdf2-sha512$..."  # generate with `authelia crypto hash generate`
+           public: false
+           authorization_policy: two_factor  # choose the policy that matches your MFA requirements
            redirect_uris:
              - https://app.example.com/api/auth/callback/oidc
+             - http://localhost:3000/api/auth/callback/oidc  # optional: local dev callback
            scopes:
              - openid
              - profile
              - email
+             - groups  # include if you plan to map OIDC groups to SubPaperFlux roles
            grant_types:
              - authorization_code
            response_types:
@@ -234,11 +238,11 @@ PY
            require_pkce: true
    ```
 
-   Adjust the `id`, `secret`, and redirect URL to match your deployment domain. Authelia enables state handling automatically; `require_pkce: true` keeps it aligned with the NextAuth PKCE check.
+   Authelia expects hashed secrets: run `authelia crypto hash generate pbkdf2 --random --length 48` (or your preferred hash helper) and paste the output into `client_secret`. Restart Authelia after updating the configuration so the new client is loaded.
 
-2. **Expose the discovery document.** Authelia publishes the issuer metadata at `https://<authelia-host>/.well-known/openid-configuration`. Set `OIDC_ISSUER` on both the API and web app to the base issuer URL (for example, `https://auth.example.com`).
+2. **Expose the discovery document.** Authelia publishes issuer metadata at `https://<authelia-host>/.well-known/openid-configuration`. Set `OIDC_ISSUER` on both the API and web app containers to the base issuer URL (for example, `https://auth.example.com`).
 
-3. **Align audience/client IDs.** Authelia emits the client ID as the `aud` claim by default. Set both `OIDC_CLIENT_ID` values (API and web) to the Authelia client `id`. Only set `OIDC_AUDIENCE` if you configure Authelia to emit a custom audience claim.
+3. **Align client credentials.** Authelia emits the `client_id` as the `aud` claim by default. Set `OIDC_CLIENT_ID` on both the API and web services to that identifier, export `OIDC_CLIENT_SECRET` for the Next.js app so it can complete the authorization-code exchange, and only define `OIDC_AUDIENCE` if you configure Authelia to mint a different `aud` value.
 
 4. **JWKS without discovery.** If you disable discovery in Authelia, manually point `OIDC_JWKS_URL` to the JWKS endpoint (typically `https://<authelia-host>/.well-known/jwks.json`). Otherwise, leave it unset so the API discovers the signing keys automatically.
 
