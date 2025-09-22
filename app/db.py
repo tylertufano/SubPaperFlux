@@ -89,7 +89,9 @@ def _configure_rls(session: Session) -> bool:
     user_id = _current_user_id.get()
     try:
         if user_id:
-            session.exec(text("SET app.user_id = :user_id"), {"user_id": user_id})
+            session.exec(
+                text("SET app.user_id = :user_id"), params={"user_id": user_id}
+            )
         else:
             session.exec(text("RESET app.user_id"))
         return True
