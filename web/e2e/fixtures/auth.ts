@@ -19,7 +19,7 @@ const DEFAULT_CLIENT_ID = process.env.OIDC_CLIENT_ID ?? 'local'
 const DEFAULT_CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET ?? 'local'
 const DEFAULT_AUDIENCE = process.env.OIDC_AUDIENCE ?? DEFAULT_CLIENT_ID
 const DEFAULT_ISSUER = process.env.OIDC_ISSUER ?? `http://127.0.0.1:${DEFAULT_STUB_PORT}/oidc`
-const DEFAULT_SCOPE = 'openid profile email offline_access'
+const DEFAULT_SCOPE = 'openid profile email groups'
 const TOKEN_TTL_SECONDS = 60 * 60
 
 export type TestUser = {
