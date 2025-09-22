@@ -207,7 +207,7 @@ PY
 - `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET`: The client credentials issued by your IdP. They must match the API's expectations so that the resulting tokens pass the `aud` check.
 - `OIDC_DISPLAY_NAME_CLAIM`: Optional override that selects which claim supplies the signed-in user's display name. Provide the claim key (for example, `name` or `custom:display_name`). When unset, the UI searches for `display_name` variants (case/namespace insensitive) and falls back to the base profile name.
 - Callback URL: NextAuth handles the OIDC response at `/api/auth/callback/oidc` (see `web/pages/api/auth/[...nextauth].ts`). Ensure this path is included in your IdP client's redirect URIs.
-- Scope and checks: The default provider configuration requests `openid profile email` and enforces PKCE + state. Make sure the IdP client allows those scopes and the authorization code flow.
+- Scope and checks: The default provider configuration requests `openid profile email groups` and enforces PKCE + state. Make sure the IdP client allows those scopes and the authorization code flow.
 
 ### Using Authelia as the IdP
 
@@ -226,11 +226,11 @@ PY
            redirect_uris:
              - https://app.example.com/api/auth/callback/oidc
              - http://localhost:3000/api/auth/callback/oidc  # optional: local dev callback
-           scopes:
-             - openid
-             - profile
-             - email
-             - groups  # include if you plan to map OIDC groups to SubPaperFlux roles
+          scopes:
+            - openid
+            - profile
+            - email
+            - groups
            grant_types:
              - authorization_code
            response_types:

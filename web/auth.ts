@@ -384,7 +384,7 @@ export const authOptions: NextAuthConfig = {
       clientSecret: process.env.OIDC_CLIENT_SECRET,
       idToken: true,
       checks: ['pkce', 'state'],
-      authorization: { params: { scope: 'openid profile email' } },
+      authorization: { params: { scope: 'openid profile email groups' } },
       profile(profile: any) {
         const claimRecord =
           profile && typeof profile === 'object' ? (profile as ClaimContainer) : ({} as ClaimContainer)

@@ -8,6 +8,7 @@ import { ALL_PERMISSIONS, derivePermissionsFromRoles } from '../lib/rbac'
 type OidcProvider = {
   id: string
   profile: (profile: any) => any
+  authorization?: { params?: Record<string, unknown> }
 }
 
 const originalFetch = globalThis.fetch
@@ -37,6 +38,19 @@ function getOidcProvider(): OidcProvider {
   }
   return provider
 }
+
+describe('authOptions provider configuration', () => {
+  it('requests group claims via the authorization scope', () => {
+    const provider = getOidcProvider()
+    const scope = provider.authorization?.params?.scope
+    expect(typeof scope).toBe('string')
+    const normalized = scope
+      ?.split(/\s+/)
+      .map((segment) => segment.trim())
+      .filter((segment) => segment.length > 0)
+    expect(normalized).toContain('groups')
+  })
+})
 
 describe('authOptions profile callback', () => {
   it('normalizes role and group claims from the profile payload', () => {
