@@ -50,6 +50,32 @@ _GROUP_CANDIDATES: Sequence[str] = ("groups", "group")
 _ROLE_CANDIDATES: Sequence[str] = ("roles", "role")
 
 
+def summarize_identity(identity: Optional[Mapping[str, Any]]) -> str:
+    """Return a stable, human-readable description for ``identity``."""
+
+    if not isinstance(identity, Mapping):
+        return "anonymous"
+
+    parts: List[str] = []
+    sub = identity.get("sub")
+    if sub:
+        parts.append(f"sub={sub}")
+    user_id = identity.get("user_id")
+    if user_id and user_id != sub:
+        parts.append(f"user_id={user_id}")
+    email = identity.get("email")
+    if email:
+        parts.append(f"email={email}")
+    if not parts:
+        claims = identity.get("claims")
+        if isinstance(claims, Mapping):
+            claim_sub = claims.get("sub")
+            if claim_sub:
+                parts.append(f"claims.sub={claim_sub}")
+
+    return ", ".join(parts) if parts else "anonymous"
+
+
 def _payload_keys_snapshot(payload: Mapping[str, Any]) -> List[str]:
     try:
         return sorted(str(key) for key in payload.keys())
@@ -351,24 +377,25 @@ def _find_key(jwks: Dict[str, Any], kid: str) -> Optional[Dict[str, Any]]:
 
 
 def _validate_exp(payload: Dict[str, Any]):
+    identity_summary = summarize_identity(payload)
     exp = payload.get("exp")
     if exp is None:
-        logger.debug("OIDC token for sub=%s missing 'exp' claim", payload.get("sub"))
+        logger.debug("OIDC token for %s missing 'exp' claim", identity_summary)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     try:
         exp_value = float(exp)
     except (TypeError, ValueError):
         logger.debug(
-            "OIDC token for sub=%s has invalid 'exp' claim: %r",
-            payload.get("sub"),
+            "OIDC token for %s has invalid 'exp' claim: %r",
+            identity_summary,
             exp,
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     now = time.time()
     if now > exp_value:
         logger.debug(
-            "OIDC token for sub=%s expired (exp=%s, now=%s)",
-            payload.get("sub"),
+            "OIDC token for %s expired (exp=%s, now=%s)",
+            identity_summary,
             exp_value,
             now,
         )
@@ -376,11 +403,12 @@ def _validate_exp(payload: Dict[str, Any]):
 
 
 def _validate_iss_aud(payload: Dict[str, Any], cfg: OIDCConfig):
+    identity_summary = summarize_identity(payload)
     iss = payload.get("iss")
     if cfg.issuer and iss != cfg.issuer:
         logger.debug(
-            "OIDC issuer mismatch for sub=%s: expected %s got %s",
-            payload.get("sub"),
+            "OIDC issuer mismatch for %s: expected %s got %s",
+            identity_summary,
             cfg.issuer,
             iss,
         )
@@ -391,8 +419,8 @@ def _validate_iss_aud(payload: Dict[str, Any], cfg: OIDCConfig):
         if isinstance(aud, list):
             if expected not in aud:
                 logger.debug(
-                    "OIDC audience mismatch for sub=%s: expected %s not in %s",
-                    payload.get("sub"),
+                    "OIDC audience mismatch for %s: expected %s not in %s",
+                    identity_summary,
                     expected,
                     aud,
                 )
@@ -400,8 +428,8 @@ def _validate_iss_aud(payload: Dict[str, Any], cfg: OIDCConfig):
         else:
             if aud != expected:
                 logger.debug(
-                    "OIDC audience mismatch for sub=%s: expected %s got %s",
-                    payload.get("sub"),
+                    "OIDC audience mismatch for %s: expected %s got %s",
+                    identity_summary,
                     expected,
                     aud,
                 )
@@ -467,9 +495,10 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     payload = _verify_jwt(token, cfg)
     claims_mapping: Mapping[str, Any] = payload if isinstance(payload, Mapping) else {}
     subject = claims_mapping.get("sub") if isinstance(claims_mapping, Mapping) else None
+    payload_summary = summarize_identity(claims_mapping)
     logger.debug(
-        "Decoded OIDC token for sub=%s; payload keys: %s",
-        subject,
+        "Decoded OIDC token for %s; payload keys: %s",
+        payload_summary,
         _payload_keys_snapshot(claims_mapping) if claims_mapping else [],
     )
     name = _resolve_name(claims_mapping)
@@ -477,14 +506,18 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     user_id = _resolve_user_id(claims_mapping)
     groups = _resolve_groups(claims_mapping)
     roles = _resolve_roles(claims_mapping)
+    identity_summary_hint = payload_summary or (subject or "<unknown>")
     if not name:
-        logger.debug("OIDC payload for sub=%s missing recognizable display name claims", subject)
+        logger.debug(
+            "OIDC payload for %s missing recognizable display name claims",
+            identity_summary_hint,
+        )
     if not email:
-        logger.debug("OIDC payload for sub=%s missing email claim", subject)
+        logger.debug("OIDC payload for %s missing email claim", identity_summary_hint)
     if not user_id:
-        logger.debug("OIDC payload for sub=%s missing explicit user identifier", subject)
+        logger.debug("OIDC payload for %s missing explicit user identifier", identity_summary_hint)
     if not groups and not roles:
-        logger.debug("OIDC payload for sub=%s missing group/role claims", subject)
+        logger.debug("OIDC payload for %s missing group/role claims", identity_summary_hint)
     identity: Dict[str, Any] = {
         "sub": payload.get("sub"),
         "email": email,
@@ -494,9 +527,10 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     }
     if user_id:
         identity.setdefault("user_id", user_id)
+    identity_summary = summarize_identity(identity)
     logger.debug(
-        "Constructed OIDC identity for sub=%s (has_name=%s, has_email=%s, groups=%d, roles=%d)",
-        identity.get("sub"),
+        "Constructed OIDC identity for %s (has_name=%s, has_email=%s, groups=%d, roles=%d)",
+        identity_summary,
         bool(name),
         bool(email),
         len(groups),
