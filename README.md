@@ -171,7 +171,7 @@ To verify Postgres row-level security policies:
 
 API (OIDC + DB) — Optional Preview
 - Install API deps: `pip install -r requirements.api.txt`
-- Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`)
+- Set env for OIDC: `OIDC_ISSUER` and either `OIDC_AUDIENCE` or `OIDC_CLIENT_ID` (optionally `OIDC_JWKS_URL`, `OIDC_USERINFO_ENDPOINT`)
 - Set DB URL (defaults to SQLite): `DATABASE_URL=sqlite:///./dev.db`
 - User-management APIs are exposed by default. Set `USER_MGMT_CORE=0` (or any non-truthy value) if you need to temporarily disable `/v1/admin/users`, `/v1/admin/audit`, or OIDC auto-provisioning.
 - Set encryption key for secrets (32-byte base64 urlsafe):
@@ -192,6 +192,7 @@ PY
 - `OIDC_AUDIENCE`: Optional explicit audience used when validating tokens. Provide this when your IdP emits a distinct `aud` claim (for multi-client deployments). If omitted, the API falls back to `OIDC_CLIENT_ID` when present.
 - `OIDC_CLIENT_ID`: Required when you rely on the client ID for the API's `aud` check or when a single value should align with both the frontend and backend. Set this to the client identifier that matches your IdP registration.
 - `OIDC_JWKS_URL`: Optional override that points directly to the signing keys (JWKS) endpoint. Leave unset to let the API discover `jwks_uri` from the issuer's discovery document.
+- `OIDC_USERINFO_ENDPOINT`: Optional absolute URL to the IdP's UserInfo endpoint. When configured, the API enriches access-token claims with the UserInfo payload so auto-provisioning can pick up names, emails, and group/role assignments that are omitted from the JWT.
 - `DEV_NO_AUTH`: Set to `1`/`true` to bypass OIDC entirely and issue a synthetic developer identity. Only use this for local development.
 - `DEV_USER_SUB`, `DEV_USER_EMAIL`, `DEV_USER_NAME`, `DEV_USER_GROUPS`: Customize the placeholder identity returned while `DEV_NO_AUTH` is enabled. Groups are provided as a comma-separated list.
 - `USER_MGMT_CORE`: Enabled by default to expose the core user-management APIs. Set to `0`, `false`, `no`, or leave an empty string to opt out while keeping the rest of the stack online.

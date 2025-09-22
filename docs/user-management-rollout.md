@@ -176,6 +176,19 @@ policies:
   verify the `owner_user_id` columns were backfilled correctly and that your
   query is not running as a superuser (superusers bypass RLS by default).
 
+## Identity claim enrichment
+
+Many identity providers only place stable identifiers inside access tokens and
+leave profile or group information to the UserInfo endpoint. When that happens,
+the backend cannot derive names, email addresses, or group memberships directly
+from the JWT and auto-provisioning ends up with empty role inputs. Export
+`OIDC_USERINFO_ENDPOINT` with the absolute URL to your IdP's UserInfo route to
+close the gap. The API replays the bearer token against that endpoint whenever a
+decoded payload is missing key attributes, merges the returned claims, and reruns
+the group/role resolution before calling provisioning. Frontend deployments
+already follow this pattern; keeping the API in sync ensures users inherit the
+expected roles even when access tokens are sparse.
+
 ## Mapping configuration
 
 Role assignments derived from identity provider groups are configured entirely
