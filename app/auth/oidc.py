@@ -327,6 +327,7 @@ class OIDCConfig:
         self.client_id: Optional[str] = os.getenv("OIDC_CLIENT_ID")
         # If not provided, will be discovered via issuer
         self.jwks_url: Optional[str] = os.getenv("OIDC_JWKS_URL")
+        self.userinfo_endpoint: Optional[str] = os.getenv("OIDC_USERINFO_ENDPOINT")
 
 
 @lru_cache(maxsize=1)
@@ -492,9 +493,9 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
         return None
 
     cfg = get_oidc_config()
-    payload = _verify_jwt(token, cfg)
-    claims_mapping: Mapping[str, Any] = payload if isinstance(payload, Mapping) else {}
-    subject = claims_mapping.get("sub") if isinstance(claims_mapping, Mapping) else None
+    jwt_payload = _verify_jwt(token, cfg)
+    claims_mapping: Dict[str, Any] = dict(jwt_payload) if isinstance(jwt_payload, Mapping) else {}
+    subject = claims_mapping.get("sub") if claims_mapping else None
     payload_summary = summarize_identity(claims_mapping)
     logger.debug(
         "Decoded OIDC token for %s; payload keys: %s",
@@ -507,6 +508,64 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     groups = _resolve_groups(claims_mapping)
     roles = _resolve_roles(claims_mapping)
     identity_summary_hint = payload_summary or (subject or "<unknown>")
+    needs_userinfo = (
+        bool(cfg.userinfo_endpoint)
+        and bool(token)
+        and (not name or not email or not user_id or not groups or not roles)
+    )
+    if needs_userinfo:
+        logger.debug(
+            "OIDC payload for %s missing claims; attempting UserInfo fetch from %s",
+            identity_summary_hint,
+            cfg.userinfo_endpoint,
+        )
+        try:
+            with httpx.Client(timeout=5.0) as client:
+                response = client.get(
+                    cfg.userinfo_endpoint,
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                response.raise_for_status()
+                userinfo = response.json()
+        except Exception:  # noqa: BLE001
+            logger.warning(
+                "Failed to fetch OIDC UserInfo for %s from %s",
+                identity_summary_hint,
+                cfg.userinfo_endpoint,
+                exc_info=True,
+            )
+        else:
+            if isinstance(userinfo, Mapping):
+                logger.debug(
+                    "OIDC UserInfo enrichment for %s returned keys: %s",
+                    identity_summary_hint,
+                    _payload_keys_snapshot(userinfo),
+                )
+                claims_mapping.update(userinfo)
+                new_name = _resolve_name(claims_mapping)
+                if new_name:
+                    name = new_name
+                new_email = _resolve_email(claims_mapping)
+                if new_email:
+                    email = new_email
+                new_user_id = _resolve_user_id(claims_mapping)
+                if new_user_id:
+                    user_id = new_user_id
+                new_groups = _resolve_groups(claims_mapping)
+                if new_groups:
+                    groups = new_groups
+                new_roles = _resolve_roles(claims_mapping)
+                if new_roles:
+                    roles = new_roles
+                subject = claims_mapping.get("sub", subject)
+                payload_summary = summarize_identity(claims_mapping)
+                identity_summary_hint = payload_summary or (subject or "<unknown>")
+            else:
+                logger.warning(
+                    "OIDC UserInfo response for %s was not a mapping: %s",
+                    identity_summary_hint,
+                    type(userinfo).__name__,
+                )
     if not name:
         logger.debug(
             "OIDC payload for %s missing recognizable display name claims",
@@ -519,11 +578,11 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     if not groups and not roles:
         logger.debug("OIDC payload for %s missing group/role claims", identity_summary_hint)
     identity: Dict[str, Any] = {
-        "sub": payload.get("sub"),
+        "sub": claims_mapping.get("sub"),
         "email": email,
         "name": name,
         "groups": groups or roles or [],
-        "claims": payload,
+        "claims": claims_mapping,
     }
     if user_id:
         identity.setdefault("user_id", user_id)
