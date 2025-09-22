@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, HTTPException, Request
 
 from .auth import ensure_admin_role
-from .auth.oidc import oidc_startup_event, resolve_user_from_token
+from .auth.oidc import oidc_startup_event, resolve_user_from_token, summarize_identity
 from .auth.provisioning import maybe_provision_user
 from .config import is_rls_enforced, is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 from .db import (
@@ -223,16 +223,36 @@ def create_app() -> FastAPI:
                 parts = auth_header.split(" ", 1)
                 if len(parts) == 2 and parts[0].lower() == "bearer":
                     bearer_token = parts[1].strip()
+            user = None
             try:
                 user = resolve_user_from_token(bearer_token)
                 if user:
                     maybe_provision_user(user)
                     increment_user_login()
+                    logger.debug(
+                        "Authenticated %s request for %s as %s",
+                        request.method,
+                        request.url.path,
+                        summarize_identity(user),
+                    )
             except HTTPException:
                 raise
             except Exception:  # noqa: BLE001
                 logger.exception("Failed to resolve user from bearer token")
                 user = None
+            if not user:
+                if bearer_token:
+                    logger.debug(
+                        "Bearer token provided but no identity resolved for %s %s",
+                        request.method,
+                        request.url.path,
+                    )
+                else:
+                    logger.debug(
+                        "Processing anonymous %s request for %s",
+                        request.method,
+                        request.url.path,
+                    )
             user_id = user.get("sub") if user else None
             request.state.current_user = user
             request.state.user_id = user_id

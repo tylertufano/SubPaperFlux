@@ -14,6 +14,7 @@ from ..db import get_session_ctx
 from ..models import User
 from . import get_user_roles, grant_role, revoke_role
 from .mapping import resolve_roles_for_groups
+from .oidc import summarize_identity
 from .role_overrides import get_user_role_overrides
 from .users import ensure_user_from_identity
 
@@ -170,14 +171,30 @@ def maybe_provision_user(identity: Any, *, user_mgmt_enabled: bool | None = None
             if created and default_role:
                 assigned = _apply_default_role(session, user)
 
+            logger.debug(
+                "Provisioning summary for %s (db_user_id=%s): created=%s, updated=%s, assigned_default_role=%s, roles_changed=%s",
+                summarize_identity(identity),
+                getattr(user, "id", None),
+                created,
+                updated,
+                assigned,
+                roles_changed,
+            )
+
             if created or updated or assigned or roles_changed:
                 session.commit()
             else:
                 session.rollback()
         except ValueError:
             session.rollback()
-            logger.debug("Identity payload missing required fields for provisioning")
+            logger.debug(
+                "Identity payload missing required fields for provisioning (%s)",
+                summarize_identity(identity),
+            )
         except Exception:  # noqa: BLE001
             session.rollback()
-            logger.exception("Failed to auto-provision user from identity claims")
+            logger.exception(
+                "Failed to auto-provision user from identity claims (%s)",
+                summarize_identity(identity),
+            )
 
