@@ -330,6 +330,27 @@ class OIDCConfig:
         # If not provided, will be discovered via issuer
         self.jwks_url: Optional[str] = os.getenv("OIDC_JWKS_URL")
         self.userinfo_endpoint: Optional[str] = os.getenv("OIDC_USERINFO_ENDPOINT")
+        self._userinfo_discovery_attempted: bool = False
+        self._discovered_userinfo_endpoint: Optional[str] = None
+
+    def resolve_userinfo_endpoint(self) -> Optional[str]:
+        if self.userinfo_endpoint:
+            return self.userinfo_endpoint
+        if self._userinfo_discovery_attempted:
+            return self._discovered_userinfo_endpoint
+
+        discovery = get_oidc_discovery()
+        endpoint: Optional[str] = None
+        if isinstance(discovery, Mapping):
+            raw_endpoint = discovery.get("userinfo_endpoint")
+            if isinstance(raw_endpoint, str):
+                endpoint = raw_endpoint.strip() or None
+
+        self._userinfo_discovery_attempted = True
+        self._discovered_userinfo_endpoint = endpoint
+        if endpoint:
+            self.userinfo_endpoint = endpoint
+        return endpoint
 
 
 @lru_cache(maxsize=1)
@@ -517,16 +538,17 @@ def resolve_user_from_token(
     roles = _resolve_roles(claims_mapping)
     identity_summary_hint = payload_summary or (subject or "<unknown>")
     userinfo_token = userinfo_bearer or token
-    needs_userinfo = (
-        bool(cfg.userinfo_endpoint)
-        and bool(userinfo_token)
-        and (not name or not email or not user_id or not groups or not roles)
-    )
+    userinfo_endpoint = cfg.userinfo_endpoint or None
+    needs_userinfo = False
+    if userinfo_token and (not name or not email or not user_id or not groups or not roles):
+        if not userinfo_endpoint:
+            userinfo_endpoint = cfg.resolve_userinfo_endpoint()
+        needs_userinfo = bool(userinfo_endpoint)
     if needs_userinfo:
         logger.debug(
             "OIDC payload for %s missing claims; attempting UserInfo fetch from %s",
             identity_summary_hint,
-            cfg.userinfo_endpoint,
+            userinfo_endpoint,
         )
         if userinfo_bearer and userinfo_bearer != token:
             logger.debug(
@@ -536,7 +558,7 @@ def resolve_user_from_token(
         try:
             with httpx.Client(timeout=5.0) as client:
                 response = client.get(
-                    cfg.userinfo_endpoint,
+                    userinfo_endpoint,
                     headers={"Authorization": f"Bearer {userinfo_token}"},
                 )
                 response.raise_for_status()
@@ -545,7 +567,7 @@ def resolve_user_from_token(
             logger.warning(
                 "Failed to fetch OIDC UserInfo for %s from %s",
                 identity_summary_hint,
-                cfg.userinfo_endpoint,
+                userinfo_endpoint,
                 exc_info=True,
             )
         else:
