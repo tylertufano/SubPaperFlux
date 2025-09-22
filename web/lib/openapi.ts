@@ -30,6 +30,7 @@ const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
 const BUILD_USER_MGMT_CORE = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_CORE)
 const BUILD_USER_MGMT_UI = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_UI)
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
+const OIDC_ACCESS_TOKEN_HEADER = 'X-OIDC-Access-Token'
 
 type UiConfigWindow = Window & {
   __SPF_UI_CONFIG?: UiConfig
@@ -150,6 +151,34 @@ function resolveSessionToken(session: Session | null | undefined): string | unde
   return undefined
 }
 
+function resolveSessionAccessToken(session: Session | null | undefined): string | undefined {
+  if (!session) return undefined
+  if (typeof session.accessToken === 'string' && session.accessToken.length > 0) {
+    return session.accessToken
+  }
+  return undefined
+}
+
+function normalizeHeaders(headers: HeadersInit | undefined): Record<string, string> {
+  if (!headers) return {}
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    const result: Record<string, string> = {}
+    headers.forEach((value, key) => {
+      result[key] = value
+    })
+    return result
+  }
+  if (Array.isArray(headers)) {
+    const result: Record<string, string> = {}
+    for (const [key, value] of headers) {
+      if (typeof value === 'undefined') continue
+      result[key] = String(value)
+    }
+    return result
+  }
+  return { ...(headers as Record<string, string>) }
+}
+
 async function getClients() {
   if (!clientsPromise) {
     clientsPromise = (async () => {
@@ -192,6 +221,24 @@ async function getClients() {
           return undefined
         }
       }
+      const attachAccessToken: Middleware = {
+        pre: async context => {
+          try {
+            const session = await loadSession()
+            const accessToken = resolveSessionAccessToken(session)
+            const headers = normalizeHeaders(context.init.headers as HeadersInit | undefined)
+            if (accessToken) {
+              headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
+            } else {
+              delete headers[OIDC_ACCESS_TOKEN_HEADER]
+            }
+            return { url: context.url, init: { ...context.init, headers } }
+          } catch (error) {
+            // If session resolution fails, continue without modifying headers
+            return undefined
+          }
+        },
+      }
       const cfg = new Configuration({
         basePath,
         accessToken: async () => {
@@ -200,7 +247,7 @@ async function getClients() {
           return token ?? ''
         },
         headers: { 'X-CSRF-Token': CSRF, 'x-csrf-token': CSRF },
-        middleware: [retry],
+        middleware: [retry, attachAccessToken],
       })
       return {
         v1: new V1Api(cfg),
@@ -220,6 +267,7 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
   const basePath = await resolveApiBase()
   const session = await loadSession()
   const token = resolveSessionToken(session)
+  const accessToken = resolveSessionAccessToken(session)
   const headers: Record<string, string> = {
     'X-CSRF-Token': CSRF,
   }
@@ -231,6 +279,7 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
     }
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
+  if (accessToken) headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
 
   const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
   const response = await fetch(`${normalizedBase}${path}`, {
@@ -880,10 +929,14 @@ export async function bulkPublishBookmarksStream({ requestBody, signal }: { requ
   const basePath = await resolveApiBase()
   const session = await loadSession()
   const token = resolveSessionToken(session)
+  const accessToken = resolveSessionAccessToken(session)
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-CSRF-Token': CSRF,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+  if (accessToken) {
+    headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
   }
   const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
   return fetch(`${normalizedBase}/v1/bookmarks/bulk-publish`, {
@@ -946,8 +999,12 @@ export const v1 = {
       'X-CSRF-Token': CSRF,
     }
     const token = resolveSessionToken(session)
+    const accessToken = resolveSessionAccessToken(session)
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
+    }
+    if (accessToken) {
+      headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
     }
     const res = await fetch(`${basePath}/v1/bookmarks/${encodeURIComponent(bookmarkId)}/preview`, {
       method: 'GET',

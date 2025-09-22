@@ -38,7 +38,10 @@ def _setup_app(
 
     init_db()
 
-    def _resolve_identity(token: object) -> Dict[str, object]:
+    def _resolve_identity(
+        token: object,
+        userinfo_bearer: object | None = None,
+    ) -> Dict[str, object]:
         return identity() if callable(identity) else identity
 
     monkeypatch.setattr("app.auth.oidc.resolve_user_from_token", _resolve_identity)

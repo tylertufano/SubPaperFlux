@@ -105,10 +105,10 @@ def test_resolve_user_from_token_enriches_with_userinfo(monkeypatch: pytest.Monk
         userinfo_endpoint="https://idp.example.com/userinfo",
     )
 
-    identity = oidc.resolve_user_from_token("dummy-token")
+    identity = oidc.resolve_user_from_token("dummy-token", userinfo_bearer="dummy-access-token")
 
     assert requests["url"] == "https://idp.example.com/userinfo"
-    assert requests["headers"]["Authorization"] == "Bearer dummy-token"
+    assert requests["headers"]["Authorization"] == "Bearer dummy-access-token"
     assert identity["name"] == "UserInfo Primary"
     assert identity["email"] == "userinfo@example.com"
     assert identity["user_id"] == "user-404-uid"
