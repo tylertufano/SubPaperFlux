@@ -17,7 +17,7 @@ security = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
 
-USERINFO_BEARER_HEADER = "x-oidc-access-token"
+USERINFO_BEARER_HEADER = "X-OIDC-Access-Token"
 
 _NORMALIZE_PATTERN = re.compile(r"[^a-zA-Z0-9]")
 
@@ -504,6 +504,12 @@ def _dev_user() -> Dict[str, Any]:
     }
 
 
+def extract_userinfo_bearer(request: Request) -> Optional[str]:
+    """Return the auxiliary UserInfo bearer from ``request`` if provided."""
+
+    return request.headers.get(USERINFO_BEARER_HEADER) or None
+
+
 def resolve_user_from_token(
     token: Optional[str],
     userinfo_bearer: Optional[str] = None,
@@ -638,7 +644,7 @@ def get_current_user(
     request: Request,
     creds: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Dict[str, Any]:
-    userinfo_bearer = request.headers.get(USERINFO_BEARER_HEADER) or None
+    userinfo_bearer = extract_userinfo_bearer(request)
     user = resolve_user_from_token(
         creds.credentials if creds else None,
         userinfo_bearer=userinfo_bearer,

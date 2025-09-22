@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 
 from .auth import ensure_admin_role
 from .auth.oidc import (
-    USERINFO_BEARER_HEADER,
+    extract_userinfo_bearer,
     oidc_startup_event,
     resolve_user_from_token,
     summarize_identity,
@@ -229,7 +229,7 @@ def create_app() -> FastAPI:
                 if len(parts) == 2 and parts[0].lower() == "bearer":
                     bearer_token = parts[1].strip()
             user = None
-            userinfo_bearer = request.headers.get(USERINFO_BEARER_HEADER) or None
+            userinfo_bearer = extract_userinfo_bearer(request)
             try:
                 user = resolve_user_from_token(
                     bearer_token,

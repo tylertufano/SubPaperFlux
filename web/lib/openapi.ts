@@ -30,7 +30,7 @@ const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
 const BUILD_USER_MGMT_CORE = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_CORE)
 const BUILD_USER_MGMT_UI = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_UI)
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
-const OIDC_ACCESS_TOKEN_HEADER = 'X-OIDC-Access-Token'
+export const OIDC_ACCESS_TOKEN_HEADER = 'X-OIDC-Access-Token'
 
 type UiConfigWindow = Window & {
   __SPF_UI_CONFIG?: UiConfig
@@ -179,6 +179,18 @@ function normalizeHeaders(headers: HeadersInit | undefined): Record<string, stri
   return { ...(headers as Record<string, string>) }
 }
 
+function applyAccessTokenHeader(
+  headers: Record<string, string>,
+  accessToken: string | undefined,
+): Record<string, string> {
+  if (accessToken) {
+    headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
+  } else {
+    delete headers[OIDC_ACCESS_TOKEN_HEADER]
+  }
+  return headers
+}
+
 async function getClients() {
   if (!clientsPromise) {
     clientsPromise = (async () => {
@@ -227,11 +239,7 @@ async function getClients() {
             const session = await loadSession()
             const accessToken = resolveSessionAccessToken(session)
             const headers = normalizeHeaders(context.init.headers as HeadersInit | undefined)
-            if (accessToken) {
-              headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
-            } else {
-              delete headers[OIDC_ACCESS_TOKEN_HEADER]
-            }
+            applyAccessTokenHeader(headers, accessToken)
             return { url: context.url, init: { ...context.init, headers } }
           } catch (error) {
             // If session resolution fails, continue without modifying headers
@@ -279,7 +287,7 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
     }
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
-  if (accessToken) headers[OIDC_ACCESS_TOKEN_HEADER] = accessToken
+  applyAccessTokenHeader(headers, accessToken)
 
   const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
   const response = await fetch(`${normalizedBase}${path}`, {
