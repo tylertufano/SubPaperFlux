@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Set
 
 import httpx
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.utils import base64url_decode
@@ -16,6 +16,8 @@ from jose.utils import base64url_decode
 security = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
+
+USERINFO_BEARER_HEADER = "x-oidc-access-token"
 
 _NORMALIZE_PATTERN = re.compile(r"[^a-zA-Z0-9]")
 
@@ -481,8 +483,14 @@ def _dev_user() -> Dict[str, Any]:
     }
 
 
-def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
-    """Return a user dictionary from a bearer token, or ``None`` if missing."""
+def resolve_user_from_token(
+    token: Optional[str],
+    userinfo_bearer: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Return a user dictionary from a bearer token, or ``None`` if missing.
+
+    ``userinfo_bearer`` allows callers to provide an alternate token for UserInfo requests.
+    """
 
     if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
         logger.debug("DEV_NO_AUTH enabled; returning synthetic developer identity")
@@ -508,9 +516,10 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     groups = _resolve_groups(claims_mapping)
     roles = _resolve_roles(claims_mapping)
     identity_summary_hint = payload_summary or (subject or "<unknown>")
+    userinfo_token = userinfo_bearer or token
     needs_userinfo = (
         bool(cfg.userinfo_endpoint)
-        and bool(token)
+        and bool(userinfo_token)
         and (not name or not email or not user_id or not groups or not roles)
     )
     if needs_userinfo:
@@ -519,11 +528,16 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
             identity_summary_hint,
             cfg.userinfo_endpoint,
         )
+        if userinfo_bearer and userinfo_bearer != token:
+            logger.debug(
+                "Using auxiliary bearer token for UserInfo request for %s",
+                identity_summary_hint,
+            )
         try:
             with httpx.Client(timeout=5.0) as client:
                 response = client.get(
                     cfg.userinfo_endpoint,
-                    headers={"Authorization": f"Bearer {token}"},
+                    headers={"Authorization": f"Bearer {userinfo_token}"},
                 )
                 response.raise_for_status()
                 userinfo = response.json()
@@ -598,8 +612,15 @@ def resolve_user_from_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
     return identity
 
 
-def get_current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict[str, Any]:
-    user = resolve_user_from_token(creds.credentials if creds else None)
+def get_current_user(
+    request: Request,
+    creds: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> Dict[str, Any]:
+    userinfo_bearer = request.headers.get(USERINFO_BEARER_HEADER) or None
+    user = resolve_user_from_token(
+        creds.credentials if creds else None,
+        userinfo_bearer=userinfo_bearer,
+    )
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     return user

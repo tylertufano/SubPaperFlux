@@ -3,7 +3,12 @@ import logging
 from fastapi import FastAPI, HTTPException, Request
 
 from .auth import ensure_admin_role
-from .auth.oidc import oidc_startup_event, resolve_user_from_token, summarize_identity
+from .auth.oidc import (
+    USERINFO_BEARER_HEADER,
+    oidc_startup_event,
+    resolve_user_from_token,
+    summarize_identity,
+)
 from .auth.provisioning import maybe_provision_user
 from .config import is_rls_enforced, is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 from .db import (
@@ -224,8 +229,12 @@ def create_app() -> FastAPI:
                 if len(parts) == 2 and parts[0].lower() == "bearer":
                     bearer_token = parts[1].strip()
             user = None
+            userinfo_bearer = request.headers.get(USERINFO_BEARER_HEADER) or None
             try:
-                user = resolve_user_from_token(bearer_token)
+                user = resolve_user_from_token(
+                    bearer_token,
+                    userinfo_bearer=userinfo_bearer,
+                )
                 if user:
                     maybe_provision_user(user)
                     increment_user_login()

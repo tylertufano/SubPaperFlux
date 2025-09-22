@@ -63,8 +63,14 @@ def client(monkeypatch) -> TestClient:
     from app.models import User
 
     init_db()
-    monkeypatch.setattr("app.auth.oidc.resolve_user_from_token", lambda token: identity)
-    monkeypatch.setattr("app.main.resolve_user_from_token", lambda token: identity)
+    monkeypatch.setattr(
+        "app.auth.oidc.resolve_user_from_token",
+        lambda token, userinfo_bearer=None: identity,
+    )
+    monkeypatch.setattr(
+        "app.main.resolve_user_from_token",
+        lambda token, userinfo_bearer=None: identity,
+    )
     app = create_app()
     with TestClient(app) as test_client:
         with next(get_session()) as session:
