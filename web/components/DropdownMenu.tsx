@@ -16,6 +16,7 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
   const [open, setOpen] = React.useState(false)
   const triggerRef = React.useRef<HTMLAnchorElement | null>(null)
   const menuRef = React.useRef<HTMLDivElement | null>(null)
+  const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const menuId = React.useId()
   const isActive = (href: string) => currentPath === href
   const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
@@ -26,6 +27,26 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
   const menuLinkClass = (href: string) =>
     `${baseMenuItemClass} ${isActive(href) ? 'text-blue-600 font-semibold' : 'text-gray-700'}`
   const menuButtonClass = `${baseMenuItemClass} w-full text-left text-gray-700`
+
+  const clearCloseTimeout = React.useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }, [])
+
+  const openMenu = React.useCallback(() => {
+    clearCloseTimeout()
+    setOpen(true)
+  }, [clearCloseTimeout])
+
+  const scheduleClose = React.useCallback(() => {
+    clearCloseTimeout()
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpen(false)
+      closeTimeoutRef.current = null
+    }, 150)
+  }, [clearCloseTimeout])
 
   React.useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -51,6 +72,10 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
     }
   }, [open])
 
+  React.useEffect(() => {
+    return () => clearCloseTimeout()
+  }, [clearCloseTimeout])
+
   function focusFirstItem() {
     const itemsEls = menuRef.current?.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]')
     itemsEls && itemsEls[0]?.focus()
@@ -64,7 +89,15 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
   }
 
   return (
-    <div className="relative inline-block" onMouseLeave={() => setOpen(false)} onMouseEnter={() => setOpen(true)}>
+    <div
+      className="relative inline-block"
+      onBlur={(e) => {
+        const next = e.relatedTarget as Node | null
+        if (!next || !e.currentTarget.contains(next)) {
+          setOpen(false)
+        }
+      }}
+    >
       <Link
         href={baseHref}
         ref={triggerRef as any}
@@ -73,16 +106,18 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
         aria-expanded={open}
         aria-controls={menuId}
         aria-current={isActive(baseHref) ? 'page' : undefined}
-        onFocus={() => setOpen(true)}
+        onMouseEnter={openMenu}
+        onMouseLeave={scheduleClose}
+        onFocus={openMenu}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            setOpen(true)
+            openMenu()
             setTimeout(focusFirstItem, 0)
           }
           if (e.key === 'ArrowUp') {
             e.preventDefault()
-            setOpen(true)
+            openMenu()
             const els = menuRef.current?.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]')
             els && els[els.length - 1]?.focus()
           }
@@ -97,6 +132,8 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
         className={(open ? 'block ' : 'hidden ') + 'absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow z-20 min-w-[180px]'}
         role="menu"
         aria-label={t('dropdown_submenu_label', { label })}
+        onMouseEnter={openMenu}
+        onMouseLeave={scheduleClose}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') { e.preventDefault(); focusNext(false) }
           if (e.key === 'ArrowUp') { e.preventDefault(); focusNext(true) }
