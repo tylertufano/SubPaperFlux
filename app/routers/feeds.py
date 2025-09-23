@@ -42,12 +42,22 @@ def _resolve_owner(
     requested_owner: Optional[str],
     *,
     default_owner: Optional[str],
+    owner_specified: bool = False,
 ) -> Optional[str]:
     user_id = current_user.get("sub") if isinstance(current_user, dict) else None
+
+    explicit_global_request = False
+    if isinstance(requested_owner, str) and requested_owner.lower() == "global":
+        requested_owner = None
+        explicit_global_request = True
+    elif requested_owner is None:
+        explicit_global_request = owner_specified
 
     if requested_owner is None:
         if default_owner is None:
             return None
+        if not explicit_global_request:
+            return default_owner
         allowed_global = _ensure_feed_permission(
             session,
             current_user,
@@ -86,11 +96,13 @@ def list_feeds(current_user=Depends(get_current_user), session=Depends(get_sessi
 def create_feed(body: FeedSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
     payload = body.model_dump(mode="json")
     requested_owner = payload.get("owner_user_id")
+    owner_specified = "owner_user_id" in getattr(body, "model_fields_set", set())
     owner_id = _resolve_owner(
         session,
         current_user,
         requested_owner,
         default_owner=current_user.get("sub"),
+        owner_specified=owner_specified,
     )
     payload["owner_user_id"] = owner_id
     model = FeedModel(**payload)
@@ -147,6 +159,7 @@ def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current
             current_user,
             requested_owner,
             default_owner=original_owner,
+            owner_specified=True,
         )
         if new_owner != original_owner and new_owner is not None:
             enforce_user_quota(
