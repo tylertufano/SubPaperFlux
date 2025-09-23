@@ -99,6 +99,8 @@ def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
         next_run_at=schedule.next_run_at,
         last_run_at=schedule.last_run_at,
         last_job_id=schedule.last_job_id,
+        last_error=schedule.last_error,
+        last_error_at=schedule.last_error_at,
         is_active=bool(schedule.is_active),
     )
 
@@ -334,11 +336,14 @@ def run_job_schedule_now(
         payload=dict(schedule.payload or {}),
         status="queued",
         owner_user_id=schedule.owner_user_id,
+        details={"schedule_id": schedule.id},
     )
     session.add(job)
 
     schedule.last_job_id = job.id
     schedule.last_run_at = datetime.now(timezone.utc)
+    schedule.last_error = None
+    schedule.last_error_at = None
     session.add(schedule)
 
     session.commit()

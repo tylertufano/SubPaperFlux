@@ -196,6 +196,8 @@ def test_run_now_creates_job(client: TestClient):
         assert schedule is not None
         assert schedule.last_job_id == job_payload["id"]
         assert schedule.last_run_at is not None
+        assert schedule.last_error is None
+        assert schedule.last_error_at is None
 
 
 def test_rbac_enforcement(client: TestClient):
