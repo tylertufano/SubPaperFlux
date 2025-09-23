@@ -31,6 +31,7 @@ vi.mock('next-auth/react', () => ({
   useSession: () => useSessionMock(),
   signIn: vi.fn(),
   signOut: vi.fn(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 vi.mock('../components/DropdownMenu', () => ({
@@ -78,10 +79,6 @@ describe('Nav component', () => {
     return screen.getAllByTestId('dropdown-Test User')
   }
 
-  function getFeedsDropdown() {
-    return screen.getByTestId('dropdown-Feeds')
-  }
-
   it('shows admin navigation inside the account dropdown by default', () => {
     renderWithSWR(<Nav />, { locale: 'en' })
 
@@ -103,7 +100,9 @@ describe('Nav component', () => {
       accountDropdowns.some((dropdown) => within(dropdown).queryByText('Admin')),
     ).toBe(true)
 
-    const feedsDropdown = getFeedsDropdown()
+    expect(screen.getByRole('link', { name: 'Bookmarks' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Jobs' })).toBeInTheDocument()
+    const feedsDropdown = screen.getByTestId('dropdown-Feeds')
     expect(within(feedsDropdown).getByText('Create Feed')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Site Configs' })).toBeInTheDocument()
@@ -134,9 +133,10 @@ describe('Nav component', () => {
     expect(
       accountDropdowns.every((dropdown) => !within(dropdown).queryByText('Site settings')),
     ).toBe(true)
-
-    const feedsDropdown = getFeedsDropdown()
-    expect(within(feedsDropdown).queryByText('Create Feed')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Bookmarks' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Jobs' })).toBeNull()
+    const feedsDropdown = screen.queryByTestId('dropdown-Feeds')
+    expect(feedsDropdown).toBeNull()
     expect(screen.queryByRole('link', { name: 'Credentials' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
   })
@@ -156,8 +156,10 @@ describe('Nav component', () => {
 
     renderWithSWR(<Nav />, { locale: 'en' })
 
-    const feedsDropdown = getFeedsDropdown()
-    expect(within(feedsDropdown).queryByText('Create Feed')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Bookmarks' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Jobs' })).toBeNull()
+    const feedsDropdown = screen.queryByTestId('dropdown-Feeds')
+    expect(feedsDropdown).toBeNull()
     expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
   })

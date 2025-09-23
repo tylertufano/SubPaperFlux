@@ -10,6 +10,13 @@ const { useSWRMock, mutateBookmarksMock, mutateTagsMock } = vi.hoisted(() => ({
   mutateTagsMock: vi.fn(),
 }))
 
+const { useSessionMock } = vi.hoisted(() => ({
+  useSessionMock: vi.fn(() => ({
+    data: { user: { permissions: ['bookmarks:read'] } },
+    status: 'authenticated' as const,
+  })),
+}))
+
 const { bulkUpdateBookmarkTagsMock } = vi.hoisted(() => ({
   bulkUpdateBookmarkTagsMock: vi.fn(),
 }))
@@ -81,6 +88,12 @@ vi.mock('../components', async () => {
   }
 })
 
+vi.mock('next-auth/react', () => ({
+  __esModule: true,
+  useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 function renderBookmarks() {
   return render(
     <I18nProvider>
@@ -95,6 +108,11 @@ describe('Bulk tag assignment modal', () => {
     mutateBookmarksMock.mockReset()
     mutateTagsMock.mockReset()
     bulkUpdateBookmarkTagsMock.mockReset()
+    useSessionMock.mockReset()
+    useSessionMock.mockReturnValue({
+      data: { user: { permissions: ['bookmarks:read'] } },
+      status: 'authenticated' as const,
+    })
 
     const bookmarksData = {
       items: [

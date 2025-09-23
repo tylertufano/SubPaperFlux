@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Bookmarks from '../pages/bookmarks'
 import { I18nProvider } from '../lib/i18n'
 
-const { useSWRMock, mutateBookmarksMock, mutateTagsMock, mutateFoldersMock, mutatePreviewMock } = vi.hoisted(() => ({
+const { useSWRMock, mutateBookmarksMock, mutateTagsMock, mutateFoldersMock, mutatePreviewMock, useSessionMock } = vi.hoisted(() => ({
   useSWRMock: vi.fn(),
   mutateBookmarksMock: vi.fn(),
   mutateTagsMock: vi.fn(),
   mutateFoldersMock: vi.fn(),
   mutatePreviewMock: vi.fn(),
+  useSessionMock: vi.fn(() => ({
+    data: { user: { permissions: ['bookmarks:read'] } },
+    status: 'authenticated' as const,
+  })),
 }))
 
 vi.mock('swr', () => ({
@@ -33,6 +37,12 @@ vi.mock('../lib/openapi', () => ({
     listFoldersBookmarksFoldersGet: vi.fn(),
     previewBookmarkV1BookmarksBookmarkIdPreviewGet: vi.fn(),
   },
+}))
+
+vi.mock('next-auth/react', () => ({
+  __esModule: true,
+  useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 vi.mock('../components', async () => {
@@ -65,6 +75,11 @@ describe('Bookmarks preview keyboard navigation', () => {
     mutateTagsMock.mockReset()
     mutateFoldersMock.mockReset()
     mutatePreviewMock.mockReset()
+    useSessionMock.mockReset()
+    useSessionMock.mockReturnValue({
+      data: { user: { permissions: ['bookmarks:read'] } },
+      status: 'authenticated' as const,
+    })
     localStorage.clear()
 
     const bookmarksData = {

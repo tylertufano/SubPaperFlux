@@ -20,6 +20,13 @@ const {
   updateTagMock: vi.fn(),
 }))
 
+const { useSessionMock } = vi.hoisted(() => ({
+  useSessionMock: vi.fn(() => ({
+    data: { user: { permissions: ['bookmarks:read'] } },
+    status: 'authenticated' as const,
+  })),
+}))
+
 vi.mock('swr', () => ({
   __esModule: true,
   default: (key: any, fetcher?: any) => useSWRMock(key, fetcher),
@@ -53,6 +60,12 @@ vi.mock('../components', async () => {
   }
 })
 
+vi.mock('next-auth/react', () => ({
+  __esModule: true,
+  useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 vi.mock('../lib/openapi', () => ({
   v1: {
     listBookmarksV1BookmarksGet: vi.fn(),
@@ -82,6 +95,11 @@ describe('Bookmarks filters and pagination', () => {
     mutatePreviewMock.mockReset()
     updateTagMock.mockReset()
     updateTagMock.mockResolvedValue({})
+    useSessionMock.mockReset()
+    useSessionMock.mockReturnValue({
+      data: { user: { permissions: ['bookmarks:read'] } },
+      status: 'authenticated' as const,
+    })
     localStorage.clear()
 
     const bookmarksData = {
@@ -184,12 +202,16 @@ describe('Bookmarks filters and pagination', () => {
     cleanup()
   })
 
-  it('passes filter state to useSWR keys and resets pagination', async () => {
-    render(
+  function renderBookmarks() {
+    return render(
       <I18nProvider>
         <Bookmarks />
       </I18nProvider>,
     )
+  }
+
+  it('passes filter state to useSWR keys and resets pagination', async () => {
+    renderBookmarks()
 
     await screen.findByText('Bookmark One')
 

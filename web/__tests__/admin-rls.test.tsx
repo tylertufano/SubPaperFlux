@@ -35,6 +35,22 @@ vi.mock('../components', async () => {
   }
 })
 
+const defaultSession = {
+  user: {
+    name: 'Admin User',
+    email: 'admin@example.com',
+    permissions: [
+      'bookmarks:read',
+      'bookmarks:manage',
+      'credentials:read',
+      'credentials:manage',
+      'site_configs:read',
+      'site_configs:manage',
+    ],
+  },
+  expires: '2099-01-01T00:00:00.000Z',
+} as const
+
 describe('Admin RLS warning', () => {
   afterEach(() => {
     document.documentElement.dir = 'ltr'
@@ -57,6 +73,7 @@ describe('Admin RLS warning', () => {
           },
         ],
       },
+      session: defaultSession,
     })
 
     expect(screen.getByText(/Requires Postgres and superuser credentials\./)).toBeInTheDocument()

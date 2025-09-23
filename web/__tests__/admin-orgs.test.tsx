@@ -54,6 +54,22 @@ const defaultPage = {
   total_pages: 1,
 }
 
+const defaultSession = {
+  user: {
+    name: 'Admin User',
+    email: 'admin@example.com',
+    permissions: [
+      'bookmarks:read',
+      'bookmarks:manage',
+      'credentials:read',
+      'credentials:manage',
+      'site_configs:read',
+      'site_configs:manage',
+    ],
+  },
+  expires: '2099-01-01T00:00:00.000Z',
+} as const
+
 type RenderOptions = {
   data?: typeof defaultPage
   mutate?: ReturnType<typeof vi.fn>
@@ -69,6 +85,7 @@ function renderPage({ data = defaultPage, mutate = vi.fn().mockResolvedValue(und
   renderWithSWR(<AdminOrgs />, {
     locale: 'en',
     swr: { handlers },
+    session: defaultSession,
   })
   return { mutate }
 }

@@ -23,6 +23,7 @@ vi.mock('../components', () => ({
 vi.mock('next-auth/react', () => ({
   __esModule: true,
   useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 type SwrState<Data> = {

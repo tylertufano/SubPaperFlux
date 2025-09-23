@@ -6,12 +6,30 @@ import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
+import {
+  extractPermissionList,
+  hasPermission,
+  PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+  PERMISSION_READ_GLOBAL_CREDENTIALS,
+} from '../lib/rbac'
 
 export default function Credentials() {
   const { t } = useI18n()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
-  const { data, error, isLoading, mutate } = useSWR(['/v1/credentials'], () => v1.listCredentialsV1V1CredentialsGet({}))
+  const permissions = extractPermissionList(session?.user)
+  const isAuthenticated = status === 'authenticated'
+  const canViewCredentials = Boolean(
+    isAuthenticated &&
+      (hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS) ||
+        hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
+  )
+  const { data, error, isLoading, mutate } = useSWR(
+    canViewCredentials ? ['/v1/credentials'] : null,
+    () => v1.listCredentialsV1V1CredentialsGet({}),
+  )
   const [kind, setKind] = useState('site_login')
   const [description, setDescription] = useState('')
   const [scopeGlobal, setScopeGlobal] = useState(false)
@@ -196,6 +214,37 @@ export default function Credentials() {
     } catch (e: any) {
       setBanner({ kind: 'error', message: e?.message || String(e) })
     }
+  }
+
+  if (status === 'loading') {
+    return (
+      <div>
+        <Nav />
+        <main className="container py-12">
+          <p className="text-gray-700">{t('loading_text')}</p>
+        </main>
+      </div>
+    )
+  }
+
+  const renderAccessMessage = (title: string, message: string) => (
+    <div>
+      <Nav />
+      <main className="container py-12">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-700">{message}</p>
+        </div>
+      </main>
+    </div>
+  )
+
+  if (status === 'unauthenticated') {
+    return renderAccessMessage(t('access_sign_in_title'), t('access_sign_in_message'))
+  }
+
+  if (!canViewCredentials) {
+    return renderAccessMessage(t('access_denied_title'), t('access_denied_message'))
   }
 
   return (

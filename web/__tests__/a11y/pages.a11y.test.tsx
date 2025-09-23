@@ -32,6 +32,7 @@ vi.mock('next-auth/react', () => {
     useSession: () => sessionValue,
     signIn: vi.fn(),
     signOut: vi.fn(),
+    SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   }
 })
 

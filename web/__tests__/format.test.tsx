@@ -28,6 +28,7 @@ vi.mock('next-auth/react', () => ({
   __esModule: true,
   useSession: () => useSessionMock(),
   signIn: (...args: any[]) => signInMock(...args),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 const originalDateTimeFormat = Intl.DateTimeFormat

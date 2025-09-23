@@ -8,6 +8,9 @@ import {
   PERMISSION_MANAGE_BOOKMARKS,
   PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
   PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
+  PERMISSION_READ_BOOKMARKS,
+  PERMISSION_READ_GLOBAL_CREDENTIALS,
+  extractPermissionList,
   hasPermission,
 } from '../lib/rbac'
 
@@ -16,47 +19,6 @@ type AdminCandidate = Record<string, unknown>
 type SessionUser = {
   displayName?: string | null
   name?: string | null
-}
-
-function isIterable(value: unknown): value is Iterable<unknown> {
-  return typeof value === 'object' && value !== null && typeof (value as any)[Symbol.iterator] === 'function'
-}
-
-function extractPermissionList(user: unknown): string[] {
-  if (!user || typeof user !== 'object') {
-    return []
-  }
-  const record = user as { permissions?: unknown }
-  const { permissions } = record
-  if (!permissions) {
-    return []
-  }
-  const results: string[] = []
-  const add = (value: unknown) => {
-    if (typeof value !== 'string') {
-      return
-    }
-    const trimmed = value.trim()
-    if (trimmed) {
-      results.push(trimmed)
-    }
-  }
-  if (typeof permissions === 'string') {
-    add(permissions)
-    return results
-  }
-  if (Array.isArray(permissions)) {
-    for (const entry of permissions) {
-      add(entry)
-    }
-    return results
-  }
-  if (isIterable(permissions)) {
-    for (const entry of permissions) {
-      add(entry)
-    }
-  }
-  return results
 }
 
 function extractFirstName(value: string | null | undefined): string | null {
@@ -135,24 +97,34 @@ export default function Nav() {
   const isAuthenticated = status === 'authenticated'
   const isAdminUser = isAuthenticated && userHasAdminAccess(session?.user)
   const hasAdminAccess = Boolean(userMgmtEnabled && isAdminUser)
+  const canReadBookmarksPermission = hasPermission(permissions, PERMISSION_READ_BOOKMARKS)
+  const canManageBookmarksPermission = hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)
+  const canViewBookmarks = Boolean(
+    isAuthenticated && (isAdminUser || canReadBookmarksPermission || canManageBookmarksPermission),
+  )
   const canManageFeeds = Boolean(
-    userMgmtEnabled &&
-      isAuthenticated &&
-      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
+    userMgmtEnabled && isAuthenticated && (isAdminUser || canManageBookmarksPermission),
+  )
+  const canReadGlobalCredentialsPermission = hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS)
+  const canManageGlobalCredentialsPermission = hasPermission(
+    permissions,
+    PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
+  )
+  const canReadCredentials = Boolean(
+    userMgmtEnabled && isAuthenticated && (isAdminUser || canReadGlobalCredentialsPermission),
   )
   const canManageCredentials = Boolean(
-    userMgmtEnabled &&
-      isAuthenticated &&
-      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
+    userMgmtEnabled && isAuthenticated && (isAdminUser || canManageGlobalCredentialsPermission),
   )
+  const shouldShowCredentialsLink = canReadCredentials || canManageCredentials
   const canManageSiteConfigs = Boolean(
     userMgmtEnabled &&
       isAuthenticated &&
       (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS)),
   )
-  const shouldShowFeedsMenu = userMgmtEnabled && isAuthenticated
-  const shouldShowBookmarksLink = isAuthenticated
-  const shouldShowJobsLink = isAuthenticated
+  const shouldShowFeedsMenu = Boolean(userMgmtEnabled && canViewBookmarks)
+  const shouldShowBookmarksLink = canViewBookmarks
+  const shouldShowJobsLink = canViewBookmarks
 
   const adminAccountItems = hasAdminAccess
     ? [
@@ -205,7 +177,7 @@ export default function Nav() {
             ]}
           />
         ) : null}
-        {canManageCredentials ? (
+        {shouldShowCredentialsLink ? (
           <Link
             href="/credentials"
             className={linkClass('/credentials')}

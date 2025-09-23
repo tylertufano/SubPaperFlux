@@ -144,6 +144,14 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
   const renderResult = renderWithSWR(<Credentials />, {
     locale,
     swr: swrConfig,
+    session: {
+      user: {
+        name: 'Test User',
+        email: 'user@example.com',
+        permissions: ['credentials:manage'],
+      },
+      expires: '2099-01-01T00:00:00.000Z',
+    },
   })
 
   const kindSelect = (await screen.findByLabelText(/Kind/)) as HTMLSelectElement

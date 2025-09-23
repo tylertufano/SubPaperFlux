@@ -2,6 +2,8 @@ import React, { type ComponentType, type ReactElement, type ReactNode } from 're
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react'
 import { vi } from 'vitest'
 import { I18nProvider } from '../../lib/i18n'
+import { SessionProvider } from 'next-auth/react'
+import type { Session } from 'next-auth'
 
 type AnyFunction = (...args: any[]) => any
 
@@ -34,6 +36,7 @@ type SWRMockConfig = {
 export type RenderWithSWROptions = RenderOptions & {
   locale?: string
   swr?: SWRMockConfig
+  session?: Session | null
 }
 
 const { useSWRMock } = vi.hoisted(() => ({ useSWRMock: vi.fn() }))
@@ -64,15 +67,19 @@ function resolveValue<Data, Error>(
   return normalize(entry)
 }
 
-function buildWrapper(userWrapper?: ComponentType<{ children: ReactNode }>) {
+function buildWrapper(session: Session | null, userWrapper?: ComponentType<{ children: ReactNode }>) {
   return function Wrapper({ children }: { children: ReactNode }) {
     const content = userWrapper ? React.createElement(userWrapper, null, children) : children
-    return <I18nProvider>{content}</I18nProvider>
+    return (
+      <SessionProvider session={session}>
+        <I18nProvider>{content}</I18nProvider>
+      </SessionProvider>
+    )
   }
 }
 
 export function renderWithSWR(ui: ReactElement, options: RenderWithSWROptions = {}): RenderResult {
-  const { locale, swr, wrapper: userWrapper, ...renderOptions } = options
+  const { locale, swr, session = null, wrapper: userWrapper, ...renderOptions } = options
   const handlers = swr?.handlers ?? []
   const fallback = swr?.fallback ?? {}
 
@@ -95,7 +102,7 @@ export function renderWithSWR(ui: ReactElement, options: RenderWithSWROptions = 
     }
   }
 
-  return render(ui, { ...renderOptions, wrapper: buildWrapper(userWrapper) })
+  return render(ui, { ...renderOptions, wrapper: buildWrapper(session, userWrapper) })
 }
 
 export function makeSWRSuccess<Data>(
