@@ -79,9 +79,7 @@ describe('Nav component', () => {
     return screen.getAllByTestId('dropdown-Test User')
   }
 
-  it('shows admin navigation inside the account dropdown by default', () => {
-    renderWithSWR(<Nav />, { locale: 'en' })
-
+  function expectAdminNavigationVisible() {
     const accountDropdowns = getAccountDropdowns()
     expect(screen.queryByRole('link', { name: 'Admin' })).toBeNull()
     expect(
@@ -106,6 +104,20 @@ describe('Nav component', () => {
     expect(within(feedsDropdown).getByText('Create Feed')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Site Configs' })).toBeInTheDocument()
+  }
+
+  it('shows admin navigation inside the account dropdown by default', () => {
+    renderWithSWR(<Nav />, { locale: 'en' })
+
+    expectAdminNavigationVisible()
+  })
+
+  it('shows admin navigation when the backend is disabled but the UI remains enabled', () => {
+    useFeatureFlagsMock.mockReturnValue({ userMgmtCore: false, userMgmtUi: true, isLoaded: true })
+
+    renderWithSWR(<Nav />, { locale: 'en' })
+
+    expectAdminNavigationVisible()
   })
 
   it('hides admin links for users without admin privileges', () => {
