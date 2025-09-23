@@ -165,12 +165,16 @@ def list_users(
     if is_active is not None:
         filters.append(User.is_active == is_active)
 
-    stmt = select(User)
+    created_at_expression = func.max(User.created_at).label("created_at")
+    user_ids_stmt = (
+        select(User.id.label("user_id"), created_at_expression)
+        .select_from(User)
+    )
     count_stmt = select(func.count(func.distinct(User.id))).select_from(User)
 
     if role:
-        stmt = (
-            stmt.join(UserRole, UserRole.user_id == User.id)
+        user_ids_stmt = (
+            user_ids_stmt.join(UserRole, UserRole.user_id == User.id)
             .join(Role, Role.id == UserRole.role_id)
             .where(Role.name == role)
         )
@@ -181,7 +185,7 @@ def list_users(
         )
 
     if organization_id:
-        stmt = stmt.join(
+        user_ids_stmt = user_ids_stmt.join(
             OrganizationMembership,
             OrganizationMembership.user_id == User.id,
         ).where(OrganizationMembership.organization_id == organization_id)
@@ -191,13 +195,28 @@ def list_users(
         ).where(OrganizationMembership.organization_id == organization_id)
 
     if filters:
-        stmt = stmt.where(*filters)
+        user_ids_stmt = user_ids_stmt.where(*filters)
         count_stmt = count_stmt.where(*filters)
 
-    stmt = stmt.distinct().order_by(User.created_at.desc())
-
     offset = (page - 1) * size
-    rows = session.exec(stmt.offset(offset).limit(size)).all()
+    user_ids_stmt = user_ids_stmt.group_by(User.id)
+    user_ids_subquery = user_ids_stmt.subquery()
+    paginated_ids_stmt = (
+        select(user_ids_subquery.c.user_id, user_ids_subquery.c.created_at)
+        .order_by(user_ids_subquery.c.created_at.desc())
+        .offset(offset)
+        .limit(size)
+    )
+    id_rows = session.exec(paginated_ids_stmt).all()
+    user_ids = [row.user_id for row in id_rows]
+
+    rows: List[User]
+    if not user_ids:
+        rows = []
+    else:
+        id_order = {user_id: index for index, user_id in enumerate(user_ids)}
+        fetched_rows = session.exec(select(User).where(User.id.in_(user_ids))).all()
+        rows = sorted(fetched_rows, key=lambda user: id_order[user.id])
     total = int(session.exec(count_stmt).one() or 0)
 
     items = [_serialize_user(session, row) for row in rows]
