@@ -329,10 +329,26 @@ class JobSchedule(SQLModel, table=True):
 
 class Cookie(SQLModel, table=True):
     __tablename__ = "cookie"
+    __table_args__ = (
+        UniqueConstraint(
+            "site_config_id",
+            "credential_id",
+            name="uq_cookie_site_config_credential",
+        ),
+    )
+
     id: str = Field(default_factory=lambda: gen_id("cookie"), primary_key=True)
     # A stable key per user+site config for easy lookup
     cookie_key: str = Field(index=True)
     owner_user_id: Optional[str] = Field(default=None, index=True)
+    credential_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("credential.id", ondelete="CASCADE"),
+            nullable=True,
+            index=True,
+        ),
+    )
     site_config_id: Optional[str] = Field(default=None, index=True)
     cookies: Dict = Field(default_factory=dict, sa_column=Column(JSON))
     last_refresh: Optional[str] = None  # ISO timestamp

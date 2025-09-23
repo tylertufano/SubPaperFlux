@@ -134,21 +134,37 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
 
     # Backward-compat: previously wrote to cookie_state.json. Now store in DB.
     cookie_key = f"{credential_id}-{site_config_id}"
+    encrypted = encrypt_dict({"cookies": cookies})
+    expiry_hint = _compute_expiry_hint(cookies)
+    now_iso = datetime.now(timezone.utc).isoformat()
     with get_session_ctx() as session:
-        stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
+        stmt = select(CookieModel).where(
+            (CookieModel.credential_id == credential_id)
+            & (CookieModel.site_config_id == site_config_id)
+        )
         existing = session.exec(stmt).first()
+        if not existing:
+            stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
+            existing = session.exec(stmt).first()
         if existing:
-            existing.cookies = encrypt_dict({"cookies": cookies})
-            existing.last_refresh = datetime.now(timezone.utc).isoformat()
-            existing.expiry_hint = _compute_expiry_hint(cookies)
+            existing.cookie_key = cookie_key
+            existing.credential_id = credential_id
+            existing.site_config_id = site_config_id
+            existing.cookies = encrypted
+            existing.last_refresh = now_iso
+            existing.expiry_hint = expiry_hint
+            if owner_user_id is not None:
+                existing.owner_user_id = owner_user_id
             session.add(existing)
         else:
             new = CookieModel(
                 cookie_key=cookie_key,
+                credential_id=credential_id,
                 site_config_id=site_config_id,
-                cookies=encrypt_dict({"cookies": cookies}),
-                last_refresh=datetime.now(timezone.utc).isoformat(),
-                expiry_hint=_compute_expiry_hint(cookies),
+                owner_user_id=owner_user_id,
+                cookies=encrypted,
+                last_refresh=now_iso,
+                expiry_hint=expiry_hint,
             )
             session.add(new)
         session.commit()
@@ -159,6 +175,13 @@ def get_cookies_from_db(cookie_key: str) -> List[Dict[str, Any]]:
     with get_session_ctx() as session:
         stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
         rec = session.exec(stmt).first()
+        if not rec and "-" in cookie_key:
+            cred_id, sc_id = cookie_key.split("-", 1)
+            stmt = select(CookieModel).where(
+                (CookieModel.credential_id == cred_id)
+                & (CookieModel.site_config_id == sc_id)
+            )
+            rec = session.exec(stmt).first()
         blob = rec.cookies if rec else None
         if isinstance(blob, dict) and is_encrypted(blob):
             try:
