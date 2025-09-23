@@ -12,6 +12,8 @@ type OidcProvider = {
 }
 
 const originalFetch = globalThis.fetch
+const originalGroupRoleMap = process.env.OIDC_GROUP_ROLE_MAP
+const originalGroupRoleDefaults = process.env.OIDC_GROUP_ROLE_DEFAULTS
 
 afterEach(() => {
   if (originalFetch) {
@@ -21,6 +23,16 @@ afterEach(() => {
   }
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+  if (originalGroupRoleMap === undefined) {
+    delete process.env.OIDC_GROUP_ROLE_MAP
+  } else {
+    process.env.OIDC_GROUP_ROLE_MAP = originalGroupRoleMap
+  }
+  if (originalGroupRoleDefaults === undefined) {
+    delete process.env.OIDC_GROUP_ROLE_DEFAULTS
+  } else {
+    process.env.OIDC_GROUP_ROLE_DEFAULTS = originalGroupRoleDefaults
+  }
 })
 
 function buildIdToken(payload: Record<string, unknown>): string {
@@ -120,6 +132,37 @@ describe('authOptions callbacks', () => {
       groups: ['Staff'],
     })
   }
+
+  it('derives roles from configured group mappings when explicit role claims are absent', async () => {
+    process.env.OIDC_GROUP_ROLE_MAP = 'staff=admin'
+    process.env.OIDC_GROUP_ROLE_DEFAULTS = 'auditor'
+
+    const provider = getOidcProvider()
+    const user = provider.profile({
+      sub: 'user-303',
+      name: 'Group Only User',
+      groups: ['Staff'],
+    })
+
+    const token = await authOptions.callbacks?.jwt?.({
+      token: {},
+      user,
+      account: null,
+    } as any)
+
+    expect(token?.groups).toEqual(['staff'])
+    expect(token?.roles).toEqual(['auditor', 'admin'])
+    expect(token?.permissions).toEqual([...ALL_PERMISSIONS])
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: token!,
+    } as any)
+
+    expect(session?.user?.groups).toEqual(['staff'])
+    expect(session?.user?.roles).toEqual(['auditor', 'admin'])
+    expect(session?.user?.permissions).toEqual([...ALL_PERMISSIONS])
+  })
 
   it('persists normalized roles, groups, and permissions onto the JWT and session', async () => {
     const user = buildUser()

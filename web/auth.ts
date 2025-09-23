@@ -4,7 +4,7 @@ import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 
-import { derivePermissionsFromRoles, normalizeIdentifierList } from './lib/rbac'
+import { derivePermissionsFromRoles, normalizeIdentifier, normalizeIdentifierList } from './lib/rbac'
 import { decodeBase64UrlSegment } from './lib/base64'
 
 const WELL_KNOWN_SUFFIX = '/.well-known/openid-configuration'
@@ -65,6 +65,107 @@ type MutableToken = JWT & {
   sub?: string
   userId?: string
   userInfoSynced?: boolean
+}
+
+type GroupRoleConfig = {
+  groupRoleMap: ReadonlyMap<string, readonly string[]>
+  defaultRoles: readonly string[]
+}
+
+function iterTokens(raw: string): string[] {
+  return raw
+    .replace(/\n/g, ',')
+    .split(',')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0)
+}
+
+function parseGroupRoleMap(raw: string): Map<string, string[]> {
+  const mapping = new Map<string, string[]>()
+
+  for (const token of iterTokens(raw)) {
+    const separatorIndex = token.indexOf('=')
+    if (separatorIndex === -1) {
+      throw new Error(`Invalid group role mapping entry: ${JSON.stringify(token)}`)
+    }
+
+    const groupSegment = token.slice(0, separatorIndex)
+    const roleSegment = token.slice(separatorIndex + 1)
+    const normalizedGroup = normalizeIdentifier(groupSegment)
+    const normalizedRole = normalizeIdentifier(roleSegment)
+
+    if (!normalizedGroup || !normalizedRole) {
+      throw new Error(`Invalid group role mapping entry: ${JSON.stringify(token)}`)
+    }
+
+    const existing = mapping.get(normalizedGroup)
+    if (existing) {
+      if (!existing.includes(normalizedRole)) {
+        existing.push(normalizedRole)
+      }
+    } else {
+      mapping.set(normalizedGroup, [normalizedRole])
+    }
+  }
+
+  return mapping
+}
+
+function parseDefaultRoles(raw: string): string[] {
+  const defaults: string[] = []
+  const seen = new Set<string>()
+
+  for (const token of iterTokens(raw)) {
+    const normalized = normalizeIdentifier(token)
+    if (!normalized || seen.has(normalized)) {
+      continue
+    }
+    seen.add(normalized)
+    defaults.push(normalized)
+  }
+
+  return defaults
+}
+
+function loadGroupRoleConfig(): GroupRoleConfig {
+  const rawMap = process.env.OIDC_GROUP_ROLE_MAP ?? ''
+  const rawDefaults = process.env.OIDC_GROUP_ROLE_DEFAULTS ?? ''
+  const groupRoleMap = parseGroupRoleMap(rawMap)
+  const defaultRoles = parseDefaultRoles(rawDefaults)
+  return { groupRoleMap, defaultRoles }
+}
+
+function resolveRolesForGroups(groups: Iterable<string>): string[] {
+  const config = loadGroupRoleConfig()
+  const resolved: string[] = []
+  const seen = new Set<string>()
+
+  const addRole = (role: string) => {
+    if (!seen.has(role)) {
+      seen.add(role)
+      resolved.push(role)
+    }
+  }
+
+  for (const role of config.defaultRoles) {
+    addRole(role)
+  }
+
+  for (const group of groups) {
+    const normalizedGroup = normalizeIdentifier(group)
+    if (!normalizedGroup) {
+      continue
+    }
+    const mappedRoles = config.groupRoleMap.get(normalizedGroup)
+    if (!mappedRoles) {
+      continue
+    }
+    for (const role of mappedRoles) {
+      addRole(role)
+    }
+  }
+
+  return resolved
 }
 
 function normalizeClaimKey(key: string): string {
@@ -484,6 +585,8 @@ export const authOptions: NextAuthConfig = {
           mutableToken.userInfoSynced = true
         }
       }
+      const resolvedGroupRoles = resolveRolesForGroups(mutableToken.groups ?? [])
+      mutableToken.roles = normalizeIdentifierList([mutableToken.roles ?? [], resolvedGroupRoles])
       mutableToken.permissions = derivePermissionsFromRoles(mutableToken.roles)
       return mutableToken
     },
