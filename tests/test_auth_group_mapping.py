@@ -61,3 +61,16 @@ def test_resolve_roles_for_groups_includes_defaults(monkeypatch):
     roles = resolve_roles_for_groups([" team-one ", None, "", "team-two", "unknown"])
 
     assert roles == frozenset({"default-role", "role-alpha", "role-beta"})
+
+
+def test_resolve_roles_for_groups_normalizes_group_names(monkeypatch):
+    from app.auth.mapping import resolve_roles_for_groups
+
+    monkeypatch.setenv(
+        "OIDC_GROUP_ROLE_MAP",
+        "MediaAdmins=role-writer,mediaadmins=role-reader",
+    )
+
+    roles = resolve_roles_for_groups(["MediaAdmins", "mediaadmins", " MEDIAADMINS "])
+
+    assert roles == frozenset({"role-reader", "role-writer"})
