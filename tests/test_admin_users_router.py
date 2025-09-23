@@ -225,6 +225,73 @@ def test_admin_users_listing_and_role_management(admin_client):
         assert "revoke" in actions
 
 
+def test_admin_users_list_deduplicates_with_multiple_roles_and_orgs(admin_client):
+    from app.auth import ensure_role, grant_role
+    from app.db import get_session
+    from app.models import User
+
+    target_user_id = "multi-role-org-user"
+    with next(get_session()) as session:
+        user = session.get(User, target_user_id)
+        if user is None:
+            user = User(
+                id=target_user_id,
+                email="multi@example.com",
+                full_name="Multi Role Org",
+            )
+        else:
+            user.email = "multi@example.com"
+            user.full_name = "Multi Role Org"
+        session.add(user)
+        session.commit()
+
+        ensure_role(session, "alpha-role")
+        ensure_role(session, "beta-role")
+        session.commit()
+
+        grant_role(session, user.id, "alpha-role", granted_by_user_id="admin-1")
+        grant_role(session, user.id, "beta-role", granted_by_user_id="admin-1")
+        session.commit()
+
+    primary_org = create_organization(
+        slug="multi-org-primary",
+        name="Multi Org Primary",
+        member_ids=[target_user_id],
+    )
+    create_organization(
+        slug="multi-org-secondary",
+        name="Multi Org Secondary",
+        member_ids=[target_user_id],
+    )
+
+    resp_role = admin_client.get("/v1/admin/users", params={"role": "alpha-role"})
+    assert resp_role.status_code == 200
+    payload_role = resp_role.json()
+    ids_role = [item["id"] for item in payload_role["items"]]
+    assert ids_role.count(target_user_id) == 1
+    assert len(ids_role) == len(set(ids_role))
+
+    resp_org = admin_client.get(
+        "/v1/admin/users",
+        params={"organization_id": primary_org.id},
+    )
+    assert resp_org.status_code == 200
+    payload_org = resp_org.json()
+    ids_org = [item["id"] for item in payload_org["items"]]
+    assert ids_org.count(target_user_id) == 1
+    assert len(ids_org) == len(set(ids_org))
+
+    resp_combined = admin_client.get(
+        "/v1/admin/users",
+        params={"role": "alpha-role", "organization_id": primary_org.id},
+    )
+    assert resp_combined.status_code == 200
+    payload_combined = resp_combined.json()
+    ids_combined = [item["id"] for item in payload_combined["items"]]
+    assert ids_combined.count(target_user_id) == 1
+    assert len(ids_combined) == len(set(ids_combined))
+
+
 def test_admin_users_role_override_management(admin_client):
     from app.auth.role_overrides import ROLE_OVERRIDES_CLAIM
     from app.db import get_session
