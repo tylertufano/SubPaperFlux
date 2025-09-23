@@ -7,6 +7,8 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
+import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
+import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
 import { auth } from '../auth'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
@@ -1032,6 +1034,43 @@ export const v1 = {
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
+  listJobSchedulesV1JobSchedulesGet: async (p: any = {}) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(p),
+  createJobScheduleV1JobSchedulesPost: async ({
+    jobScheduleCreate,
+  }: {
+    jobScheduleCreate: JobScheduleCreate
+  }) => (await getClients()).v1.createJobScheduleV1JobSchedulesPost({ jobScheduleCreate }),
+  getJobScheduleV1JobSchedulesScheduleIdGet: async ({
+    scheduleId,
+  }: {
+    scheduleId: string
+  }) => (await getClients()).v1.getJobScheduleV1JobSchedulesScheduleIdGet({ scheduleId }),
+  updateJobScheduleV1JobSchedulesScheduleIdPatch: async ({
+    scheduleId,
+    jobScheduleUpdate,
+  }: {
+    scheduleId: string
+    jobScheduleUpdate: JobScheduleUpdate
+  }) =>
+    (await getClients()).v1.updateJobScheduleV1JobSchedulesScheduleIdPatch({
+      scheduleId,
+      jobScheduleUpdate,
+    }),
+  deleteJobScheduleV1JobSchedulesScheduleIdDelete: async ({
+    scheduleId,
+  }: {
+    scheduleId: string
+  }) => (await getClients()).v1.deleteJobScheduleV1JobSchedulesScheduleIdDelete({ scheduleId }),
+  toggleJobScheduleV1JobSchedulesScheduleIdTogglePost: async ({
+    scheduleId,
+  }: {
+    scheduleId: string
+  }) => (await getClients()).v1.toggleJobScheduleV1JobSchedulesScheduleIdTogglePost({ scheduleId }),
+  runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost: async ({
+    scheduleId,
+  }: {
+    scheduleId: string
+  }) => (await getClients()).v1.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost({ scheduleId }),
   copyCredentialV1CredentialsCredIdCopyPost: async ({ credId }: { credId: string }): Promise<Credential> =>
     (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
   copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>

@@ -122,6 +122,9 @@ export default function Nav() {
   const shouldShowFeedsMenu = Boolean(userMgmtUiEnabled && canViewBookmarks)
   const shouldShowBookmarksLink = canViewBookmarks
   const shouldShowJobsLink = canViewBookmarks
+  const shouldShowJobSchedulesLink = Boolean(
+    isAuthenticated && (isAdminUser || canManageBookmarksPermission),
+  )
 
   const defaultFeedsLabel = t('nav_feeds_all')
   const feedsMenuItems = [{ href: '/feeds', label: defaultFeedsLabel }]
@@ -168,6 +171,15 @@ export default function Nav() {
         {shouldShowJobsLink ? (
           <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
             {t('nav_jobs')}
+          </Link>
+        ) : null}
+        {shouldShowJobSchedulesLink ? (
+          <Link
+            href="/job-schedules"
+            className={linkClass('/job-schedules')}
+            aria-current={pathname === '/job-schedules' ? 'page' : undefined}
+          >
+            {t('nav_job_schedules')}
           </Link>
         ) : null}
         {shouldShowFeedsMenu ? (
