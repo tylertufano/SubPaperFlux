@@ -1734,13 +1734,13 @@ export default function JobSchedulesPage() {
                 {schedules.map((schedule) => {
                   const isTogglePending =
                     pendingAction?.id === schedule.id &&
-                    pendingAction.kind === "toggle";
+                    pendingAction?.kind === "toggle";
                   const isRunPending =
                     pendingAction?.id === schedule.id &&
-                    pendingAction.kind === "run";
+                    pendingAction?.kind === "run";
                   const isDeletePending =
                     pendingAction?.id === schedule.id &&
-                    pendingAction.kind === "delete";
+                    pendingAction?.kind === "delete";
                   const isRowPending = Boolean(
                     pendingAction?.id === schedule.id,
                   );
