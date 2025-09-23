@@ -55,6 +55,22 @@ const defaultWelcomeSetting: SiteWelcomeSettingOut = {
   updated_by_user_id: 'admin-1',
 }
 
+const defaultSession = {
+  user: {
+    name: 'Admin User',
+    email: 'admin@example.com',
+    permissions: [
+      'bookmarks:read',
+      'bookmarks:manage',
+      'credentials:read',
+      'credentials:manage',
+      'site_configs:read',
+      'site_configs:manage',
+    ],
+  },
+  expires: '2099-01-01T00:00:00.000Z',
+} as const
+
 type RenderOptions = {
   data?: SiteWelcomeSettingOut
 }
@@ -71,6 +87,7 @@ function renderPage({ data = defaultWelcomeSetting }: RenderOptions = {}) {
   renderWithSWR(<AdminSiteSettings />, {
     locale: 'en',
     swr: { handlers },
+    session: defaultSession,
   })
 }
 

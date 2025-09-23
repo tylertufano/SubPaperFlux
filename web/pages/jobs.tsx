@@ -7,21 +7,40 @@ import Link from 'next/link'
 import { formatNumberValue, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
+import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 
 export default function Jobs() {
   const { t } = useI18n()
   const router = useRouter()
+  const { data: session, status: sessionStatus } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
-  const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, status], ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s }))
+  const permissions = extractPermissionList(session?.user)
+  const isAuthenticated = sessionStatus === 'authenticated'
+  const canViewJobs = Boolean(
+    isAuthenticated &&
+      (hasPermission(permissions, PERMISSION_READ_BOOKMARKS) ||
+        hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
+  )
+  const { data, error, isLoading, mutate } = useSWR(
+    canViewJobs ? [`/v1/jobs`, page, status] : null,
+    ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s }),
+  )
   const [now, setNow] = useState<number>(Date.now() / 1000)
   useEffect(() => {
+    if (!canViewJobs) {
+      return
+    }
     const id = setInterval(() => setNow(Date.now() / 1000), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [canViewJobs])
   useEffect(() => {
+    if (!canViewJobs) {
+      return
+    }
     const params = new URLSearchParams({ page: String(page), size: "20" })
     if (status) params.set('status', status)
     const apiBase = process.env.NEXT_PUBLIC_API_BASE || ''
@@ -38,7 +57,7 @@ export default function Jobs() {
     return () => {
       es.close()
     }
-  }, [page, status, mutate])
+  }, [page, status, mutate, canViewJobs])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
@@ -47,6 +66,37 @@ export default function Jobs() {
     setStatus('')
     setPage(1)
     mutate()
+  }
+
+  if (sessionStatus === 'loading') {
+    return (
+      <div>
+        <Nav />
+        <main className="container py-12">
+          <p className="text-gray-700">{t('loading_text')}</p>
+        </main>
+      </div>
+    )
+  }
+
+  const renderAccessMessage = (title: string, message: string) => (
+    <div>
+      <Nav />
+      <main className="container py-12">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-700">{message}</p>
+        </div>
+      </main>
+    </div>
+  )
+
+  if (sessionStatus === 'unauthenticated') {
+    return renderAccessMessage(t('access_sign_in_title'), t('access_sign_in_message'))
+  }
+
+  if (!canViewJobs) {
+    return renderAccessMessage(t('access_denied_title'), t('access_denied_message'))
   }
 
   return (

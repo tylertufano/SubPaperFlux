@@ -141,6 +141,14 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
   const renderResult = renderWithSWR(<SiteConfigs />, {
     locale,
     swr: swrConfig,
+    session: {
+      user: {
+        name: 'Admin User',
+        email: 'admin@example.com',
+        permissions: ['site_configs:read', 'site_configs:manage'],
+      },
+      expires: '2099-01-01T00:00:00.000Z',
+    },
   })
 
   const nameInput = (await screen.findByLabelText(/^Name$/i)) as HTMLInputElement

@@ -7,6 +7,13 @@ import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
+import {
+  extractPermissionList,
+  hasPermission,
+  PERMISSION_MANAGE_BOOKMARKS,
+  PERMISSION_READ_BOOKMARKS,
+} from '../lib/rbac'
 import type { FeedOut } from '../sdk/src/models/FeedOut'
 import type { FolderOut } from '../sdk/src/models/FolderOut'
 import type { TagOut } from '../sdk/src/models/TagOut'
@@ -73,6 +80,7 @@ function extractItems<T>(source: ItemsSource<T> | undefined): T[] {
 export default function Bookmarks() {
   const { t } = useI18n()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
@@ -105,8 +113,17 @@ export default function Bookmarks() {
   const [tagModal, setTagModal] = useState<TagModalState | null>(null)
   const [folderModal, setFolderModal] = useState<FolderModalState | null>(null)
   const [previewBookmarkId, setPreviewBookmarkId] = useState<string | null>(null)
+  const permissions = extractPermissionList(session?.user)
+  const isAuthenticated = status === 'authenticated'
+  const canViewBookmarks = Boolean(
+    isAuthenticated &&
+      (hasPermission(permissions, PERMISSION_READ_BOOKMARKS) ||
+        hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
+  )
   function addZ(v?: string) { if (!v) return undefined; return v.endsWith('Z') ? v : v + ':00Z' }
-  const { data, error, isLoading, mutate } = useSWR([
+  const { data, error, isLoading, mutate } = useSWR(
+    canViewBookmarks
+      ? [
     `/v1/bookmarks`,
     page,
     keyword,
@@ -122,7 +139,8 @@ export default function Bookmarks() {
     until,
     sortBy,
     sortDir,
-  ],
+  ]
+      : null,
     ([, p, kw, tQuery, uQuery, regexValue, target, regexCI, f, tagFilter, folderFilter, s, u, sb, sd]) => v1.listBookmarksV1BookmarksGet({
       page: p,
       search: kw || undefined,
@@ -140,21 +158,30 @@ export default function Bookmarks() {
       sortBy: sb,
       sortDir: sb === 'relevance' ? undefined : sd,
     }))
-  const { data: feeds } = useSWR<ItemsSource<FeedOut>>([`/v1/feeds`], () => v1.listFeedsV1V1FeedsGet({}))
+  const { data: feeds } = useSWR<ItemsSource<FeedOut>>(
+    canViewBookmarks ? [`/v1/feeds`] : null,
+    () => v1.listFeedsV1V1FeedsGet({}),
+  )
   const feedItems = extractItems(feeds)
   const {
     data: tagsData,
     error: tagsError,
     isLoading: tagsLoading,
     mutate: mutateTags,
-  } = useSWR<ItemsSource<TagOut>>([`/v1/bookmarks/tags`], () => v1.listTagsBookmarksTagsGet())
+  } = useSWR<ItemsSource<TagOut>>(
+    canViewBookmarks ? [`/v1/bookmarks/tags`] : null,
+    () => v1.listTagsBookmarksTagsGet(),
+  )
   const tagItems = extractItems(tagsData)
   const {
     data: foldersData,
     error: foldersError,
     isLoading: foldersLoading,
     mutate: mutateFolders,
-  } = useSWR<ItemsSource<FolderOut>>([`/v1/bookmarks/folders`], () => v1.listFoldersBookmarksFoldersGet())
+  } = useSWR<ItemsSource<FolderOut>>(
+    canViewBookmarks ? [`/v1/bookmarks/folders`] : null,
+    () => v1.listFoldersBookmarksFoldersGet(),
+  )
   const folderItems = extractItems(foldersData)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
@@ -192,7 +219,7 @@ export default function Bookmarks() {
   }
 
   const { data: previewData, error: previewError, isLoading: previewLoading } = useSWR(
-    previewBookmarkId ? ['/v1/bookmarks', previewBookmarkId, 'preview'] : null,
+    canViewBookmarks && previewBookmarkId ? ['/v1/bookmarks', previewBookmarkId, 'preview'] : null,
     () => v1.previewBookmarkV1BookmarksBookmarkIdPreviewGet({ bookmarkId: previewBookmarkId as string }),
   )
   const previewSnippet = typeof previewData === 'string' ? previewData : ''
@@ -858,6 +885,33 @@ export default function Bookmarks() {
       const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bookmarks.csv'; a.click()
     }
+  }
+  if (status === 'loading') {
+    return (
+      <div>
+        <Nav />
+        <main className="container py-12">
+          <p className="text-gray-700">{t('loading_text')}</p>
+        </main>
+      </div>
+    )
+  }
+  const renderAccessMessage = (title: string, message: string) => (
+    <div>
+      <Nav />
+      <main className="container py-12">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-700">{message}</p>
+        </div>
+      </main>
+    </div>
+  )
+  if (status === 'unauthenticated') {
+    return renderAccessMessage(t('access_sign_in_title'), t('access_sign_in_message'))
+  }
+  if (!canViewBookmarks) {
+    return renderAccessMessage(t('access_denied_title'), t('access_denied_message'))
   }
   return (
     <div>

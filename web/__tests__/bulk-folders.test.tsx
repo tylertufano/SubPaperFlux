@@ -11,6 +11,13 @@ const { useSWRMock, mutateBookmarksMock, mutateTagsMock, mutateFoldersMock } = v
   mutateFoldersMock: vi.fn(),
 }))
 
+const { useSessionMock } = vi.hoisted(() => ({
+  useSessionMock: vi.fn(() => ({
+    data: { user: { permissions: ['bookmarks:read'] } },
+    status: 'authenticated' as const,
+  })),
+}))
+
 const { bulkUpdateFoldersMock } = vi.hoisted(() => ({
   bulkUpdateFoldersMock: vi.fn(),
 }))
@@ -80,6 +87,12 @@ vi.mock('../components', async () => {
   }
 })
 
+vi.mock('next-auth/react', () => ({
+  __esModule: true,
+  useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 function renderBookmarks() {
   return render(
     <I18nProvider>
@@ -94,6 +107,11 @@ describe('Bulk folder assignment modal', () => {
     mutateBookmarksMock.mockReset()
     mutateTagsMock.mockReset()
     mutateFoldersMock.mockReset()
+    useSessionMock.mockReset()
+    useSessionMock.mockReturnValue({
+      data: { user: { permissions: ['bookmarks:read'] } },
+      status: 'authenticated' as const,
+    })
     bulkUpdateFoldersMock.mockReset()
 
     const bookmarksData = {

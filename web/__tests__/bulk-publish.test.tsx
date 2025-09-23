@@ -4,9 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Bookmarks from '../pages/bookmarks'
 import { I18nProvider } from '../lib/i18n'
 
-const { useSWRMock, mutateMock } = vi.hoisted(() => ({
+const { useSWRMock, mutateMock, useSessionMock } = vi.hoisted(() => ({
   useSWRMock: vi.fn(),
   mutateMock: vi.fn(),
+  useSessionMock: vi.fn(() => ({
+    data: { user: { permissions: ['bookmarks:read'] } },
+    status: 'authenticated' as const,
+  })),
 }))
 
 const { streamBulkPublishMock } = vi.hoisted(() => ({
@@ -57,6 +61,12 @@ vi.mock('../components', async () => {
   }
 })
 
+vi.mock('next-auth/react', () => ({
+  __esModule: true,
+  useSession: () => useSessionMock(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 function renderBookmarks() {
   return render(
     <I18nProvider>
@@ -70,6 +80,11 @@ describe('Bookmarks bulk publish modal', () => {
     mutateMock.mockReset()
     streamBulkPublishMock.mockReset()
     useSWRMock.mockReset()
+    useSessionMock.mockReset()
+    useSessionMock.mockReturnValue({
+      data: { user: { permissions: ['bookmarks:read'] } },
+      status: 'authenticated' as const,
+    })
     const bookmarksData = {
       items: [
         {

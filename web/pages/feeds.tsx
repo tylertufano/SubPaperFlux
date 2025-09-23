@@ -5,12 +5,25 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import { useSession } from 'next-auth/react'
+import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 
 export default function Feeds() {
   const { t } = useI18n()
   const router = useRouter()
+  const { data: session, status: sessionStatus } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
-  const { data, error, isLoading, mutate } = useSWR(['/v1/feeds'], () => v1.listFeedsV1V1FeedsGet({}))
+  const permissions = extractPermissionList(session?.user)
+  const isAuthenticated = sessionStatus === 'authenticated'
+  const canViewFeeds = Boolean(
+    isAuthenticated &&
+      (hasPermission(permissions, PERMISSION_READ_BOOKMARKS) ||
+        hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
+  )
+  const { data, error, isLoading, mutate } = useSWR(
+    canViewFeeds ? ['/v1/feeds'] : null,
+    () => v1.listFeedsV1V1FeedsGet({}),
+  )
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
   const [lookback, setLookback] = useState('')
@@ -88,6 +101,37 @@ export default function Feeds() {
     } catch (e: any) {
       setBanner({ kind: 'error', message: e?.message || String(e) })
     }
+  }
+
+  if (sessionStatus === 'loading') {
+    return (
+      <div>
+        <Nav />
+        <main className="container py-12">
+          <p className="text-gray-700">{t('loading_text')}</p>
+        </main>
+      </div>
+    )
+  }
+
+  const renderAccessMessage = (title: string, message: string) => (
+    <div>
+      <Nav />
+      <main className="container py-12">
+        <div className="max-w-xl space-y-2">
+          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-gray-700">{message}</p>
+        </div>
+      </main>
+    </div>
+  )
+
+  if (sessionStatus === 'unauthenticated') {
+    return renderAccessMessage(t('access_sign_in_title'), t('access_sign_in_message'))
+  }
+
+  if (!canViewFeeds) {
+    return renderAccessMessage(t('access_denied_title'), t('access_denied_message'))
   }
 
   return (

@@ -95,6 +95,49 @@ export function derivePermissionsFromRoles(roles: Iterable<string> | null | unde
   return permissions
 }
 
+export function extractPermissionList(source: unknown): string[] {
+  if (source === null || source === undefined) {
+    return []
+  }
+
+  const values: unknown =
+    typeof source === 'object' && source !== null && 'permissions' in (source as Record<string, unknown>)
+      ? (source as { permissions?: unknown }).permissions
+      : source
+
+  const results: string[] = []
+
+  const add = (candidate: unknown) => {
+    if (typeof candidate !== 'string') {
+      return
+    }
+    const trimmed = candidate.trim()
+    if (trimmed) {
+      results.push(trimmed)
+    }
+  }
+
+  if (typeof values === 'string') {
+    add(values)
+    return results
+  }
+
+  if (Array.isArray(values)) {
+    for (const entry of values) {
+      add(entry)
+    }
+    return results
+  }
+
+  if (isIterable(values)) {
+    for (const entry of values as Iterable<unknown>) {
+      add(entry)
+    }
+  }
+
+  return results
+}
+
 export function hasPermission(permissions: Iterable<string> | null | undefined, permission: Permission): boolean {
   if (!permission) {
     return false
