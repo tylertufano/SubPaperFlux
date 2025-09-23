@@ -89,7 +89,7 @@ function fromDateTimeLocalValue(value: string): Date | null {
 
 function initPayloadState(
   jobType: JobType,
-  payload?: Record<string, any>,
+  payload?: Record<string, any> | null,
 ): Record<string, any> {
   switch (jobType) {
     case "login":
