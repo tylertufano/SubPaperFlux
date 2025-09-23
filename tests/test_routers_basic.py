@@ -341,6 +341,24 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         is_user_mgmt_enforce_enabled.cache_clear()
 
 
+def test_admin_feed_creation_defaults_to_requester(client):
+    resp = client.post(
+        "/feeds/",
+        json={"url": "https://example.com/feed"},
+    )
+    assert resp.status_code == 201
+    payload = resp.json()
+    assert payload["owner_user_id"] == "u1"
+
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        stored = session.get(Feed, payload["id"])
+        assert stored is not None
+        assert stored.owner_user_id == "u1"
+
+
 def test_instapaper_login_success(monkeypatch, client):
     from app.db import get_session
     from app.models import AuditLog, Credential
