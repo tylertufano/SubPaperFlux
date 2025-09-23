@@ -80,14 +80,11 @@ function logDateTimeFallback(error: unknown) {
 function tryCreateDateTimeFormatter(
   locale: string,
   options?: Intl.DateTimeFormatOptions,
-): { formatter: Intl.DateTimeFormat | null; error: RangeError | null } {
+): { formatter: Intl.DateTimeFormat | null; error: unknown } {
   try {
     return { formatter: new Intl.DateTimeFormat(locale, options), error: null }
   } catch (error) {
-    if (error instanceof RangeError) {
-      return { formatter: null, error }
-    }
-    throw error
+    return { formatter: null, error: error ?? new Error('Unknown Intl.DateTimeFormat error') }
   }
 }
 
@@ -99,17 +96,51 @@ function stripDateAndTimeStyles(options?: Intl.DateTimeFormatOptions) {
   return Object.keys(sanitized).length > 0 ? sanitized : undefined
 }
 
+function createIsoDateTimeFormatter(): Intl.DateTimeFormat {
+  const formatValue = (value?: Date | number) => {
+    const date =
+      value instanceof Date ? value : value !== undefined ? new Date(value) : new Date(Date.now())
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString()
+  }
+
+  const fallback = {
+    format(value?: Date | number) {
+      return formatValue(value)
+    },
+    formatToParts(value?: Date | number) {
+      return [{ type: 'literal', value: formatValue(value) }]
+    },
+    formatRange(start?: Date | number, end?: Date | number) {
+      return `${formatValue(start)} – ${formatValue(end)}`
+    },
+    formatRangeToParts(start?: Date | number, end?: Date | number) {
+      return [
+        { type: 'startRange', value: formatValue(start) },
+        { type: 'literal', value: ' – ' },
+        { type: 'endRange', value: formatValue(end) },
+      ]
+    },
+    resolvedOptions() {
+      return {
+        calendar: 'gregory',
+        hour12: false,
+        locale: 'und',
+        numberingSystem: 'latn',
+        timeZone: 'UTC',
+      }
+    },
+  }
+
+  return fallback as unknown as Intl.DateTimeFormat
+}
+
 function createDateTimeFormatter(locale: string, options?: Intl.DateTimeFormatOptions) {
   const primary = tryCreateDateTimeFormatter(locale, options)
   if (primary.formatter) {
     return primary.formatter
   }
 
-  const firstError = primary.error
-  if (!firstError) {
-    // Should be unreachable, but fall back to the direct constructor if it happens.
-    return new Intl.DateTimeFormat(locale, options)
-  }
+  const firstError = primary.error ?? new Error('Unknown Intl.DateTimeFormat error')
 
   logDateTimeFallback(firstError)
 
@@ -136,8 +167,6 @@ function createDateTimeFormatter(locale: string, options?: Intl.DateTimeFormatOp
 
   attempts.push(['en-US', undefined])
 
-  let lastError: RangeError = firstError
-
   for (const [nextLocale, nextOptions] of attempts) {
     const key = `${nextLocale}:${optionsKey(nextOptions)}`
     if (seen.has(key)) {
@@ -148,12 +177,9 @@ function createDateTimeFormatter(locale: string, options?: Intl.DateTimeFormatOp
     if (result.formatter) {
       return result.formatter
     }
-    if (result.error) {
-      lastError = result.error
-    }
   }
 
-  throw lastError
+  return createIsoDateTimeFormatter()
 }
 
 export function useDateTimeFormatter(options?: Intl.DateTimeFormatOptions) {

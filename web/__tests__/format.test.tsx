@@ -69,7 +69,15 @@ describe('useFormatDateTime', () => {
     } catch {}
   })
 
-  it('falls back when Intl.DateTimeFormat throws a RangeError', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <I18nContext.Provider
+      value={{ locale: 'custom-locale', locales: ['custom-locale'], setLocale: () => {}, t: (key) => key }}
+    >
+      {children}
+    </I18nContext.Provider>
+  )
+
+  it('prefers a supported Intl.DateTimeFormat configuration when available', () => {
     const calls: Array<{ locale?: string; options?: Intl.DateTimeFormatOptions }> = []
     const mock = setMockDateTimeFormat((locale, options) => {
       calls.push({ locale, options })
@@ -86,14 +94,6 @@ describe('useFormatDateTime', () => {
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <I18nContext.Provider
-        value={{ locale: 'custom-locale', locales: ['custom-locale'], setLocale: () => {}, t: (key) => key }}
-      >
-        {children}
-      </I18nContext.Provider>
-    )
-
     const { result } = renderHook(
       () => useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' }),
       { wrapper },
@@ -107,13 +107,80 @@ describe('useFormatDateTime', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('allows the debug page to render with the fallback formatter', async () => {
+  it('uses a manual ISO formatter when Intl.DateTimeFormat only throws RangeError', () => {
+    const mock = setMockDateTimeFormat(() => {
+      throw new RangeError('unsupported locale')
+    })
+
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const { result } = renderHook(
+      () => useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' }),
+      { wrapper },
+    )
+
+    const inputDate = new Date('2024-01-02T00:00:00.000Z')
+    const output = result.current(inputDate)
+
+    expect(output).toBe('2024-01-02T00:00:00.000Z')
+    expect(mock).toHaveBeenCalled()
+  })
+
+  it('uses a manual ISO formatter when Intl.DateTimeFormat throws TypeError', () => {
+    const mock = setMockDateTimeFormat(() => {
+      throw new TypeError('Intl not supported')
+    })
+
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const { result } = renderHook(
+      () => useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' }),
+      { wrapper },
+    )
+
+    const inputDate = new Date('2024-01-03T00:00:00.000Z')
+    const output = result.current(inputDate)
+
+    expect(output).toBe('2024-01-03T00:00:00.000Z')
+    expect(mock).toHaveBeenCalled()
+  })
+
+  it('allows the debug page to render with a manual fallback formatter when Intl is unavailable', async () => {
+    const mock = setMockDateTimeFormat(() => {
+      throw new TypeError('Intl.DateTimeFormat not supported')
+    })
+
+    useSessionMock.mockReturnValue({
+      data: {
+        user: {
+          name: 'Test User',
+          roles: [],
+          groups: [],
+          permissions: [],
+        },
+        expires: '2024-01-01T00:00:00.000Z',
+        accessToken: 'access-token',
+      },
+      status: 'authenticated' as const,
+    })
+
+    render(
+      <I18nProvider>
+        <Debug />
+      </I18nProvider>,
+    )
+
+    expect(mock).toHaveBeenCalled()
+    expect(await screen.findByText('Local: 2024-01-01T00:00:00.000Z')).toBeInTheDocument()
+  })
+
+  it('still uses native Intl formatting on the debug page when available', async () => {
     const mock = setMockDateTimeFormat((locale, options) => {
       if (locale !== 'en-US' || (options && ('dateStyle' in options || 'timeStyle' in options))) {
         throw new RangeError('unsupported configuration')
       }
       return {
-        format: (date: Date) => `fallback:${date.toISOString()}`,
+        format: (date: Date) => `native:${date.toISOString()}`,
       } as Intl.DateTimeFormat
     })
 
@@ -138,8 +205,6 @@ describe('useFormatDateTime', () => {
     )
 
     expect(mock).toHaveBeenCalled()
-    expect(
-      await screen.findByText('Local: fallback:2024-01-01T00:00:00.000Z'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Local: native:2024-01-01T00:00:00.000Z')).toBeInTheDocument()
   })
 })
