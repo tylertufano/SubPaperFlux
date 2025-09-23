@@ -2,6 +2,7 @@ import time
 import logging
 import os
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from sqlmodel import select
@@ -12,8 +13,9 @@ from .db import (
     reset_current_user_id,
     set_current_user_id,
 )
-from .models import Job
+from .models import Job, JobSchedule
 from .jobs import get_handler  # import registry
+from .jobs.scheduler import enqueue_due_schedules
 from .observability.logging import bind_job_id
 from .observability.metrics import JOB_COUNTER, JOB_DURATION
 
@@ -48,6 +50,44 @@ def job_owner_ctx(owner_user_id: Optional[str]):
         yield
     finally:
         reset_current_user_id(token)
+
+
+def _update_schedule_for_job(session, db_job: Job, *, error: Optional[str]) -> None:
+    details = dict(db_job.details or {})
+    schedule_id = details.get("schedule_id")
+    if not schedule_id:
+        return
+
+    schedule = session.get(JobSchedule, schedule_id)
+    if not schedule:
+        return
+
+    now = datetime.now(timezone.utc)
+    schedule.last_job_id = db_job.id
+    schedule.last_run_at = now
+    if error:
+        schedule.last_error = error[:500]
+        schedule.last_error_at = now
+    else:
+        schedule.last_error = None
+        schedule.last_error_at = None
+    session.add(schedule)
+
+
+def enqueue_due_schedules_once() -> None:
+    with session_ctx() as session:
+        jobs = []
+        try:
+            with session.begin():
+                jobs = enqueue_due_schedules(session)
+        except Exception:  # noqa: BLE001
+            logging.exception("Failed to enqueue scheduled jobs")
+            return
+        if jobs:
+            logging.info(
+                "Enqueued scheduled jobs",
+                extra={"event": "schedule_enqueued", "count": len(jobs)},
+            )
 
 
 def fetch_next_job() -> Optional[Job]:
@@ -94,9 +134,12 @@ def mark_done(job: Job, details: Dict[str, Any] | None = None) -> None:
         if db_job:
             db_job.status = "done"
             db_job.last_error = None
+            existing_details = dict(db_job.details or {})
             if details is not None:
-                db_job.details = details
+                existing_details.update(details)
+                db_job.details = existing_details
             session.add(db_job)
+            _update_schedule_for_job(session, db_job, error=None)
             session.commit()
     logging.info("Job done", extra={"event": "job_done", "job_id": job.id, "type": job.type})
 
@@ -106,7 +149,8 @@ def mark_failed(job: Job, error: str) -> None:
         db_job = session.get(Job, job.id)
         if db_job:
             db_job.attempts = (db_job.attempts or 0) + 1
-            db_job.last_error = error[:500]
+            truncated_error = error[:500]
+            db_job.last_error = truncated_error
             max_attempts = _max_attempts(db_job.type or "")
             if db_job.attempts < max_attempts:
                 # Exponential backoff
@@ -118,6 +162,7 @@ def mark_failed(job: Job, error: str) -> None:
                 db_job.status = "failed"
                 db_job.available_at = None
             session.add(db_job)
+            _update_schedule_for_job(session, db_job, error=truncated_error)
             session.commit()
     logging.warning("Job error", extra={"event": "job_error", "job_id": job.id, "type": job.type, "error": error})
 
@@ -127,6 +172,7 @@ def run_forever():
     logging.info("Worker started")
     try:
         while True:
+            enqueue_due_schedules_once()
             job = fetch_next_job()
             if not job:
                 time.sleep(POLL_INTERVAL)

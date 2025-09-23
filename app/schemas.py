@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr, model_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
+from .jobs.scheduler import parse_frequency
 from .jobs.validation import validate_job
 
 
@@ -156,6 +157,12 @@ class JobScheduleCreate(BaseModel):
     is_active: bool = True
     owner_user_id: Optional[str] = None
 
+    @field_validator("frequency")
+    @classmethod
+    def _validate_frequency(cls, value: str) -> str:
+        parse_frequency(value)
+        return value
+
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleCreate":
         result = validate_job(self.job_type, self.payload or {})
@@ -175,6 +182,13 @@ class JobScheduleUpdate(BaseModel):
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
     next_run_at: Optional[datetime] = None
     is_active: Optional[bool] = None
+
+    @field_validator("frequency")
+    @classmethod
+    def _validate_frequency(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            parse_frequency(value)
+        return value
 
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleUpdate":
@@ -208,6 +222,8 @@ class JobScheduleOut(BaseModel):
     next_run_at: Optional[datetime] = None
     last_run_at: Optional[datetime] = None
     last_job_id: Optional[str] = None
+    last_error: Optional[str] = None
+    last_error_at: Optional[datetime] = None
     is_active: bool = True
 
 

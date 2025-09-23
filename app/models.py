@@ -313,6 +313,14 @@ class JobSchedule(SQLModel, table=True):
         default=None,
         sa_column=Column(String, nullable=True),
     )
+    last_error: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
+    )
+    last_error_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
     is_active: bool = Field(
         default=True,
         sa_column=Column(Boolean, nullable=False, index=True),
