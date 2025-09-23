@@ -87,23 +87,23 @@ export default function Nav() {
   const { data: session, status } = useSession()
   const { t } = useI18n()
   const { pathname } = useRouter()
-  const { userMgmtCore, userMgmtUi } = useFeatureFlags()
+  const { userMgmtUi } = useFeatureFlags()
   const baseLinkStyles =
     'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
   const linkClass = (href: string) =>
     `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
   const permissions = extractPermissionList(session?.user)
-  const userMgmtEnabled = Boolean(userMgmtCore && userMgmtUi)
+  const userMgmtUiEnabled = Boolean(userMgmtUi)
   const isAuthenticated = status === 'authenticated'
   const isAdminUser = isAuthenticated && userHasAdminAccess(session?.user)
-  const hasAdminAccess = Boolean(userMgmtEnabled && isAdminUser)
+  const hasAdminAccess = Boolean(userMgmtUiEnabled && isAdminUser)
   const canReadBookmarksPermission = hasPermission(permissions, PERMISSION_READ_BOOKMARKS)
   const canManageBookmarksPermission = hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)
   const canViewBookmarks = Boolean(
     isAuthenticated && (isAdminUser || canReadBookmarksPermission || canManageBookmarksPermission),
   )
   const canManageFeeds = Boolean(
-    userMgmtEnabled && isAuthenticated && (isAdminUser || canManageBookmarksPermission),
+    userMgmtUiEnabled && isAuthenticated && (isAdminUser || canManageBookmarksPermission),
   )
   const canReadGlobalCredentialsPermission = hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS)
   const canManageGlobalCredentialsPermission = hasPermission(
@@ -111,18 +111,18 @@ export default function Nav() {
     PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
   )
   const canReadCredentials = Boolean(
-    userMgmtEnabled && isAuthenticated && (isAdminUser || canReadGlobalCredentialsPermission),
+    userMgmtUiEnabled && isAuthenticated && (isAdminUser || canReadGlobalCredentialsPermission),
   )
   const canManageCredentials = Boolean(
-    userMgmtEnabled && isAuthenticated && (isAdminUser || canManageGlobalCredentialsPermission),
+    userMgmtUiEnabled && isAuthenticated && (isAdminUser || canManageGlobalCredentialsPermission),
   )
   const shouldShowCredentialsLink = canReadCredentials || canManageCredentials
   const canManageSiteConfigs = Boolean(
-    userMgmtEnabled &&
+    userMgmtUiEnabled &&
       isAuthenticated &&
       (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS)),
   )
-  const shouldShowFeedsMenu = Boolean(userMgmtEnabled && canViewBookmarks)
+  const shouldShowFeedsMenu = Boolean(userMgmtUiEnabled && canViewBookmarks)
   const shouldShowBookmarksLink = canViewBookmarks
   const shouldShowJobsLink = canViewBookmarks
 
