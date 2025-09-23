@@ -102,9 +102,6 @@ export default function Nav() {
   const canViewBookmarks = Boolean(
     isAuthenticated && (isAdminUser || canReadBookmarksPermission || canManageBookmarksPermission),
   )
-  const canManageFeeds = Boolean(
-    userMgmtUiEnabled && isAuthenticated && (isAdminUser || canManageBookmarksPermission),
-  )
   const canReadGlobalCredentialsPermission = hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS)
   const canManageGlobalCredentialsPermission = hasPermission(
     permissions,
@@ -173,7 +170,6 @@ export default function Nav() {
             currentPath={pathname}
             items={[
               { href: '/feeds', label: t('nav_feeds_all') },
-              ...(canManageFeeds ? [{ href: '/feeds#create-feed', label: t('nav_feeds_create') }] : []),
             ]}
           />
         ) : null}
