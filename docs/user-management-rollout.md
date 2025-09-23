@@ -200,7 +200,9 @@ grants:
   `group=role` pairs. Multiple entries for the same group append additional
   roles to the set. The parser trims surrounding whitespace and rejects
   malformed tokens so operators get immediate feedback when a deployment starts
-  (see `app/auth/mapping.py`).
+  (see `app/auth/mapping.py`). Group identifiers are normalized in a
+  case-insensitive manner, so `Admins`, `admins`, and `ADMINS` all reference the
+  same mapping entry.
 - `OIDC_GROUP_ROLE_DEFAULTS` lists roles that should be granted to every
   auto-provisioned account regardless of group membership. These defaults seed
   the resolved role set before any mapped groups are evaluated (also in

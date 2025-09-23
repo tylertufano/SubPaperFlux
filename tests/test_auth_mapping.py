@@ -57,6 +57,18 @@ def test_load_group_role_config_trims_whitespace(monkeypatch):
     assert cfg.group_role_map["team-beta"] == frozenset({"role-writer"})
 
 
+def test_load_group_role_config_normalizes_group_names(monkeypatch):
+    monkeypatch.setenv(
+        "OIDC_GROUP_ROLE_MAP",
+        "Team-Alpha=role-reader,TEAM-ALPHA=role-writer",
+    )
+
+    cfg = load_group_role_config()
+
+    assert set(cfg.group_role_map.keys()) == {"team-alpha"}
+    assert cfg.group_role_map["team-alpha"] == frozenset({"role-reader", "role-writer"})
+
+
 @pytest.mark.parametrize(
     "value",
     [
@@ -85,3 +97,15 @@ def test_resolve_roles_for_groups(monkeypatch):
     roles = resolve_roles_for_groups([" group-a ", "unknown", "group-a", "", "group-b"])
 
     assert roles == frozenset({"default-role", "role-alpha", "role-beta"})
+
+
+def test_resolve_roles_for_groups_normalizes_case(monkeypatch):
+    monkeypatch.setenv(
+        "OIDC_GROUP_ROLE_MAP",
+        "Team-Admin=role-admin,TEAM-ADMIN=role-operator",
+    )
+    monkeypatch.setenv("OIDC_GROUP_ROLE_DEFAULTS", "Default-Role")
+
+    roles = resolve_roles_for_groups(["team-admin", "TEAM-ADMIN", "Team-Admin", "unknown"])
+
+    assert roles == frozenset({"Default-Role", "role-admin", "role-operator"})

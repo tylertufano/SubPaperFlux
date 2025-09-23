@@ -8,6 +8,12 @@ from types import MappingProxyType
 from typing import FrozenSet, Iterable, Mapping, MutableMapping, Set
 
 
+def _normalize_group(value: str) -> str:
+    """Normalize group identifiers for consistent comparisons."""
+
+    return value.strip().casefold()
+
+
 @dataclass(frozen=True)
 class GroupRoleConfig:
     """Configuration parsed from environment variables."""
@@ -33,7 +39,10 @@ def _parse_group_role_map(raw: str) -> Mapping[str, FrozenSet[str]]:
         role = role.strip()
         if not group or not role:
             raise ValueError(f"Invalid group role mapping entry: {token!r}")
-        mapping.setdefault(group, set()).add(role)
+        normalized_group = _normalize_group(group)
+        if not normalized_group:
+            raise ValueError(f"Invalid group role mapping entry: {token!r}")
+        mapping.setdefault(normalized_group, set()).add(role)
     return MappingProxyType({group: frozenset(roles) for group, roles in mapping.items()})
 
 
@@ -59,7 +68,7 @@ def resolve_roles_for_groups(groups: Iterable[str]) -> FrozenSet[str]:
     for group in groups:
         if group is None:
             continue
-        group_name = group.strip()
+        group_name = _normalize_group(group)
         if not group_name:
             continue
         roles = config.group_role_map.get(group_name)
