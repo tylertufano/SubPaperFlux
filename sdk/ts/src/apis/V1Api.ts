@@ -50,12 +50,18 @@ import type {
   HTTPValidationError,
   JobOut,
   JobRequest,
+  JobScheduleCreate,
+  JobScheduleOut,
+  JobScheduleUpdate,
+  JobSchedulesPage,
   JobsPage,
   MeOut,
   MeUpdate,
   RoleGrantRequest,
   SiteConfigOut,
   SiteConfigsPage,
+  SiteWelcomeSettingOut,
+  SiteWelcomeSettingUpdate,
   StatusResponse,
   TagCreate,
   TagOut,
@@ -132,6 +138,14 @@ import {
     JobOutToJSON,
     JobRequestFromJSON,
     JobRequestToJSON,
+    JobScheduleCreateFromJSON,
+    JobScheduleCreateToJSON,
+    JobScheduleOutFromJSON,
+    JobScheduleOutToJSON,
+    JobScheduleUpdateFromJSON,
+    JobScheduleUpdateToJSON,
+    JobSchedulesPageFromJSON,
+    JobSchedulesPageToJSON,
     JobsPageFromJSON,
     JobsPageToJSON,
     MeOutFromJSON,
@@ -144,6 +158,10 @@ import {
     SiteConfigOutToJSON,
     SiteConfigsPageFromJSON,
     SiteConfigsPageToJSON,
+    SiteWelcomeSettingOutFromJSON,
+    SiteWelcomeSettingOutToJSON,
+    SiteWelcomeSettingUpdateFromJSON,
+    SiteWelcomeSettingUpdateToJSON,
     StatusResponseFromJSON,
     StatusResponseToJSON,
     TagCreateFromJSON,
@@ -211,6 +229,14 @@ export interface CreateFolderV1BookmarksFoldersPostRequest {
     xCsrfToken?: string | null;
 }
 
+export interface CreateJobScheduleV1JobSchedulesPostRequest {
+    jobScheduleCreate: JobScheduleCreate;
+}
+
+export interface CreateJobScheduleV1JobSchedulesPost0Request {
+    jobScheduleCreate: JobScheduleCreate;
+}
+
 export interface CreateOrganizationV1AdminOrgsPostRequest {
     adminOrganizationCreate: AdminOrganizationCreate;
 }
@@ -242,6 +268,10 @@ export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
     folderId: string;
     xCsrfToken?: string | null;
+}
+
+export interface DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest {
+    scheduleId: string;
 }
 
 export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
@@ -289,6 +319,10 @@ export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
 
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: string;
+}
+
+export interface GetJobScheduleV1JobSchedulesScheduleIdGetRequest {
+    scheduleId: string;
 }
 
 export interface GetJobV1JobsJobIdGetRequest {
@@ -426,6 +460,22 @@ export interface ListFeedsV1V1FeedsGet0Request {
     size?: number;
 }
 
+export interface ListJobSchedulesV1JobSchedulesGetRequest {
+    ownerUserId?: Array<string> | null;
+    jobType?: string | null;
+    isActive?: boolean | null;
+    page?: number;
+    size?: number;
+}
+
+export interface ListJobSchedulesV1JobSchedulesGet0Request {
+    ownerUserId?: Array<string> | null;
+    jobType?: string | null;
+    isActive?: boolean | null;
+    page?: number;
+    size?: number;
+}
+
 export interface ListJobsV1JobsGetRequest {
     status?: string | null;
     jobType?: string | null;
@@ -506,6 +556,10 @@ export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
     confirm?: boolean;
 }
 
+export interface RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest {
+    scheduleId: string;
+}
+
 export interface StreamJobsV1JobsStreamGetRequest {
     status?: string | null;
     jobType?: string | null;
@@ -527,6 +581,10 @@ export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
     configId: string;
 }
 
+export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
+    scheduleId: string;
+}
+
 export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
     bookmarkId: string;
     bookmarkFolderUpdate: BookmarkFolderUpdate;
@@ -543,6 +601,11 @@ export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
     folderId: string;
     folderUpdate: FolderUpdate;
     xCsrfToken?: string | null;
+}
+
+export interface UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest {
+    scheduleId: string;
+    jobScheduleUpdate: JobScheduleUpdate;
 }
 
 export interface UpdateMeV1MePatchRequest {
@@ -573,6 +636,14 @@ export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequ
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
     userId: string;
     adminUserUpdate: AdminUserUpdate;
+}
+
+export interface UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+}
+
+export interface UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
 }
 
 export interface ValidateJobPayloadV1JobsValidatePostRequest {
@@ -1118,6 +1189,100 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Create a job schedule
+     */
+    async createJobScheduleV1JobSchedulesPostRaw(requestParameters: CreateJobScheduleV1JobSchedulesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
+        if (requestParameters['jobScheduleCreate'] == null) {
+            throw new runtime.RequiredError(
+                'jobScheduleCreate',
+                'Required parameter "jobScheduleCreate" was null or undefined when calling createJobScheduleV1JobSchedulesPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: JobScheduleCreateToJSON(requestParameters['jobScheduleCreate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobScheduleOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create a job schedule
+     */
+    async createJobScheduleV1JobSchedulesPost(requestParameters: CreateJobScheduleV1JobSchedulesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
+        const response = await this.createJobScheduleV1JobSchedulesPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create a job schedule
+     */
+    async createJobScheduleV1JobSchedulesPost_1Raw(requestParameters: CreateJobScheduleV1JobSchedulesPost0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
+        if (requestParameters['jobScheduleCreate'] == null) {
+            throw new runtime.RequiredError(
+                'jobScheduleCreate',
+                'Required parameter "jobScheduleCreate" was null or undefined when calling createJobScheduleV1JobSchedulesPost_1().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: JobScheduleCreateToJSON(requestParameters['jobScheduleCreate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobScheduleOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create a job schedule
+     */
+    async createJobScheduleV1JobSchedulesPost_1(requestParameters: CreateJobScheduleV1JobSchedulesPost0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
+        const response = await this.createJobScheduleV1JobSchedulesPost_1Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Create an organization
      */
     async createOrganizationV1AdminOrgsPostRaw(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>> {
@@ -1484,6 +1649,50 @@ export class V1Api extends runtime.BaseAPI {
      */
     async deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Delete a job schedule
+     */
+    async deleteJobScheduleV1JobSchedulesScheduleIdDeleteRaw(requestParameters: DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['scheduleId'] == null) {
+            throw new runtime.RequiredError(
+                'scheduleId',
+                'Required parameter "scheduleId" was null or undefined when calling deleteJobScheduleV1JobSchedulesScheduleIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/{schedule_id}`;
+        urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete a job schedule
+     */
+    async deleteJobScheduleV1JobSchedulesScheduleIdDelete(requestParameters: DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteJobScheduleV1JobSchedulesScheduleIdDeleteRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -1910,6 +2119,51 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get a job schedule
+     */
+    async getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
+        if (requestParameters['scheduleId'] == null) {
+            throw new runtime.RequiredError(
+                'scheduleId',
+                'Required parameter "scheduleId" was null or undefined when calling getJobScheduleV1JobSchedulesScheduleIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/{schedule_id}`;
+        urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobScheduleOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get a job schedule
+     */
+    async getJobScheduleV1JobSchedulesScheduleIdGet(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
+        const response = await this.getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get a single job by id.
      * Get job
      */
@@ -2203,6 +2457,35 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Retrieve the public welcome message
+     */
+    async getWelcomeSettingV1SiteSettingsWelcomeGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/v1/site-settings/welcome`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SiteWelcomeSettingOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Retrieve the public welcome message
+     */
+    async getWelcomeSettingV1SiteSettingsWelcomeGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut> {
+        const response = await this.getWelcomeSettingV1SiteSettingsWelcomeGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Grant a role to a user
      */
     async grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters: GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
@@ -2346,7 +2629,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    async headBookmarksV1BookmarksHead_1Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+    async headBookmarksV1BookmarksHead_2Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         const queryParameters: any = {};
 
         if (requestParameters['search'] != null) {
@@ -2423,8 +2706,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    async headBookmarksV1BookmarksHead_1(requestParameters: HeadBookmarksV1BookmarksHead0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides);
+    async headBookmarksV1BookmarksHead_2(requestParameters: HeadBookmarksV1BookmarksHead0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2650,7 +2933,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_2Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+    async listBookmarksV1BookmarksGet_3Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -2743,8 +3026,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_2(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
-        const response = await this.listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides);
+    async listBookmarksV1BookmarksGet_3(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2804,7 +3087,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    async listCredentialsV1V1CredentialsGet_3Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
+    async listCredentialsV1V1CredentialsGet_4Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['includeGlobal'] != null) {
@@ -2849,8 +3132,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    async listCredentialsV1V1CredentialsGet_3(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
-        const response = await this.listCredentialsV1V1CredentialsGet_3Raw(requestParameters, initOverrides);
+    async listCredentialsV1V1CredentialsGet_4(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
+        const response = await this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2906,7 +3189,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    async listFeedsV1V1FeedsGet_4Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
+    async listFeedsV1V1FeedsGet_5Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['ownerUserIds'] != null) {
@@ -2947,8 +3230,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    async listFeedsV1V1FeedsGet_4(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
-        const response = await this.listFeedsV1V1FeedsGet_4Raw(requestParameters, initOverrides);
+    async listFeedsV1V1FeedsGet_5(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
+        const response = await this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2986,6 +3269,120 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listFoldersV1BookmarksFoldersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FolderOut>> {
         const response = await this.listFoldersV1BookmarksFoldersGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List job schedules
+     */
+    async listJobSchedulesV1JobSchedulesGetRaw(requestParameters: ListJobSchedulesV1JobSchedulesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+        }
+
+        if (requestParameters['jobType'] != null) {
+            queryParameters['job_type'] = requestParameters['jobType'];
+        }
+
+        if (requestParameters['isActive'] != null) {
+            queryParameters['is_active'] = requestParameters['isActive'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobSchedulesPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List job schedules
+     */
+    async listJobSchedulesV1JobSchedulesGet(requestParameters: ListJobSchedulesV1JobSchedulesGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage> {
+        const response = await this.listJobSchedulesV1JobSchedulesGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List job schedules
+     */
+    async listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['ownerUserId'] != null) {
+            queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+        }
+
+        if (requestParameters['jobType'] != null) {
+            queryParameters['job_type'] = requestParameters['jobType'];
+        }
+
+        if (requestParameters['isActive'] != null) {
+            queryParameters['is_active'] = requestParameters['isActive'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobSchedulesPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List job schedules
+     */
+    async listJobSchedulesV1JobSchedulesGet_6(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage> {
+        const response = await this.listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3056,7 +3453,7 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_5Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
+    async listJobsV1JobsGet_7Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters['status'] != null) {
@@ -3110,8 +3507,8 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_5(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
-        const response = await this.listJobsV1JobsGet_5Raw(requestParameters, initOverrides);
+    async listJobsV1JobsGet_7(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
+        const response = await this.listJobsV1JobsGet_7Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3716,6 +4113,51 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Enqueue a job for immediate execution
+     */
+    async runJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRaw(requestParameters: RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobOut>> {
+        if (requestParameters['scheduleId'] == null) {
+            throw new runtime.RequiredError(
+                'scheduleId',
+                'Required parameter "scheduleId" was null or undefined when calling runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/{schedule_id}/run-now`;
+        urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Enqueue a job for immediate execution
+     */
+    async runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost(requestParameters: RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobOut> {
+        const response = await this.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Server-sent events stream of jobs list.
      * Stream jobs
      */
@@ -3922,6 +4364,51 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Toggle schedule active state
+     */
+    async toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
+        if (requestParameters['scheduleId'] == null) {
+            throw new runtime.RequiredError(
+                'scheduleId',
+                'Required parameter "scheduleId" was null or undefined when calling toggleJobScheduleV1JobSchedulesScheduleIdTogglePost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/{schedule_id}/toggle`;
+        urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobScheduleOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Toggle schedule active state
+     */
+    async toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
+        const response = await this.toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Update Bookmark Folder
      */
     async updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
@@ -4095,6 +4582,61 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateFolderV1BookmarksFoldersFolderIdPut(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
         const response = await this.updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update a job schedule
+     */
+    async updateJobScheduleV1JobSchedulesScheduleIdPatchRaw(requestParameters: UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
+        if (requestParameters['scheduleId'] == null) {
+            throw new runtime.RequiredError(
+                'scheduleId',
+                'Required parameter "scheduleId" was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch().'
+            );
+        }
+
+        if (requestParameters['jobScheduleUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'jobScheduleUpdate',
+                'Required parameter "jobScheduleUpdate" was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/job-schedules/{schedule_id}`;
+        urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: JobScheduleUpdateToJSON(requestParameters['jobScheduleUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => JobScheduleOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update a job schedule
+     */
+    async updateJobScheduleV1JobSchedulesScheduleIdPatch(requestParameters: UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
+        const response = await this.updateJobScheduleV1JobSchedulesScheduleIdPatchRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -4421,6 +4963,100 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateUserV1AdminUsersUserIdPatch(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut> {
         const response = await this.updateUserV1AdminUsersUserIdPatchRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Partially update the welcome message
+     */
+    async updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>> {
+        if (requestParameters['siteWelcomeSettingUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'siteWelcomeSettingUpdate',
+                'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/site-settings/welcome`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SiteWelcomeSettingUpdateToJSON(requestParameters['siteWelcomeSettingUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SiteWelcomeSettingOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Partially update the welcome message
+     */
+    async updateWelcomeSettingV1SiteSettingsWelcomePatch(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut> {
+        const response = await this.updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create or replace the welcome message
+     */
+    async updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>> {
+        if (requestParameters['siteWelcomeSettingUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'siteWelcomeSettingUpdate',
+                'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/site-settings/welcome`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SiteWelcomeSettingUpdateToJSON(requestParameters['siteWelcomeSettingUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SiteWelcomeSettingOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create or replace the welcome message
+     */
+    async updateWelcomeSettingV1SiteSettingsWelcomePut(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut> {
+        const response = await this.updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,25 +21,23 @@ import { exists, mapValues } from '../runtime';
 export interface FolderUpdate {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FolderUpdate
      */
-    name?: any | null;
+    name?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof FolderUpdate
      */
-    instapaperFolderId?: any | null;
+    instapaperFolderId?: string | null;
 }
 
 /**
  * Check if a given object implements the FolderUpdate interface.
  */
-export function instanceOfFolderUpdate(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfFolderUpdate(value: object): value is FolderUpdate {
+    return true;
 }
 
 export function FolderUpdateFromJSON(json: any): FolderUpdate {
@@ -47,27 +45,29 @@ export function FolderUpdateFromJSON(json: any): FolderUpdate {
 }
 
 export function FolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): FolderUpdate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
 
-export function FolderUpdateToJSON(value?: FolderUpdate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function FolderUpdateToJSON(json: any): FolderUpdate {
+    return FolderUpdateToJSONTyped(json, false);
+}
+
+export function FolderUpdateToJSONTyped(value?: FolderUpdate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'name': value.name,
-        'instapaper_folder_id': value.instapaperFolderId,
+        'name': value['name'],
+        'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
 

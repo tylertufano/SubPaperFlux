@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,20 +21,18 @@ import { exists, mapValues } from '../runtime';
 export interface TagCreate {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof TagCreate
      */
-    name: any | null;
+    name: string;
 }
 
 /**
  * Check if a given object implements the TagCreate interface.
  */
-export function instanceOfTagCreate(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfTagCreate(value: object): value is TagCreate {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function TagCreateFromJSON(json: any): TagCreate {
@@ -42,7 +40,7 @@ export function TagCreateFromJSON(json: any): TagCreate {
 }
 
 export function TagCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagCreate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function TagCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     };
 }
 
-export function TagCreateToJSON(value?: TagCreate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function TagCreateToJSON(json: any): TagCreate {
+    return TagCreateToJSONTyped(json, false);
+}
+
+export function TagCreateToJSONTyped(value?: TagCreate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'name': value.name,
+        'name': value['name'],
     };
 }
 

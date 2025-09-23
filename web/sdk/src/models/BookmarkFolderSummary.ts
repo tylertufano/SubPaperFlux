@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
+import type { FolderOut } from './FolderOut';
+import {
+    FolderOutFromJSON,
+    FolderOutFromJSONTyped,
+    FolderOutToJSON,
+    FolderOutToJSONTyped,
+} from './FolderOut';
+
 /**
  * 
  * @export
@@ -21,26 +29,24 @@ import { exists, mapValues } from '../runtime';
 export interface BookmarkFolderSummary {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof BookmarkFolderSummary
      */
-    bookmarkId: any | null;
+    bookmarkId: string;
     /**
      * 
-     * @type {any}
+     * @type {FolderOut}
      * @memberof BookmarkFolderSummary
      */
-    folder?: any | null;
+    folder?: FolderOut | null;
 }
 
 /**
  * Check if a given object implements the BookmarkFolderSummary interface.
  */
-export function instanceOfBookmarkFolderSummary(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "bookmarkId" in value;
-
-    return isInstance;
+export function instanceOfBookmarkFolderSummary(value: object): value is BookmarkFolderSummary {
+    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined) return false;
+    return true;
 }
 
 export function BookmarkFolderSummaryFromJSON(json: any): BookmarkFolderSummary {
@@ -48,27 +54,29 @@ export function BookmarkFolderSummaryFromJSON(json: any): BookmarkFolderSummary 
 }
 
 export function BookmarkFolderSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkFolderSummary {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'bookmarkId': json['bookmark_id'],
-        'folder': !exists(json, 'folder') ? undefined : json['folder'],
+        'folder': json['folder'] == null ? undefined : FolderOutFromJSON(json['folder']),
     };
 }
 
-export function BookmarkFolderSummaryToJSON(value?: BookmarkFolderSummary | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BookmarkFolderSummaryToJSON(json: any): BookmarkFolderSummary {
+    return BookmarkFolderSummaryToJSONTyped(json, false);
+}
+
+export function BookmarkFolderSummaryToJSONTyped(value?: BookmarkFolderSummary | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'bookmark_id': value.bookmarkId,
-        'folder': value.folder,
+        'bookmark_id': value['bookmarkId'],
+        'folder': FolderOutToJSON(value['folder']),
     };
 }
 

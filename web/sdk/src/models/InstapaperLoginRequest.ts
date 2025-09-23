@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,40 +21,38 @@ import { exists, mapValues } from '../runtime';
 export interface InstapaperLoginRequest {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof InstapaperLoginRequest
      */
-    description: any | null;
+    description: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof InstapaperLoginRequest
      */
-    username: any | null;
+    username: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof InstapaperLoginRequest
      */
-    password: any | null;
+    password: string;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof InstapaperLoginRequest
      */
-    scopeGlobal?: any | null;
+    scopeGlobal?: boolean;
 }
 
 /**
  * Check if a given object implements the InstapaperLoginRequest interface.
  */
-export function instanceOfInstapaperLoginRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "description" in value;
-    isInstance = isInstance && "username" in value;
-    isInstance = isInstance && "password" in value;
-
-    return isInstance;
+export function instanceOfInstapaperLoginRequest(value: object): value is InstapaperLoginRequest {
+    if (!('description' in value) || value['description'] === undefined) return false;
+    if (!('username' in value) || value['username'] === undefined) return false;
+    if (!('password' in value) || value['password'] === undefined) return false;
+    return true;
 }
 
 export function InstapaperLoginRequestFromJSON(json: any): InstapaperLoginRequest {
@@ -62,7 +60,7 @@ export function InstapaperLoginRequestFromJSON(json: any): InstapaperLoginReques
 }
 
 export function InstapaperLoginRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): InstapaperLoginRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -70,23 +68,25 @@ export function InstapaperLoginRequestFromJSONTyped(json: any, ignoreDiscriminat
         'description': json['description'],
         'username': json['username'],
         'password': json['password'],
-        'scopeGlobal': !exists(json, 'scope_global') ? undefined : json['scope_global'],
+        'scopeGlobal': json['scope_global'] == null ? undefined : json['scope_global'],
     };
 }
 
-export function InstapaperLoginRequestToJSON(value?: InstapaperLoginRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function InstapaperLoginRequestToJSON(json: any): InstapaperLoginRequest {
+    return InstapaperLoginRequestToJSONTyped(json, false);
+}
+
+export function InstapaperLoginRequestToJSONTyped(value?: InstapaperLoginRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'description': value.description,
-        'username': value.username,
-        'password': value.password,
-        'scope_global': value.scopeGlobal,
+        'description': value['description'],
+        'username': value['username'],
+        'password': value['password'],
+        'scope_global': value['scopeGlobal'],
     };
 }
 
