@@ -1360,7 +1360,7 @@ export default function JobSchedulesPage() {
     );
   }
 
-  const schedules = data?.items ?? [];
+  const schedules: JobScheduleOut[] = data?.items ?? [];
   const credentials = credentialsData?.items ?? [];
   const siteConfigs = siteConfigsData?.items ?? [];
   const feeds = feedsData?.items ?? [];
