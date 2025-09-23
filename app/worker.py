@@ -78,10 +78,11 @@ def enqueue_due_schedules_once() -> None:
     with session_ctx() as session:
         jobs = []
         try:
-            with session.begin():
-                jobs = enqueue_due_schedules(session)
+            jobs = enqueue_due_schedules(session)
+            session.commit()
         except Exception:  # noqa: BLE001
             logging.exception("Failed to enqueue scheduled jobs")
+            session.rollback()
             return
         if jobs:
             logging.info(
