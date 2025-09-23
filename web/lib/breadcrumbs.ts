@@ -9,6 +9,7 @@ const breadcrumbKeyMap: Record<string, string> = {
   '/credentials': 'credentials_title',
   '/feeds': 'feeds_title',
   '/jobs': 'jobs_title',
+  '/job-schedules': 'job_schedules_title',
   '/jobs-dead': 'nav_jobs_dead',
   '/site-configs': 'site_configs_title',
 
