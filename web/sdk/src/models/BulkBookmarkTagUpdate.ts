@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,32 +21,30 @@ import { exists, mapValues } from '../runtime';
 export interface BulkBookmarkTagUpdate {
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof BulkBookmarkTagUpdate
      */
-    bookmarkIds: any | null;
+    bookmarkIds: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof BulkBookmarkTagUpdate
      */
-    tags?: any | null;
+    tags?: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {boolean}
      * @memberof BulkBookmarkTagUpdate
      */
-    clear?: any | null;
+    clear?: boolean;
 }
 
 /**
  * Check if a given object implements the BulkBookmarkTagUpdate interface.
  */
-export function instanceOfBulkBookmarkTagUpdate(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "bookmarkIds" in value;
-
-    return isInstance;
+export function instanceOfBulkBookmarkTagUpdate(value: object): value is BulkBookmarkTagUpdate {
+    if (!('bookmarkIds' in value) || value['bookmarkIds'] === undefined) return false;
+    return true;
 }
 
 export function BulkBookmarkTagUpdateFromJSON(json: any): BulkBookmarkTagUpdate {
@@ -54,29 +52,31 @@ export function BulkBookmarkTagUpdateFromJSON(json: any): BulkBookmarkTagUpdate 
 }
 
 export function BulkBookmarkTagUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BulkBookmarkTagUpdate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'bookmarkIds': json['bookmark_ids'],
-        'tags': !exists(json, 'tags') ? undefined : json['tags'],
-        'clear': !exists(json, 'clear') ? undefined : json['clear'],
+        'tags': json['tags'] == null ? undefined : json['tags'],
+        'clear': json['clear'] == null ? undefined : json['clear'],
     };
 }
 
-export function BulkBookmarkTagUpdateToJSON(value?: BulkBookmarkTagUpdate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BulkBookmarkTagUpdateToJSON(json: any): BulkBookmarkTagUpdate {
+    return BulkBookmarkTagUpdateToJSONTyped(json, false);
+}
+
+export function BulkBookmarkTagUpdateToJSONTyped(value?: BulkBookmarkTagUpdate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'bookmark_ids': value.bookmarkIds,
-        'tags': value.tags,
-        'clear': value.clear,
+        'bookmark_ids': value['bookmarkIds'],
+        'tags': value['tags'],
+        'clear': value['clear'],
     };
 }
 

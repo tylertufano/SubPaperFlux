@@ -2,7 +2,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr, model_validator
+from pydantic_core import PydanticCustomError
+
+from .jobs.validation import validate_job
 
 
 class User(BaseModel):
@@ -138,6 +141,78 @@ class JobOut(BaseModel):
 
 class JobsPage(BaseModel):
     items: List[JobOut]
+    total: int
+    page: int
+    size: int
+    has_next: bool = False
+    total_pages: int = 1
+
+
+class JobScheduleCreate(BaseModel):
+    job_type: constr(strip_whitespace=True, min_length=1)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    frequency: constr(strip_whitespace=True, min_length=1)
+    next_run_at: Optional[datetime] = None
+    is_active: bool = True
+    owner_user_id: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_payload(self) -> "JobScheduleCreate":
+        result = validate_job(self.job_type, self.payload or {})
+        if not result.get("ok", True):
+            missing_values = result.get("missing", [])
+            raise PydanticCustomError(
+                "job_payload_missing_fields",
+                "Missing payload fields: {missing}",
+                {"missing": ", ".join(missing_values)},
+            )
+        return self
+
+
+class JobScheduleUpdate(BaseModel):
+    job_type: Optional[constr(strip_whitespace=True, min_length=1)] = None
+    payload: Optional[Dict[str, Any]] = None
+    frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
+    next_run_at: Optional[datetime] = None
+    is_active: Optional[bool] = None
+
+    @model_validator(mode="after")
+    def _validate_payload(self) -> "JobScheduleUpdate":
+        provided_job_type = self.job_type
+        provided_payload = self.payload
+        if provided_job_type is None and provided_payload is None:
+            return self
+        if provided_job_type is None or provided_payload is None:
+            raise PydanticCustomError(
+                "job_payload_requires_job_type",
+                "job_type and payload must be provided together when updating the payload",
+                {},
+            )
+        result = validate_job(provided_job_type, provided_payload or {})
+        if not result.get("ok", True):
+            missing_values = result.get("missing", [])
+            raise PydanticCustomError(
+                "job_payload_missing_fields",
+                "Missing payload fields: {missing}",
+                {"missing": ", ".join(missing_values)},
+            )
+        return self
+
+
+class JobScheduleOut(BaseModel):
+    id: str
+    job_type: str
+    owner_user_id: Optional[str] = None
+    payload: Dict[str, Any]
+    frequency: str
+    next_run_at: Optional[datetime] = None
+    last_run_at: Optional[datetime] = None
+    last_job_id: Optional[str] = None
+    is_active: bool = True
+
+
+class JobSchedulesPage(BaseModel):
+    items: List[JobScheduleOut]
     total: int
     page: int
     size: int

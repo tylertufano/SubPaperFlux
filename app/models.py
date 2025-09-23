@@ -286,6 +286,39 @@ class Job(SQLModel, table=True):
     details: Dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
+class JobSchedule(SQLModel, table=True):
+    __tablename__ = "job_schedule"
+
+    id: str = Field(default_factory=lambda: gen_id("js"), primary_key=True)
+    job_type: str = Field(
+        sa_column=Column(String(length=255), nullable=False, index=True)
+    )
+    owner_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True, index=True),
+    )
+    payload: Dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    frequency: str = Field(
+        sa_column=Column(String(length=255), nullable=False)
+    )
+    next_run_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True, index=True),
+    )
+    last_run_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    last_job_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True),
+    )
+    is_active: bool = Field(
+        default=True,
+        sa_column=Column(Boolean, nullable=False, index=True),
+    )
+
+
 class Cookie(SQLModel, table=True):
     __tablename__ = "cookie"
     id: str = Field(default_factory=lambda: gen_id("cookie"), primary_key=True)

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,66 +21,64 @@ import { exists, mapValues } from '../runtime';
 export interface AuditLogOut {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    id: any | null;
+    id: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    entityType: any | null;
+    entityType: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    entityId: any | null;
+    entityId: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    action: any | null;
+    action: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    ownerUserId?: any | null;
+    ownerUserId?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof AuditLogOut
      */
-    actorUserId?: any | null;
+    actorUserId?: string | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof AuditLogOut
      */
-    details?: { [key: string]: any; } | null;
+    details?: { [key: string]: any; };
     /**
      * 
-     * @type {any}
+     * @type {Date}
      * @memberof AuditLogOut
      */
-    createdAt: any | null;
+    createdAt: Date;
 }
 
 /**
  * Check if a given object implements the AuditLogOut interface.
  */
-export function instanceOfAuditLogOut(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "entityType" in value;
-    isInstance = isInstance && "entityId" in value;
-    isInstance = isInstance && "action" in value;
-    isInstance = isInstance && "createdAt" in value;
-
-    return isInstance;
+export function instanceOfAuditLogOut(value: object): value is AuditLogOut {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('entityType' in value) || value['entityType'] === undefined) return false;
+    if (!('entityId' in value) || value['entityId'] === undefined) return false;
+    if (!('action' in value) || value['action'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    return true;
 }
 
 export function AuditLogOutFromJSON(json: any): AuditLogOut {
@@ -88,7 +86,7 @@ export function AuditLogOutFromJSON(json: any): AuditLogOut {
 }
 
 export function AuditLogOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuditLogOut {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -97,30 +95,32 @@ export function AuditLogOutFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'entityType': json['entity_type'],
         'entityId': json['entity_id'],
         'action': json['action'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
-        'actorUserId': !exists(json, 'actor_user_id') ? undefined : json['actor_user_id'],
-        'details': !exists(json, 'details') ? undefined : json['details'],
-        'createdAt': json['created_at'],
+        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'actorUserId': json['actor_user_id'] == null ? undefined : json['actor_user_id'],
+        'details': json['details'] == null ? undefined : json['details'],
+        'createdAt': (new Date(json['created_at'])),
     };
 }
 
-export function AuditLogOutToJSON(value?: AuditLogOut | null): any {
-    if (value === undefined) {
-        return undefined;
+export function AuditLogOutToJSON(json: any): AuditLogOut {
+    return AuditLogOutToJSONTyped(json, false);
+}
+
+export function AuditLogOutToJSONTyped(value?: AuditLogOut | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'entity_type': value.entityType,
-        'entity_id': value.entityId,
-        'action': value.action,
-        'owner_user_id': value.ownerUserId,
-        'actor_user_id': value.actorUserId,
-        'details': value.details,
-        'created_at': value.createdAt,
+        'id': value['id'],
+        'entity_type': value['entityType'],
+        'entity_id': value['entityId'],
+        'action': value['action'],
+        'owner_user_id': value['ownerUserId'],
+        'actor_user_id': value['actorUserId'],
+        'details': value['details'],
+        'created_at': ((value['createdAt']).toISOString()),
     };
 }
 

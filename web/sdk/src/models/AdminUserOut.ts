@@ -13,6 +13,28 @@
  */
 
 import { mapValues } from '../runtime';
+import type { AdminUserRoleOverrides } from './AdminUserRoleOverrides';
+import {
+    AdminUserRoleOverridesFromJSON,
+    AdminUserRoleOverridesFromJSONTyped,
+    AdminUserRoleOverridesToJSON,
+    AdminUserRoleOverridesToJSONTyped,
+} from './AdminUserRoleOverrides';
+import type { AdminUserOrganization } from './AdminUserOrganization';
+import {
+    AdminUserOrganizationFromJSON,
+    AdminUserOrganizationFromJSONTyped,
+    AdminUserOrganizationToJSON,
+    AdminUserOrganizationToJSONTyped,
+} from './AdminUserOrganization';
+import type { AdminUserOrganizationMembership } from './AdminUserOrganizationMembership';
+import {
+    AdminUserOrganizationMembershipFromJSON,
+    AdminUserOrganizationMembershipFromJSONTyped,
+    AdminUserOrganizationMembershipToJSON,
+    AdminUserOrganizationMembershipToJSONTyped,
+} from './AdminUserOrganizationMembership';
+
 /**
  * 
  * @export
@@ -109,6 +131,30 @@ export interface AdminUserOut {
      * @memberof AdminUserOut
      */
     quotaApiTokens?: number | null;
+    /**
+     * 
+     * @type {AdminUserRoleOverrides}
+     * @memberof AdminUserOut
+     */
+    roleOverrides?: AdminUserRoleOverrides;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof AdminUserOut
+     */
+    organizationIds?: Array<string>;
+    /**
+     * 
+     * @type {Array<AdminUserOrganizationMembership>}
+     * @memberof AdminUserOut
+     */
+    organizationMemberships?: Array<AdminUserOrganizationMembership>;
+    /**
+     * 
+     * @type {Array<AdminUserOrganization>}
+     * @memberof AdminUserOut
+     */
+    organizations?: Array<AdminUserOrganization>;
 }
 
 /**
@@ -147,6 +193,10 @@ export function AdminUserOutFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
         'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
         'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'roleOverrides': json['role_overrides'] == null ? undefined : AdminUserRoleOverridesFromJSON(json['role_overrides']),
+        'organizationIds': json['organization_ids'] == null ? undefined : json['organization_ids'],
+        'organizationMemberships': json['organization_memberships'] == null ? undefined : ((json['organization_memberships'] as Array<any>).map(AdminUserOrganizationMembershipFromJSON)),
+        'organizations': json['organizations'] == null ? undefined : ((json['organizations'] as Array<any>).map(AdminUserOrganizationFromJSON)),
     };
 }
 
@@ -176,6 +226,10 @@ export function AdminUserOutToJSONTyped(value?: AdminUserOut | null, ignoreDiscr
         'quota_site_configs': value['quotaSiteConfigs'],
         'quota_feeds': value['quotaFeeds'],
         'quota_api_tokens': value['quotaApiTokens'],
+        'role_overrides': AdminUserRoleOverridesToJSON(value['roleOverrides']),
+        'organization_ids': value['organizationIds'],
+        'organization_memberships': value['organizationMemberships'] == null ? undefined : ((value['organizationMemberships'] as Array<any>).map(AdminUserOrganizationMembershipToJSON)),
+        'organizations': value['organizations'] == null ? undefined : ((value['organizations'] as Array<any>).map(AdminUserOrganizationToJSON)),
     };
 }
 

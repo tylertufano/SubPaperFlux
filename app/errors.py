@@ -34,7 +34,25 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def http_exc_handler(request: Request, exc: StarletteHTTPException):  # type: ignore[override]
         trace_id = str(uuid.uuid4())
-        return _problem(code="http_error", message=str(exc.detail), status=exc.status_code, trace_id=trace_id)
+        detail = exc.detail
+        if isinstance(detail, dict):
+            message = detail.get("message") or detail.get("error") or "HTTP error"
+            return _problem(
+                code="http_error",
+                message=str(message),
+                status=exc.status_code,
+                trace_id=trace_id,
+                details=detail,
+            )
+        if isinstance(detail, list):
+            return _problem(
+                code="http_error",
+                message="HTTP error",
+                status=exc.status_code,
+                trace_id=trace_id,
+                details={"errors": detail},
+            )
+        return _problem(code="http_error", message=str(detail), status=exc.status_code, trace_id=trace_id)
 
     @app.exception_handler(RequestValidationError)
     async def validation_exc_handler(request: Request, exc: RequestValidationError):  # type: ignore[override]

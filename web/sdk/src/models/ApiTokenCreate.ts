@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,38 +21,36 @@ import { exists, mapValues } from '../runtime';
 export interface ApiTokenCreate {
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof ApiTokenCreate
      */
-    name: any | null;
+    name: string;
     /**
      * 
-     * @type {any}
+     * @type {string}
      * @memberof ApiTokenCreate
      */
-    description?: any | null;
+    description?: string | null;
     /**
      * 
-     * @type {any}
+     * @type {Array<string>}
      * @memberof ApiTokenCreate
      */
-    scopes?: any | null;
+    scopes?: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {Date}
      * @memberof ApiTokenCreate
      */
-    expiresAt?: any | null;
+    expiresAt?: Date | null;
 }
 
 /**
  * Check if a given object implements the ApiTokenCreate interface.
  */
-export function instanceOfApiTokenCreate(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfApiTokenCreate(value: object): value is ApiTokenCreate {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function ApiTokenCreateFromJSON(json: any): ApiTokenCreate {
@@ -60,31 +58,33 @@ export function ApiTokenCreateFromJSON(json: any): ApiTokenCreate {
 }
 
 export function ApiTokenCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenCreate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'name': json['name'],
-        'description': !exists(json, 'description') ? undefined : json['description'],
-        'scopes': !exists(json, 'scopes') ? undefined : json['scopes'],
-        'expiresAt': !exists(json, 'expires_at') ? undefined : json['expires_at'],
+        'description': json['description'] == null ? undefined : json['description'],
+        'scopes': json['scopes'] == null ? undefined : json['scopes'],
+        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
     };
 }
 
-export function ApiTokenCreateToJSON(value?: ApiTokenCreate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ApiTokenCreateToJSON(json: any): ApiTokenCreate {
+    return ApiTokenCreateToJSONTyped(json, false);
+}
+
+export function ApiTokenCreateToJSONTyped(value?: ApiTokenCreate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'name': value.name,
-        'description': value.description,
-        'scopes': value.scopes,
-        'expires_at': value.expiresAt,
+        'name': value['name'],
+        'description': value['description'],
+        'scopes': value['scopes'],
+        'expires_at': value['expiresAt'] === null ? null : ((value['expiresAt'] as any)?.toISOString()),
     };
 }
 
