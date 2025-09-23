@@ -100,9 +100,7 @@ describe('Nav component', () => {
 
     expect(screen.getByRole('link', { name: 'Bookmarks' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Jobs' })).toBeInTheDocument()
-    const feedsDropdown = screen.getByTestId('dropdown-Feeds')
-    expect(within(feedsDropdown).getByText('All Feeds')).toBeInTheDocument()
-    expect(within(feedsDropdown).queryByText('Create Feed')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Feeds' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Site Configs' })).toBeInTheDocument()
   }
@@ -148,8 +146,7 @@ describe('Nav component', () => {
     ).toBe(true)
     expect(screen.queryByRole('link', { name: 'Bookmarks' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Jobs' })).toBeNull()
-    const feedsDropdown = screen.queryByTestId('dropdown-Feeds')
-    expect(feedsDropdown).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Feeds' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Credentials' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
   })
@@ -171,8 +168,7 @@ describe('Nav component', () => {
 
     expect(screen.queryByRole('link', { name: 'Bookmarks' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Jobs' })).toBeNull()
-    const feedsDropdown = screen.queryByTestId('dropdown-Feeds')
-    expect(feedsDropdown).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Feeds' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Credentials' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Site Configs' })).toBeNull()
   })

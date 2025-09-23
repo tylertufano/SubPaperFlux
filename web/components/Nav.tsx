@@ -123,6 +123,13 @@ export default function Nav() {
   const shouldShowBookmarksLink = canViewBookmarks
   const shouldShowJobsLink = canViewBookmarks
 
+  const defaultFeedsLabel = t('nav_feeds_all')
+  const feedsMenuItems = [{ href: '/feeds', label: defaultFeedsLabel }]
+  const hasOnlyDefaultFeedsItem =
+    feedsMenuItems.length === 1 &&
+    feedsMenuItems[0].href === '/feeds' &&
+    feedsMenuItems[0].label === defaultFeedsLabel
+
   const adminAccountItems = hasAdminAccess
     ? [
         { href: '/admin', label: t('nav_admin') },
@@ -164,14 +171,22 @@ export default function Nav() {
           </Link>
         ) : null}
         {shouldShowFeedsMenu ? (
-          <DropdownMenu
-            label={t('nav_feeds')}
-            baseHref="/feeds"
-            currentPath={pathname}
-            items={[
-              { href: '/feeds', label: t('nav_feeds_all') },
-            ]}
-          />
+          hasOnlyDefaultFeedsItem ? (
+            <Link
+              href="/feeds"
+              className={linkClass('/feeds')}
+              aria-current={pathname === '/feeds' ? 'page' : undefined}
+            >
+              {t('nav_feeds')}
+            </Link>
+          ) : (
+            <DropdownMenu
+              label={t('nav_feeds')}
+              baseHref="/feeds"
+              currentPath={pathname}
+              items={feedsMenuItems}
+            />
+          )
         ) : null}
         {shouldShowCredentialsLink ? (
           <Link
