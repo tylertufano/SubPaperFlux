@@ -48,6 +48,9 @@ def _mask_value(value: str) -> str:
     return value[:2] + "***" + value[-2:]
 
 
+ALLOWED_GLOBAL_CREDENTIAL_KINDS = frozenset({"instapaper_app"})
+
+
 def _mask_credential(kind: str, data: dict) -> dict:
     masked = dict(data)
     sensitive_keys = {
@@ -60,6 +63,14 @@ def _mask_credential(kind: str, data: dict) -> dict:
         if key in masked and isinstance(masked[key], str):
             masked[key] = _mask_value(masked[key])
     return masked
+
+
+def _ensure_global_kind(kind: str) -> None:
+    if kind not in ALLOWED_GLOBAL_CREDENTIAL_KINDS:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Global credentials must use kind 'instapaper_app'",
+        )
 
 
 class InstapaperLoginRequest(BaseModel):
@@ -141,6 +152,8 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         )
         if not allowed_global:
             owner = current_user["sub"]
+        else:
+            _ensure_global_kind(body.kind)
     if owner is not None:
         enforce_user_quota(
             session,
@@ -201,13 +214,15 @@ def create_instapaper_credential_from_login(
 
     owner: Optional[str] = user_id
     if body.scope_global:
-        allowed_global = _ensure_permission(
+        _ensure_permission(
             session,
             current_user,
             PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
         )
-        if allowed_global:
-            owner = None
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Instapaper credentials cannot be global",
+        )
 
     if owner is not None:
         enforce_user_quota(
@@ -277,6 +292,7 @@ def delete_credential(cred_id: str, current_user=Depends(get_current_user), sess
         raise HTTPException(status_code=404, detail="Not found")
 
     if model.owner_user_id is None:
+        _ensure_global_kind(model.kind)
         allowed_global = _ensure_permission(
             session,
             current_user,
@@ -347,6 +363,7 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         raise HTTPException(status_code=404, detail="Not found")
     # Only owner can update; allow admin to update globals
     if model.owner_user_id is None:
+        _ensure_global_kind(model.kind)
         allowed_global = _ensure_permission(
             session,
             current_user,
@@ -354,6 +371,8 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         )
         if not allowed_global:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        incoming_kind = body.kind or model.kind
+        _ensure_global_kind(incoming_kind)
     elif model.owner_user_id != current_user["sub"]:
         allowed_cross = has_permission(
             session,

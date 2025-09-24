@@ -407,6 +407,7 @@
   "credentials_kind_instapaper": "instapaper",
   "credentials_kind_instapaper_app": "instapaper_app (admin/global)",
   "credentials_scope_global_label": "Global (admin)",
+  "credentials_scope_global_hint": "Only Instapaper app credentials may be global.",
   "credentials_field_description_placeholder": "Description",
   "credentials_error_description_required": "Description is required",
   "credentials_field_username_placeholder": "Username",

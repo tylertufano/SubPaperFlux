@@ -97,7 +97,7 @@ def test_credentials_and_siteconfigs(client):
     assert r2_after.status_code == 200
     assert r2_after.json()["total"] == 0
 
-    # Create a global credential as admin
+    # Creating a global credential that isn't instapaper_app should fail
     r_global_create = client.post(
         "/credentials",
         json={
@@ -107,10 +107,26 @@ def test_credentials_and_siteconfigs(client):
             "owner_user_id": None,
         },
     )
+    assert r_global_create.status_code == 400
+    error_body = r_global_create.json()
+    assert error_body["status"] == 400
+    assert "instapaper_app" in error_body["message"]
+
+    # Admins can create global Instapaper app credentials
+    r_global_create = client.post(
+        "/credentials",
+        json={
+            "kind": "instapaper_app",
+            "description": "Global Instapaper app",
+            "data": {"consumer_key": "ckey", "consumer_secret": "csecret"},
+            "owner_user_id": None,
+        },
+    )
     assert r_global_create.status_code == 201
     global_cred = r_global_create.json()
     assert global_cred["owner_user_id"] is None
-    assert global_cred["description"] == "Global credential"
+    assert global_cred["kind"] == "instapaper_app"
+    assert global_cred["description"] == "Global Instapaper app"
 
     # Regular users should receive 403 when trying to delete a global credential
     from app.auth.oidc import get_current_user
@@ -126,7 +142,7 @@ def test_credentials_and_siteconfigs(client):
     # Ensure the credential still exists and admin can delete it
     r_global_detail = client.get(f"/credentials/{global_cred['id']}")
     assert r_global_detail.status_code == 200
-    assert r_global_detail.json()["description"] == "Global credential"
+    assert r_global_detail.json()["description"] == "Global Instapaper app"
 
     r_global_delete = client.delete(f"/credentials/{global_cred['id']}")
     assert r_global_delete.status_code == 204
@@ -199,9 +215,9 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
         cred_resp = client.post(
             "/credentials",
             json={
-                "kind": "site_login",
-                "description": "Global credential",
-                "data": {"username": "ga", "password": "gp"},
+                "kind": "instapaper_app",
+                "description": "Global Instapaper app",
+                "data": {"consumer_key": "ckey", "consumer_secret": "csecret"},
                 "owner_user_id": None,
             },
         )
@@ -417,6 +433,58 @@ def test_instapaper_login_success(monkeypatch, client):
         assert plain["username"] == "reader@example.com"
         logs = session.exec(select(AuditLog).where(AuditLog.entity_id == stored.id)).all()
         assert any(log.action == "create" for log in logs)
+
+
+def test_instapaper_login_cannot_be_global(monkeypatch, client):
+    from app.db import get_session
+    from app.models import Credential
+    from app.security.crypto import encrypt_dict
+    import app.integrations.instapaper as instapaper
+    import app.routers.credentials as credentials_router
+
+    with next(get_session()) as session:
+        session.add(
+            Credential(
+                kind="instapaper_app",
+                description="Instapaper app",
+                data=encrypt_dict({"consumer_key": "ckey", "consumer_secret": "csecret"}),
+                owner_user_id=None,
+            )
+        )
+        session.commit()
+
+    called = False
+
+    def fail(*args, **kwargs):  # pragma: no cover - should not be called
+        nonlocal called
+        called = True
+        return instapaper.InstapaperTokenResponse(
+            success=True,
+            oauth_token="tok",
+            oauth_token_secret="sec",
+            status_code=200,
+        )
+
+    monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fail)
+
+    resp = client.post(
+        "/credentials/instapaper/login",
+        json={
+            "description": "Instapaper",
+            "username": "reader@example.com",
+            "password": "pw",
+            "scope_global": True,
+        },
+    )
+    assert resp.status_code == 400
+    error_body = resp.json()
+    assert error_body["status"] == 400
+    assert "cannot be global" in error_body["message"]
+    assert called is False
+
+    with next(get_session()) as session:
+        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).all()
+        assert stored == []
 
 
 def test_instapaper_login_missing_app_creds(monkeypatch, client):
