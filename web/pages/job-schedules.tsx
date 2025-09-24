@@ -94,13 +94,11 @@ function initPayloadState(
   switch (jobType) {
     case "login":
       return {
-        config_dir: payload?.config_dir ?? "",
         site_config_id: payload?.site_config_id ?? "",
         credential_id: payload?.credential_id ?? "",
       };
     case "miniflux_refresh":
       return {
-        config_dir: payload?.config_dir ?? "",
         miniflux_id: payload?.miniflux_id ?? "",
         feed_ids_text: Array.isArray(payload?.feed_ids)
           ? payload.feed_ids.join(",")
@@ -111,7 +109,6 @@ function initPayloadState(
       };
     case "rss_poll":
       return {
-        config_dir: payload?.config_dir ?? "",
         instapaper_id: payload?.instapaper_id ?? "",
         feed_url: payload?.feed_url ?? "",
         lookback: payload?.lookback ?? "",
@@ -122,7 +119,6 @@ function initPayloadState(
       };
     case "publish":
       return {
-        config_dir: payload?.config_dir ?? "",
         instapaper_id: payload?.instapaper_id ?? "",
         url: payload?.url ?? "",
         title: payload?.title ?? "",
@@ -275,13 +271,10 @@ function ScheduleForm({
     const payload: Record<string, any> = {};
 
     if (jobType === "login") {
-      const configDir = (payloadState.config_dir || "").toString().trim();
       const siteConfigId = (payloadState.site_config_id || "")
         .toString()
         .trim();
       const credentialId = (payloadState.credential_id || "").toString().trim();
-      if (!configDir)
-        nextErrors["payload.config_dir"] = t("job_schedules_error_config_dir");
       if (!siteConfigId)
         nextErrors["payload.site_config_id"] = t(
           "job_schedules_error_site_config",
@@ -290,11 +283,9 @@ function ScheduleForm({
         nextErrors["payload.credential_id"] = t(
           "job_schedules_error_credential",
         );
-      payload.config_dir = configDir;
       payload.site_config_id = siteConfigId;
       payload.credential_id = credentialId;
     } else if (jobType === "miniflux_refresh") {
-      const configDir = (payloadState.config_dir || "").toString().trim();
       const minifluxId = (payloadState.miniflux_id || "").toString().trim();
       const feedIdsText = (payloadState.feed_ids_text || "").toString().trim();
       const cookieKey = (payloadState.cookie_key || "").toString().trim();
@@ -302,8 +293,6 @@ function ScheduleForm({
         .toString()
         .trim();
       const credentialId = (payloadState.credential_id || "").toString().trim();
-      if (!configDir)
-        nextErrors["payload.config_dir"] = t("job_schedules_error_config_dir");
       if (!minifluxId)
         nextErrors["payload.miniflux_id"] = t("job_schedules_error_miniflux");
       if (!feedIdsText)
@@ -327,7 +316,6 @@ function ScheduleForm({
           "job_schedules_error_miniflux_cookie",
         );
       }
-      payload.config_dir = configDir;
       payload.miniflux_id = minifluxId;
       if (feedIds.length > 0) {
         payload.feed_ids = feedIds;
@@ -336,7 +324,6 @@ function ScheduleForm({
       if (siteConfigId) payload.site_config_id = siteConfigId;
       if (credentialId) payload.credential_id = credentialId;
     } else if (jobType === "rss_poll") {
-      const configDir = (payloadState.config_dir || "").toString().trim();
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedUrl = (payloadState.feed_url || "").toString().trim();
       const lookback = (payloadState.lookback || "").toString().trim();
@@ -346,15 +333,12 @@ function ScheduleForm({
         .trim();
       const isPaywalled = Boolean(payloadState.is_paywalled);
       const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
-      if (!configDir)
-        nextErrors["payload.config_dir"] = t("job_schedules_error_config_dir");
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
       if (!feedUrl || !isValidUrl(feedUrl))
         nextErrors["payload.feed_url"] = t("job_schedules_error_feed_url");
-      payload.config_dir = configDir;
       payload.instapaper_id = instapaperId;
       payload.feed_url = feedUrl;
       if (lookback) payload.lookback = lookback;
@@ -363,22 +347,18 @@ function ScheduleForm({
       if (cookieKey) payload.cookie_key = cookieKey;
       if (siteConfigId) payload.site_config_id = siteConfigId;
     } else if (jobType === "publish") {
-      const configDir = (payloadState.config_dir || "").toString().trim();
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const url = (payloadState.url || "").toString().trim();
       const title = (payloadState.title || "").toString().trim();
       const folder = (payloadState.folder || "").toString().trim();
       const tagsText = (payloadState.tags_text || "").toString();
       const feedId = (payloadState.feed_id || "").toString().trim();
-      if (!configDir)
-        nextErrors["payload.config_dir"] = t("job_schedules_error_config_dir");
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
       if (!url || !isValidUrl(url))
         nextErrors["payload.url"] = t("job_schedules_error_url");
-      payload.config_dir = configDir;
       payload.instapaper_id = instapaperId;
       payload.url = url;
       if (title) payload.title = title;
@@ -432,34 +412,6 @@ function ScheduleForm({
       case "login":
         return (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-login-config-dir"
-              >
-                {t("job_schedules_field_config_dir")}
-              </label>
-              <input
-                id="schedule-login-config-dir"
-                className="input"
-                value={payloadState.config_dir || ""}
-                onChange={(e) => updatePayload("config_dir", e.target.value)}
-                aria-invalid={Boolean(errors["payload.config_dir"])}
-                aria-describedby={
-                  errors["payload.config_dir"]
-                    ? "schedule-login-config-dir-error"
-                    : undefined
-                }
-              />
-              {errors["payload.config_dir"] && (
-                <p
-                  id="schedule-login-config-dir-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.config_dir"]}
-                </p>
-              )}
-            </div>
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
@@ -537,34 +489,6 @@ function ScheduleForm({
       case "miniflux_refresh":
         return (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-miniflux-config-dir"
-              >
-                {t("job_schedules_field_config_dir")}
-              </label>
-              <input
-                id="schedule-miniflux-config-dir"
-                className="input"
-                value={payloadState.config_dir || ""}
-                onChange={(e) => updatePayload("config_dir", e.target.value)}
-                aria-invalid={Boolean(errors["payload.config_dir"])}
-                aria-describedby={
-                  errors["payload.config_dir"]
-                    ? "schedule-miniflux-config-dir-error"
-                    : undefined
-                }
-              />
-              {errors["payload.config_dir"] && (
-                <p
-                  id="schedule-miniflux-config-dir-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.config_dir"]}
-                </p>
-              )}
-            </div>
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
@@ -714,34 +638,6 @@ function ScheduleForm({
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-config-dir"
-              >
-                {t("job_schedules_field_config_dir")}
-              </label>
-              <input
-                id="schedule-rss-config-dir"
-                className="input"
-                value={payloadState.config_dir || ""}
-                onChange={(e) => updatePayload("config_dir", e.target.value)}
-                aria-invalid={Boolean(errors["payload.config_dir"])}
-                aria-describedby={
-                  errors["payload.config_dir"]
-                    ? "schedule-rss-config-dir-error"
-                    : undefined
-                }
-              />
-              {errors["payload.config_dir"] && (
-                <p
-                  id="schedule-rss-config-dir-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.config_dir"]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
                 htmlFor="schedule-rss-instapaper"
               >
                 {t("job_schedules_field_instapaper_credential")}
@@ -887,34 +783,6 @@ function ScheduleForm({
       case "publish":
         return (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-publish-config-dir"
-              >
-                {t("job_schedules_field_config_dir")}
-              </label>
-              <input
-                id="schedule-publish-config-dir"
-                className="input"
-                value={payloadState.config_dir || ""}
-                onChange={(e) => updatePayload("config_dir", e.target.value)}
-                aria-invalid={Boolean(errors["payload.config_dir"])}
-                aria-describedby={
-                  errors["payload.config_dir"]
-                    ? "schedule-publish-config-dir-error"
-                    : undefined
-                }
-              />
-              {errors["payload.config_dir"] && (
-                <p
-                  id="schedule-publish-config-dir-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.config_dir"]}
-                </p>
-              )}
-            </div>
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
