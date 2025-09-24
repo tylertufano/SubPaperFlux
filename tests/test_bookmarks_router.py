@@ -93,6 +93,51 @@ def test_bookmarks_list_filters():
     assert bad.status_code == 400
 
 
+def test_bookmarks_count_endpoint_available_under_v1_prefix():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.models import Bookmark
+    from app.auth.oidc import get_current_user
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "user-count"}
+
+    with next(get_session()) as session:
+        session.add(
+            Bookmark(
+                owner_user_id="user-count",
+                instapaper_bookmark_id="count-1",
+                title="Count Me In",
+                url="https://example.com/one",
+            )
+        )
+        session.add(
+            Bookmark(
+                owner_user_id="user-count",
+                instapaper_bookmark_id="count-2",
+                title="Another One",
+                url="https://example.com/two",
+            )
+        )
+        session.add(
+            Bookmark(
+                owner_user_id="other-user",
+                instapaper_bookmark_id="count-3",
+                title="Should Not Count",
+                url="https://example.com/three",
+            )
+        )
+        session.commit()
+
+    client = TestClient(app)
+
+    response = client.get("/v1/bookmarks/count")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload == {"total": 2, "total_pages": 1}
+
+
 def test_bookmark_tags_and_folders_endpoints():
     from app.db import init_db, get_session
     from app.main import create_app

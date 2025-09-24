@@ -664,6 +664,41 @@ def list_bookmarks(
     return BookmarksPage(items=items, total=int(total), page=page, size=size, has_next=has_next, total_pages=total_pages)
 
 
+@router.get("/count", response_model=dict)
+def count_bookmarks(
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+    feed_id: Optional[str] = None,
+    tag_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None),
+    since: Optional[str] = None,
+    until: Optional[str] = None,
+    search: Optional[str] = None,
+    title_query: Optional[str] = Query(None),
+    url_query: Optional[str] = Query(None),
+    regex: Optional[str] = Query(None),
+    regex_target: Optional[str] = Query("both", pattern="^(title|url|both)$"),
+    regex_flags: Optional[str] = Query(None, pattern="^[imxs]*$"),
+    size: int = Query(20, ge=1, le=200),
+):
+    user_id = current_user["sub"]
+    filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
+    base = select(Bookmark)
+    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
+    if is_postgres():
+        clauses = _sql_clauses(filters)
+        count_stmt = select(func.count()).select_from(Bookmark)
+        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
+        for clause in clauses:
+            count_stmt = count_stmt.where(clause)
+        total = session.exec(count_stmt).one()
+    else:
+        rows = session.exec(base).all()
+        total = len(_python_filter(rows, filters))
+    total_pages = int((total + size - 1) // size) if size else 1
+    return {"total": int(total), "total_pages": total_pages}
+
+
 @router.delete("/{bookmark_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
 def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), session=Depends(get_session), delete_remote: bool = Query(True)):
     bm = session.get(Bookmark, bookmark_id)
@@ -1537,41 +1572,6 @@ def get_bookmark(bookmark_id: str, current_user=Depends(get_current_user), sessi
         feed_id=bm.feed_id,
         published_at=(bm.published_at.isoformat() if bm.published_at else None),
     )
-
-
-@router.get("/count", response_model=dict)
-def count_bookmarks(
-    current_user=Depends(get_current_user),
-    session=Depends(get_session),
-    feed_id: Optional[str] = None,
-    tag_id: Optional[str] = Query(None),
-    folder_id: Optional[str] = Query(None),
-    since: Optional[str] = None,
-    until: Optional[str] = None,
-    search: Optional[str] = None,
-    title_query: Optional[str] = Query(None),
-    url_query: Optional[str] = Query(None),
-    regex: Optional[str] = Query(None),
-    regex_target: Optional[str] = Query("both", pattern="^(title|url|both)$"),
-    regex_flags: Optional[str] = Query(None, pattern="^[imxs]*$"),
-    size: int = Query(20, ge=1, le=200),
-):
-    user_id = current_user["sub"]
-    filters = _collect_filters(search, title_query, url_query, regex, regex_target, regex_flags)
-    base = select(Bookmark)
-    base = _apply_filters(base, user_id, feed_id, since, until, tag_id, folder_id)
-    if is_postgres():
-        clauses = _sql_clauses(filters)
-        count_stmt = select(func.count()).select_from(Bookmark)
-        count_stmt = _apply_filters(count_stmt, user_id, feed_id, since, until, tag_id, folder_id)
-        for clause in clauses:
-            count_stmt = count_stmt.where(clause)
-        total = session.exec(count_stmt).one()
-    else:
-        rows = session.exec(base).all()
-        total = len(_python_filter(rows, filters))
-    total_pages = int((total + size - 1) // size) if size else 1
-    return {"total": int(total), "total_pages": total_pages}
 
 
 @router.head("")
