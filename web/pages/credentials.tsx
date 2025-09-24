@@ -26,6 +26,7 @@ export default function Credentials() {
       (hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS) ||
         hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
   )
+  const canManageGlobalCredentials = hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)
   const { data, error, isLoading, mutate } = useSWR(
     canViewCredentials ? ['/v1/credentials'] : null,
     () => v1.listCredentialsV1V1CredentialsGet({}),
@@ -44,6 +45,7 @@ export default function Credentials() {
   const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
   const hasDescription = description.trim().length > 0
   const hasEditDescription = editDescription.trim().length > 0
+  const allowGlobalScope = canManageGlobalCredentials && kind === 'instapaper_app'
 
   async function testCred(c: any) {
     try {
@@ -86,7 +88,7 @@ export default function Credentials() {
           description: trimmedDescription,
           username: parsed.data.username,
           password: parsed.data.password,
-          scope_global: scopeGlobal,
+          scope_global: allowGlobalScope && scopeGlobal,
         })
       } else {
         await creds.createCredentialCredentialsPost({
@@ -94,7 +96,7 @@ export default function Credentials() {
             kind,
             description: trimmedDescription,
             data: parsed.data,
-            ownerUserId: scopeGlobal ? null : undefined,
+            ownerUserId: allowGlobalScope && scopeGlobal ? null : undefined,
           },
         })
       }
@@ -292,13 +294,36 @@ export default function Credentials() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <label htmlFor="credential-kind-select">{t('credentials_kind_label')} <span className="ml-1 text-gray-500 cursor-help" title={t('credentials_kind_help')}>?</span>:</label>
-              <select id="credential-kind-select" className="input" value={kind} onChange={(e) => setKind(e.target.value)}>
+              <select
+                id="credential-kind-select"
+                className="input"
+                value={kind}
+                onChange={(e) => {
+                  const nextKind = e.target.value
+                  setKind(nextKind)
+                  if (nextKind !== 'instapaper_app') {
+                    setScopeGlobal(false)
+                  }
+                }}
+              >
                 <option value="site_login">{t('credentials_kind_site_login')}</option>
                 <option value="miniflux">{t('credentials_kind_miniflux')}</option>
                 <option value="instapaper">{t('credentials_kind_instapaper')}</option>
                 <option value="instapaper_app">{t('credentials_kind_instapaper_app')}</option>
               </select>
-              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={scopeGlobal} onChange={e => setScopeGlobal(e.target.checked)} /> {t('credentials_scope_global_label')}</label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={scopeGlobal && allowGlobalScope}
+                  onChange={e => setScopeGlobal(e.target.checked && allowGlobalScope)}
+                  disabled={!allowGlobalScope}
+                  aria-disabled={!allowGlobalScope}
+                />
+                {t('credentials_scope_global_label')}
+              </label>
+              {!allowGlobalScope && (
+                <span className="text-sm text-gray-500">{t('credentials_scope_global_hint')}</span>
+              )}
             </div>
             {kind === 'site_login' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
