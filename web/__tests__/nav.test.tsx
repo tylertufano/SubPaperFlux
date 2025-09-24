@@ -103,6 +103,23 @@ describe("Nav component", () => {
     return screen.getAllByTestId("dropdown-Test User");
   }
 
+  function expectNavigationOrder(expectedOrder: string[]) {
+    const navigation = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    const navLinks = expectedOrder.map((label) =>
+      within(navigation).getByRole("link", { name: label }),
+    );
+
+    for (let index = 0; index < navLinks.length - 1; index += 1) {
+      const current = navLinks[index];
+      const next = navLinks[index + 1];
+      const position = current.compareDocumentPosition(next);
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBe(0);
+    }
+  }
+
   function expectAdminNavigationVisible() {
     const accountDropdowns = getAccountDropdowns();
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
@@ -142,6 +159,15 @@ describe("Nav component", () => {
     expect(
       screen.getByRole("link", { name: "Site Configs" }),
     ).toBeInTheDocument();
+
+    expectNavigationOrder([
+      "Site Configs",
+      "Credentials",
+      "Feeds",
+      "Bookmarks",
+      "Schedules",
+      "Jobs",
+    ]);
   }
 
   it("shows admin navigation inside the account dropdown by default", () => {
