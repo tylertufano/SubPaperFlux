@@ -238,7 +238,6 @@ describe("Critical page accessibility", () => {
                 id: "schedule-1",
                 jobType: "rss_poll",
                 payload: {
-                  config_dir: "configs/rss",
                   instapaper_id: "cred-1",
                   feed_url: "https://example.com/rss.xml",
                 },

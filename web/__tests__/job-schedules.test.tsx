@@ -70,7 +70,6 @@ const defaultSchedule = {
   id: "schedule-1",
   jobType: "rss_poll",
   payload: {
-    config_dir: "configs/rss",
     instapaper_id: "cred-1",
     feed_url: "https://example.com/rss.xml",
     lookback: "1d",
@@ -226,7 +225,7 @@ describe("JobSchedulesPage", () => {
     expect(await screen.findByText("Metadata")).toBeInTheDocument();
     expect(screen.getByText("Payload")).toBeInTheDocument();
     expect(
-      screen.getByText(/"config_dir": "configs\/rss"/),
+      screen.getByText(/"instapaper_id": "cred-1"/),
     ).toBeInTheDocument();
   });
 
@@ -238,11 +237,6 @@ describe("JobSchedulesPage", () => {
       "Frequency",
     ) as HTMLInputElement;
     fireEvent.change(frequencyInput, { target: { value: "2h" } });
-
-    const configDirInput = screen.getByLabelText(
-      "Config directory",
-    ) as HTMLInputElement;
-    fireEvent.change(configDirInput, { target: { value: "/data/rss" } });
 
     const instapaperSelect = screen.getByLabelText(
       "Instapaper credential",
@@ -265,7 +259,6 @@ describe("JobSchedulesPage", () => {
         frequency: "2h",
         isActive: true,
         payload: expect.objectContaining({
-          config_dir: "/data/rss",
           instapaper_id: "cred-1",
           feed_url: "https://example.com/feed.xml",
         }),
@@ -299,11 +292,13 @@ describe("JobSchedulesPage", () => {
     const frequencyInput = within(editForm).getByDisplayValue(
       "1h",
     ) as HTMLInputElement;
-    const configDirInput = within(editForm).getByDisplayValue(
-      "configs/rss",
+    const feedUrlInput = within(editForm).getByDisplayValue(
+      "https://example.com/rss.xml",
     ) as HTMLInputElement;
     fireEvent.change(frequencyInput, { target: { value: "30m" } });
-    fireEvent.change(configDirInput, { target: { value: "configs/updated" } });
+    fireEvent.change(feedUrlInput, {
+      target: { value: "https://example.com/rss-updated.xml" },
+    });
 
     const activeCheckbox = within(editForm).getByRole("checkbox", {
       name: "Schedule is active",
@@ -322,7 +317,9 @@ describe("JobSchedulesPage", () => {
         jobType: "rss_poll",
         frequency: "30m",
         isActive: false,
-        payload: expect.objectContaining({ config_dir: "configs/updated" }),
+        payload: expect.objectContaining({
+          feed_url: "https://example.com/rss-updated.xml",
+        }),
       }),
     });
 
