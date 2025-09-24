@@ -159,27 +159,22 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
-        {shouldShowBookmarksLink ? (
+        {canManageSiteConfigs ? (
           <Link
-            href="/bookmarks"
-            className={linkClass('/bookmarks')}
-            aria-current={pathname === '/bookmarks' ? 'page' : undefined}
+            href="/site-configs"
+            className={linkClass('/site-configs')}
+            aria-current={pathname === '/site-configs' ? 'page' : undefined}
           >
-            {t('nav_bookmarks')}
+            {t('nav_site_configs')}
           </Link>
         ) : null}
-        {shouldShowJobsLink ? (
-          <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
-            {t('nav_jobs')}
-          </Link>
-        ) : null}
-        {shouldShowJobSchedulesLink ? (
+        {shouldShowCredentialsLink ? (
           <Link
-            href="/job-schedules"
-            className={linkClass('/job-schedules')}
-            aria-current={pathname === '/job-schedules' ? 'page' : undefined}
+            href="/credentials"
+            className={linkClass('/credentials')}
+            aria-current={pathname === '/credentials' ? 'page' : undefined}
           >
-            {t('nav_job_schedules')}
+            {t('nav_credentials')}
           </Link>
         ) : null}
         {shouldShowFeedsMenu ? (
@@ -200,22 +195,27 @@ export default function Nav() {
             />
           )
         ) : null}
-        {shouldShowCredentialsLink ? (
+        {shouldShowBookmarksLink ? (
           <Link
-            href="/credentials"
-            className={linkClass('/credentials')}
-            aria-current={pathname === '/credentials' ? 'page' : undefined}
+            href="/bookmarks"
+            className={linkClass('/bookmarks')}
+            aria-current={pathname === '/bookmarks' ? 'page' : undefined}
           >
-            {t('nav_credentials')}
+            {t('nav_bookmarks')}
           </Link>
         ) : null}
-        {canManageSiteConfigs ? (
+        {shouldShowJobSchedulesLink ? (
           <Link
-            href="/site-configs"
-            className={linkClass('/site-configs')}
-            aria-current={pathname === '/site-configs' ? 'page' : undefined}
+            href="/job-schedules"
+            className={linkClass('/job-schedules')}
+            aria-current={pathname === '/job-schedules' ? 'page' : undefined}
           >
-            {t('nav_site_configs')}
+            {t('nav_job_schedules')}
+          </Link>
+        ) : null}
+        {shouldShowJobsLink ? (
+          <Link href="/jobs" className={linkClass('/jobs')} aria-current={pathname === '/jobs' ? 'page' : undefined}>
+            {t('nav_jobs')}
           </Link>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
