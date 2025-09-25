@@ -245,7 +245,8 @@ export default function Credentials() {
       const body = full?.data ?? {}
       setEditing({ id, kind, json: JSON.stringify(body, null, 2) })
       setEditDescription((full?.description ?? '').toString())
-      setEditSiteConfigId((full?.site_config_id ?? '')?.toString())
+      const siteConfigRaw = (full as any)?.site_config_id ?? full?.siteConfigId ?? ''
+      setEditSiteConfigId(siteConfigRaw != null ? String(siteConfigRaw) : '')
       setEditErrors({})
     } catch (e: any) {
       setBanner({ kind: 'error', message: t('credentials_load_failed', { reason: e?.message || String(e) }) })
