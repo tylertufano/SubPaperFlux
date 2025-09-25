@@ -5,7 +5,7 @@ from ..jobs import register_handler
 from .util_subpaperflux import publish_url
 from ..db import get_session_ctx
 from ..models import Bookmark
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 
@@ -29,6 +29,15 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                     published_at = datetime.fromisoformat(published_at)
                 except Exception:
                     published_at = None
+            publication_recorded_at = datetime.now(timezone.utc).isoformat()
+            publication_statuses = {
+                "instapaper": {
+                    "status": "published",
+                    "bookmark_id": str(res.get("bookmark_id")),
+                    "content_location": res.get("content_location"),
+                    "published_at": publication_recorded_at,
+                }
+            }
             bm = Bookmark(
                 owner_user_id=owner_user_id,
                 instapaper_bookmark_id=str(res.get("bookmark_id")),
@@ -37,6 +46,9 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                 content_location=res.get("content_location"),
                 feed_id=payload.get("feed_id"),
                 published_at=published_at,
+                rss_entry=payload.get("rss_entry") or {},
+                raw_html_content=payload.get("raw_html_content"),
+                publication_statuses=publication_statuses,
             )
             session.add(bm)
             record_audit_log(
@@ -50,6 +62,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                     "instapaper_bookmark_id": bm.instapaper_bookmark_id,
                     "job_id": job_id,
                     "source": "publish_job",
+                    "publication_statuses": publication_statuses,
                 },
             )
             session.commit()

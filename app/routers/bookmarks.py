@@ -647,7 +647,13 @@ def list_bookmarks(
 
     items = []
     for r in rows:
-        dt = r.published_at.isoformat() if getattr(r, "published_at", None) else None
+        raw_dt = getattr(r, "published_at", None)
+        if isinstance(raw_dt, datetime):
+            dt = raw_dt.isoformat()
+        elif isinstance(raw_dt, str):
+            dt = raw_dt
+        else:
+            dt = None
         items.append(
             BookmarkOut(
                 id=r.id,
@@ -657,6 +663,9 @@ def list_bookmarks(
                 content_location=r.content_location,
                 feed_id=r.feed_id,
                 published_at=dt,
+                rss_entry=r.rss_entry or {},
+                raw_html_content=r.raw_html_content,
+                publication_statuses=r.publication_statuses or {},
             )
         )
     has_next = (page * size) < total
@@ -1563,6 +1572,13 @@ def get_bookmark(bookmark_id: str, current_user=Depends(get_current_user), sessi
         attempted_action="read",
         permission=PERMISSION_READ_BOOKMARKS,
     )
+    published_value = bm.published_at
+    if isinstance(published_value, datetime):
+        published_str = published_value.isoformat()
+    elif isinstance(published_value, str):
+        published_str = published_value
+    else:
+        published_str = None
     return BookmarkOut(
         id=bm.id,
         instapaper_bookmark_id=bm.instapaper_bookmark_id,
@@ -1570,7 +1586,10 @@ def get_bookmark(bookmark_id: str, current_user=Depends(get_current_user), sessi
         url=bm.url,
         content_location=bm.content_location,
         feed_id=bm.feed_id,
-        published_at=(bm.published_at.isoformat() if bm.published_at else None),
+        published_at=published_str,
+        rss_entry=bm.rss_entry or {},
+        raw_html_content=bm.raw_html_content,
+        publication_statuses=bm.publication_statuses or {},
     )
 
 

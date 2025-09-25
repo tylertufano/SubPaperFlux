@@ -375,7 +375,22 @@ class Bookmark(SQLModel, table=True):
     title: Optional[str] = None
     content_location: Optional[str] = None
     feed_id: Optional[str] = Field(default=None, index=True)
-    published_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    published_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    rss_entry: Dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSON, nullable=False),
+    )
+    raw_html_content: Optional[str] = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
+    )
+    publication_statuses: Dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSON, nullable=False),
+    )
 
 
 class Tag(SQLModel, table=True):
