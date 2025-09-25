@@ -1,14 +1,19 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
 
 from sqlmodel import select
 
 from ..audit import record_audit_log
 from ..db import get_session_ctx
-from ..models import Cookie as CookieModel, Credential as CredentialModel, SiteConfig as SiteConfigModel, Bookmark as BookmarkModel
+from ..models import (
+    Cookie as CookieModel,
+    Credential as CredentialModel,
+    SiteConfig as SiteConfigModel,
+    Bookmark as BookmarkModel,
+)
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
 
 
@@ -103,38 +108,85 @@ def _get_db_credential_by_kind(kind: str, owner_user_id: Optional[str]) -> Optio
     return None
 
 
-def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credential_id: str, owner_user_id: Optional[str]) -> Dict[str, Any]:
+def _resolve_site_login_context(
+    *,
+    site_login_credential_id: str,
+    owner_user_id: Optional[str],
+    config_dir: str,
+) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
+    if not site_login_credential_id:
+        raise ValueError("site_login_credential_id is required")
+
+    resolved_dir = resolve_config_dir(config_dir)
+    creds_file = _load_json(os.path.join(resolved_dir, "credentials.json"))
+    sites_file = _load_json(os.path.join(resolved_dir, "site_configs.json"))
+
+    with get_session_ctx() as session:
+        cred_record = session.get(CredentialModel, site_login_credential_id)
+        if cred_record is None:
+            credential_data: Dict[str, Any] = {}
+            site_config_id: Optional[str] = None
+        else:
+            if cred_record.kind != "site_login":
+                raise ValueError("credential must be of kind 'site_login'")
+            if owner_user_id is not None and cred_record.owner_user_id != owner_user_id:
+                raise ValueError("site_login credential does not belong to requesting user")
+            try:
+                credential_data = decrypt_dict(cred_record.data or {})
+            except Exception:
+                credential_data = {}
+            site_config_id = cred_record.site_config_id
+
+        if not credential_data:
+            credential_data = creds_file.get(site_login_credential_id) or {}
+            if not site_config_id:
+                site_config_id = credential_data.get("site_config_id")
+
+        site_config: Dict[str, Any] = {}
+        sc_record = None
+        if site_config_id:
+            sc_record = session.get(SiteConfigModel, site_config_id)
+        if sc_record:
+            site_config = {
+                "site_url": sc_record.site_url,
+                "username_selector": sc_record.username_selector,
+                "password_selector": sc_record.password_selector,
+                "login_button_selector": sc_record.login_button_selector,
+                "post_login_selector": sc_record.post_login_selector,
+                "cookies_to_store": sc_record.cookies_to_store or [],
+            }
+        elif site_config_id:
+            site_config = sites_file.get(site_config_id) or {}
+
+    if not credential_data or not site_config or not site_config_id:
+        raise ValueError("Missing login credentials or site config for provided IDs")
+
+    return credential_data, site_config_id, site_config
+
+
+def perform_login_and_save_cookies(
+    *,
+    config_dir: str,
+    site_login_credential_id: str,
+    owner_user_id: Optional[str],
+) -> Dict[str, Any]:
     spf = _import_spf()
 
-    creds = _load_json(os.path.join(config_dir, "credentials.json"))
-    sites = _load_json(os.path.join(config_dir, "site_configs.json"))
-    # Prefer DB-backed credentials; fallback to file by id key
-    login_credentials = _get_db_credential(credential_id, owner_user_id) or creds.get(credential_id) or {}
-    # Prefer DB site_config by id; fallback to file by key
-    with get_session_ctx() as session:
-        sc = session.get(SiteConfigModel, site_config_id)
-        if sc:
-            site_config = {
-                "site_url": sc.site_url,
-                "username_selector": sc.username_selector,
-                "password_selector": sc.password_selector,
-                "login_button_selector": sc.login_button_selector,
-                "post_login_selector": sc.post_login_selector,
-                "cookies_to_store": sc.cookies_to_store or [],
-            }
-        else:
-            site_config = sites.get(site_config_id) or {}
-
-    if not login_credentials or not site_config:
-        raise ValueError("Missing login credentials or site config for provided IDs")
+    login_credentials, site_config_id, site_config = _resolve_site_login_context(
+        site_login_credential_id=site_login_credential_id,
+        owner_user_id=owner_user_id,
+        config_dir=config_dir,
+    )
 
     cookies = spf.login_and_update(site_config_id, site_config, login_credentials)
     if not cookies:
         raise RuntimeError("Login did not return any cookies")
 
     # Backward-compat: previously wrote to cookie_state.json. Now store in DB.
+    credential_id = site_login_credential_id
     cookie_key = f"{credential_id}-{site_config_id}"
-    encrypted = encrypt_dict({"cookies": cookies})
+    encrypted_payload = encrypt_dict({"cookies": cookies})
+    encrypted_blob = json.dumps(encrypted_payload)
     expiry_hint = _compute_expiry_hint(cookies)
     now_iso = datetime.now(timezone.utc).isoformat()
     with get_session_ctx() as session:
@@ -143,14 +195,8 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
             & (CookieModel.site_config_id == site_config_id)
         )
         existing = session.exec(stmt).first()
-        if not existing:
-            stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
-            existing = session.exec(stmt).first()
         if existing:
-            existing.cookie_key = cookie_key
-            existing.credential_id = credential_id
-            existing.site_config_id = site_config_id
-            existing.cookies = encrypted
+            existing.encrypted_cookies = encrypted_blob
             existing.last_refresh = now_iso
             existing.expiry_hint = expiry_hint
             if owner_user_id is not None:
@@ -158,11 +204,10 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
             session.add(existing)
         else:
             new = CookieModel(
-                cookie_key=cookie_key,
                 credential_id=credential_id,
                 site_config_id=site_config_id,
                 owner_user_id=owner_user_id,
-                cookies=encrypted,
+                encrypted_cookies=encrypted_blob,
                 last_refresh=now_iso,
                 expiry_hint=expiry_hint,
             )
@@ -171,24 +216,60 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
     logging.info("Saved cookies to DB for key=%s", cookie_key)
     return {"cookie_key": cookie_key, "cookies_saved": len(cookies)}
 
-def get_cookies_from_db(cookie_key: str) -> List[Dict[str, Any]]:
+def _decode_cookie_blob(blob: Optional[Any]) -> List[Dict[str, Any]]:
+    payload = blob
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            payload = None
+    if isinstance(payload, dict) and is_encrypted(payload):
+        try:
+            payload = decrypt_dict(payload)
+        except Exception:
+            payload = None
+    if isinstance(payload, dict):
+        cookies = payload.get("cookies")
+        if isinstance(cookies, list):
+            return cookies
+    return []
+
+
+def _get_cookies_for_pair(credential_id: str, site_config_id: str) -> List[Dict[str, Any]]:
+    if not credential_id or not site_config_id:
+        return []
     with get_session_ctx() as session:
-        stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
+        stmt = select(CookieModel).where(
+            (CookieModel.credential_id == credential_id)
+            & (CookieModel.site_config_id == site_config_id)
+        )
         rec = session.exec(stmt).first()
-        if not rec and "-" in cookie_key:
-            cred_id, sc_id = cookie_key.split("-", 1)
-            stmt = select(CookieModel).where(
-                (CookieModel.credential_id == cred_id)
-                & (CookieModel.site_config_id == sc_id)
-            )
-            rec = session.exec(stmt).first()
-        blob = rec.cookies if rec else None
-        if isinstance(blob, dict) and is_encrypted(blob):
-            try:
-                blob = decrypt_dict(blob)
-            except Exception:
-                blob = None
-        return (blob or {}).get("cookies", []) if isinstance(blob, dict) else []
+        if not rec:
+            return []
+        return _decode_cookie_blob(rec.encrypted_cookies)
+
+
+def get_cookies_from_db(cookie_key: str) -> List[Dict[str, Any]]:
+    if "-" not in cookie_key:
+        return []
+    cred_id, sc_id = cookie_key.split("-", 1)
+    return _get_cookies_for_pair(cred_id, sc_id)
+
+
+def get_cookies_for_site_login(
+    site_login_credential_id: str, owner_user_id: Optional[str]
+) -> List[Dict[str, Any]]:
+    if not site_login_credential_id:
+        return []
+    with get_session_ctx() as session:
+        cred = session.get(CredentialModel, site_login_credential_id)
+        if not cred or cred.kind != "site_login" or not cred.site_config_id:
+            return []
+        if owner_user_id is not None and cred.owner_user_id != owner_user_id:
+            return []
+        credential_id = cred.id
+        site_config_id = cred.site_config_id
+    return _get_cookies_for_pair(credential_id, site_config_id)
 
 def parse_lookback_to_seconds(s: str) -> int:
     import re
@@ -204,6 +285,7 @@ def poll_rss_and_publish(
     lookback: str = "24h",
     is_paywalled: bool = False,
     rss_requires_auth: bool = False,
+    site_login_credential_id: Optional[str] = None,
     cookie_key: Optional[str] = None,
     site_config_id: Optional[str] = None,
     owner_user_id: Optional[str] = None,
@@ -246,16 +328,27 @@ def poll_rss_and_publish(
 
     # Site config (for sanitization hints)
     site_cfg = None
-    if site_config_id:
-        with get_session_ctx() as session:
-            sc = session.get(SiteConfigModel, site_config_id)
-            if sc:
-                site_cfg = {
-                    "sanitizing_criteria": sc.cookies_to_store or [],
-                }
-
-    # Cookies
-    cookies = get_cookies_from_db(cookie_key) if cookie_key else []
+    resolved_site_config_id = site_config_id
+    if site_login_credential_id:
+        _, resolved_site_config_id, resolved_site_config = _resolve_site_login_context(
+            site_login_credential_id=site_login_credential_id,
+            owner_user_id=owner_user_id,
+            config_dir=config_dir,
+        )
+        site_cfg = {
+            "sanitizing_criteria": resolved_site_config.get("cookies_to_store") or [],
+        }
+        cookies = get_cookies_for_site_login(site_login_credential_id, owner_user_id)
+        cookie_key = f"{site_login_credential_id}-{resolved_site_config_id}"
+    else:
+        if resolved_site_config_id:
+            with get_session_ctx() as session:
+                sc = session.get(SiteConfigModel, resolved_site_config_id)
+                if sc:
+                    site_cfg = {
+                        "sanitizing_criteria": sc.cookies_to_store or [],
+                    }
+        cookies = get_cookies_from_db(cookie_key) if cookie_key else []
 
     new_entries = spf.get_new_rss_entries(
         config_file=os.path.join(config_dir, "adhoc.ini"),
@@ -400,20 +493,38 @@ def get_miniflux_config(miniflux_cred_id: str, owner_user_id: Optional[str]) -> 
     return decrypt_dict(rec.data or {})
 
 
-def push_miniflux_cookies(config_dir: str, miniflux_id: str, feed_ids: List[int], cookie_key: str, owner_user_id: Optional[str]) -> Dict[str, Any]:
+def push_miniflux_cookies(
+    *,
+    config_dir: str,
+    miniflux_id: str,
+    feed_ids: List[int],
+    site_login_credential_id: str,
+    owner_user_id: Optional[str],
+) -> Dict[str, Any]:
     spf = _import_spf()
     creds = _load_json(os.path.join(config_dir, "credentials.json"))
     miniflux_cfg = _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
 
-    cookies = get_cookies_from_db(cookie_key)
+    _, site_config_id, _ = _resolve_site_login_context(
+        site_login_credential_id=site_login_credential_id,
+        owner_user_id=owner_user_id,
+        config_dir=config_dir,
+    )
+    cookies = get_cookies_for_site_login(site_login_credential_id, owner_user_id)
     if not cookies:
-        raise RuntimeError("No cookies found for provided cookie_key")
+        raise RuntimeError("No cookies found for provided site login credential")
 
+    cookie_key = f"{site_login_credential_id}-{site_config_id}"
     ids_str = ",".join(str(i) for i in feed_ids)
     from ..util.ratelimit import limiter as _limiter
     _limiter.wait("miniflux")
     spf.update_miniflux_feed_with_cookies(miniflux_cfg, cookies, config_name=cookie_key, feed_ids_str=ids_str)
-    return {"feed_ids": feed_ids, "cookie_key": cookie_key}
+    return {
+        "feed_ids": feed_ids,
+        "site_login_credential_id": site_login_credential_id,
+        "site_config_id": site_config_id,
+        "cookie_key": cookie_key,
+    }
 
 
 def publish_url(config_dir: str, instapaper_id: str, url: str, title: Optional[str] = None, folder: Optional[str] = None, tags: Optional[List[str]] = None, owner_user_id: Optional[str] = None) -> Dict[str, Any]:

@@ -1,6 +1,7 @@
 import base64
 import os
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from fastapi.testclient import TestClient
@@ -93,10 +94,11 @@ def _seed_user(*, quota_credentials=_UNSET, quota_site_configs=_UNSET):
         session.commit()
 
 
-def _insert_global_credential():
+def _insert_global_credential(*, site_config_id: Optional[str] = None):
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
+    from app.models import SiteConfig
 
     plain = {
         "username": "global-user",
@@ -105,11 +107,33 @@ def _insert_global_credential():
     }
 
     with next(get_session()) as session:
+        target_site_config_id = site_config_id
+        if target_site_config_id is None:
+            site_config = session.exec(
+                select(SiteConfig).where(SiteConfig.owner_user_id.is_(None))
+            ).first()
+            if site_config is None:
+                site_config = SiteConfig(
+                    name="Global Login",
+                    site_url="https://global.example.com/login",
+                    username_selector="#global-user",
+                    password_selector="#global-pass",
+                    login_button_selector="#login",
+                    post_login_selector=".dashboard",
+                    cookies_to_store=["sid", "csrftoken"],
+                    owner_user_id=None,
+                )
+                session.add(site_config)
+                session.commit()
+                session.refresh(site_config)
+            target_site_config_id = site_config.id
+
         record = Credential(
             kind="site_login",
             description="Global credential",
             data=encrypt_dict(plain),
             owner_user_id=None,
+            site_config_id=target_site_config_id,
         )
         session.add(record)
         session.commit()
@@ -138,17 +162,40 @@ def _insert_global_site_config():
         return record
 
 
-def _create_user_credential(description="User credential"):
+def _create_user_credential(*, description="User credential", site_config_id: Optional[str] = None):
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
+    from app.models import SiteConfig
 
     with next(get_session()) as session:
+        target_site_config_id = site_config_id
+        if target_site_config_id is None:
+            site_config = session.exec(
+                select(SiteConfig).where(SiteConfig.owner_user_id == USER_ID)
+            ).first()
+            if site_config is None:
+                site_config = SiteConfig(
+                    name="User Login",
+                    site_url="https://user.example.com/login",
+                    username_selector="#user",
+                    password_selector="#pass",
+                    login_button_selector="#submit",
+                    post_login_selector=".app",
+                    cookies_to_store=["sid"],
+                    owner_user_id=USER_ID,
+                )
+                session.add(site_config)
+                session.commit()
+                session.refresh(site_config)
+            target_site_config_id = site_config.id
+
         record = Credential(
             kind="site_login",
             description=description,
             data=encrypt_dict({"username": "user", "password": "secret"}),
             owner_user_id=USER_ID,
+            site_config_id=target_site_config_id,
         )
         session.add(record)
         session.commit()
@@ -218,7 +265,8 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
 
 
 def test_copy_global_credential_creates_user_owned_clone(copy_client):
-    global_credential, plain = _insert_global_credential()
+    global_config = _insert_global_site_config()
+    global_credential, plain = _insert_global_credential(site_config_id=global_config.id)
 
     response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
     assert response.status_code == 201
@@ -261,11 +309,11 @@ def test_copy_global_credential_creates_user_owned_clone(copy_client):
 
 def test_copy_global_assets_respects_quota_limits(copy_client):
     _seed_user(quota_credentials=1, quota_site_configs=1)
-    global_credential, _ = _insert_global_credential()
     global_config = _insert_global_site_config()
+    global_credential, _ = _insert_global_credential(site_config_id=global_config.id)
 
-    _create_user_credential(description="Existing credential")
-    _create_user_site_config(name="Existing config")
+    user_config = _create_user_site_config(name="Existing config")
+    _create_user_credential(description="Existing credential", site_config_id=user_config.id)
 
     cred_response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
     assert cred_response.status_code == 403

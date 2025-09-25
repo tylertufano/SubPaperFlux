@@ -108,12 +108,14 @@ def api_context(request, monkeypatch):
             description="Global Login",
             data={"username": "global", "password": "example"},
             owner_user_id=None,
+            site_config_id=global_config_id,
         )
         owner_credential = Credential(
             kind="site_login",
             description="Owner Login",
             data={"username": "owner", "password": "example"},
             owner_user_id=owner_identity["sub"],
+            site_config_id=owner_config_id,
         )
         session.add(global_credential)
         session.add(owner_credential)

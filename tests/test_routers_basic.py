@@ -54,6 +54,34 @@ def client():
 
 
 def test_credentials_and_siteconfigs(client):
+    from app.db import get_session
+    from app.models import SiteConfig
+
+    with next(get_session()) as session:
+        user_site = SiteConfig(
+            name="User Site",
+            site_url="https://user.example.com/login",
+            username_selector="#username",
+            password_selector="#password",
+            login_button_selector="#submit",
+            cookies_to_store=["sid"],
+            owner_user_id="u1",
+        )
+        global_site = SiteConfig(
+            name="Global Site",
+            site_url="https://global.example.com/login",
+            username_selector="#u",
+            password_selector="#p",
+            login_button_selector="button[type='submit']",
+            cookies_to_store=["sid"],
+            owner_user_id=None,
+        )
+        session.add(user_site)
+        session.add(global_site)
+        session.commit()
+        session.refresh(user_site)
+        session.refresh(global_site)
+
     # Create a credential (site_login)
     r = client.post(
         "/credentials",
@@ -62,6 +90,7 @@ def test_credentials_and_siteconfigs(client):
             "description": "User credential",
             "data": {"username": "u", "password": "p"},
             "owner_user_id": "u1",
+            "site_config_id": user_site.id,
         },
     )
     assert r.status_code == 201
@@ -77,6 +106,7 @@ def test_credentials_and_siteconfigs(client):
             "kind": "site_login",
             "description": "Updated credential",
             "data": {"username": "u", "note": "updated"},
+            "site_config_id": user_site.id,
         },
     )
     assert r_update.status_code == 200
@@ -105,6 +135,7 @@ def test_credentials_and_siteconfigs(client):
             "description": "Global credential",
             "data": {"username": "ga", "password": "gp"},
             "owner_user_id": None,
+            "site_config_id": global_site.id,
         },
     )
     assert r_global_create.status_code == 400
@@ -179,7 +210,10 @@ def test_credentials_and_siteconfigs(client):
     r4 = client.get("/v1/site-configs")
     assert r4.status_code == 200
     scs = r4.json()
-    assert scs["total"] == 0
+    assert scs["total"] == 2
+    site_ids = {item["id"] for item in scs["items"]}
+    assert user_site.id in site_ids
+    assert global_site.id in site_ids
 
     # Verify audit logs recorded
     from app.db import get_session
@@ -267,18 +301,6 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
     is_user_mgmt_enforce_enabled.cache_clear()
     client.app.state.cache_user_mgmt_flags()
     try:
-        cred_resp = client.post(
-            "/credentials",
-            json={
-                "kind": "site_login",
-                "description": "Owned credential",
-                "data": {"username": "owner", "password": "secret"},
-                "owner_user_id": "u1",
-            },
-        )
-        assert cred_resp.status_code == 201
-        owned_cred = cred_resp.json()
-
         sc_resp = client.post(
             "/site-configs",
             json={
@@ -294,6 +316,19 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         assert sc_resp.status_code == 201
         owned_sc = sc_resp.json()
 
+        cred_resp = client.post(
+            "/credentials",
+            json={
+                "kind": "site_login",
+                "description": "Owned credential",
+                "data": {"username": "owner", "password": "secret"},
+                "owner_user_id": "u1",
+                "site_config_id": owned_sc["id"],
+            },
+        )
+        assert cred_resp.status_code == 201
+        owned_cred = cred_resp.json()
+
         from app.auth.oidc import get_current_user
 
         original_override = client.app.dependency_overrides[get_current_user]
@@ -304,6 +339,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
                 "kind": owned_cred["kind"],
                 "description": "Unauthorized update",
                 "data": {"note": "denied"},
+                "site_config_id": owned_sc["id"],
             }
             r_cred_update = client.put(f"/credentials/{owned_cred['id']}", json=cred_update_payload)
             assert r_cred_update.status_code == 404
@@ -314,26 +350,6 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
             assert r_sc_update.status_code == 403
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
-
-        other_cred_resp = client.post(
-            "/credentials",
-            json={
-                "kind": "site_login",
-                "description": "Tenant credential",
-                "data": {"username": "tenant", "password": "pw"},
-                "owner_user_id": "tenant",
-            },
-        )
-        assert other_cred_resp.status_code == 201
-        tenant_cred = other_cred_resp.json()
-        cred_update_payload = {
-            "id": tenant_cred["id"],
-            "kind": tenant_cred["kind"],
-            "description": "Admin update",
-            "data": {"note": "admin"},
-        }
-        r_admin_cred_update = client.put(f"/credentials/{tenant_cred['id']}", json=cred_update_payload)
-        assert r_admin_cred_update.status_code == 200
 
         tenant_sc_resp = client.post(
             "/site-configs",
@@ -349,6 +365,27 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         )
         assert tenant_sc_resp.status_code == 201
         tenant_sc = tenant_sc_resp.json()
+        other_cred_resp = client.post(
+            "/credentials",
+            json={
+                "kind": "site_login",
+                "description": "Tenant credential",
+                "data": {"username": "tenant", "password": "pw"},
+                "owner_user_id": "tenant",
+                "site_config_id": tenant_sc["id"],
+            },
+        )
+        assert other_cred_resp.status_code == 201
+        tenant_cred = other_cred_resp.json()
+        cred_update_payload = {
+            "id": tenant_cred["id"],
+            "kind": tenant_cred["kind"],
+            "description": "Admin update",
+            "data": {"note": "admin"},
+            "site_config_id": tenant_sc["id"],
+        }
+        r_admin_cred_update = client.put(f"/credentials/{tenant_cred['id']}", json=cred_update_payload)
+        assert r_admin_cred_update.status_code == 200
         sc_update_payload = dict(tenant_sc)
         sc_update_payload["name"] = "Admin updated"
         r_admin_sc_update = client.put(f"/site-configs/{tenant_sc['id']}", json=sc_update_payload)
@@ -562,7 +599,13 @@ def test_jobs_validation(client):
     assert r.status_code == 200
     assert r.json()["ok"] is False
     # Provide required
-    r2 = client.post("/v1/jobs/validate", json={"type": "login", "payload": {"config_dir": ".", "site_config_id": "a", "credential_id": "b"}})
+    r2 = client.post(
+        "/v1/jobs/validate",
+        json={
+            "type": "login",
+            "payload": {"config_dir": ".", "site_login_credential_id": "cred-1"},
+        },
+    )
     assert r2.status_code == 200
     assert r2.json()["ok"] is True
 

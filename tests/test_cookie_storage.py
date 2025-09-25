@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import os
 from pathlib import Path
 
@@ -8,10 +9,12 @@ from sqlmodel import select
 
 from app.db import get_session_ctx, init_db
 from app.jobs.util_subpaperflux import (
+    get_cookies_for_site_login,
     get_cookies_from_db,
     perform_login_and_save_cookies,
 )
 from app.models import Cookie, Credential, SiteConfig
+from app.security.crypto import decrypt_dict
 
 
 class DummySPFModule:
@@ -50,6 +53,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
             description="Test credential",
             data={"username": "alice", "password": "wonder"},
             owner_user_id="user-1",
+            site_config_id="sc_test",
         )
         site_config = SiteConfig(
             id="sc_test",
@@ -67,8 +71,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
 
     result = perform_login_and_save_cookies(
         config_dir=str(tmp_path),
-        site_config_id="sc_test",
-        credential_id="cred_test",
+        site_login_credential_id="cred_test",
         owner_user_id="user-1",
     )
     assert result["cookie_key"] == "cred_test-sc_test"
@@ -82,7 +85,11 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
         ).one()
         assert cookie.credential_id == "cred_test"
         assert cookie.site_config_id == "sc_test"
-        assert cookie.cookie_key == "cred_test-sc_test"
+        assert isinstance(cookie.encrypted_cookies, str)
+        decrypted = decrypt_dict(json.loads(cookie.encrypted_cookies)) if cookie.encrypted_cookies else {}
+        assert decrypted.get("cookies") == [
+            {"name": "session", "value": "abc", "expiry": 123.0},
+        ]
 
     stored_cookies = get_cookies_from_db("cred_test-sc_test")
     assert stored_cookies == [
@@ -94,8 +101,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     ]
     perform_login_and_save_cookies(
         config_dir=str(tmp_path),
-        site_config_id="sc_test",
-        credential_id="cred_test",
+        site_login_credential_id="cred_test",
         owner_user_id="user-1",
     )
 
@@ -108,3 +114,6 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     assert updated_cookies == [
         {"name": "session", "value": "xyz", "expiry": 456.0},
     ]
+
+    helper_cookies = get_cookies_for_site_login("cred_test", "user-1")
+    assert helper_cookies == updated_cookies

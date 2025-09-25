@@ -70,6 +70,7 @@ def list_credentials_v1(
             description=r.description,
             data=_mask_credential(r.kind, {}),
             owner_user_id=r.owner_user_id,
+            site_config_id=r.site_config_id,
         )
         for r in rows
     ]
@@ -114,6 +115,7 @@ def copy_credential(
         description=source.description,
         data=dict(source.data or {}),
         owner_user_id=user_id,
+        site_config_id=source.site_config_id,
     )
     session.add(cloned)
 
@@ -141,4 +143,5 @@ def copy_credential(
         description=cloned.description,
         data=_mask_credential(cloned.kind, plain),
         owner_user_id=cloned.owner_user_id,
+        site_config_id=cloned.site_config_id,
     )

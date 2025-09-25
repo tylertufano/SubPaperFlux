@@ -66,8 +66,7 @@ def client() -> TestClient:
 def _sample_payload() -> Dict[str, str]:
     return {
         "config_dir": "/tmp/workspace",
-        "site_config_id": "site-1",
-        "credential_id": "cred-1",
+        "site_login_credential_id": "cred-1",
     }
 
 
@@ -148,7 +147,7 @@ def test_validation_errors(client: TestClient):
         "/v1/job-schedules",
         json={
             "job_type": "login",
-            "payload": {"site_config_id": "site-1"},
+            "payload": {"config_dir": "/tmp/workspace"},
             "frequency": "1h",
         },
     )

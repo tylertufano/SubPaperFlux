@@ -2,11 +2,11 @@ from typing import Dict, List
 
 
 REQUIRED_FIELDS: Dict[str, List[str]] = {
-    "login": ["config_dir", "site_config_id", "credential_id"],
-    "miniflux_refresh": ["config_dir", "miniflux_id", "feed_ids"],
+    "login": ["config_dir", "site_login_credential_id"],
+    "miniflux_refresh": ["config_dir", "miniflux_id", "feed_ids", "site_login_credential_id"],
     "rss_poll": ["config_dir", "instapaper_id", "feed_url"],
     "publish": ["config_dir", "instapaper_id", "url"],
-    "retention": ["older_than"],
+    "retention": ["older_than", "instapaper_id"],
 }
 
 

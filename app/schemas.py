@@ -69,6 +69,7 @@ class Credential(BaseModel):
     description: constr(strip_whitespace=True, min_length=1, max_length=200)
     data: dict  # Placeholder; to be encrypted at rest in a real impl
     owner_user_id: Optional[str] = None
+    site_config_id: Optional[str] = None
 
 
 class JobRequest(BaseModel):
