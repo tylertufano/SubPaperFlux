@@ -181,7 +181,10 @@ function initPayloadState(
       };
     case "retention":
       return {
+        instapaper_credential_id:
+          payload?.instapaper_credential_id ?? payload?.instapaper_id ?? "",
         older_than: payload?.older_than ?? "",
+        feed_id: payload?.feed_id ?? "",
       };
     default:
       return {};
@@ -419,10 +422,28 @@ function ScheduleForm({
       if (tags.length > 0) payload.tags = tags;
       if (feedId) payload.feed_id = feedId;
     } else if (jobType === "retention") {
+      const instapaperId = (
+        payloadState.instapaper_credential_id ||
+        payloadState.instapaper_id ||
+        ""
+      )
+        .toString()
+        .trim();
+      const feedId = (payloadState.feed_id || "").toString().trim();
       const olderThan = (payloadState.older_than || "").toString().trim();
+      if (!instapaperId)
+        nextErrors["payload.instapaper_credential_id"] = t(
+          "job_schedules_error_instapaper",
+        );
       if (!olderThan)
         nextErrors["payload.older_than"] = t("job_schedules_error_retention");
+      if (instapaperId) {
+        payload.instapaper_credential_id = instapaperId;
+      }
       payload.older_than = olderThan;
+      if (feedId) {
+        payload.feed_id = feedId;
+      }
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -965,33 +986,103 @@ function ScheduleForm({
         );
       case "retention":
         return (
-          <div className="flex flex-col">
-            <label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="schedule-retention-older-than"
-            >
-              {t("job_schedules_field_retention")}
-            </label>
-            <input
-              id="schedule-retention-older-than"
-              className="input"
-              value={payloadState.older_than || ""}
-              onChange={(e) => updatePayload("older_than", e.target.value)}
-              aria-invalid={Boolean(errors["payload.older_than"])}
-              aria-describedby={
-                errors["payload.older_than"]
-                  ? "schedule-retention-older-than-error"
-                  : undefined
-              }
-            />
-            {errors["payload.older_than"] && (
-              <p
-                id="schedule-retention-older-than-error"
-                className="text-sm text-red-600 mt-1"
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col">
+              <label
+                className="text-sm font-medium text-gray-700"
+                htmlFor="schedule-retention-instapaper"
               >
-                {errors["payload.older_than"]}
-              </p>
-            )}
+                {t("job_schedules_field_instapaper_credential")}
+              </label>
+              <select
+                id="schedule-retention-instapaper"
+                className="input"
+                value={payloadState.instapaper_credential_id || ""}
+                onChange={(e) =>
+                  updatePayload("instapaper_credential_id", e.target.value)
+                }
+                aria-invalid={
+                  Boolean(
+                    errors["payload.instapaper_credential_id"] ||
+                      errors["payload.instapaper_id"],
+                  )
+                }
+                aria-describedby={
+                  errors["payload.instapaper_credential_id"] ||
+                  errors["payload.instapaper_id"]
+                    ? "schedule-retention-instapaper-error"
+                    : undefined
+                }
+              >
+                <option value="">{t("job_schedules_option_select")}</option>
+                {instapaperCredentials.map((cred) => (
+                  <option key={cred.id} value={cred.id}>
+                    {cred.description}
+                  </option>
+                ))}
+              </select>
+              {(errors["payload.instapaper_credential_id"] ||
+                errors["payload.instapaper_id"]) && (
+                <p
+                  id="schedule-retention-instapaper-error"
+                  className="text-sm text-red-600 mt-1"
+                >
+                  {
+                    errors["payload.instapaper_credential_id"] ||
+                    errors["payload.instapaper_id"]
+                  }
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <label
+                className="text-sm font-medium text-gray-700"
+                htmlFor="schedule-retention-feed"
+              >
+                {t("job_schedules_field_retention_feed")}
+              </label>
+              <select
+                id="schedule-retention-feed"
+                className="input"
+                value={payloadState.feed_id || ""}
+                onChange={(e) => updatePayload("feed_id", e.target.value)}
+              >
+                <option value="">{t("job_schedules_option_select")}</option>
+                {feeds.map((feed) => (
+                  <option key={feed.id} value={feed.id}>
+                    {feed.url}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col md:col-span-2">
+              <label
+                className="text-sm font-medium text-gray-700"
+                htmlFor="schedule-retention-older-than"
+              >
+                {t("job_schedules_field_retention")}
+              </label>
+              <input
+                id="schedule-retention-older-than"
+                className="input"
+                value={payloadState.older_than || ""}
+                onChange={(e) => updatePayload("older_than", e.target.value)}
+                aria-invalid={Boolean(errors["payload.older_than"])}
+                aria-describedby={
+                  errors["payload.older_than"]
+                    ? "schedule-retention-older-than-error"
+                    : undefined
+                }
+              />
+              {errors["payload.older_than"] && (
+                <p
+                  id="schedule-retention-older-than-error"
+                  className="text-sm text-red-600 mt-1"
+                >
+                  {errors["payload.older_than"]}
+                </p>
+              )}
+            </div>
           </div>
         );
       default:

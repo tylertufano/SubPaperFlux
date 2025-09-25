@@ -169,6 +169,18 @@ def test_validation_errors(client: TestClient):
     assert unknown_detail["code"] == "http_error"
     assert unknown_detail["details"]["error"] == "unknown_job_type"
 
+    retention_missing_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "retention",
+            "payload": {"older_than": "30d"},
+            "frequency": "1d",
+        },
+    )
+    assert retention_missing_resp.status_code == 422
+    retention_errors = retention_missing_resp.json()["details"]["errors"]
+    assert any("instapaper" in err.get("msg", "") for err in retention_errors)
+
 
 def test_run_now_creates_job(client: TestClient):
     create_resp = client.post(
@@ -197,6 +209,23 @@ def test_run_now_creates_job(client: TestClient):
         assert schedule.last_run_at is not None
         assert schedule.last_error is None
         assert schedule.last_error_at is None
+
+
+def test_retention_schedule_accepts_legacy_instapaper_id(client: TestClient):
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "retention",
+            "payload": {
+                "older_than": "60d",
+                "instapaper_id": "cred-inst-1",
+            },
+            "frequency": "1d",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+    assert created["payload"]["instapaper_id"] == "cred-inst-1"
 
 
 def test_rbac_enforcement(client: TestClient):
