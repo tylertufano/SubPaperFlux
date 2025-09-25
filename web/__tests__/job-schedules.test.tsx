@@ -270,10 +270,12 @@ describe("JobSchedulesPage", () => {
         payload: expect.objectContaining({
           instapaper_id: "cred-1",
           feed_id: "feed-1",
-          feed_url: "https://example.com/feed.xml",
         }),
       }),
     });
+    const createdPayload =
+      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.feed_url).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -327,10 +329,12 @@ describe("JobSchedulesPage", () => {
         isActive: false,
         payload: expect.objectContaining({
           feed_id: "feed-2",
-          feed_url: "https://example.com/rss-updated.xml",
         }),
       }),
     });
+    const updatedPayload =
+      openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
+    expect(updatedPayload.feed_url).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(

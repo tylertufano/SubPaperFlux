@@ -1,12 +1,13 @@
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, feeds as feedsApi } from '../lib/openapi'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
+import type { Credential } from '../sdk/src/models/Credential'
 
 export default function Feeds() {
   const { t } = useI18n()
@@ -28,12 +29,17 @@ export default function Feeds() {
     canViewFeeds ? ['/v1/site-configs', 'feeds'] : null,
     () => v1.listSiteConfigsV1V1SiteConfigsGet({ page: 1, size: 200 }),
   )
+  const { data: credentialsData } = useSWR(
+    canViewFeeds ? ['/v1/credentials', 'feeds'] : null,
+    () => v1.listCredentialsV1V1CredentialsGet({ page: 1, size: 200 }),
+  )
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
   const [lookback, setLookback] = useState('')
   const [paywalled, setPaywalled] = useState(false)
   const [rssAuth, setRssAuth] = useState(false)
   const [siteConfigId, setSiteConfigId] = useState('')
+  const [siteLoginSelection, setSiteLoginSelection] = useState('')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editRow, setEditRow] = useState<any | null>(null)
@@ -48,6 +54,116 @@ export default function Feeds() {
     return map
   }, [siteConfigs])
 
+  const loginCredentials = useMemo(
+    () => (credentialsData?.items ?? []).filter((cred: Credential) => cred?.kind === 'site_login'),
+    [credentialsData],
+  )
+
+  type SiteLoginOption = {
+    value: string
+    label: string
+    siteConfigId: string
+    type: 'pair' | 'config'
+  }
+
+  const siteLoginOptions: SiteLoginOption[] = useMemo(() => {
+    const options: SiteLoginOption[] = []
+    const pairedConfigs = new Set<string>()
+
+    const resolveCredentialSiteConfigId = (credential: Credential): string | null => {
+      const direct = (credential as Credential & { siteConfigId?: string | null }).siteConfigId
+        ?? (credential as Credential & { site_config_id?: string | null }).site_config_id
+      if (typeof direct === 'string' && direct.trim()) {
+        return direct.trim()
+      }
+      const data = credential.data ?? {}
+      const fromData = (data as Record<string, any>).site_config_id
+        ?? (data as Record<string, any>).siteConfigId
+        ?? (data as Record<string, any>).site_config
+      if (typeof fromData === 'string' && fromData.trim()) {
+        return fromData.trim()
+      }
+      return null
+    }
+
+    for (const credential of loginCredentials) {
+      if (!credential?.id) continue
+      const resolvedId = resolveCredentialSiteConfigId(credential)
+      if (!resolvedId) continue
+      const configName = siteConfigMap.get(resolvedId) || resolvedId
+      const credentialLabel = credential.description || credential.id
+      const value = `pair:${credential.id}::${resolvedId}`
+      options.push({
+        value,
+        label: `${credentialLabel} • ${configName}`,
+        siteConfigId: resolvedId,
+        type: 'pair',
+      })
+      pairedConfigs.add(resolvedId)
+    }
+
+    for (const config of siteConfigs) {
+      if (!config?.id) continue
+      const id = String(config.id)
+      if (pairedConfigs.has(id)) continue
+      options.push({
+        value: `config:${id}`,
+        label: `${config.name || id} (${t('feeds_field_site_config_only')})`,
+        siteConfigId: id,
+        type: 'config',
+      })
+    }
+
+    options.sort((a, b) => a.label.localeCompare(b.label))
+    return options
+  }, [loginCredentials, siteConfigMap, siteConfigs, t])
+
+  const getSelectionForSiteConfig = useCallback((id?: string | null): string => {
+    if (!id) return ''
+    const pairOption = siteLoginOptions.find(opt => opt.type === 'pair' && opt.siteConfigId === id)
+    if (pairOption) return pairOption.value
+    const configOption = siteLoginOptions.find(opt => opt.type === 'config' && opt.siteConfigId === id)
+    return configOption?.value ?? ''
+  }, [siteLoginOptions])
+
+  useEffect(() => {
+    const nextSelection = getSelectionForSiteConfig(siteConfigId)
+    if (nextSelection !== siteLoginSelection) {
+      setSiteLoginSelection(nextSelection)
+    }
+  }, [getSelectionForSiteConfig, siteConfigId, siteLoginSelection])
+
+  useEffect(() => {
+    setEditRow(prev => {
+      if (!prev) return prev
+      const nextSelection = getSelectionForSiteConfig(prev.siteConfigId)
+      if (nextSelection && nextSelection !== prev.siteLoginSelection) {
+        return { ...prev, siteLoginSelection: nextSelection }
+      }
+      if (!nextSelection && prev.siteLoginSelection) {
+        return { ...prev, siteLoginSelection: '' }
+      }
+      return prev
+    })
+  }, [getSelectionForSiteConfig, siteLoginOptions])
+
+  const siteConfigLabelMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const option of siteLoginOptions) {
+      if (!map.has(option.siteConfigId)) {
+        map.set(option.siteConfigId, option.label)
+      }
+    }
+    for (const config of siteConfigs) {
+      if (!config?.id) continue
+      const id = String(config.id)
+      if (!map.has(id)) {
+        map.set(id, config.name || id)
+      }
+    }
+    return map
+  }, [siteLoginOptions, siteConfigs])
+
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
     try {
@@ -59,7 +175,7 @@ export default function Feeds() {
         rssRequiresAuth: rssAuth,
         siteConfigId: siteConfigId || undefined,
       } as any })
-      setUrl(''); setLookback(''); setSiteConfigId(''); setPaywalled(false); setRssAuth(false)
+      setUrl(''); setLookback(''); setSiteConfigId(''); setSiteLoginSelection(''); setPaywalled(false); setRssAuth(false)
       setBanner({ kind: 'success', message: t('feeds_create_success') })
       mutate()
     } catch (e: any) {
@@ -190,18 +306,27 @@ export default function Feeds() {
             value={lookback}
             onChange={e => setLookback(e.target.value)}
           />
-          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_config_select')}</label>
+          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_login_select')}</label>
           <select
             id="create-feed-site-config"
             className="input"
-            aria-label={t('feeds_field_site_config_select')}
-            value={siteConfigId}
-            onChange={e => setSiteConfigId(e.target.value)}
+            aria-label={t('feeds_field_site_login_select')}
+            value={siteLoginSelection}
+            onChange={e => {
+              const value = e.target.value
+              setSiteLoginSelection(value)
+              if (!value) {
+                setSiteConfigId('')
+                return
+              }
+              const option = siteLoginOptions.find(opt => opt.value === value)
+              setSiteConfigId(option?.siteConfigId ?? '')
+            }}
           >
-            <option value="">{t('feeds_field_site_config_select')}</option>
-            {siteConfigs.map((config: any) => (
-              <option key={config.id} value={config.id}>
-                {config.name}
+            <option value="">{t('feeds_field_site_login_select')}</option>
+            {siteLoginOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -251,14 +376,22 @@ export default function Feeds() {
                         <td className="td">
                           <select
                             className="input w-full"
-                            value={editRow.siteConfigId}
-                            onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })}
-                            aria-label={t('feeds_field_site_config_select')}
+                            value={editRow.siteLoginSelection || ''}
+                            onChange={e => {
+                              const value = e.target.value
+                              const option = siteLoginOptions.find(opt => opt.value === value)
+                              setEditRow({
+                                ...editRow,
+                                siteLoginSelection: value,
+                                siteConfigId: option?.siteConfigId ?? '',
+                              })
+                            }}
+                            aria-label={t('feeds_field_site_login_select')}
                           >
-                            <option value="">{t('feeds_field_site_config_select')}</option>
-                            {siteConfigs.map((config: any) => (
-                              <option key={config.id} value={config.id}>
-                                {config.name}
+                            <option value="">{t('feeds_field_site_login_select')}</option>
+                            {siteLoginOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
                               </option>
                             ))}
                           </select>
@@ -279,7 +412,8 @@ export default function Feeds() {
                           (() => {
                             const id = f.site_config_id || f.siteConfigId
                             if (!id) return ''
-                            return siteConfigMap.get(String(id)) || id
+                            const key = String(id)
+                            return siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
                           })()
                         }</td>
                         <td className="td flex gap-2">
