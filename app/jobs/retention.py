@@ -5,11 +5,13 @@ from typing import Any, Dict, Optional, Tuple
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..integrations.instapaper import INSTAPAPER_BOOKMARKS_DELETE_URL
+from ..integrations.instapaper import (
+    INSTAPAPER_BOOKMARKS_DELETE_URL,
+    get_instapaper_oauth_session_for_credential,
+)
 from ..jobs import register_handler
 from ..db import get_session_ctx
 from ..models import Bookmark
-from .util_subpaperflux import get_instapaper_oauth_session_for_id
 
 
 def _seconds_from_spec(spec: str) -> int:
@@ -42,27 +44,36 @@ def _extract_instapaper_publication(
     bookmark: Bookmark,
     *,
     credential_id: str,
-) -> Optional[Tuple[str, datetime, Dict[str, Any]]]:
+) -> Optional[Tuple[str, datetime, Dict[str, Any], Dict[str, Any]]]:
+    flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+    if not flags.get("should_publish"):
+        return None
+    flag_cred = flags.get("credential_id")
+    if flag_cred and flag_cred != credential_id:
+        return None
+
     statuses = bookmark.publication_statuses or {}
     instapaper_status = statuses.get("instapaper") or {}
     if instapaper_status.get("status") != "published":
         return None
-    status_cred = instapaper_status.get("credential_id")
-    if status_cred and status_cred != credential_id:
-        return None
+
     bookmark_id = instapaper_status.get("bookmark_id") or bookmark.instapaper_bookmark_id
     if not bookmark_id:
         return None
-    published_ts = _parse_datetime(instapaper_status.get("published_at") or bookmark.published_at)
+
+    published_ts = _parse_datetime(
+        instapaper_status.get("published_at") or bookmark.published_at
+    )
     if not published_ts:
         return None
-    return str(bookmark_id), published_ts, instapaper_status
+
+    return str(bookmark_id), published_ts, instapaper_status, flags
 
 
 def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     # Expected payload: {"older_than": "30d", "instapaper_credential_id": str, "feed_id": str | None}
     older_than = payload.get("older_than", "30d")
-    instapaper_id = payload.get("instapaper_credential_id") or payload.get("instapaper_id")
+    instapaper_id = payload.get("instapaper_credential_id")
     feed_id = payload.get("feed_id")
     if not instapaper_id:
         raise ValueError("instapaper_credential_id is required")
@@ -85,7 +96,7 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
         rows = session.exec(stmt).all()
 
     # Build OAuth session
-    oauth = get_instapaper_oauth_session_for_id(instapaper_id, owner_user_id)
+    oauth = get_instapaper_oauth_session_for_credential(instapaper_id, owner_user_id)
     if oauth is None:
         logging.warning("[job:%s] No Instapaper credentials or app creds found; skipping retention.", job_id)
         return {"deleted_count": 0}
@@ -96,14 +107,14 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
         extraction = _extract_instapaper_publication(b, credential_id=instapaper_id)
         if not extraction:
             continue
-        bookmark_id, published_ts, instapaper_status = extraction
+        bookmark_id, published_ts, instapaper_status, instapaper_flags = extraction
         if published_ts <= cutoff:
-            to_delete.append((b, bookmark_id, instapaper_status))
+            to_delete.append((b, bookmark_id, instapaper_status, instapaper_flags))
 
     deleted = 0
     from ..util.ratelimit import limiter
     with get_session_ctx() as session:
-        for db_bookmark, bookmark_id, instapaper_status in to_delete:
+        for db_bookmark, bookmark_id, instapaper_status, instapaper_flags in to_delete:
             try:
                 limiter.wait("instapaper")
                 resp = oauth.post(INSTAPAPER_BOOKMARKS_DELETE_URL, data={"bookmark_id": bookmark_id})
@@ -123,6 +134,7 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
                             "source": "retention_job",
                             "cutoff": cutoff.isoformat(),
                             "publication_status": instapaper_status,
+                            "publication_flags": instapaper_flags,
                         },
                     )
                     session.delete(persistent)

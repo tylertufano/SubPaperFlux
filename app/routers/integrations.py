@@ -2,11 +2,11 @@ import requests
 from fastapi import APIRouter, Depends
 
 from ..auth.oidc import get_current_user
-from ..jobs.util_subpaperflux import (
-    get_instapaper_oauth_session_for_id,
-    get_miniflux_config,
+from ..integrations.instapaper import (
+    get_instapaper_oauth_session_for_credential,
     resolve_config_dir,
 )
+from ..jobs.util_subpaperflux import get_miniflux_config
 from ..observability.metrics import INTEGRATION_TEST_COUNTER
 from ..security.ratelimit_dep import rate_limiter_dep
 # Avoid importing heavy modules at startup; use constant URL
@@ -29,7 +29,9 @@ def test_instapaper(body: dict, current_user=Depends(get_current_user), _rl=Depe
     if not cred_id:
         return {"ok": False, "error": "credential_id is required"}
     config_dir = _resolve_config_dir_from_body(body)
-    sess = get_instapaper_oauth_session_for_id(cred_id, current_user["sub"], config_dir=config_dir)
+    sess = get_instapaper_oauth_session_for_credential(
+        cred_id, current_user["sub"], config_dir=config_dir
+    )
     if not sess:
         return {"ok": False, "error": "credential not found or no app creds"}
     try:

@@ -209,7 +209,26 @@ def test_run_now_creates_job(client: TestClient):
         assert schedule.last_error_at is None
 
 
-def test_retention_schedule_accepts_legacy_instapaper_id(client: TestClient):
+def test_retention_schedule_requires_explicit_instapaper_credential(client: TestClient):
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "retention",
+            "payload": {
+                "older_than": "60d",
+                "instapaper_credential_id": "cred-inst-1",
+                "feed_id": "feed-123",
+            },
+            "frequency": "1d",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+    assert created["payload"]["instapaper_credential_id"] == "cred-inst-1"
+    assert created["payload"]["feed_id"] == "feed-123"
+
+
+def test_retention_schedule_rejects_legacy_instapaper_id(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
@@ -221,9 +240,7 @@ def test_retention_schedule_accepts_legacy_instapaper_id(client: TestClient):
             "frequency": "1d",
         },
     )
-    assert create_resp.status_code == 201, create_resp.text
-    created = create_resp.json()
-    assert created["payload"]["instapaper_id"] == "cred-inst-1"
+    assert create_resp.status_code == 422
 
 
 def test_rbac_enforcement(client: TestClient):
