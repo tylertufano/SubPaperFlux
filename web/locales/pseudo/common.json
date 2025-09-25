@@ -118,6 +118,8 @@
   "job_schedules_owner_me": "Mis programaciones ✨",
   "job_schedules_owner_all": "Todo lo accesible ✨",
   "job_schedules_option_select": "Selecciona… ✨",
+  "feeds_field_site_login_select": "Selecciona login o configuración (opcional) ✨",
+  "feeds_field_site_config_only": "solo configuración ✨",
   "job_schedules_field_job_type": "Tipo de trabajo ✨",
   "job_schedules_field_frequency": "Frecuencia ✨",
   "job_schedules_field_next_run": "Siguiente ejecución ✨",

@@ -369,27 +369,11 @@ function ScheduleForm({
     } else if (jobType === "rss_poll") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedId = (payloadState.feed_id || "").toString().trim();
-      let feedUrl = (payloadState.feed_url || "").toString().trim();
-      let selectedFeed: FeedOut | undefined;
-      if (!feedId && feedUrl) {
-        selectedFeed = feeds.find((feed) => feed.url === feedUrl);
-      } else if (feedId) {
-        selectedFeed = feeds.find((feed) => {
-          const candidateId = feed.id ? String(feed.id) : null;
-          if (candidateId && candidateId === feedId) return true;
-          if (!candidateId && feed.url === feedId) return true;
-          return false;
-        });
-      }
-      let effectiveFeedId = feedId;
-      if (!effectiveFeedId && selectedFeed) {
-        effectiveFeedId = selectedFeed.id
-          ? String(selectedFeed.id)
-          : selectedFeed.url;
-      }
-      if (selectedFeed && (!feedUrl || selectedFeed.url === feedUrl)) {
-        feedUrl = selectedFeed.url;
-      }
+      const selectedFeed = feeds.find((feed) => {
+        const candidateId = feed.id ? String(feed.id) : null;
+        if (candidateId && candidateId === feedId) return true;
+        return false;
+      });
       const lookback = (payloadState.lookback || "").toString().trim();
       const isPaywalled = Boolean(payloadState.is_paywalled);
       const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
@@ -397,18 +381,14 @@ function ScheduleForm({
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
-      if (!effectiveFeedId)
+      if (!feedId)
         nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
-      if (feedUrl && !isValidUrl(feedUrl)) {
-        nextErrors["payload.feed_url"] = t("job_schedules_error_feed_url");
-      }
       const siteLoginValue = (payloadState.site_login_pair || "")
         .toString()
         .trim();
       const siteLogin = parseSiteLoginKey(siteLoginValue);
       payload.instapaper_id = instapaperId;
-      if (effectiveFeedId) payload.feed_id = effectiveFeedId;
-      if (feedUrl) payload.feed_url = feedUrl;
+      if (feedId) payload.feed_id = feedId;
       if (lookback) payload.lookback = lookback;
       payload.is_paywalled = isPaywalled;
       payload.rss_requires_auth = rssRequiresAuth;
@@ -747,6 +727,16 @@ function ScheduleForm({
                     return false;
                   });
                   updatePayload("feed_url", selected?.url ?? "");
+                  if (selected?.siteConfigId) {
+                    const autoPair = siteLoginOptions.find(
+                      (option) => option.siteConfigId === String(selected.siteConfigId),
+                    );
+                    if (!payloadState.site_login_pair && autoPair) {
+                      updatePayload("site_login_pair", autoPair.id);
+                    }
+                  } else if (payloadState.site_login_pair) {
+                    updatePayload("site_login_pair", "");
+                  }
                 }}
                 aria-label={t("job_schedules_field_saved_feed")}
                 aria-invalid={Boolean(errors["payload.feed_id"])}

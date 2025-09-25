@@ -395,6 +395,8 @@
   "feeds_field_lookback_placeholder": "Initial lookback (e.g., 7d)",
   "feeds_field_site_config_placeholder": "Site Config ID (optional)",
   "feeds_field_site_config_select": "Select a site configuration (optional)",
+  "feeds_field_site_login_select": "Select a site login or configuration (optional)",
+  "feeds_field_site_config_only": "configuration only",
   "feeds_field_paywalled_label": "Paywalled",
   "feeds_field_rss_auth_label": "RSS requires auth",
   "feeds_table_label": "Feeds table",
