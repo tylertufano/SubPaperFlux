@@ -397,8 +397,23 @@ def poll_rss_and_publish(
             resolve_final_url=True,
         )
         if res:
-            # Persist bookmark with published timestamp if available
             published += 1
+            published_at_value = entry.get("published_dt")
+            if isinstance(published_at_value, str):
+                try:
+                    published_at_value = datetime.fromisoformat(published_at_value)
+                except Exception:
+                    published_at_value = None
+            publication_recorded_at = datetime.now(timezone.utc).isoformat()
+            publication_statuses = {
+                "instapaper": {
+                    "status": "published",
+                    "bookmark_id": str(res.get("bookmark_id")),
+                    "content_location": res.get("content_location"),
+                    "published_at": publication_recorded_at,
+                }
+            }
+            rss_entry_metadata = entry.get("rss_entry_metadata") or {}
             try:
                 with get_session_ctx() as session:
                     bm = BookmarkModel(
@@ -408,7 +423,10 @@ def poll_rss_and_publish(
                         title=res.get("title") or entry.get("title"),
                         content_location=res.get("content_location"),
                         feed_id=None,
-                        published_at=(entry.get("published_dt").isoformat() if entry.get("published_dt") else None),
+                        published_at=published_at_value,
+                        rss_entry=rss_entry_metadata,
+                        raw_html_content=entry.get("raw_html_content"),
+                        publication_statuses=publication_statuses,
                     )
                     session.add(bm)
                     record_audit_log(
@@ -422,6 +440,7 @@ def poll_rss_and_publish(
                             "instapaper_bookmark_id": bm.instapaper_bookmark_id,
                             "source": "rss_import",
                             "feed_title": entry.get("title"),
+                            "publication_statuses": publication_statuses,
                         },
                     )
                     session.commit()

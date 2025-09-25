@@ -118,6 +118,9 @@ class BookmarkOut(BaseModel):
     content_location: Optional[str] = None
     feed_id: Optional[str] = None
     published_at: Optional[str] = None
+    rss_entry: Dict[str, Any] = Field(default_factory=dict)
+    raw_html_content: Optional[str] = None
+    publication_statuses: Dict[str, Any] = Field(default_factory=dict)
 
 
 class BookmarksPage(BaseModel):

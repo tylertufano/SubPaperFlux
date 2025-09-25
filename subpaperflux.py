@@ -716,7 +716,65 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                 
                 # Convert to a list for JSON serialization later
                 categories_list = list(entry_categories)
-                
+
+                entry_summary = getattr(entry, 'summary', None) or getattr(entry, 'description', None)
+                entry_author = getattr(entry, 'author', None)
+                entry_id = getattr(entry, 'id', None) or getattr(entry, 'guid', None)
+                entry_guid = getattr(entry, 'guid', None)
+                entry_content_list = []
+                if hasattr(entry, 'content'):
+                    for content_item in entry.content:
+                        if isinstance(content_item, dict):
+                            entry_content_list.append({
+                                'type': content_item.get('type'),
+                                'value': content_item.get('value'),
+                                'language': content_item.get('language'),
+                            })
+                        else:
+                            entry_content_list.append({
+                                'type': getattr(content_item, 'type', None),
+                                'value': getattr(content_item, 'value', None),
+                                'language': getattr(content_item, 'language', None),
+                            })
+                enclosures_list = []
+                if hasattr(entry, 'enclosures'):
+                    for enclosure in entry.enclosures:
+                        if isinstance(enclosure, dict):
+                            enclosures_list.append({
+                                'href': enclosure.get('href'),
+                                'type': enclosure.get('type'),
+                                'length': enclosure.get('length'),
+                            })
+                        else:
+                            enclosures_list.append({
+                                'href': getattr(enclosure, 'href', None),
+                                'type': getattr(enclosure, 'type', None),
+                                'length': getattr(enclosure, 'length', None),
+                            })
+
+                feed_metadata = {
+                    'title': getattr(feed.feed, 'title', None),
+                    'link': getattr(feed.feed, 'link', None),
+                    'language': getattr(feed.feed, 'language', None),
+                }
+
+                rss_entry_metadata = {
+                    'id': entry_id,
+                    'guid': entry_guid,
+                    'title': title,
+                    'link': url,
+                    'author': entry_author,
+                    'summary': entry_summary,
+                    'published': getattr(entry, 'published', None),
+                    'updated': getattr(entry, 'updated', None),
+                    'published_parsed': entry_timestamp_dt.isoformat() if entry_timestamp_dt else None,
+                    'categories': categories_list,
+                    'content': entry_content_list,
+                    'enclosures': enclosures_list,
+                    'feed': feed_metadata,
+                    'fetched_at': datetime.now(timezone.utc).isoformat(),
+                }
+
                 raw_html_content = None
                 
                 if is_paywalled and cookies:
@@ -739,6 +797,7 @@ def get_new_rss_entries(config_file, feed_url, instapaper_config, app_creds, rss
                         'rss_feed_config': rss_feed_config,
                         'instapaper_ini_config': instapaper_ini_config,
                         'site_config': site_config,
+                        'rss_entry_metadata': rss_entry_metadata,
                     }
                     new_entries.append(new_entry)
                     logging.info(f"Found new entry: '{title}' from {entry_timestamp_dt.isoformat()}")
