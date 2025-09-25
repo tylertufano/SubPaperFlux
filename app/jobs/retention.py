@@ -60,13 +60,13 @@ def _extract_instapaper_publication(
 
 
 def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
-    # Expected payload: {"older_than": "30d", "instapaper_id": str, "feed_id": str | None, "config_dir": str | None}
+    # Expected payload: {"older_than": "30d", "instapaper_credential_id": str, "feed_id": str | None, "config_dir": str | None}
     older_than = payload.get("older_than", "30d")
     instapaper_id = payload.get("instapaper_credential_id") or payload.get("instapaper_id")
     feed_id = payload.get("feed_id")
     config_dir = payload.get("config_dir")
     if not instapaper_id:
-        raise ValueError("instapaper_id is required")
+        raise ValueError("instapaper_credential_id is required")
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=_seconds_from_spec(older_than))
     logging.info(
         "[job:%s] Retention purge user=%s older_than=%s feed_id=%s instapaper_cred=%s (cutoff=%s)",

@@ -150,6 +150,7 @@
   "job_schedules_field_tags_help": "Separa las etiquetas con comas ✨",
   "job_schedules_field_publish_feed": "Vincular a feed (opcional) ✨",
   "job_schedules_field_retention": "Borrar elementos mayores que ✨",
+  "job_schedules_field_retention_feed": "Filtrar por feed (opcional) ✨",
   "job_schedules_error_frequency": "La frecuencia es obligatoria ✨",
   "job_schedules_error_job_type": "Elige un tipo de trabajo ✨",
   "job_schedules_error_datetime": "Introduce una fecha válida o deja vacío ✨",
