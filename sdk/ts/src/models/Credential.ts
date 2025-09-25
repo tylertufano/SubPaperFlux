@@ -44,11 +44,17 @@ export interface Credential {
      */
     data: { [key: string]: any; };
     /**
-     * 
+     *
      * @type {string}
      * @memberof Credential
      */
     ownerUserId?: string | null;
+    /**
+     *
+     * @type {string}
+     * @memberof Credential
+     */
+    siteConfigId?: string | null;
 }
 
 /**
@@ -76,6 +82,7 @@ export function CredentialFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'description': json['description'],
         'data': json['data'],
         'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
     };
 }
 
@@ -95,6 +102,7 @@ export function CredentialToJSONTyped(value?: Credential | null, ignoreDiscrimin
         'description': value['description'],
         'data': value['data'],
         'owner_user_id': value['ownerUserId'],
+        'site_config_id': value['siteConfigId'],
     };
 }
 

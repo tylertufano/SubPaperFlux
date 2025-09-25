@@ -16,7 +16,7 @@ from ..models import Credential
 from ..schemas import CredentialsPage, Credential as CredentialSchema
 from ..security.crypto import decrypt_dict
 from ..util.quotas import enforce_user_quota
-from .credentials import _mask_credential
+from .credentials import _mask_credential, _validate_site_config_assignment
 
 
 router = APIRouter(prefix="/v1/credentials", tags=["v1"])
@@ -117,6 +117,19 @@ def copy_credential(
         owner_user_id=user_id,
         site_config_id=source.site_config_id,
     )
+
+    if cloned.kind == "site_login":
+        if not cloned.site_config_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_login credentials require a site_config_id",
+            )
+        _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=cloned.site_config_id,
+            credential_owner_id=user_id,
+        )
     session.add(cloned)
 
     record_audit_log(

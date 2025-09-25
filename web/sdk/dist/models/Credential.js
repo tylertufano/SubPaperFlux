@@ -43,6 +43,7 @@ function CredentialFromJSONTyped(json, ignoreDiscriminator) {
         'description': json['description'],
         'data': json['data'],
         'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
     };
 }
 function CredentialToJSON(json) {
@@ -58,5 +59,6 @@ function CredentialToJSONTyped(value, ignoreDiscriminator = false) {
         'description': value['description'],
         'data': value['data'],
         'owner_user_id': value['ownerUserId'],
+        'site_config_id': value['siteConfigId'],
     };
 }

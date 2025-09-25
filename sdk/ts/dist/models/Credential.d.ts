@@ -47,6 +47,12 @@ export interface Credential {
      * @memberof Credential
      */
     ownerUserId?: string | null;
+    /**
+     *
+     * @type {string}
+     * @memberof Credential
+     */
+    siteConfigId?: string | null;
 }
 /**
  * Check if a given object implements the Credential interface.
