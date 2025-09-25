@@ -316,10 +316,10 @@ Credentials (DB-backed)
 - API responses mask sensitive values (e.g., tokens, passwords). Stored values are encrypted at rest using AES‑GCM with `CREDENTIALS_ENC_KEY`.
 
 Job Types (preview)
-- `login`: payload `{ "config_dir": "./config", "site_login_pair": "<credId>::<siteId>" }`
-- `miniflux_refresh`: payload `{ "config_dir": "./config", "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "site_login_pair": "<credId>::<siteId>" }`
-- `rss_poll`: payload `{ "config_dir": "./config", "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }`
-- `publish`: payload `{ "config_dir": "./config", "instapaper_id": "<DB_INSTAPAPER_ID>", "url": "https://...", "title": "Optional", "folder": "Optional" }`
+- `login`: payload `{ "site_login_pair": "<credId>::<siteId>" }`
+- `miniflux_refresh`: payload `{ "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "site_login_pair": "<credId>::<siteId>" }`
+- `rss_poll`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }`
+- `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "url": "https://...", "title": "Optional", "folder": "Optional" }`
 - `retention`: payload `{ "older_than": "30d" }`
 
 Notes: Handlers dispatch real work using the existing subpaperflux functions. Publish persists bookmark metadata (including published timestamps when available); retention deletes old bookmarks in Instapaper and removes them from the DB. Jobs retry up to `WORKER_MAX_ATTEMPTS` with last error tracked on the job.

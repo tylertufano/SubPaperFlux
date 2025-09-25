@@ -60,11 +60,10 @@ def _extract_instapaper_publication(
 
 
 def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
-    # Expected payload: {"older_than": "30d", "instapaper_credential_id": str, "feed_id": str | None, "config_dir": str | None}
+    # Expected payload: {"older_than": "30d", "instapaper_credential_id": str, "feed_id": str | None}
     older_than = payload.get("older_than", "30d")
     instapaper_id = payload.get("instapaper_credential_id") or payload.get("instapaper_id")
     feed_id = payload.get("feed_id")
-    config_dir = payload.get("config_dir")
     if not instapaper_id:
         raise ValueError("instapaper_credential_id is required")
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=_seconds_from_spec(older_than))
@@ -86,7 +85,7 @@ def handle_retention(*, job_id: str, owner_user_id: str | None, payload: dict) -
         rows = session.exec(stmt).all()
 
     # Build OAuth session
-    oauth = get_instapaper_oauth_session_for_id(instapaper_id, owner_user_id, config_dir=config_dir)
+    oauth = get_instapaper_oauth_session_for_id(instapaper_id, owner_user_id)
     if oauth is None:
         logging.warning("[job:%s] No Instapaper credentials or app creds found; skipping retention.", job_id)
         return {"deleted_count": 0}

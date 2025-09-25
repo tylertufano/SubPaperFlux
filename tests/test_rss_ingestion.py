@@ -24,6 +24,7 @@ def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
         config_dir = tmp_path
         (config_dir / "instapaper_app_creds.json").write_text(json.dumps({}))
         (config_dir / "credentials.json").write_text(json.dumps({}))
+        monkeypatch.setenv("SPF_CONFIG_DIR", str(config_dir))
 
         with next(get_session()) as session:
             feed = Feed(
@@ -60,7 +61,6 @@ def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
         monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
 
         res = poll_rss_and_publish(
-            config_dir=str(config_dir),
             instapaper_id="cred-instapaper",
             feed_id=feed_id,
             owner_user_id="user-rss",

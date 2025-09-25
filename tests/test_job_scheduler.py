@@ -16,9 +16,7 @@ def _env(monkeypatch):
 
 def _sample_payload():
     return {
-        "config_dir": "/tmp/workspace",
-        "site_config_id": "site-1",
-        "credential_id": "cred-1",
+        "site_login_pair": "cred-1::site-1",
     }
 
 

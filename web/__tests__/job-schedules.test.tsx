@@ -72,7 +72,6 @@ const defaultSchedule = {
   payload: {
     instapaper_id: "cred-1",
     feed_id: "feed-1",
-    feed_url: "https://example.com/rss.xml",
     lookback: "1d",
     is_paywalled: false,
     rss_requires_auth: false,
@@ -275,7 +274,7 @@ describe("JobSchedulesPage", () => {
     });
     const createdPayload =
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
-    expect(createdPayload.feed_url).toBeUndefined();
+    expect(createdPayload.site_login_pair).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -334,7 +333,7 @@ describe("JobSchedulesPage", () => {
     });
     const updatedPayload =
       openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
-    expect(updatedPayload.feed_url).toBeUndefined();
+    expect(updatedPayload.site_login_pair).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(

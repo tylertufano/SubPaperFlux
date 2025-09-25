@@ -5,10 +5,10 @@ RequiredField = Union[str, Sequence[str]]
 
 
 REQUIRED_FIELDS: Dict[str, List[RequiredField]] = {
-    "login": ["config_dir", "site_login_pair"],
-    "miniflux_refresh": ["config_dir", "miniflux_id", "feed_ids", "site_login_pair"],
-    "rss_poll": ["config_dir", "instapaper_id", "feed_id"],
-    "publish": ["config_dir", "instapaper_id", "url"],
+    "login": ["site_login_pair"],
+    "miniflux_refresh": ["miniflux_id", "feed_ids", "site_login_pair"],
+    "rss_poll": ["instapaper_id", "feed_id"],
+    "publish": ["instapaper_id", "url"],
     "retention": ["older_than", ("instapaper_credential_id", "instapaper_id")],
 }
 
