@@ -81,7 +81,7 @@ export default function Feeds() {
   }, [getSelectionForSiteConfig, siteConfigId, siteLoginSelection])
 
   useEffect(() => {
-    setEditRow(prev => {
+    setEditRow((prev: any) => {
       if (!prev) return prev
       const nextSelection = getSelectionForSiteConfig(prev.siteConfigId)
       if (nextSelection && nextSelection !== prev.siteLoginSelection) {
