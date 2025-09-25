@@ -19,6 +19,7 @@ import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
 import { isValidUrl } from "../lib/validate";
+import { buildSiteLoginOptions, SiteLoginOption } from "../lib/siteLoginOptions";
 type JobType =
   | "login"
   | "miniflux_refresh"
@@ -86,23 +87,6 @@ function parseSiteLoginKey(
   const [credentialId, siteConfigId] = value.split("::");
   if (!credentialId || !siteConfigId) return null;
   return { credentialId, siteConfigId };
-}
-
-function resolveCredentialSiteConfigId(credential: Credential): string | null {
-  const direct =
-    (credential as Credential & { siteConfigId?: string | null }).siteConfigId ??
-    (credential as Credential & { site_config_id?: string | null })
-      .site_config_id;
-  if (typeof direct === "string" && direct.trim().length > 0) {
-    return direct;
-  }
-  const data = credential.data ?? {};
-  const fromData =
-    data.site_config_id ?? data.siteConfigId ?? data.site_config ?? null;
-  if (typeof fromData === "string" && fromData.trim().length > 0) {
-    return fromData;
-  }
-  return null;
 }
 
 function toDateTimeLocalValue(value?: Date | null): string {
@@ -469,45 +453,9 @@ function ScheduleForm({
     { value: "global", label: t("job_schedules_owner_global") },
   ];
 
-  const siteConfigMap = useMemo(() => {
-    const map = new Map<string, SiteConfigOut>();
-    for (const config of siteConfigs) {
-      if (config.id) {
-        map.set(String(config.id), config);
-      }
-    }
-    return map;
-  }, [siteConfigs]);
-
-  const siteLoginOptions = useMemo(
-    () =>
-      loginCredentials
-        .map((cred) => {
-          if (!cred.id) return null;
-          const siteConfigId = resolveCredentialSiteConfigId(cred);
-          if (!siteConfigId) return null;
-          const siteConfig = siteConfigMap.get(siteConfigId);
-          const labelParts = [cred.description];
-          if (siteConfig?.name) {
-            labelParts.push(siteConfig.name);
-          }
-          return {
-            id: toSiteLoginKey({
-              credentialId: String(cred.id),
-              siteConfigId,
-            }),
-            credentialId: String(cred.id),
-            siteConfigId,
-            label: labelParts.join(" • "),
-          };
-        })
-        .filter(Boolean) as Array<{
-        id: string;
-        credentialId: string;
-        siteConfigId: string;
-        label: string;
-      }>,
-    [loginCredentials, siteConfigMap],
+  const siteLoginOptions: SiteLoginOption[] = useMemo(
+    () => buildSiteLoginOptions(loginCredentials, siteConfigs, t("feeds_field_site_config_only")),
+    [loginCredentials, siteConfigs, t],
   );
 
   function renderJobSpecificFields() {
@@ -535,7 +483,7 @@ function ScheduleForm({
             >
               <option value="">{t("job_schedules_option_select_pair")}</option>
               {siteLoginOptions.map((option) => (
-                <option key={option.id} value={option.id}>
+                <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
@@ -656,7 +604,7 @@ function ScheduleForm({
               >
                 <option value="">{t("job_schedules_option_select_pair")}</option>
                 {siteLoginOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
+                  <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
@@ -733,7 +681,7 @@ function ScheduleForm({
                       (option) => option.siteConfigId === String(selected.siteConfigId),
                     );
                     if (!payloadState.site_login_pair && autoPair) {
-                      updatePayload("site_login_pair", autoPair.id);
+                      updatePayload("site_login_pair", autoPair.value);
                     }
                   } else if (payloadState.site_login_pair) {
                     updatePayload("site_login_pair", "");
@@ -824,7 +772,7 @@ function ScheduleForm({
               >
                 <option value="">{t("job_schedules_option_select_pair")}</option>
                 {siteLoginOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
+                  <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}

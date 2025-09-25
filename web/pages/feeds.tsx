@@ -8,6 +8,7 @@ import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 import type { Credential } from '../sdk/src/models/Credential'
+import { buildSiteConfigLabelMap, buildSiteLoginOptions, SiteLoginOption } from '../lib/siteLoginOptions'
 
 export default function Feeds() {
   const { t } = useI18n()
@@ -59,64 +60,10 @@ export default function Feeds() {
     [credentialsData],
   )
 
-  type SiteLoginOption = {
-    value: string
-    label: string
-    siteConfigId: string
-    type: 'pair' | 'config'
-  }
-
-  const siteLoginOptions: SiteLoginOption[] = useMemo(() => {
-    const options: SiteLoginOption[] = []
-    const pairedConfigs = new Set<string>()
-
-    const resolveCredentialSiteConfigId = (credential: Credential): string | null => {
-      const direct = (credential as Credential & { siteConfigId?: string | null }).siteConfigId
-        ?? (credential as Credential & { site_config_id?: string | null }).site_config_id
-      if (typeof direct === 'string' && direct.trim()) {
-        return direct.trim()
-      }
-      const data = credential.data ?? {}
-      const fromData = (data as Record<string, any>).site_config_id
-        ?? (data as Record<string, any>).siteConfigId
-        ?? (data as Record<string, any>).site_config
-      if (typeof fromData === 'string' && fromData.trim()) {
-        return fromData.trim()
-      }
-      return null
-    }
-
-    for (const credential of loginCredentials) {
-      if (!credential?.id) continue
-      const resolvedId = resolveCredentialSiteConfigId(credential)
-      if (!resolvedId) continue
-      const configName = siteConfigMap.get(resolvedId) || resolvedId
-      const credentialLabel = credential.description || credential.id
-      const value = `pair:${credential.id}::${resolvedId}`
-      options.push({
-        value,
-        label: `${credentialLabel} • ${configName}`,
-        siteConfigId: resolvedId,
-        type: 'pair',
-      })
-      pairedConfigs.add(resolvedId)
-    }
-
-    for (const config of siteConfigs) {
-      if (!config?.id) continue
-      const id = String(config.id)
-      if (pairedConfigs.has(id)) continue
-      options.push({
-        value: `config:${id}`,
-        label: `${config.name || id} (${t('feeds_field_site_config_only')})`,
-        siteConfigId: id,
-        type: 'config',
-      })
-    }
-
-    options.sort((a, b) => a.label.localeCompare(b.label))
-    return options
-  }, [loginCredentials, siteConfigMap, siteConfigs, t])
+  const siteLoginOptions: SiteLoginOption[] = useMemo(
+    () => buildSiteLoginOptions(loginCredentials, siteConfigs, t('feeds_field_site_config_only')),
+    [loginCredentials, siteConfigs, t],
+  )
 
   const getSelectionForSiteConfig = useCallback((id?: string | null): string => {
     if (!id) return ''
@@ -147,22 +94,10 @@ export default function Feeds() {
     })
   }, [getSelectionForSiteConfig, siteLoginOptions])
 
-  const siteConfigLabelMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const option of siteLoginOptions) {
-      if (!map.has(option.siteConfigId)) {
-        map.set(option.siteConfigId, option.label)
-      }
-    }
-    for (const config of siteConfigs) {
-      if (!config?.id) continue
-      const id = String(config.id)
-      if (!map.has(id)) {
-        map.set(id, config.name || id)
-      }
-    }
-    return map
-  }, [siteLoginOptions, siteConfigs])
+  const siteConfigLabelMap = useMemo(
+    () => buildSiteConfigLabelMap(siteLoginOptions, siteConfigs),
+    [siteLoginOptions, siteConfigs],
+  )
 
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
