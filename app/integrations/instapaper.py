@@ -14,6 +14,7 @@ from oauthlib.oauth1 import Client as OAuth1Client
 logger = logging.getLogger(__name__)
 
 INSTAPAPER_OAUTH_TOKEN_URL = "https://www.instapaper.com/api/1/oauth/access_token"
+INSTAPAPER_BOOKMARKS_DELETE_URL = "https://www.instapaper.com/api/1.1/bookmarks/delete"
 
 
 @dataclass
