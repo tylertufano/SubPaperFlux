@@ -60,6 +60,14 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
                     "published_at": older.isoformat(),
                 }
             },
+            publication_flags={
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": credential_id,
+                    "created_at": older.isoformat(),
+                    "last_seen_at": older.isoformat(),
+                }
+            },
         )
         recent_match = Bookmark(
             owner_user_id="user-1",
@@ -73,6 +81,14 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
                     "credential_id": credential_id,
                     "bookmark_id": "102",
                     "published_at": recent.isoformat(),
+                }
+            },
+            publication_flags={
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": credential_id,
+                    "created_at": older.isoformat(),
+                    "last_seen_at": recent.isoformat(),
                 }
             },
         )
@@ -90,6 +106,14 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
                     "published_at": older.isoformat(),
                 }
             },
+            publication_flags={
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": credential_id,
+                    "created_at": older.isoformat(),
+                    "last_seen_at": older.isoformat(),
+                }
+            },
         )
         other_credential = Bookmark(
             owner_user_id="user-1",
@@ -105,6 +129,14 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
                     "published_at": older.isoformat(),
                 }
             },
+            publication_flags={
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": "other-cred",
+                    "created_at": older.isoformat(),
+                    "last_seen_at": older.isoformat(),
+                }
+            },
         )
         missing_publication = Bookmark(
             owner_user_id="user-1",
@@ -113,6 +145,14 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
             published_at=older,
             rss_entry={},
             publication_statuses={"instapaper": {"status": "archived"}},
+            publication_flags={
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": credential_id,
+                    "created_at": older.isoformat(),
+                    "last_seen_at": older.isoformat(),
+                }
+            },
         )
         session.add(eligible)
         session.add(recent_match)
@@ -143,7 +183,7 @@ def test_handle_retention_filters_by_feed_and_publication(monkeypatch):
     dummy_oauth = DummyOAuth()
     monkeypatch.setattr(
         retention_module,
-        "get_instapaper_oauth_session_for_id",
+        "get_instapaper_oauth_session_for_credential",
         lambda *args, **kwargs: dummy_oauth,
     )
     monkeypatch.setattr(ratelimit.limiter, "wait", lambda key: None)
