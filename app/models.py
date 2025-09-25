@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -265,6 +266,12 @@ class Feed(SQLModel, table=True):
 
 class Credential(SQLModel, table=True):
     __tablename__ = "credential"
+    __table_args__ = (
+        CheckConstraint(
+            "(kind <> 'site_login') OR (site_config_id IS NOT NULL)",
+            name="ck_credential_site_login_site_config",
+        ),
+    )
     id: str = Field(default_factory=lambda: gen_id("cred"), primary_key=True)
     kind: str  # instapaper|miniflux|site_login|substack
     description: str = Field(sa_column=Column(String(length=200), nullable=False))
@@ -273,7 +280,7 @@ class Credential(SQLModel, table=True):
     site_config_id: Optional[str] = Field(
         default=None,
         sa_column=Column(
-            ForeignKey("siteconfig.id", ondelete="SET NULL"),
+            ForeignKey("siteconfig.id", ondelete="CASCADE"),
             nullable=True,
             index=True,
         ),
