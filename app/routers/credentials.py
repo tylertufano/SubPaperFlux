@@ -14,11 +14,12 @@ from ..auth.oidc import get_current_user
 from ..auth.permissions import (
     PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
     PERMISSION_READ_GLOBAL_CREDENTIALS,
+    PERMISSION_READ_GLOBAL_SITE_CONFIGS,
     has_permission,
 )
 from ..schemas import Credential as CredentialSchema
 from ..db import get_session
-from ..models import Credential as CredentialModel
+from ..models import Credential as CredentialModel, SiteConfig as SiteConfigModel
 from ..security.crypto import encrypt_dict, decrypt_dict, is_encrypted
 from ..security.csrf import csrf_protect
 from ..util.quotas import enforce_user_quota
@@ -71,6 +72,35 @@ def _ensure_global_kind(kind: str) -> None:
             status.HTTP_400_BAD_REQUEST,
             detail="Global credentials must use kind 'instapaper_app'",
         )
+
+
+def _validate_site_config_assignment(
+    session,
+    current_user,
+    *,
+    site_config_id: Optional[str],
+    credential_owner_id: Optional[str],
+) -> Optional[SiteConfigModel]:
+    if not site_config_id:
+        return None
+    site_config = session.get(SiteConfigModel, site_config_id)
+    if not site_config:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="site_config_id is invalid",
+        )
+    if site_config.owner_user_id is None:
+        _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
+        )
+    elif credential_owner_id != site_config.owner_user_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="site_config_id does not belong to the credential owner",
+        )
+    return site_config
 
 
 class InstapaperLoginRequest(BaseModel):
@@ -170,6 +200,13 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="site_login credentials require a site_config_id",
+        )
+    if body.kind == "site_login":
+        _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=site_config_id,
+            credential_owner_id=owner,
         )
     model = CredentialModel(
         kind=body.kind,
@@ -402,6 +439,13 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="site_login credentials require a site_config_id",
+        )
+    if new_kind == "site_login" and new_site_config_id:
+        _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=new_site_config_id,
+            credential_owner_id=model.owner_user_id,
         )
     if is_encrypted(incoming):
         enc = incoming
