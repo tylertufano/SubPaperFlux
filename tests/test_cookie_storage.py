@@ -9,8 +9,8 @@ from sqlmodel import select
 
 from app.db import get_session_ctx, init_db
 from app.jobs.util_subpaperflux import (
-    get_cookies_for_site_login,
-    get_cookies_from_db,
+    format_site_login_pair_id,
+    get_cookies_for_site_login_pair,
     perform_login_and_save_cookies,
 )
 from app.models import Cookie, Credential, SiteConfig
@@ -69,12 +69,13 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
         session.add(site_config)
         session.commit()
 
+    pair_id = format_site_login_pair_id("cred_test", "sc_test")
     result = perform_login_and_save_cookies(
         config_dir=str(tmp_path),
-        site_login_credential_id="cred_test",
+        site_login_pair_id=pair_id,
         owner_user_id="user-1",
     )
-    assert result["cookie_key"] == "cred_test-sc_test"
+    assert result["site_login_pair"] == pair_id
 
     with get_session_ctx() as session:
         cookie = session.exec(
@@ -91,7 +92,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
             {"name": "session", "value": "abc", "expiry": 123.0},
         ]
 
-    stored_cookies = get_cookies_from_db("cred_test-sc_test")
+    stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert stored_cookies == [
         {"name": "session", "value": "abc", "expiry": 123.0},
     ]
@@ -101,7 +102,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     ]
     perform_login_and_save_cookies(
         config_dir=str(tmp_path),
-        site_login_credential_id="cred_test",
+        site_login_pair_id=pair_id,
         owner_user_id="user-1",
     )
 
@@ -110,10 +111,10 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
         assert len(cookies) == 1
         assert cookies[0].credential_id == "cred_test"
 
-    updated_cookies = get_cookies_from_db("cred_test-sc_test")
+    updated_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert updated_cookies == [
         {"name": "session", "value": "xyz", "expiry": 456.0},
     ]
 
-    helper_cookies = get_cookies_for_site_login("cred_test", "user-1")
+    helper_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert helper_cookies == updated_cookies
