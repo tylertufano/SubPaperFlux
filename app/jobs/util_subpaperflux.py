@@ -397,92 +397,142 @@ def poll_rss_and_publish(
         site_config=site_cfg,
     )
 
-    published = 0
-    for entry in new_entries:
-        # Idempotency: dedupe by user + url within window
-        try:
-            window_sec = int(os.getenv("PUBLISH_DEDUPE_WINDOW_SEC", "86400"))
-        except Exception:
-            window_sec = 86400
-        if owner_user_id and window_sec > 0:
-            from datetime import datetime, timezone, timedelta
-            since = datetime.now(timezone.utc) - timedelta(seconds=window_sec)
-            with get_session_ctx() as session:
-                from sqlmodel import select
-                stmt = select(BookmarkModel).where(
-                    (BookmarkModel.owner_user_id == owner_user_id)
-                    & (BookmarkModel.url == entry.get("url"))
-                    & ((BookmarkModel.published_at.is_(None)) | (BookmarkModel.published_at >= since))
-                )
-                exists = session.exec(stmt).first()
-                if exists:
-                    continue
-        # Rate-limit Instapaper publish per item
-        from ..util.ratelimit import limiter
-        limiter.wait("instapaper")
-        res = spf.publish_to_instapaper(
-            entry["instapaper_config"],
-            entry["app_creds"],
-            entry["url"],
-            entry["title"],
-            entry.get("raw_html_content"),
-            entry.get("categories_from_feed", []),
-            entry["instapaper_ini_config"],
-            entry.get("site_config"),
-            resolve_final_url=True,
-        )
-        if res:
-            published += 1
+    stored = 0
+    duplicates = 0
+    total_entries = len(new_entries)
+
+    with get_session_ctx() as session:
+        for entry in new_entries:
+            url = entry.get("url")
+            if not url:
+                continue
+
+            seen_at = datetime.now(timezone.utc).isoformat()
+
             published_at_value = entry.get("published_dt")
             if isinstance(published_at_value, str):
                 try:
                     published_at_value = datetime.fromisoformat(published_at_value)
                 except Exception:
                     published_at_value = None
-            publication_recorded_at = datetime.now(timezone.utc).isoformat()
+
+            rss_entry_metadata = entry.get("rss_entry_metadata") or {}
+            feed_meta = rss_entry_metadata.get("feed") or {}
+            if feed_id:
+                feed_meta.setdefault("id", feed_id)
+            feed_meta.setdefault("url", feed_url)
+            rss_entry_metadata["feed"] = feed_meta
+            rss_entry_metadata["ingested_at"] = seen_at
+            rss_entry_metadata["is_paywalled"] = bool(effective_is_paywalled)
+
+            raw_html_content = entry.get("raw_html_content")
+
+            stmt = (
+                select(BookmarkModel)
+                .where(
+                    (BookmarkModel.owner_user_id == owner_user_id)
+                    & (BookmarkModel.url == url)
+                    & (
+                        (BookmarkModel.feed_id == feed_id)
+                        | (BookmarkModel.feed_id.is_(None))
+                    )
+                )
+                .order_by(BookmarkModel.published_at.desc(), BookmarkModel.id.desc())
+            )
+            existing = session.exec(stmt).first()
+
+            if existing:
+                duplicates += 1
+                changed = False
+                merged_metadata = dict(existing.rss_entry or {})
+                merged_metadata.update(rss_entry_metadata)
+                if merged_metadata != existing.rss_entry:
+                    existing.rss_entry = merged_metadata
+                    changed = True
+
+                if raw_html_content and not existing.raw_html_content:
+                    existing.raw_html_content = raw_html_content
+                    changed = True
+
+                statuses = dict(existing.publication_statuses or {})
+                instapaper_status = dict(statuses.get("instapaper") or {})
+                instapaper_status.setdefault("status", "pending")
+                instapaper_status["updated_at"] = seen_at
+                statuses["instapaper"] = instapaper_status
+                if statuses != existing.publication_statuses:
+                    existing.publication_statuses = statuses
+                    changed = True
+
+                flags = dict(existing.publication_flags or {})
+                instapaper_flags = dict(flags.get("instapaper") or {})
+                instapaper_flags.update(
+                    {
+                        "should_publish": True,
+                        "credential_id": instapaper_id,
+                        "is_paywalled": bool(effective_is_paywalled),
+                        "last_seen_at": seen_at,
+                        "has_raw_html": bool(raw_html_content) or instapaper_flags.get("has_raw_html", False),
+                    }
+                )
+                flags["instapaper"] = instapaper_flags
+                if flags != existing.publication_flags:
+                    existing.publication_flags = flags
+                    changed = True
+
+                if changed:
+                    session.add(existing)
+                    session.commit()
+                continue
+
             publication_statuses = {
                 "instapaper": {
-                    "status": "published",
-                    "bookmark_id": str(res.get("bookmark_id")),
-                    "content_location": res.get("content_location"),
-                    "published_at": publication_recorded_at,
+                    "status": "pending",
+                    "updated_at": seen_at,
                 }
             }
-            rss_entry_metadata = entry.get("rss_entry_metadata") or {}
-            try:
-                with get_session_ctx() as session:
-                    bm = BookmarkModel(
-                        owner_user_id=owner_user_id,
-                        instapaper_bookmark_id=str(res.get("bookmark_id")),
-                        url=entry.get("url"),
-                        title=res.get("title") or entry.get("title"),
-                        content_location=res.get("content_location"),
-                        feed_id=None,
-                        published_at=published_at_value,
-                        rss_entry=rss_entry_metadata,
-                        raw_html_content=entry.get("raw_html_content"),
-                        publication_statuses=publication_statuses,
-                    )
-                    session.add(bm)
-                    record_audit_log(
-                        session,
-                        entity_type="bookmark",
-                        entity_id=bm.id,
-                        action="create",
-                        owner_user_id=bm.owner_user_id,
-                        actor_user_id=owner_user_id,
-                        details={
-                            "instapaper_bookmark_id": bm.instapaper_bookmark_id,
-                            "source": "rss_import",
-                            "feed_title": entry.get("title"),
-                            "publication_statuses": publication_statuses,
-                        },
-                    )
-                    session.commit()
-            except Exception:
-                # Best-effort persistence; continue
-                pass
-    return {"published": published, "total": len(new_entries), "skipped": len(new_entries) - published}
+            publication_flags = {
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": instapaper_id,
+                    "is_paywalled": bool(effective_is_paywalled),
+                    "created_at": seen_at,
+                    "last_seen_at": seen_at,
+                    "has_raw_html": bool(raw_html_content),
+                }
+            }
+
+            bm = BookmarkModel(
+                owner_user_id=owner_user_id,
+                instapaper_bookmark_id=None,
+                url=url,
+                title=entry.get("title"),
+                content_location=None,
+                feed_id=feed_id,
+                published_at=published_at_value,
+                rss_entry=rss_entry_metadata,
+                raw_html_content=raw_html_content,
+                publication_statuses=publication_statuses,
+                publication_flags=publication_flags,
+            )
+            session.add(bm)
+            record_audit_log(
+                session,
+                entity_type="bookmark",
+                entity_id=bm.id,
+                action="create",
+                owner_user_id=bm.owner_user_id,
+                actor_user_id=owner_user_id,
+                details={
+                    "source": "rss_ingest",
+                    "feed_id": feed_id,
+                    "publication_statuses": publication_statuses,
+                    "publication_flags": publication_flags,
+                },
+            )
+            session.commit()
+            stored += 1
+
+    return {"stored": stored, "duplicates": duplicates, "total": total_entries}
 
 
 def get_instapaper_oauth_session(owner_user_id: Optional[str]):
