@@ -1,7 +1,7 @@
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, creds, createInstapaperCredentialFromLogin } from '../lib/openapi'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
@@ -12,6 +12,7 @@ import {
   hasPermission,
   PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
   PERMISSION_READ_GLOBAL_CREDENTIALS,
+  PERMISSION_READ_GLOBAL_SITE_CONFIGS,
 } from '../lib/rbac'
 
 export default function Credentials() {
@@ -27,18 +28,29 @@ export default function Credentials() {
         hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
   )
   const canManageGlobalCredentials = hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)
+  const canReadGlobalSiteConfigs = hasPermission(permissions, PERMISSION_READ_GLOBAL_SITE_CONFIGS)
   const { data, error, isLoading, mutate } = useSWR(
     canViewCredentials ? ['/v1/credentials'] : null,
     () => v1.listCredentialsV1V1CredentialsGet({}),
+  )
+  const {
+    data: siteConfigsData,
+    error: siteConfigsError,
+    isLoading: isLoadingSiteConfigs,
+  } = useSWR(
+    isAuthenticated ? ['/v1/site-configs', canReadGlobalSiteConfigs] : null,
+    () => v1.listSiteConfigsV1V1SiteConfigsGet({ includeGlobal: canReadGlobalSiteConfigs, size: 200 }),
   )
   const [kind, setKind] = useState('site_login')
   const [description, setDescription] = useState('')
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
+  const [siteConfigId, setSiteConfigId] = useState('')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [copyingId, setCopyingId] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; kind: string; json: string } | null>(null)
   const [editDescription, setEditDescription] = useState('')
+  const [editSiteConfigId, setEditSiteConfigId] = useState('')
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
   const [editErrors, setEditErrors] = useState<Record<string, string>>({})
   const createObj = (() => { try { return JSON.parse(jsonData || '{}') } catch { return {} } })() as any
@@ -46,6 +58,52 @@ export default function Credentials() {
   const hasDescription = description.trim().length > 0
   const hasEditDescription = editDescription.trim().length > 0
   const allowGlobalScope = canManageGlobalCredentials && kind === 'instapaper_app'
+  const siteConfigItems = useMemo(() => {
+    if (!siteConfigsData) return [] as any[]
+    if (Array.isArray(siteConfigsData)) return siteConfigsData as any[]
+    if (Array.isArray((siteConfigsData as any).items)) return (siteConfigsData as any).items as any[]
+    return [] as any[]
+  }, [siteConfigsData])
+  const siteConfigOptions = useMemo(
+    () =>
+      siteConfigItems.map((item: any) => ({
+        id: item.id,
+        label: item.name || item.id,
+        scopeLabel: item.owner_user_id ? t('scope_user') : t('scope_global'),
+      })),
+    [siteConfigItems, t],
+  )
+  const siteConfigMap = useMemo(() => {
+    const map = new Map<string, any>()
+    for (const item of siteConfigItems) {
+      if (item?.id) map.set(String(item.id), item)
+    }
+    return map
+  }, [siteConfigItems])
+
+  useEffect(() => {
+    if (kind !== 'site_login') {
+      setSiteConfigId('')
+      setCreateErrors((prev) => {
+        if (!prev.site_config_id) return prev
+        const next = { ...prev }
+        delete next.site_config_id
+        return next
+      })
+    }
+  }, [kind])
+
+  useEffect(() => {
+    if (!editing || editing.kind !== 'site_login') {
+      setEditSiteConfigId('')
+      setEditErrors((prev) => {
+        if (!prev.site_config_id) return prev
+        const next = { ...prev }
+        delete next.site_config_id
+        return next
+      })
+    }
+  }, [editing])
 
   async function testCred(c: any) {
     try {
@@ -76,7 +134,15 @@ export default function Credentials() {
       return
     }
 
-    const err = validateCredential(kind, parsed.data, trimmedDescription)
+    const trimmedSiteConfigId = kind === 'site_login' ? siteConfigId.trim() : ''
+    if (kind === 'site_login' && !trimmedSiteConfigId) {
+      const message = t('credentials_error_site_config_required')
+      setCreateErrors((prev) => ({ ...prev, site_config_id: message }))
+      setBanner({ kind: 'error', message })
+      return
+    }
+
+    const err = validateCredential(kind, parsed.data, trimmedDescription, trimmedSiteConfigId)
     if (err) {
       setBanner({ kind: 'error', message: err })
       return
@@ -97,12 +163,14 @@ export default function Credentials() {
             description: trimmedDescription,
             data: parsed.data,
             ownerUserId: allowGlobalScope && scopeGlobal ? null : undefined,
+            site_config_id: kind === 'site_login' ? trimmedSiteConfigId : undefined,
           },
         })
       }
 
       setJsonData('')
       setDescription('')
+      setSiteConfigId('')
       setCreateErrors({})
       setBanner({ kind: 'success', message: t('credentials_create_success') })
       mutate()
@@ -177,6 +245,7 @@ export default function Credentials() {
       const body = full?.data ?? {}
       setEditing({ id, kind, json: JSON.stringify(body, null, 2) })
       setEditDescription((full?.description ?? '').toString())
+      setEditSiteConfigId((full?.site_config_id ?? '')?.toString())
       setEditErrors({})
     } catch (e: any) {
       setBanner({ kind: 'error', message: t('credentials_load_failed', { reason: e?.message || String(e) }) })
@@ -204,13 +273,26 @@ export default function Credentials() {
       setBanner({ kind: 'error', message })
       return
     }
+    const trimmedSiteConfigId = editing.kind === 'site_login' ? editSiteConfigId.trim() : ''
+    if (editing.kind === 'site_login' && !trimmedSiteConfigId) {
+      const message = t('credentials_error_site_config_required')
+      setEditErrors((prev) => ({ ...prev, site_config_id: message }))
+      setBanner({ kind: 'error', message })
+      return
+    }
     try {
       await creds.updateCredentialCredentialsCredIdPut({
         credId: editing.id,
-        credential: { kind: editing.kind, description: trimmedDescription, data },
+        credential: {
+          kind: editing.kind,
+          description: trimmedDescription,
+          data,
+          site_config_id: editing.kind === 'site_login' ? trimmedSiteConfigId : undefined,
+        },
       })
       setEditing(null)
       setEditDescription('')
+      setEditSiteConfigId('')
       setBanner({ kind: 'success', message: t('credentials_update_success') })
       mutate()
     } catch (e: any) {
@@ -326,33 +408,82 @@ export default function Credentials() {
               )}
             </div>
             {kind === 'site_login' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="space-y-2">
                 <div>
-                  <input
-                    id="create-credential-username"
+                  <label htmlFor="create-credential-site-config" className="block text-sm font-medium text-gray-700">
+                    {t('site_config_label')}
+                  </label>
+                  <select
+                    id="create-credential-site-config"
                     className="input"
-                    placeholder={t('credentials_field_username_placeholder')}
-                    aria-label={t('credentials_field_username_placeholder')}
-                    aria-invalid={Boolean(createErrors.username)}
-                    aria-describedby={createErrors.username ? 'create-credential-username-error' : undefined}
-                    value={createObj.username || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: v, password: createObj.password || '' })); setCreateErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
-                  />
-                  {createErrors.username && <div id="create-credential-username-error" className="text-sm text-red-600">{createErrors.username}</div>}
+                    value={siteConfigId}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      setSiteConfigId(value)
+                      setCreateErrors((prev) => ({
+                        ...prev,
+                        site_config_id: value ? '' : t('credentials_error_site_config_required'),
+                      }))
+                    }}
+                    aria-invalid={Boolean(createErrors.site_config_id)}
+                    aria-describedby={createErrors.site_config_id ? 'create-credential-site-config-error' : undefined}
+                    disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
+                    aria-disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
+                  >
+                    <option value="">
+                      {t('credentials_field_site_config_placeholder')}
+                    </option>
+                    {siteConfigOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {`${option.label} • ${option.scopeLabel}`}
+                      </option>
+                    ))}
+                  </select>
+                  {isLoadingSiteConfigs && (
+                    <div className="text-sm text-gray-500">{t('loading_text')}</div>
+                  )}
+                  {siteConfigsError && (
+                    <div className="text-sm text-red-600">
+                      {siteConfigsError instanceof Error ? siteConfigsError.message : String(siteConfigsError)}
+                    </div>
+                  )}
+                  {!isLoadingSiteConfigs && !siteConfigsError && siteConfigOptions.length === 0 && (
+                    <div className="text-sm text-gray-500">{t('credentials_site_config_empty')}</div>
+                  )}
+                  {createErrors.site_config_id && (
+                    <div id="create-credential-site-config-error" className="text-sm text-red-600">
+                      {createErrors.site_config_id}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <input
-                    id="create-credential-password"
-                    className="input"
-                    placeholder={t('credentials_field_password_placeholder')}
-                    type="password"
-                    aria-label={t('credentials_field_password_placeholder')}
-                    aria-invalid={Boolean(createErrors.password)}
-                    aria-describedby={createErrors.password ? 'create-credential-password-error' : undefined}
-                    value={createObj.password || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: createObj.username || '', password: v })); setCreateErrors(prev=>({ ...prev, password: v.trim()? '' : t('credentials_error_password_required') })) }}
-                  />
-                  {createErrors.password && <div id="create-credential-password-error" className="text-sm text-red-600">{createErrors.password}</div>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      id="create-credential-username"
+                      className="input"
+                      placeholder={t('credentials_field_username_placeholder')}
+                      aria-label={t('credentials_field_username_placeholder')}
+                      aria-invalid={Boolean(createErrors.username)}
+                      aria-describedby={createErrors.username ? 'create-credential-username-error' : undefined}
+                      value={createObj.username || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: v, password: createObj.password || '' })); setCreateErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
+                    />
+                    {createErrors.username && <div id="create-credential-username-error" className="text-sm text-red-600">{createErrors.username}</div>}
+                  </div>
+                  <div>
+                    <input
+                      id="create-credential-password"
+                      className="input"
+                      placeholder={t('credentials_field_password_placeholder')}
+                      type="password"
+                      aria-label={t('credentials_field_password_placeholder')}
+                      aria-invalid={Boolean(createErrors.password)}
+                      aria-describedby={createErrors.password ? 'create-credential-password-error' : undefined}
+                      value={createObj.password || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: createObj.username || '', password: v })); setCreateErrors(prev=>({ ...prev, password: v.trim()? '' : t('credentials_error_password_required') })) }}
+                    />
+                    {createErrors.password && <div id="create-credential-password-error" className="text-sm text-red-600">{createErrors.password}</div>}
+                  </div>
                 </div>
               </div>
             )}
@@ -479,7 +610,7 @@ export default function Credentials() {
                   !(
                     hasDescription &&
                     (
-                      (kind === 'site_login' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
+                      (kind === 'site_login' && !!(siteConfigId.trim() && createObj.username?.trim() && createObj.password?.trim())) ||
                       (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
                       (kind === 'instapaper' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
                       (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
@@ -511,6 +642,7 @@ export default function Credentials() {
                   <tr>
                     <th className="th" scope="col">{t('credentials_table_column_credential')}</th>
                     <th className="th" scope="col">{t('kind_label')}</th>
+                    <th className="th" scope="col">{t('site_config_label')}</th>
                     <th className="th" scope="col">{t('scope_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
@@ -523,6 +655,25 @@ export default function Credentials() {
                         <div className="text-sm text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
                       </td>
                       <td className="td">{c.kind}</td>
+                      <td className="td">
+                        {(() => {
+                          const scId = c.site_config_id ?? c.siteConfigId ?? ''
+                          if (!scId) return <span aria-hidden="true">—</span>
+                          const entry = siteConfigMap.get(String(scId))
+                          const displayName = entry?.name || scId
+                          return (
+                            <div className="space-y-0.5">
+                              <div className="text-gray-900">{displayName}</div>
+                              <div className="text-xs text-gray-500">{t('credentials_table_id_caption', { id: scId })}</div>
+                              {entry && (
+                                <div className="text-xs text-gray-500">
+                                  {t('scope_label')}: {entry.owner_user_id ? t('scope_user') : t('scope_global')}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </td>
                       <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                       <td className="td flex flex-wrap gap-2">
                         {!c.ownerUserId && (
@@ -595,30 +746,71 @@ export default function Credentials() {
                   )}
                 </div>
                 {editing.kind === 'site_login' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     <div>
-                      <input
-                        id="edit-credential-username"
+                      <label htmlFor="edit-credential-site-config" className="block text-sm font-medium text-gray-700">
+                        {t('site_config_label')}
+                      </label>
+                      <select
+                        id="edit-credential-site-config"
                         className="input"
-                        placeholder={editingObj?.username || t('credentials_field_username_placeholder')}
-                        aria-label={t('credentials_field_username_placeholder')}
-                        aria-invalid={Boolean(editErrors.username)}
-                        aria-describedby={editErrors.username ? 'edit-credential-username-error' : undefined}
-                        value={editingObj?.username ? (editingObj.username.includes('*') ? '' : editingObj.username) : ''}
-                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), username: v }) }); setEditErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
-                      />
-                      {editErrors.username && <div id="edit-credential-username-error" className="text-sm text-red-600">{editErrors.username}</div>}
+                        value={editSiteConfigId}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setEditSiteConfigId(value)
+                          setEditErrors((prev) => ({
+                            ...prev,
+                            site_config_id: value ? '' : t('credentials_error_site_config_required'),
+                          }))
+                        }}
+                        aria-invalid={Boolean(editErrors.site_config_id)}
+                        aria-describedby={editErrors.site_config_id ? 'edit-credential-site-config-error' : undefined}
+                        disabled={siteConfigOptions.length === 0}
+                        aria-disabled={siteConfigOptions.length === 0}
+                      >
+                        <option value="">
+                          {t('credentials_field_site_config_placeholder')}
+                        </option>
+                        {siteConfigOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {`${option.label} • ${option.scopeLabel}`}
+                          </option>
+                        ))}
+                      </select>
+                      {siteConfigOptions.length === 0 && (
+                        <div className="text-sm text-gray-500">{t('credentials_site_config_empty')}</div>
+                      )}
+                      {editErrors.site_config_id && (
+                        <div id="edit-credential-site-config-error" className="text-sm text-red-600">
+                          {editErrors.site_config_id}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <input
-                        id="edit-credential-password"
-                        className="input"
-                        placeholder={(editingObj?.password && editingObj.password.includes('*')) ? '••••' : t('credentials_field_password_keep_placeholder')}
-                        type="password"
-                        aria-label={t('credentials_field_password_keep_placeholder')}
-                        value={(editingObj?.password && editingObj.password.includes('*')) ? '' : (editingObj?.password || '')}
-                        onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), password: v }) }) }}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <input
+                          id="edit-credential-username"
+                          className="input"
+                          placeholder={editingObj?.username || t('credentials_field_username_placeholder')}
+                          aria-label={t('credentials_field_username_placeholder')}
+                          aria-invalid={Boolean(editErrors.username)}
+                          aria-describedby={editErrors.username ? 'edit-credential-username-error' : undefined}
+                          value={editingObj?.username ? (editingObj.username.includes('*') ? '' : editingObj.username) : ''}
+                          onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), username: v }) }); setEditErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
+                        />
+                        {editErrors.username && <div id="edit-credential-username-error" className="text-sm text-red-600">{editErrors.username}</div>}
+                      </div>
+                      <div>
+                        <input
+                          id="edit-credential-password"
+                          className="input"
+                          placeholder={(editingObj?.password && editingObj.password.includes('*')) ? '••••' : t('credentials_field_password_keep_placeholder')}
+                          type="password"
+                          aria-label={t('credentials_field_password_keep_placeholder')}
+                          value={(editingObj?.password && editingObj.password.includes('*')) ? '' : (editingObj?.password || '')}
+                          onChange={e => { const v=e.target.value; setEditing({ ...editing, json: JSON.stringify({ ...(editingObj||{}), password: v }) }) }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -709,7 +901,7 @@ export default function Credentials() {
                       !(
                         hasEditDescription &&
                         (
-                          (editing.kind === 'site_login' && !!(editingObj?.username?.trim())) ||
+                          (editing.kind === 'site_login' && !!(editSiteConfigId.trim() && editingObj?.username?.trim())) ||
                           (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
                           (editing.kind === 'instapaper') ||
                           (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
@@ -727,6 +919,7 @@ export default function Credentials() {
                       setEditing(null)
                       setEditDescription('')
                       setEditErrors({})
+                      setEditSiteConfigId('')
                     }}
                   >
                     {t('btn_cancel')}

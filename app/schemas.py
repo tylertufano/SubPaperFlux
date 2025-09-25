@@ -71,6 +71,15 @@ class Credential(BaseModel):
     owner_user_id: Optional[str] = None
     site_config_id: Optional[str] = None
 
+    @model_validator(mode="after")
+    def _validate_site_config(cls, values: "Credential") -> "Credential":  # type: ignore[override]
+        if values.kind == "site_login" and not values.site_config_id:
+            raise PydanticCustomError(
+                "site_login_site_config_required",
+                "site_login credentials require a site_config_id",
+            )
+        return values
+
 
 class JobRequest(BaseModel):
     type: str  # login|miniflux_refresh|rss_poll|publish|retention

@@ -7,6 +7,7 @@ import Credentials from '../pages/credentials'
 
 const openApiSpies = vi.hoisted(() => ({
   listCredentials: vi.fn(),
+  listSiteConfigs: vi.fn(),
   createCredential: vi.fn(),
   createInstapaperFromLogin: vi.fn(),
   deleteCredential: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('../lib/openapi', () => ({
   __esModule: true,
   v1: {
     listCredentialsV1V1CredentialsGet: openApiSpies.listCredentials,
+    listSiteConfigsV1V1SiteConfigsGet: openApiSpies.listSiteConfigs,
     testInstapaperV1IntegrationsInstapaperTestPost: openApiSpies.testInstapaper,
     testMinifluxV1IntegrationsMinifluxTestPost: openApiSpies.testMiniflux,
   },
@@ -53,6 +55,7 @@ vi.mock('../lib/openapi', () => ({
 }))
 
 export const listCredentialsMock = openApiSpies.listCredentials
+export const listSiteConfigsMock = openApiSpies.listSiteConfigs
 export const createCredentialMock = openApiSpies.createCredential
 export const createInstapaperFromLoginMock = openApiSpies.createInstapaperFromLogin
 export const deleteCredentialMock = openApiSpies.deleteCredential
@@ -63,17 +66,20 @@ export const testMinifluxMock = openApiSpies.testMiniflux
 export const copyCredentialToUserMock = openApiSpies.copyCredentialToUser
 
 export const defaultCredentialsResponse = { items: [] as any[] }
+export const defaultSiteConfigsResponse = { items: [{ id: 'sc-1', name: 'Example Site', owner_user_id: 'user-123' }] }
 
 export type CredentialsSetupOptions = {
   data?: any
   locale?: string
   swr?: RenderWithSWROptions['swr']
+  siteConfigs?: any
 }
 
 export type CredentialFormControls = {
   kind: HTMLSelectElement
   scopeGlobal: HTMLInputElement
   description: HTMLInputElement | null
+  siteConfig: HTMLSelectElement | null
   username: HTMLInputElement | null
   password: HTMLInputElement | null
   instapaperUsername: HTMLInputElement | null
@@ -96,7 +102,7 @@ export type CredentialsSetupResult = RenderResult & {
 }
 
 export async function setup(options: CredentialsSetupOptions = {}): Promise<CredentialsSetupResult> {
-  const { data = defaultCredentialsResponse, locale = 'en', swr } = options
+  const { data = defaultCredentialsResponse, locale = 'en', swr, siteConfigs = defaultSiteConfigsResponse } = options
 
   Object.values(openApiSpies).forEach((spy) => spy.mockReset())
   const cloneValue = (value: any): any => {
@@ -109,9 +115,12 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
     return value
   }
   const initialData = cloneValue(data)
+  const initialSiteConfigs = cloneValue(siteConfigs)
   openApiSpies.listCredentials.mockResolvedValue(initialData)
+  openApiSpies.listSiteConfigs.mockResolvedValue(initialSiteConfigs)
 
   let currentData = initialData
+  let currentSiteConfigs = initialSiteConfigs
 
   const mutate = vi.fn(async (updater?: any) => {
     let resolved = currentData
@@ -135,7 +144,11 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
     matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/credentials',
     value: () => makeSWRSuccess(currentData, { mutate }),
   }
-  const handlers = [baseHandler, ...(swr?.handlers ?? [])]
+  const siteConfigsHandler = {
+    matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/site-configs',
+    value: () => makeSWRSuccess(currentSiteConfigs),
+  }
+  const handlers = [baseHandler, siteConfigsHandler, ...(swr?.handlers ?? [])]
   const swrConfig: RenderWithSWROptions['swr'] = {
     ...swr,
     handlers,
@@ -158,11 +171,13 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
   const form = kindSelect.closest('form') as HTMLElement
   const withinForm = within(form)
   const findInput = (label: string | RegExp) => withinForm.queryByLabelText(label) as HTMLInputElement | null
+  const findSelect = (label: string | RegExp) => withinForm.queryByLabelText(label) as HTMLSelectElement | null
 
   const inputs: CredentialFormControls = {
     kind: kindSelect,
     scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/ }) as HTMLInputElement,
     description: findInput('Description'),
+    siteConfig: findSelect('Site Config'),
     username: findInput('Username'),
     password: findInput('Password'),
     instapaperUsername: findInput(/Instapaper username/i),
@@ -197,6 +212,7 @@ describe('credentials form setup helper', () => {
     expect(form).toBeInTheDocument()
     expect(inputs.kind).toBeInstanceOf(HTMLSelectElement)
     expect(inputs.description).toBeInstanceOf(HTMLInputElement)
+    expect(inputs.siteConfig).toBeInstanceOf(HTMLSelectElement)
     expect(inputs.username).toBeInstanceOf(HTMLInputElement)
     expect(inputs.password).toBeInstanceOf(HTMLInputElement)
     expect(queryBanner()).toBeNull()
@@ -209,10 +225,12 @@ describe('credential editing', () => {
     kind: 'site_login',
     ownerUserId: null,
     description: 'Existing credential',
+    site_config_id: 'sc-1',
   }
   const maskedCredentialResponse = {
     description: 'Existing credential',
     data: { username: 'alice', password: '********' },
+    site_config_id: 'sc-1',
   }
 
   async function openEditForm() {
@@ -238,6 +256,8 @@ describe('credential editing', () => {
       const editDialog = await openEditForm()
       const usernameInput = within(editDialog).getByLabelText('Username') as HTMLInputElement
       expect(usernameInput).toHaveValue('alice')
+      const siteConfigSelect = within(editDialog).getByLabelText('Site Config') as HTMLSelectElement
+      expect(siteConfigSelect).toHaveValue('sc-1')
 
       const descriptionInput = within(editDialog).getByLabelText('Description') as HTMLInputElement
       expect(descriptionInput).toHaveValue('Existing credential')
@@ -258,6 +278,7 @@ describe('credential editing', () => {
           kind: existingCredential.kind,
           description: 'Updated credential',
           data: { username: 'bob' },
+          site_config_id: 'sc-1',
         },
       })
 
@@ -306,12 +327,16 @@ describe('credential creation form', () => {
     const { form, withinForm, inputs, mutate } = await setup()
 
     const descriptionInput = inputs.description
+    const siteConfigSelect = inputs.siteConfig
     const usernameInput = inputs.username
     const passwordInput = inputs.password
     expect(descriptionInput).toBeTruthy()
+    expect(siteConfigSelect).toBeTruthy()
     expect(usernameInput).toBeTruthy()
     expect(passwordInput).toBeTruthy()
-    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !siteConfigSelect || !usernameInput || !passwordInput) {
+      throw new Error('site_login inputs not rendered')
+    }
 
     fireEvent.change(usernameInput, { target: { value: 'alice' } })
     fireEvent.change(usernameInput, { target: { value: '' } })
@@ -324,6 +349,11 @@ describe('credential creation form', () => {
     expect(await withinForm.findByText('Description is required')).toBeInTheDocument()
     expect(await withinForm.findByText('Username is required')).toBeInTheDocument()
     expect(await withinForm.findByText('Password is required')).toBeInTheDocument()
+    fireEvent.change(descriptionInput, { target: { value: 'Filled description' } })
+    fireEvent.change(usernameInput, { target: { value: 'alice' } })
+    fireEvent.change(passwordInput, { target: { value: 'secret' } })
+    fireEvent.submit(form)
+    await waitFor(() => expect(siteConfigSelect).toHaveAttribute('aria-invalid', 'true'))
     expect(createCredentialMock).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
   })
@@ -333,15 +363,14 @@ describe('credential creation form', () => {
 
     createCredentialMock.mockResolvedValueOnce({})
 
-    const swrState = useSWRMock.mock.results.at(-1)?.value as { mutate?: ReturnType<typeof vi.fn> }
-    expect(swrState?.mutate).toBe(mutate)
-
     const descriptionInput = inputs.description
+    const siteConfigSelect = inputs.siteConfig
     const usernameInput = inputs.username
     const passwordInput = inputs.password
-    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !siteConfigSelect || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
 
     fireEvent.change(descriptionInput, { target: { value: 'Site login credential' } })
+    fireEvent.change(siteConfigSelect, { target: { value: 'sc-1' } })
     fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
     fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
 
@@ -350,7 +379,7 @@ describe('credential creation form', () => {
 
     await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
     expect(createCredentialMock).toHaveBeenCalledWith(expect.objectContaining({
-      credential: expect.objectContaining({ description: 'Site login credential' }),
+      credential: expect.objectContaining({ description: 'Site login credential', site_config_id: 'sc-1' }),
     }))
 
     const bannerMessage = await screen.findByText('Credential created')
@@ -365,11 +394,13 @@ describe('credential creation form', () => {
     createCredentialMock.mockRejectedValueOnce(error)
 
     const descriptionInput = inputs.description
+    const siteConfigSelect = inputs.siteConfig
     const usernameInput = inputs.username
     const passwordInput = inputs.password
-    if (!descriptionInput || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
+    if (!descriptionInput || !siteConfigSelect || !usernameInput || !passwordInput) throw new Error('site_login inputs not rendered')
 
     fireEvent.change(descriptionInput, { target: { value: 'Site login credential' } })
+    fireEvent.change(siteConfigSelect, { target: { value: 'sc-1' } })
     fireEvent.change(usernameInput, { target: { value: 'valid-user' } })
     fireEvent.change(passwordInput, { target: { value: 'correct horse battery staple' } })
 
@@ -426,6 +457,7 @@ describe('credential copy to user scope', () => {
       description: 'Global credential',
       kind: 'site_login',
       ownerUserId: null,
+      site_config_id: 'sc-1',
       ...overrides,
     }
   }

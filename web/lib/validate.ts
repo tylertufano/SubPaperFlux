@@ -6,11 +6,18 @@ export function parseJsonSafe<T = any>(value: string): { ok: true; data: T } | {
   try { return { ok: true, data: JSON.parse(value) } } catch (e: any) { return { ok: false, error: e?.message || 'Invalid JSON' } }
 }
 
-export function validateCredential(kind: string, data: any, description?: string): string | null {
+export function validateCredential(
+  kind: string,
+  data: any,
+  description?: string,
+  siteConfigId?: string | null,
+): string | null {
   const trimmedDescription = typeof description === 'string' ? description.trim() : ''
   if (!trimmedDescription) return 'description is required'
   if (!data || typeof data !== 'object') return 'Data must be a JSON object'
   if (kind === 'site_login') {
+    const resolvedSiteConfigId = typeof siteConfigId === 'string' ? siteConfigId.trim() : ''
+    if (!resolvedSiteConfigId) return 'site_config_id is required'
     const username = typeof data.username === 'string' ? data.username.trim() : ''
     const password = typeof data.password === 'string' ? data.password.trim() : ''
     if (!username) return 'username is required'
