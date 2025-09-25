@@ -599,7 +599,13 @@ def test_jobs_validation(client):
     assert r.status_code == 200
     assert r.json()["ok"] is False
     # Provide required
-    r2 = client.post("/v1/jobs/validate", json={"type": "login", "payload": {"config_dir": ".", "site_config_id": "a", "credential_id": "b"}})
+    r2 = client.post(
+        "/v1/jobs/validate",
+        json={
+            "type": "login",
+            "payload": {"config_dir": ".", "site_login_credential_id": "cred-1"},
+        },
+    )
     assert r2.status_code == 200
     assert r2.json()["ok"] is True
 
