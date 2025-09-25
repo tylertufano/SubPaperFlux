@@ -71,7 +71,6 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
 
     pair_id = format_site_login_pair_id("cred_test", "sc_test")
     result = perform_login_and_save_cookies(
-        config_dir=str(tmp_path),
         site_login_pair_id=pair_id,
         owner_user_id="user-1",
     )
@@ -101,7 +100,6 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
         {"name": "session", "value": "xyz", "expiry": 456.0},
     ]
     perform_login_and_save_cookies(
-        config_dir=str(tmp_path),
         site_login_pair_id=pair_id,
         owner_user_id="user-1",
     )

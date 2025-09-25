@@ -132,7 +132,7 @@ def _resolve_site_login_context(
     site_login_pair_id: Optional[str] = None,
     site_login_credential_id: Optional[str] = None,
     owner_user_id: Optional[str],
-    config_dir: str,
+    config_dir: Optional[str] = None,
 ) -> Tuple[str, str, Dict[str, Any], Dict[str, Any]]:
     expected_site_config_id: Optional[str] = None
     if site_login_pair_id:
@@ -193,7 +193,6 @@ def _resolve_site_login_context(
 
 def perform_login_and_save_cookies(
     *,
-    config_dir: str,
     site_login_pair_id: str,
     owner_user_id: Optional[str],
 ) -> Dict[str, Any]:
@@ -202,7 +201,6 @@ def perform_login_and_save_cookies(
     credential_id, site_config_id, login_credentials, site_config = _resolve_site_login_context(
         site_login_pair_id=site_login_pair_id,
         owner_user_id=owner_user_id,
-        config_dir=config_dir,
     )
 
     cookies = spf.login_and_update(site_config_id, site_config, login_credentials)
@@ -299,7 +297,6 @@ def parse_lookback_to_seconds(s: str) -> int:
 
 def poll_rss_and_publish(
     *,
-    config_dir: str,
     instapaper_id: str,
     feed_id: str,
     lookback: Optional[str] = None,
@@ -311,8 +308,9 @@ def poll_rss_and_publish(
     spf = _import_spf()
     from datetime import datetime, timezone, timedelta
 
-    app_creds_file = _load_json(os.path.join(config_dir, "instapaper_app_creds.json"))
-    instapaper_cfg_file = _load_json(os.path.join(config_dir, "credentials.json")).get(instapaper_id) or {}
+    resolved_dir = resolve_config_dir()
+    app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json"))
+    instapaper_cfg_file = _load_json(os.path.join(resolved_dir, "credentials.json")).get(instapaper_id) or {}
     instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or instapaper_cfg_file
     app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
 
@@ -375,7 +373,7 @@ def poll_rss_and_publish(
         _, resolved_site_config_id, _, resolved_site_config = _resolve_site_login_context(
             site_login_pair_id=site_login_pair_id,
             owner_user_id=owner_user_id,
-            config_dir=config_dir,
+            config_dir=resolved_dir,
         )
         site_cfg = {
             "sanitizing_criteria": resolved_site_config.get("cookies_to_store") or [],
@@ -386,7 +384,7 @@ def poll_rss_and_publish(
         cookies = []
 
     new_entries = spf.get_new_rss_entries(
-        config_file=os.path.join(config_dir, "adhoc.ini"),
+        config_file=os.path.join(resolved_dir, "adhoc.ini"),
         feed_url=feed_url,
         instapaper_config=instapaper_cfg,
         app_creds=app_creds,
@@ -599,20 +597,20 @@ def get_miniflux_config(miniflux_cred_id: str, owner_user_id: Optional[str]) -> 
 
 def push_miniflux_cookies(
     *,
-    config_dir: str,
     miniflux_id: str,
     feed_ids: List[int],
     site_login_pair_id: str,
     owner_user_id: Optional[str],
 ) -> Dict[str, Any]:
     spf = _import_spf()
-    creds = _load_json(os.path.join(config_dir, "credentials.json"))
+    resolved_dir = resolve_config_dir()
+    creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
     miniflux_cfg = _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
 
     credential_id, site_config_id, _, _ = _resolve_site_login_context(
         site_login_pair_id=site_login_pair_id,
         owner_user_id=owner_user_id,
-        config_dir=config_dir,
+        config_dir=resolved_dir,
     )
     cookies = get_cookies_for_site_login_pair(site_login_pair_id, owner_user_id)
     if not cookies:
@@ -630,10 +628,19 @@ def push_miniflux_cookies(
     }
 
 
-def publish_url(config_dir: str, instapaper_id: str, url: str, title: Optional[str] = None, folder: Optional[str] = None, tags: Optional[List[str]] = None, owner_user_id: Optional[str] = None) -> Dict[str, Any]:
+def publish_url(
+    instapaper_id: str,
+    url: str,
+    title: Optional[str] = None,
+    folder: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    owner_user_id: Optional[str] = None,
+    config_dir: Optional[str] = None,
+) -> Dict[str, Any]:
     spf = _import_spf()
-    creds = _load_json(os.path.join(config_dir, "credentials.json"))
-    app_creds_file = _load_json(os.path.join(config_dir, "instapaper_app_creds.json"))
+    resolved_dir = resolve_config_dir(config_dir)
+    creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
+    app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json"))
     # Fetch user-scoped Instapaper tokens and (optionally) app creds from DB
     instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or creds.get(instapaper_id) or {}
     app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file

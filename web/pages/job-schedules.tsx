@@ -158,7 +158,6 @@ function initPayloadState(
       return {
         instapaper_id: payload?.instapaper_id ?? "",
         feed_id: payload?.feed_id ?? "",
-        feed_url: payload?.feed_url ?? "",
         lookback: payload?.lookback ?? "",
         is_paywalled: Boolean(payload?.is_paywalled ?? false),
         rss_requires_auth: Boolean(payload?.rss_requires_auth ?? false),
@@ -336,8 +335,7 @@ function ScheduleForm({
           "job_schedules_error_site_login_pair",
         );
       } else {
-        payload.site_config_id = siteLogin.siteConfigId;
-        payload.credential_id = siteLogin.credentialId;
+        payload.site_login_pair = siteLoginValue;
       }
     } else if (jobType === "miniflux_refresh") {
       const minifluxId = (payloadState.miniflux_id || "").toString().trim();
@@ -366,17 +364,11 @@ function ScheduleForm({
         });
       }
       if (siteLogin) {
-        payload.site_config_id = siteLogin.siteConfigId;
-        payload.credential_id = siteLogin.credentialId;
+        payload.site_login_pair = siteLoginValue;
       }
     } else if (jobType === "rss_poll") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedId = (payloadState.feed_id || "").toString().trim();
-      const selectedFeed = feeds.find((feed) => {
-        const candidateId = feed.id ? String(feed.id) : null;
-        if (candidateId && candidateId === feedId) return true;
-        return false;
-      });
       const lookback = (payloadState.lookback || "").toString().trim();
       const isPaywalled = Boolean(payloadState.is_paywalled);
       const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
@@ -396,10 +388,7 @@ function ScheduleForm({
       payload.is_paywalled = isPaywalled;
       payload.rss_requires_auth = rssRequiresAuth;
       if (siteLogin) {
-        payload.site_config_id = siteLogin.siteConfigId;
-        payload.credential_id = siteLogin.credentialId;
-      } else if (selectedFeed?.siteConfigId) {
-        payload.site_config_id = selectedFeed.siteConfigId;
+        payload.site_login_pair = siteLoginValue;
       }
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
@@ -731,23 +720,14 @@ function ScheduleForm({
               <select
                 id="schedule-rss-feed-select"
                 className="input"
-                value={(() => {
-                  if (payloadState.feed_id) return payloadState.feed_id;
-                  if (!payloadState.feed_url) return "";
-                  const match = feeds.find((feed) => feed.url === payloadState.feed_url);
-                  if (!match) return "";
-                  return match.id ? String(match.id) : match.url;
-                })()}
+                value={payloadState.feed_id || ""}
                 onChange={(e) => {
                   const value = e.target.value;
                   updatePayload("feed_id", value);
                   const selected = feeds.find((feed) => {
                     const candidateId = feed.id ? String(feed.id) : null;
-                    if (candidateId && candidateId === value) return true;
-                    if (!candidateId && feed.url === value) return true;
-                    return false;
+                    return Boolean(candidateId && candidateId === value);
                   });
-                  updatePayload("feed_url", selected?.url ?? "");
                   if (selected?.siteConfigId) {
                     const autoPair = siteLoginOptions.find(
                       (option) => option.siteConfigId === String(selected.siteConfigId),
@@ -768,14 +748,16 @@ function ScheduleForm({
                 }
               >
                 <option value="">{t("job_schedules_option_select_feed")}</option>
-                {feeds.map((feed) => {
-                  const optionValue = feed.id ? String(feed.id) : feed.url;
-                  return (
-                    <option key={feed.id ?? feed.url} value={optionValue}>
-                      {feed.url}
-                    </option>
-                  );
-                })}
+                {feeds
+                  .filter((feed) => feed.id)
+                  .map((feed) => {
+                    const optionValue = feed.id ? String(feed.id) : "";
+                    return (
+                      <option key={feed.id ?? feed.url} value={optionValue}>
+                        {feed.url}
+                      </option>
+                    );
+                  })}
               </select>
               <p className="text-sm text-gray-600 mt-1">
                 {t("job_schedules_field_saved_feed_help")}

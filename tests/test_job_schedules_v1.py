@@ -65,7 +65,6 @@ def client() -> TestClient:
 
 def _sample_payload() -> Dict[str, str]:
     return {
-        "config_dir": "/tmp/workspace",
         "site_login_pair": "cred-1::site-1",
     }
 
@@ -126,7 +125,6 @@ def test_update_schedule_fields(client: TestClient):
         json={
             "job_type": "publish",
             "payload": {
-                "config_dir": "/tmp/workspace",
                 "instapaper_id": "insta-1",
                 "url": "https://example.com/article",
             },
@@ -147,7 +145,7 @@ def test_validation_errors(client: TestClient):
         "/v1/job-schedules",
         json={
             "job_type": "login",
-            "payload": {"config_dir": "/tmp/workspace"},
+            "payload": {"site_login_pair": ""},
             "frequency": "1h",
         },
     )
