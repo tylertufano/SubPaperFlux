@@ -40,6 +40,11 @@ type ScheduleFormResult = {
 
 type ScheduleFormMode = "create" | "edit";
 
+type SiteLoginSelection = {
+  credentialId: string;
+  siteConfigId: string;
+};
+
 type ExtendedJobSchedule = JobScheduleOut & {
   lastError?: string | null;
   lastErrorAt?: Date | null;
@@ -66,6 +71,39 @@ const JOB_TYPES: JobType[] = [
   "publish",
   "retention",
 ];
+
+function toSiteLoginKey({
+  credentialId,
+  siteConfigId,
+}: SiteLoginSelection): string {
+  return `${credentialId}::${siteConfigId}`;
+}
+
+function parseSiteLoginKey(
+  value: string | null | undefined,
+): SiteLoginSelection | null {
+  if (!value) return null;
+  const [credentialId, siteConfigId] = value.split("::");
+  if (!credentialId || !siteConfigId) return null;
+  return { credentialId, siteConfigId };
+}
+
+function resolveCredentialSiteConfigId(credential: Credential): string | null {
+  const direct =
+    (credential as Credential & { siteConfigId?: string | null }).siteConfigId ??
+    (credential as Credential & { site_config_id?: string | null })
+      .site_config_id;
+  if (typeof direct === "string" && direct.trim().length > 0) {
+    return direct;
+  }
+  const data = credential.data ?? {};
+  const fromData =
+    data.site_config_id ?? data.siteConfigId ?? data.site_config ?? null;
+  if (typeof fromData === "string" && fromData.trim().length > 0) {
+    return fromData;
+  }
+  return null;
+}
 
 function toDateTimeLocalValue(value?: Date | null): string {
   if (!value) return "";
@@ -94,28 +132,43 @@ function initPayloadState(
   switch (jobType) {
     case "login":
       return {
-        site_config_id: payload?.site_config_id ?? "",
-        credential_id: payload?.credential_id ?? "",
+        site_login_pair:
+          payload?.credential_id && payload?.site_config_id
+            ? toSiteLoginKey({
+                credentialId: String(payload.credential_id),
+                siteConfigId: String(payload.site_config_id),
+              })
+            : payload?.site_login_pair ?? "",
       };
     case "miniflux_refresh":
       return {
         miniflux_id: payload?.miniflux_id ?? "",
-        feed_ids_text: Array.isArray(payload?.feed_ids)
-          ? payload.feed_ids.join(",")
-          : "",
-        cookie_key: payload?.cookie_key ?? "",
-        site_config_id: payload?.site_config_id ?? "",
-        credential_id: payload?.credential_id ?? "",
+        feed_ids: Array.isArray(payload?.feed_ids)
+          ? payload.feed_ids.map((value: any) => String(value))
+          : [],
+        site_login_pair:
+          payload?.credential_id && payload?.site_config_id
+            ? toSiteLoginKey({
+                credentialId: String(payload.credential_id),
+                siteConfigId: String(payload.site_config_id),
+              })
+            : payload?.site_login_pair ?? "",
       };
     case "rss_poll":
       return {
         instapaper_id: payload?.instapaper_id ?? "",
+        feed_id: payload?.feed_id ?? "",
         feed_url: payload?.feed_url ?? "",
         lookback: payload?.lookback ?? "",
         is_paywalled: Boolean(payload?.is_paywalled ?? false),
         rss_requires_auth: Boolean(payload?.rss_requires_auth ?? false),
-        cookie_key: payload?.cookie_key ?? "",
-        site_config_id: payload?.site_config_id ?? "",
+        site_login_pair:
+          payload?.credential_id && payload?.site_config_id
+            ? toSiteLoginKey({
+                credentialId: String(payload.credential_id),
+                siteConfigId: String(payload.site_config_id),
+              })
+            : payload?.site_login_pair ?? "",
       };
     case "publish":
       return {
@@ -271,81 +324,100 @@ function ScheduleForm({
     const payload: Record<string, any> = {};
 
     if (jobType === "login") {
-      const siteConfigId = (payloadState.site_config_id || "")
+      const siteLoginValue = (payloadState.site_login_pair || "")
         .toString()
         .trim();
-      const credentialId = (payloadState.credential_id || "").toString().trim();
-      if (!siteConfigId)
-        nextErrors["payload.site_config_id"] = t(
-          "job_schedules_error_site_config",
+      const siteLogin = parseSiteLoginKey(siteLoginValue);
+      if (!siteLogin) {
+        nextErrors["payload.site_login_pair"] = t(
+          "job_schedules_error_site_login_pair",
         );
-      if (!credentialId)
-        nextErrors["payload.credential_id"] = t(
-          "job_schedules_error_credential",
-        );
-      payload.site_config_id = siteConfigId;
-      payload.credential_id = credentialId;
+      } else {
+        payload.site_config_id = siteLogin.siteConfigId;
+        payload.credential_id = siteLogin.credentialId;
+      }
     } else if (jobType === "miniflux_refresh") {
       const minifluxId = (payloadState.miniflux_id || "").toString().trim();
-      const feedIdsText = (payloadState.feed_ids_text || "").toString().trim();
-      const cookieKey = (payloadState.cookie_key || "").toString().trim();
-      const siteConfigId = (payloadState.site_config_id || "")
+      const feedIds: Array<string> = Array.isArray(payloadState.feed_ids)
+        ? payloadState.feed_ids
+            .map((value: any) => String(value).trim())
+            .filter(Boolean)
+        : [];
+      const siteLoginValue = (payloadState.site_login_pair || "")
         .toString()
         .trim();
-      const credentialId = (payloadState.credential_id || "").toString().trim();
+      const siteLogin = parseSiteLoginKey(siteLoginValue);
       if (!minifluxId)
         nextErrors["payload.miniflux_id"] = t("job_schedules_error_miniflux");
-      if (!feedIdsText)
+      if (feedIds.length === 0)
         nextErrors["payload.feed_ids"] = t("job_schedules_error_feed_ids");
-      const feedIds: number[] = [];
-      if (feedIdsText) {
-        for (const part of feedIdsText
-          .split(",")
-          .map((entry: string) => entry.trim())
-          .filter(Boolean)) {
-          const parsed = Number(part);
-          if (!Number.isFinite(parsed)) {
-            nextErrors["payload.feed_ids"] = t("job_schedules_error_feed_ids");
-            break;
-          }
-          feedIds.push(parsed);
-        }
-      }
-      if (!cookieKey && !(siteConfigId && credentialId)) {
-        nextErrors["payload.cookie_key"] = t(
-          "job_schedules_error_miniflux_cookie",
+      if (!siteLogin)
+        nextErrors["payload.site_login_pair"] = t(
+          "job_schedules_error_site_login_pair",
         );
-      }
       payload.miniflux_id = minifluxId;
       if (feedIds.length > 0) {
-        payload.feed_ids = feedIds;
+        payload.feed_ids = feedIds.map((value) => {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : value;
+        });
       }
-      if (cookieKey) payload.cookie_key = cookieKey;
-      if (siteConfigId) payload.site_config_id = siteConfigId;
-      if (credentialId) payload.credential_id = credentialId;
+      if (siteLogin) {
+        payload.site_config_id = siteLogin.siteConfigId;
+        payload.credential_id = siteLogin.credentialId;
+      }
     } else if (jobType === "rss_poll") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
-      const feedUrl = (payloadState.feed_url || "").toString().trim();
+      const feedId = (payloadState.feed_id || "").toString().trim();
+      let feedUrl = (payloadState.feed_url || "").toString().trim();
+      let selectedFeed: FeedOut | undefined;
+      if (!feedId && feedUrl) {
+        selectedFeed = feeds.find((feed) => feed.url === feedUrl);
+      } else if (feedId) {
+        selectedFeed = feeds.find((feed) => {
+          const candidateId = feed.id ? String(feed.id) : null;
+          if (candidateId && candidateId === feedId) return true;
+          if (!candidateId && feed.url === feedId) return true;
+          return false;
+        });
+      }
+      let effectiveFeedId = feedId;
+      if (!effectiveFeedId && selectedFeed) {
+        effectiveFeedId = selectedFeed.id
+          ? String(selectedFeed.id)
+          : selectedFeed.url;
+      }
+      if (selectedFeed && (!feedUrl || selectedFeed.url === feedUrl)) {
+        feedUrl = selectedFeed.url;
+      }
       const lookback = (payloadState.lookback || "").toString().trim();
-      const cookieKey = (payloadState.cookie_key || "").toString().trim();
-      const siteConfigId = (payloadState.site_config_id || "")
-        .toString()
-        .trim();
       const isPaywalled = Boolean(payloadState.is_paywalled);
       const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
-      if (!feedUrl || !isValidUrl(feedUrl))
+      if (!effectiveFeedId)
+        nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
+      if (feedUrl && !isValidUrl(feedUrl)) {
         nextErrors["payload.feed_url"] = t("job_schedules_error_feed_url");
+      }
+      const siteLoginValue = (payloadState.site_login_pair || "")
+        .toString()
+        .trim();
+      const siteLogin = parseSiteLoginKey(siteLoginValue);
       payload.instapaper_id = instapaperId;
-      payload.feed_url = feedUrl;
+      if (effectiveFeedId) payload.feed_id = effectiveFeedId;
+      if (feedUrl) payload.feed_url = feedUrl;
       if (lookback) payload.lookback = lookback;
       payload.is_paywalled = isPaywalled;
       payload.rss_requires_auth = rssRequiresAuth;
-      if (cookieKey) payload.cookie_key = cookieKey;
-      if (siteConfigId) payload.site_config_id = siteConfigId;
+      if (siteLogin) {
+        payload.site_config_id = siteLogin.siteConfigId;
+        payload.credential_id = siteLogin.credentialId;
+      } else if (selectedFeed?.siteConfigId) {
+        payload.site_config_id = selectedFeed.siteConfigId;
+      }
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const url = (payloadState.url || "").toString().trim();
@@ -407,83 +479,85 @@ function ScheduleForm({
     { value: "global", label: t("job_schedules_owner_global") },
   ];
 
+  const siteConfigMap = useMemo(() => {
+    const map = new Map<string, SiteConfigOut>();
+    for (const config of siteConfigs) {
+      if (config.id) {
+        map.set(String(config.id), config);
+      }
+    }
+    return map;
+  }, [siteConfigs]);
+
+  const siteLoginOptions = useMemo(
+    () =>
+      loginCredentials
+        .map((cred) => {
+          if (!cred.id) return null;
+          const siteConfigId = resolveCredentialSiteConfigId(cred);
+          if (!siteConfigId) return null;
+          const siteConfig = siteConfigMap.get(siteConfigId);
+          const labelParts = [cred.description];
+          if (siteConfig?.name) {
+            labelParts.push(siteConfig.name);
+          }
+          return {
+            id: toSiteLoginKey({
+              credentialId: String(cred.id),
+              siteConfigId,
+            }),
+            credentialId: String(cred.id),
+            siteConfigId,
+            label: labelParts.join(" • "),
+          };
+        })
+        .filter(Boolean) as Array<{
+        id: string;
+        credentialId: string;
+        siteConfigId: string;
+        label: string;
+      }>,
+    [loginCredentials, siteConfigMap],
+  );
+
   function renderJobSpecificFields() {
     switch (jobType) {
       case "login":
         return (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-login-site-config"
+          <div className="flex flex-col">
+            <label
+              className="text-sm font-medium text-gray-700"
+              htmlFor="schedule-login-site-login"
+            >
+              {t("job_schedules_field_site_login_pair")}
+            </label>
+            <select
+              id="schedule-login-site-login"
+              className="input"
+              value={payloadState.site_login_pair || ""}
+              onChange={(e) => updatePayload("site_login_pair", e.target.value)}
+              aria-invalid={Boolean(errors["payload.site_login_pair"])}
+              aria-describedby={
+                errors["payload.site_login_pair"]
+                  ? "schedule-login-site-login-error"
+                  : undefined
+              }
+            >
+              <option value="">{t("job_schedules_option_select_pair")}</option>
+              {siteLoginOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {errors["payload.site_login_pair"] && (
+              <p
+                id="schedule-login-site-login-error"
+                className="text-sm text-red-600 mt-1"
               >
-                {t("job_schedules_field_site_config")}
-              </label>
-              <select
-                id="schedule-login-site-config"
-                className="input"
-                value={payloadState.site_config_id || ""}
-                onChange={(e) =>
-                  updatePayload("site_config_id", e.target.value)
-                }
-                aria-invalid={Boolean(errors["payload.site_config_id"])}
-                aria-describedby={
-                  errors["payload.site_config_id"]
-                    ? "schedule-login-site-config-error"
-                    : undefined
-                }
-              >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {siteConfigs.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.name}
-                  </option>
-                ))}
-              </select>
-              {errors["payload.site_config_id"] && (
-                <p
-                  id="schedule-login-site-config-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.site_config_id"]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-login-credential"
-              >
-                {t("job_schedules_field_credential")}
-              </label>
-              <select
-                id="schedule-login-credential"
-                className="input"
-                value={payloadState.credential_id || ""}
-                onChange={(e) => updatePayload("credential_id", e.target.value)}
-                aria-invalid={Boolean(errors["payload.credential_id"])}
-                aria-describedby={
-                  errors["payload.credential_id"]
-                    ? "schedule-login-credential-error"
-                    : undefined
-                }
-              >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {loginCredentials.map((cred) => (
-                  <option key={cred.id} value={cred.id}>
-                    {cred.description}
-                  </option>
-                ))}
-              </select>
-              {errors["payload.credential_id"] && (
-                <p
-                  id="schedule-login-credential-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.credential_id"]}
-                </p>
-              )}
-            </div>
+                {errors["payload.site_login_pair"]}
+              </p>
+            )}
           </div>
         );
       case "miniflux_refresh":
@@ -527,28 +601,44 @@ function ScheduleForm({
             <div className="flex flex-col md:col-span-2">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-miniflux-feed-ids"
+                htmlFor="schedule-miniflux-feed-select"
               >
-                {t("job_schedules_field_feed_ids")}
+                {t("job_schedules_field_miniflux_feeds")}
               </label>
-              <textarea
-                id="schedule-miniflux-feed-ids"
-                className="input min-h-[3rem]"
-                value={payloadState.feed_ids_text || ""}
-                onChange={(e) => updatePayload("feed_ids_text", e.target.value)}
+              <select
+                id="schedule-miniflux-feed-select"
+                className="input h-40"
+                multiple
+                value={payloadState.feed_ids || []}
+                onChange={(e) =>
+                  updatePayload(
+                    "feed_ids",
+                    Array.from(e.target.selectedOptions, (option) => option.value),
+                  )
+                }
+                aria-label={t("job_schedules_field_miniflux_feeds")}
                 aria-invalid={Boolean(errors["payload.feed_ids"])}
                 aria-describedby={
                   errors["payload.feed_ids"]
-                    ? "schedule-miniflux-feed-ids-error"
+                    ? "schedule-miniflux-feed-select-error"
                     : undefined
                 }
-              />
+              >
+                {feeds.map((feed) => {
+                  const value = String(feed.id ?? feed.url);
+                  return (
+                    <option key={value} value={value}>
+                      {feed.url}
+                    </option>
+                  );
+                })}
+              </select>
               <p className="text-sm text-gray-600 mt-1">
-                {t("job_schedules_field_feed_ids_help")}
+                {t("job_schedules_field_miniflux_feeds_help")}
               </p>
               {errors["payload.feed_ids"] && (
                 <p
-                  id="schedule-miniflux-feed-ids-error"
+                  id="schedule-miniflux-feed-select-error"
                   className="text-sm text-red-600 mt-1"
                 >
                   {errors["payload.feed_ids"]}
@@ -558,77 +648,37 @@ function ScheduleForm({
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-miniflux-cookie-key"
+                htmlFor="schedule-miniflux-site-login"
               >
-                {t("job_schedules_field_cookie_key")}
+                {t("job_schedules_field_site_login_pair")}
               </label>
-              <input
-                id="schedule-miniflux-cookie-key"
+              <select
+                id="schedule-miniflux-site-login"
                 className="input"
-                value={payloadState.cookie_key || ""}
-                onChange={(e) => updatePayload("cookie_key", e.target.value)}
-                aria-invalid={Boolean(errors["payload.cookie_key"])}
+                value={payloadState.site_login_pair || ""}
+                onChange={(e) => updatePayload("site_login_pair", e.target.value)}
+                aria-invalid={Boolean(errors["payload.site_login_pair"])}
                 aria-describedby={
-                  errors["payload.cookie_key"]
-                    ? "schedule-miniflux-cookie-key-error"
+                  errors["payload.site_login_pair"]
+                    ? "schedule-miniflux-site-login-error"
                     : undefined
                 }
-              />
-              <p className="text-sm text-gray-600 mt-1">
-                {t("job_schedules_field_cookie_help")}
-              </p>
-              {errors["payload.cookie_key"] && (
+              >
+                <option value="">{t("job_schedules_option_select_pair")}</option>
+                {siteLoginOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors["payload.site_login_pair"] && (
                 <p
-                  id="schedule-miniflux-cookie-key-error"
+                  id="schedule-miniflux-site-login-error"
                   className="text-sm text-red-600 mt-1"
                 >
-                  {errors["payload.cookie_key"]}
+                  {errors["payload.site_login_pair"]}
                 </p>
               )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-miniflux-site-config"
-              >
-                {t("job_schedules_field_site_config_optional")}
-              </label>
-              <select
-                id="schedule-miniflux-site-config"
-                className="input"
-                value={payloadState.site_config_id || ""}
-                onChange={(e) =>
-                  updatePayload("site_config_id", e.target.value)
-                }
-              >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {siteConfigs.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-miniflux-login-cred"
-              >
-                {t("job_schedules_field_login_credential_optional")}
-              </label>
-              <select
-                id="schedule-miniflux-login-cred"
-                className="input"
-                value={payloadState.credential_id || ""}
-                onChange={(e) => updatePayload("credential_id", e.target.value)}
-              >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {loginCredentials.map((cred) => (
-                  <option key={cred.id} value={cred.id}>
-                    {cred.description}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         );
@@ -670,34 +720,61 @@ function ScheduleForm({
                 </p>
               )}
             </div>
-            <div className="flex flex-col md:col-span-2">
+            <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-feed-url"
+                htmlFor="schedule-rss-feed-select"
               >
-                {t("job_schedules_field_feed_url")}
+                {t("job_schedules_field_saved_feed")}
               </label>
-              <input
-                id="schedule-rss-feed-url"
+              <select
+                id="schedule-rss-feed-select"
                 className="input"
-                value={payloadState.feed_url || ""}
-                onChange={(e) => updatePayload("feed_url", e.target.value)}
-                aria-invalid={Boolean(errors["payload.feed_url"])}
+                value={(() => {
+                  if (payloadState.feed_id) return payloadState.feed_id;
+                  if (!payloadState.feed_url) return "";
+                  const match = feeds.find((feed) => feed.url === payloadState.feed_url);
+                  if (!match) return "";
+                  return match.id ? String(match.id) : match.url;
+                })()}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updatePayload("feed_id", value);
+                  const selected = feeds.find((feed) => {
+                    const candidateId = feed.id ? String(feed.id) : null;
+                    if (candidateId && candidateId === value) return true;
+                    if (!candidateId && feed.url === value) return true;
+                    return false;
+                  });
+                  updatePayload("feed_url", selected?.url ?? "");
+                }}
+                aria-label={t("job_schedules_field_saved_feed")}
+                aria-invalid={Boolean(errors["payload.feed_id"])}
                 aria-describedby={
-                  errors["payload.feed_url"]
-                    ? "schedule-rss-feed-url-error"
+                  errors["payload.feed_id"]
+                    ? "schedule-rss-feed-select-error"
                     : undefined
                 }
-              />
+              >
+                <option value="">{t("job_schedules_option_select_feed")}</option>
+                {feeds.map((feed) => {
+                  const optionValue = feed.id ? String(feed.id) : feed.url;
+                  return (
+                    <option key={feed.id ?? feed.url} value={optionValue}>
+                      {feed.url}
+                    </option>
+                  );
+                })}
+              </select>
               <p className="text-sm text-gray-600 mt-1">
-                {t("job_schedules_field_feed_url_help")}
+                {t("job_schedules_field_saved_feed_help")}
               </p>
-              {errors["payload.feed_url"] && (
+              {errors["payload.feed_id"] && (
                 <p
-                  id="schedule-rss-feed-url-error"
+                  id="schedule-rss-feed-select-error"
                   className="text-sm text-red-600 mt-1"
                 >
-                  {errors["payload.feed_url"]}
+                  {errors["payload.feed_id"]}
                 </p>
               )}
             </div>
@@ -720,9 +797,7 @@ function ScheduleForm({
                 id="schedule-rss-paywalled"
                 type="checkbox"
                 checked={Boolean(payloadState.is_paywalled)}
-                onChange={(e) =>
-                  updatePayload("is_paywalled", e.target.checked)
-                }
+                onChange={(e) => updatePayload("is_paywalled", e.target.checked)}
               />
               <span className="text-sm text-gray-700">
                 {t("job_schedules_field_is_paywalled")}
@@ -744,36 +819,20 @@ function ScheduleForm({
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-cookie-key"
+                htmlFor="schedule-rss-site-login"
               >
-                {t("job_schedules_field_cookie_key_optional")}
-              </label>
-              <input
-                id="schedule-rss-cookie-key"
-                className="input"
-                value={payloadState.cookie_key || ""}
-                onChange={(e) => updatePayload("cookie_key", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-site-config"
-              >
-                {t("job_schedules_field_site_config_optional")}
+                {t("job_schedules_field_site_login_optional")}
               </label>
               <select
-                id="schedule-rss-site-config"
+                id="schedule-rss-site-login"
                 className="input"
-                value={payloadState.site_config_id || ""}
-                onChange={(e) =>
-                  updatePayload("site_config_id", e.target.value)
-                }
+                value={payloadState.site_login_pair || ""}
+                onChange={(e) => updatePayload("site_login_pair", e.target.value)}
               >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {siteConfigs.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.name}
+                <option value="">{t("job_schedules_option_select_pair")}</option>
+                {siteLoginOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
                   </option>
                 ))}
               </select>
