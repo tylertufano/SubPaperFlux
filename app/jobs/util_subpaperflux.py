@@ -191,6 +191,38 @@ def _resolve_site_login_context(
     return site_login_credential_id, site_config_id, credential_data, site_config
 
 
+def _merge_publication_structures(
+    *,
+    existing_statuses: Optional[Dict[str, Any]],
+    existing_flags: Optional[Dict[str, Any]],
+    instapaper_id: str,
+    seen_at: str,
+    is_paywalled: bool,
+    raw_html_content: Optional[str],
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    statuses = dict(existing_statuses or {})
+    instapaper_status = dict(statuses.get("instapaper") or {})
+    instapaper_status.setdefault("status", "pending")
+    instapaper_status["updated_at"] = seen_at
+    statuses["instapaper"] = instapaper_status
+
+    flags = dict(existing_flags or {})
+    instapaper_flags = dict(flags.get("instapaper") or {})
+    instapaper_flags.setdefault("created_at", seen_at)
+    instapaper_flags.update(
+        {
+            "should_publish": True,
+            "credential_id": instapaper_id,
+            "is_paywalled": bool(is_paywalled),
+            "last_seen_at": seen_at,
+            "has_raw_html": bool(raw_html_content) or instapaper_flags.get("has_raw_html", False),
+        }
+    )
+    flags["instapaper"] = instapaper_flags
+
+    return statuses, flags
+
+
 def perform_login_and_save_cookies(
     *,
     site_login_pair_id: str,
@@ -442,39 +474,32 @@ def poll_rss_and_publish(
             if existing:
                 duplicates += 1
                 changed = False
+
                 merged_metadata = dict(existing.rss_entry or {})
                 merged_metadata.update(rss_entry_metadata)
                 if merged_metadata != existing.rss_entry:
                     existing.rss_entry = merged_metadata
                     changed = True
 
-                if raw_html_content and not existing.raw_html_content:
+                if raw_html_content and raw_html_content != (existing.raw_html_content or ""):
                     existing.raw_html_content = raw_html_content
                     changed = True
 
-                statuses = dict(existing.publication_statuses or {})
-                instapaper_status = dict(statuses.get("instapaper") or {})
-                instapaper_status.setdefault("status", "pending")
-                instapaper_status["updated_at"] = seen_at
-                statuses["instapaper"] = instapaper_status
-                if statuses != existing.publication_statuses:
-                    existing.publication_statuses = statuses
+                publication_statuses, publication_flags = _merge_publication_structures(
+                    existing_statuses=existing.publication_statuses,
+                    existing_flags=existing.publication_flags,
+                    instapaper_id=instapaper_id,
+                    seen_at=seen_at,
+                    is_paywalled=effective_is_paywalled,
+                    raw_html_content=raw_html_content,
+                )
+
+                if publication_statuses != existing.publication_statuses:
+                    existing.publication_statuses = publication_statuses
                     changed = True
 
-                flags = dict(existing.publication_flags or {})
-                instapaper_flags = dict(flags.get("instapaper") or {})
-                instapaper_flags.update(
-                    {
-                        "should_publish": True,
-                        "credential_id": instapaper_id,
-                        "is_paywalled": bool(effective_is_paywalled),
-                        "last_seen_at": seen_at,
-                        "has_raw_html": bool(raw_html_content) or instapaper_flags.get("has_raw_html", False),
-                    }
-                )
-                flags["instapaper"] = instapaper_flags
-                if flags != existing.publication_flags:
-                    existing.publication_flags = flags
+                if publication_flags != existing.publication_flags:
+                    existing.publication_flags = publication_flags
                     changed = True
 
                 if changed:
@@ -482,22 +507,14 @@ def poll_rss_and_publish(
                     session.commit()
                 continue
 
-            publication_statuses = {
-                "instapaper": {
-                    "status": "pending",
-                    "updated_at": seen_at,
-                }
-            }
-            publication_flags = {
-                "instapaper": {
-                    "should_publish": True,
-                    "credential_id": instapaper_id,
-                    "is_paywalled": bool(effective_is_paywalled),
-                    "created_at": seen_at,
-                    "last_seen_at": seen_at,
-                    "has_raw_html": bool(raw_html_content),
-                }
-            }
+            publication_statuses, publication_flags = _merge_publication_structures(
+                existing_statuses=None,
+                existing_flags=None,
+                instapaper_id=instapaper_id,
+                seen_at=seen_at,
+                is_paywalled=effective_is_paywalled,
+                raw_html_content=raw_html_content,
+            )
 
             bm = BookmarkModel(
                 owner_user_id=owner_user_id,
