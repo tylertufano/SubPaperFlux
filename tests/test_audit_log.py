@@ -66,11 +66,30 @@ def fetch_audit(client: TestClient, **params):
 
 
 def test_audit_log_tracks_credential_crud(admin_client: TestClient):
+    from app.db import get_session
+    from app.models import SiteConfig
+
+    with next(get_session()) as session:
+        site_config = SiteConfig(
+            name="Audit Site",
+            site_url="https://audit.example.com/login",
+            username_selector="#username",
+            password_selector="#password",
+            login_button_selector="#submit",
+            cookies_to_store=["session"],
+            owner_user_id="admin",
+        )
+        session.add(site_config)
+        session.commit()
+        session.refresh(site_config)
+        site_config_id = site_config.id
+
     create_payload = {
         "kind": "site_login",
         "description": "Initial credential",
         "data": {"username": "demo", "password": "secret"},
         "owner_user_id": "admin",
+        "site_config_id": site_config_id,
     }
     created = admin_client.post("/credentials", json=create_payload)
     assert created.status_code == 201
@@ -89,6 +108,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
         "description": "Refreshed credential",
         "data": {"username": "demo", "note": "refreshed"},
         "owner_user_id": "admin",
+        "site_config_id": site_config_id,
     }
     updated = admin_client.put(f"/credentials/{cred['id']}", json=update_payload)
     assert updated.status_code == 200

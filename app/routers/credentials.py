@@ -124,15 +124,16 @@ def list_credentials(current_user=Depends(get_current_user), session=Depends(get
         except Exception:
             # If decryption fails, return a placeholder
             data = {"error": "cannot decrypt"}
-        resp.append(
-            CredentialSchema(
-                id=rec.id,
-                kind=rec.kind,
-                description=rec.description,
-                data=_mask_credential(rec.kind, data),
-                owner_user_id=rec.owner_user_id,
+            resp.append(
+                CredentialSchema(
+                    id=rec.id,
+                    kind=rec.kind,
+                    description=rec.description,
+                    data=_mask_credential(rec.kind, data),
+                    owner_user_id=rec.owner_user_id,
+                    site_config_id=rec.site_config_id,
+                )
             )
-        )
     return resp
 
 
@@ -164,11 +165,18 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
                 CredentialModel.owner_user_id == owner
             ),
         )
+    site_config_id = body.site_config_id
+    if body.kind == "site_login" and not site_config_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="site_login credentials require a site_config_id",
+        )
     model = CredentialModel(
         kind=body.kind,
         description=description,
         data=data,
         owner_user_id=owner,
+        site_config_id=site_config_id,
     )
     session.add(model)
     record_audit_log(
@@ -194,6 +202,7 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         description=model.description,
         data=_mask_credential(model.kind, plain),
         owner_user_id=model.owner_user_id,
+        site_config_id=model.site_config_id,
     )
 
 
@@ -282,6 +291,7 @@ def create_instapaper_credential_from_login(
         description=model.description,
         data=_mask_credential(model.kind, plain),
         owner_user_id=model.owner_user_id,
+        site_config_id=model.site_config_id,
     )
 
 
@@ -353,6 +363,7 @@ def get_credential(cred_id: str, current_user=Depends(get_current_user), session
         description=model.description,
         data=_mask_credential(model.kind, plain),
         owner_user_id=model.owner_user_id,
+        site_config_id=model.site_config_id,
     )
 
 
@@ -385,6 +396,13 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
     incoming = body.data or {}
     previous_kind = model.kind
     previous_description = model.description
+    new_kind = body.kind or model.kind
+    new_site_config_id = body.site_config_id if body.site_config_id is not None else model.site_config_id
+    if new_kind == "site_login" and not new_site_config_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="site_login credentials require a site_config_id",
+        )
     if is_encrypted(incoming):
         enc = incoming
     else:
@@ -393,9 +411,10 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         for k, v in incoming.items():
             merged_plain[k] = v
         enc = encrypt_dict(merged_plain)
-    model.kind = body.kind or model.kind
+    model.kind = new_kind
     model.description = body.description.strip()
     model.data = enc
+    model.site_config_id = new_site_config_id
     session.add(model)
     record_audit_log(
         session,
@@ -421,4 +440,5 @@ def update_credential(cred_id: str, body: CredentialSchema, current_user=Depends
         description=model.description,
         data=_mask_credential(model.kind, plain),
         owner_user_id=model.owner_user_id,
+        site_config_id=model.site_config_id,
     )

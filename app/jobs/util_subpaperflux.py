@@ -134,7 +134,8 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
 
     # Backward-compat: previously wrote to cookie_state.json. Now store in DB.
     cookie_key = f"{credential_id}-{site_config_id}"
-    encrypted = encrypt_dict({"cookies": cookies})
+    encrypted_payload = encrypt_dict({"cookies": cookies})
+    encrypted_blob = json.dumps(encrypted_payload)
     expiry_hint = _compute_expiry_hint(cookies)
     now_iso = datetime.now(timezone.utc).isoformat()
     with get_session_ctx() as session:
@@ -143,14 +144,8 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
             & (CookieModel.site_config_id == site_config_id)
         )
         existing = session.exec(stmt).first()
-        if not existing:
-            stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
-            existing = session.exec(stmt).first()
         if existing:
-            existing.cookie_key = cookie_key
-            existing.credential_id = credential_id
-            existing.site_config_id = site_config_id
-            existing.cookies = encrypted
+            existing.encrypted_cookies = encrypted_blob
             existing.last_refresh = now_iso
             existing.expiry_hint = expiry_hint
             if owner_user_id is not None:
@@ -158,11 +153,10 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
             session.add(existing)
         else:
             new = CookieModel(
-                cookie_key=cookie_key,
                 credential_id=credential_id,
                 site_config_id=site_config_id,
                 owner_user_id=owner_user_id,
-                cookies=encrypted,
+                encrypted_cookies=encrypted_blob,
                 last_refresh=now_iso,
                 expiry_hint=expiry_hint,
             )
@@ -172,23 +166,29 @@ def perform_login_and_save_cookies(config_dir: str, site_config_id: str, credent
     return {"cookie_key": cookie_key, "cookies_saved": len(cookies)}
 
 def get_cookies_from_db(cookie_key: str) -> List[Dict[str, Any]]:
+    if "-" not in cookie_key:
+        return []
+    cred_id, sc_id = cookie_key.split("-", 1)
     with get_session_ctx() as session:
-        stmt = select(CookieModel).where(CookieModel.cookie_key == cookie_key)
+        stmt = select(CookieModel).where(
+            (CookieModel.credential_id == cred_id)
+            & (CookieModel.site_config_id == sc_id)
+        )
         rec = session.exec(stmt).first()
-        if not rec and "-" in cookie_key:
-            cred_id, sc_id = cookie_key.split("-", 1)
-            stmt = select(CookieModel).where(
-                (CookieModel.credential_id == cred_id)
-                & (CookieModel.site_config_id == sc_id)
-            )
-            rec = session.exec(stmt).first()
-        blob = rec.cookies if rec else None
-        if isinstance(blob, dict) and is_encrypted(blob):
+        if not rec:
+            return []
+        payload: Optional[Any] = rec.encrypted_cookies
+        if isinstance(payload, str):
             try:
-                blob = decrypt_dict(blob)
+                payload = json.loads(payload)
+            except json.JSONDecodeError:
+                payload = None
+        if isinstance(payload, dict) and is_encrypted(payload):
+            try:
+                payload = decrypt_dict(payload)
             except Exception:
-                blob = None
-        return (blob or {}).get("cookies", []) if isinstance(blob, dict) else []
+                payload = None
+        return (payload or {}).get("cookies", []) if isinstance(payload, dict) else []
 
 def parse_lookback_to_seconds(s: str) -> int:
     import re
