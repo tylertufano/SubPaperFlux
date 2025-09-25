@@ -66,7 +66,7 @@ def client() -> TestClient:
 def _sample_payload() -> Dict[str, str]:
     return {
         "config_dir": "/tmp/workspace",
-        "site_login_credential_id": "cred-1",
+        "site_login_pair": "cred-1::site-1",
     }
 
 

@@ -603,7 +603,7 @@ def test_jobs_validation(client):
         "/v1/jobs/validate",
         json={
             "type": "login",
-            "payload": {"config_dir": ".", "site_login_credential_id": "cred-1"},
+            "payload": {"config_dir": ".", "site_login_pair": "cred-1::site-1"},
         },
     )
     assert r2.status_code == 200
