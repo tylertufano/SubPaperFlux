@@ -71,6 +71,7 @@ const defaultSchedule = {
   jobType: "rss_poll",
   payload: {
     instapaper_id: "cred-1",
+    feed_id: "feed-1",
     feed_url: "https://example.com/rss.xml",
     lookback: "1d",
     is_paywalled: false,
@@ -106,6 +107,7 @@ const defaultCredentials = {
       kind: "site_login",
       description: "Site Login",
       data: {},
+      siteConfigId: "site-1",
     },
   ],
 };
@@ -130,6 +132,15 @@ const defaultFeeds = {
       id: "feed-1",
       url: "https://example.com/feed.xml",
       pollFrequency: "1h",
+      initialLookbackPeriod: "1d",
+      isPaywalled: false,
+      rssRequiresAuth: false,
+      siteConfigId: null,
+    },
+    {
+      id: "feed-2",
+      url: "https://example.com/rss-updated.xml",
+      pollFrequency: "30m",
       initialLookbackPeriod: "1d",
       isPaywalled: false,
       rssRequiresAuth: false,
@@ -243,10 +254,8 @@ describe("JobSchedulesPage", () => {
     ) as HTMLSelectElement;
     fireEvent.change(instapaperSelect, { target: { value: "cred-1" } });
 
-    const feedUrlInput = screen.getByLabelText("Feed URL") as HTMLInputElement;
-    fireEvent.change(feedUrlInput, {
-      target: { value: "https://example.com/feed.xml" },
-    });
+    const feedSelect = screen.getByLabelText("Saved feed") as HTMLSelectElement;
+    fireEvent.change(feedSelect, { target: { value: "feed-1" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Create schedule" }));
 
@@ -260,6 +269,7 @@ describe("JobSchedulesPage", () => {
         isActive: true,
         payload: expect.objectContaining({
           instapaper_id: "cred-1",
+          feed_id: "feed-1",
           feed_url: "https://example.com/feed.xml",
         }),
       }),
@@ -292,13 +302,11 @@ describe("JobSchedulesPage", () => {
     const frequencyInput = within(editForm).getByDisplayValue(
       "1h",
     ) as HTMLInputElement;
-    const feedUrlInput = within(editForm).getByDisplayValue(
-      "https://example.com/rss.xml",
-    ) as HTMLInputElement;
+    const feedSelect = within(editForm).getByLabelText(
+      "Saved feed",
+    ) as HTMLSelectElement;
     fireEvent.change(frequencyInput, { target: { value: "30m" } });
-    fireEvent.change(feedUrlInput, {
-      target: { value: "https://example.com/rss-updated.xml" },
-    });
+    fireEvent.change(feedSelect, { target: { value: "feed-2" } });
 
     const activeCheckbox = within(editForm).getByRole("checkbox", {
       name: "Schedule is active",
@@ -318,6 +326,7 @@ describe("JobSchedulesPage", () => {
         frequency: "30m",
         isActive: false,
         payload: expect.objectContaining({
+          feed_id: "feed-2",
           feed_url: "https://example.com/rss-updated.xml",
         }),
       }),

@@ -24,6 +24,10 @@ export default function Feeds() {
     canViewFeeds ? ['/v1/feeds'] : null,
     () => v1.listFeedsV1V1FeedsGet({}),
   )
+  const { data: siteConfigsData } = useSWR(
+    canViewFeeds ? ['/v1/site-configs', 'feeds'] : null,
+    () => v1.listSiteConfigsV1V1SiteConfigsGet({ page: 1, size: 200 }),
+  )
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
   const [lookback, setLookback] = useState('')
@@ -33,6 +37,16 @@ export default function Feeds() {
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editRow, setEditRow] = useState<any | null>(null)
+  const siteConfigs = siteConfigsData?.items ?? []
+  const siteConfigMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const config of siteConfigs) {
+      if (config?.id) {
+        map.set(String(config.id), config.name ?? config.id)
+      }
+    }
+    return map
+  }, [siteConfigs])
 
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
@@ -176,15 +190,21 @@ export default function Feeds() {
             value={lookback}
             onChange={e => setLookback(e.target.value)}
           />
-          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_config_placeholder')}</label>
-          <input
+          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_config_select')}</label>
+          <select
             id="create-feed-site-config"
             className="input"
-            placeholder={t('feeds_field_site_config_placeholder')}
-            aria-label={t('feeds_field_site_config_placeholder')}
+            aria-label={t('feeds_field_site_config_select')}
             value={siteConfigId}
             onChange={e => setSiteConfigId(e.target.value)}
-          />
+          >
+            <option value="">{t('feeds_field_site_config_select')}</option>
+            {siteConfigs.map((config: any) => (
+              <option key={config.id} value={config.id}>
+                {config.name}
+              </option>
+            ))}
+          </select>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
           <button type="submit" className="btn">{t('btn_create')}</button>
@@ -228,7 +248,21 @@ export default function Feeds() {
                         <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} /></td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_paywalled_label')} checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_rss_auth_label')} checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.siteConfigId} onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })} placeholder={t('feeds_field_site_config_placeholder')} aria-label={t('feeds_field_site_config_placeholder')} /></td>
+                        <td className="td">
+                          <select
+                            className="input w-full"
+                            value={editRow.siteConfigId}
+                            onChange={e => setEditRow({ ...editRow, siteConfigId: e.target.value })}
+                            aria-label={t('feeds_field_site_config_select')}
+                          >
+                            <option value="">{t('feeds_field_site_config_select')}</option>
+                            {siteConfigs.map((config: any) => (
+                              <option key={config.id} value={config.id}>
+                                {config.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="td flex gap-2">
                           <button type="button" className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
                           <button type="button" className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
@@ -241,7 +275,13 @@ export default function Feeds() {
                         <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || ''}</td>
                         <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
-                        <td className="td">{f.site_config_id || f.siteConfigId || ''}</td>
+                        <td className="td">{
+                          (() => {
+                            const id = f.site_config_id || f.siteConfigId
+                            if (!id) return ''
+                            return siteConfigMap.get(String(id)) || id
+                          })()
+                        }</td>
                         <td className="td flex gap-2">
                           <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
                           <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
