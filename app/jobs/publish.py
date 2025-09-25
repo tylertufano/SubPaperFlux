@@ -38,6 +38,15 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                     "published_at": publication_recorded_at,
                 }
             }
+            publication_flags = {
+                "instapaper": {
+                    "should_publish": True,
+                    "credential_id": instapaper_id,
+                    "created_at": publication_recorded_at,
+                    "last_seen_at": publication_recorded_at,
+                    "has_raw_html": bool(payload.get("raw_html_content")),
+                }
+            }
             bm = Bookmark(
                 owner_user_id=owner_user_id,
                 instapaper_bookmark_id=str(res.get("bookmark_id")),
@@ -49,6 +58,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                 rss_entry=payload.get("rss_entry") or {},
                 raw_html_content=payload.get("raw_html_content"),
                 publication_statuses=publication_statuses,
+                publication_flags=publication_flags,
             )
             session.add(bm)
             record_audit_log(
@@ -63,6 +73,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                     "job_id": job_id,
                     "source": "publish_job",
                     "publication_statuses": publication_statuses,
+                    "publication_flags": publication_flags,
                 },
             )
             session.commit()

@@ -22,7 +22,13 @@ def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) ->
         site_login_pair_id=payload.get("site_login_pair"),
         owner_user_id=owner_user_id,
     )
-    logging.info("[job:%s] RSS poll published %d/%d entries", job_id, res.get("published"), res.get("total"))
+    logging.info(
+        "[job:%s] RSS poll stored %d/%d entries (duplicates=%d)",
+        job_id,
+        res.get("stored"),
+        res.get("total"),
+        res.get("duplicates", 0),
+    )
     return res
 
 

@@ -377,7 +377,7 @@ class Bookmark(SQLModel, table=True):
     __tablename__ = "bookmark"
     id: str = Field(default_factory=lambda: gen_id("bm"), primary_key=True)
     owner_user_id: Optional[str] = Field(default=None, index=True)
-    instapaper_bookmark_id: str = Field(index=True)
+    instapaper_bookmark_id: Optional[str] = Field(default=None, index=True)
     url: Optional[str] = None
     title: Optional[str] = None
     content_location: Optional[str] = None
@@ -395,6 +395,10 @@ class Bookmark(SQLModel, table=True):
         sa_column=Column(Text, nullable=True),
     )
     publication_statuses: Dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSON, nullable=False),
+    )
+    publication_flags: Dict = Field(
         default_factory=dict,
         sa_column=Column(JSON, nullable=False),
     )

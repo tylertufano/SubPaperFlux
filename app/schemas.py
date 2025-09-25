@@ -112,7 +112,7 @@ class SiteWelcomeSettingUpdate(BaseModel):
 
 class BookmarkOut(BaseModel):
     id: str
-    instapaper_bookmark_id: str
+    instapaper_bookmark_id: Optional[str] = None
     title: Optional[str] = None
     url: Optional[str] = None
     content_location: Optional[str] = None
@@ -121,6 +121,7 @@ class BookmarkOut(BaseModel):
     rss_entry: Dict[str, Any] = Field(default_factory=dict)
     raw_html_content: Optional[str] = None
     publication_statuses: Dict[str, Any] = Field(default_factory=dict)
+    publication_flags: Dict[str, Any] = Field(default_factory=dict)
 
 
 class BookmarksPage(BaseModel):

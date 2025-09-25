@@ -666,6 +666,7 @@ def list_bookmarks(
                 rss_entry=r.rss_entry or {},
                 raw_html_content=r.raw_html_content,
                 publication_statuses=r.publication_statuses or {},
+                publication_flags=r.publication_flags or {},
             )
         )
     has_next = (page * size) < total
@@ -722,7 +723,7 @@ def delete_bookmark(bookmark_id: str, current_user=Depends(get_current_user), se
         attempted_action="delete",
         permission=PERMISSION_MANAGE_BOOKMARKS,
     )
-    if delete_remote:
+    if delete_remote and bm.instapaper_bookmark_id:
         oauth = get_instapaper_oauth_session(bm.owner_user_id)
         if oauth:
             try:
@@ -1339,6 +1340,8 @@ def bulk_update_bookmark_folders(
         oauth = get_instapaper_oauth_session(owner_id)
         if oauth:
             for bookmark in ordered_bookmarks:
+                if not bookmark.instapaper_bookmark_id:
+                    continue
                 try:
                     resp = oauth.post(
                         INSTAPAPER_BOOKMARKS_MOVE_URL,
@@ -1590,6 +1593,7 @@ def get_bookmark(bookmark_id: str, current_user=Depends(get_current_user), sessi
         rss_entry=bm.rss_entry or {},
         raw_html_content=bm.raw_html_content,
         publication_statuses=bm.publication_statuses or {},
+        publication_flags=bm.publication_flags or {},
     )
 
 
@@ -1892,7 +1896,7 @@ def bulk_delete_bookmarks(
             continue
 
         oauth = None
-        if delete_remote:
+        if delete_remote and bm.instapaper_bookmark_id:
             oauth = oauth_cache.get(bm.owner_user_id)
             if bm.owner_user_id not in oauth_cache:
                 oauth = get_instapaper_oauth_session(bm.owner_user_id)
