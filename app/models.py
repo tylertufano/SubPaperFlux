@@ -270,6 +270,14 @@ class Credential(SQLModel, table=True):
     description: str = Field(sa_column=Column(String(length=200), nullable=False))
     data: Dict = Field(default_factory=dict, sa_column=Column(JSON))
     owner_user_id: Optional[str] = Field(default=None, index=True)
+    site_config_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("siteconfig.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
 
 
 class Job(SQLModel, table=True):
@@ -338,19 +346,22 @@ class Cookie(SQLModel, table=True):
     )
 
     id: str = Field(default_factory=lambda: gen_id("cookie"), primary_key=True)
-    # A stable key per user+site config for easy lookup
-    cookie_key: str = Field(index=True)
     owner_user_id: Optional[str] = Field(default=None, index=True)
-    credential_id: Optional[str] = Field(
-        default=None,
+    credential_id: str = Field(
         sa_column=Column(
             ForeignKey("credential.id", ondelete="CASCADE"),
-            nullable=True,
+            nullable=False,
             index=True,
-        ),
+        )
     )
-    site_config_id: Optional[str] = Field(default=None, index=True)
-    cookies: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    site_config_id: str = Field(
+        sa_column=Column(
+            ForeignKey("siteconfig.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
+    encrypted_cookies: str = Field(sa_column=Column(Text, nullable=False))
     last_refresh: Optional[str] = None  # ISO timestamp
     expiry_hint: Optional[float] = None  # earliest expiry epoch among required cookies
 
