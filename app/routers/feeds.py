@@ -98,6 +98,36 @@ def _normalize_optional(value: Optional[str]) -> Optional[str]:
     return str(value)
 
 
+def _validate_feed_site_config_assignment(
+    session,
+    current_user,
+    *,
+    owner_id: Optional[str],
+    site_config_id: Optional[str],
+) -> Optional[str]:
+    normalized_site_config_id = _normalize_optional(site_config_id)
+    if not normalized_site_config_id:
+        return None
+    try:
+        _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=normalized_site_config_id,
+            credential_owner_id=owner_id,
+        )
+    except HTTPException as exc:
+        if (
+            exc.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            and exc.detail == "site_config_id does not belong to the credential owner"
+        ):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_config_id does not belong to the feed owner",
+            ) from exc
+        raise
+    return normalized_site_config_id
+
+
 def _validate_site_login_configuration(
     session,
     current_user,
@@ -108,6 +138,13 @@ def _validate_site_login_configuration(
 ) -> tuple[Optional[str], Optional[str]]:
     normalized_site_config_id = _normalize_optional(site_config_id)
     normalized_credential_id = _normalize_optional(site_login_credential_id)
+
+    normalized_site_config_id = _validate_feed_site_config_assignment(
+        session,
+        current_user,
+        owner_id=owner_id,
+        site_config_id=normalized_site_config_id,
+    )
 
     credential_owner_id = owner_id
 
@@ -147,6 +184,12 @@ def _validate_site_login_configuration(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="site_config_id does not match site_login_credential_id",
                 )
+            normalized_site_config_id = _validate_feed_site_config_assignment(
+                session,
+                current_user,
+                owner_id=owner_id,
+                site_config_id=normalized_site_config_id,
+            )
         else:
             normalized_site_config_id = credential.site_config_id
 
@@ -155,16 +198,14 @@ def _validate_site_login_configuration(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="site_login_credential_id requires an associated site_config_id",
             )
-    else:
-        credential_owner_id = owner_id
-
-    if normalized_site_config_id:
-        _validate_site_config_assignment(
+        normalized_site_config_id = _validate_feed_site_config_assignment(
             session,
             current_user,
+            owner_id=owner_id,
             site_config_id=normalized_site_config_id,
-            credential_owner_id=credential_owner_id,
         )
+    else:
+        credential_owner_id = owner_id
 
     return normalized_site_config_id, normalized_credential_id
 
