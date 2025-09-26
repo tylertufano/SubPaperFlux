@@ -255,12 +255,31 @@ def _resolve_site_login_context(
     site_config.setdefault("success_text_class", "")
     site_config.setdefault("expected_success_text", "")
     site_config.setdefault("required_cookies", [])
-    site_config["required_cookies"] = list(site_config.get("required_cookies") or [])
 
     if not credential_data or not site_config or not site_config_id:
         raise ValueError("Missing login credentials or site config for provided IDs")
 
     login_type = (site_config.get("login_type") or login_type or "selenium").lower()
+
+    cookies_to_store_names: List[str] = []
+    if login_type == "selenium":
+        selenium_payload = site_config.setdefault("selenium_config", {})
+        selenium_payload.setdefault("cookies_to_store", [])
+        cookies_to_store_names = list(selenium_payload.get("cookies_to_store") or [])
+    elif login_type == "api":
+        api_payload = site_config.setdefault("api_config", {})
+        if isinstance(api_payload, dict):
+            site_config["api_config"] = dict(api_payload)
+            cookies_to_store_names = list(api_payload.get("cookies_to_store") or [])
+            if not cookies_to_store_names:
+                cookie_map = api_payload.get("cookies") or {}
+                if cookie_map:
+                    cookies_to_store_names = list(cookie_map.keys())
+
+    required_cookie_names = list(site_config.get("required_cookies") or [])
+    if not required_cookie_names:
+        required_cookie_names = list(cookies_to_store_names)
+    site_config["required_cookies"] = required_cookie_names
 
     return (
         site_login_credential_id,
@@ -337,7 +356,50 @@ def perform_login_and_save_cookies(
         raise RuntimeError("Login handler returned unexpected payload")
 
     resolved_login_type = login_result.get("login_type", login_type)
-    cookies = login_result.get("cookies") or []
+    cookies_payload = login_result.get("cookies") or []
+    if not cookies_payload:
+        error_message = login_result.get("error") or "Login did not return any cookies"
+        raise RuntimeError(
+            f"{resolved_login_type} login failed for site_config={site_config_id}: {error_message}"
+        )
+
+    cookies_to_store_names: List[str] = []
+    if resolved_login_type == "selenium":
+        cookies_to_store_names = list(
+            (site_config.get("selenium_config") or {}).get("cookies_to_store") or []
+        )
+    elif resolved_login_type == "api":
+        api_payload = site_config.get("api_config") or {}
+        cookies_to_store_names = list(api_payload.get("cookies_to_store") or [])
+        if not cookies_to_store_names:
+            cookie_map = api_payload.get("cookies") or {}
+            if cookie_map:
+                cookies_to_store_names = list(cookie_map.keys())
+
+    cookies = cookies_payload
+    if cookies_to_store_names:
+        available_cookie_names = {
+            cookie.get("name") for cookie in cookies_payload if cookie.get("name")
+        }
+        cookies = [
+            cookie
+            for cookie in cookies_payload
+            if cookie.get("name") in cookies_to_store_names
+        ]
+        missing_for_storage = [
+            name
+            for name in cookies_to_store_names
+            if name and name not in available_cookie_names
+        ]
+        if missing_for_storage:
+            raise RuntimeError(
+                "{} login failed for site_config={}: missing cookies required for storage: {}".format(
+                    resolved_login_type,
+                    site_config_id,
+                    ", ".join(missing_for_storage),
+                )
+            )
+
     if not cookies:
         error_message = login_result.get("error") or "Login did not return any cookies"
         raise RuntimeError(
