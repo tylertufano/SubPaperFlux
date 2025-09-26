@@ -70,6 +70,9 @@ class SiteConfigBase(BaseModel):
     name: str
     site_url: AnyHttpUrl
     owner_user_id: Optional[str] = None  # None means global
+    success_text_class: str = ""
+    expected_success_text: str = ""
+    required_cookies: List[str] = Field(default_factory=list)
 
 
 class SiteConfigCreateBase(SiteConfigBase):
