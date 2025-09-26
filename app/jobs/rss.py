@@ -6,12 +6,12 @@ from .util_subpaperflux import format_site_login_pair_id, poll_rss_and_publish
 
 
 def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
-    # Expected payload: {"instapaper_id": str, "feed_id": str,
+    # Expected payload: {"feed_id": str, "instapaper_id": str | None,
     #                    "lookback": "24h", "is_paywalled": bool, "rss_requires_auth": bool,
     #                    "site_login_pair": str | None}
-    required = ["instapaper_id", "feed_id"]
-    if not all(k in payload and payload[k] for k in required):
-        raise ValueError("instapaper_id and feed_id are required")
+    if not (payload.get("feed_id")):
+        raise ValueError("feed_id is required")
+    instapaper_id = payload.get("instapaper_id") or None
     site_login_pair = payload.get("site_login_pair")
     if not site_login_pair:
         cred = payload.get("credential_id")
@@ -20,7 +20,7 @@ def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) ->
             site_login_pair = format_site_login_pair_id(str(cred), str(site_cfg))
 
     res = poll_rss_and_publish(
-        instapaper_id=payload["instapaper_id"],
+        instapaper_id=instapaper_id,
         feed_id=payload["feed_id"],
         lookback=payload.get("lookback", "24h"),
         is_paywalled=payload.get("is_paywalled", False),

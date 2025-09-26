@@ -140,7 +140,6 @@ function initPayloadState(
       };
     case "rss_poll":
       return {
-        instapaper_id: payload?.instapaper_id ?? "",
         feed_id: payload?.feed_id ?? "",
         lookback: payload?.lookback ?? "",
         is_paywalled: Boolean(payload?.is_paywalled ?? false),
@@ -351,22 +350,16 @@ function ScheduleForm({
         payload.site_login_pair = siteLoginValue;
       }
     } else if (jobType === "rss_poll") {
-      const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedId = (payloadState.feed_id || "").toString().trim();
       const lookback = (payloadState.lookback || "").toString().trim();
       const isPaywalled = Boolean(payloadState.is_paywalled);
       const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
-      if (!instapaperId)
-        nextErrors["payload.instapaper_id"] = t(
-          "job_schedules_error_instapaper",
-        );
       if (!feedId)
         nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
       const siteLoginValue = (payloadState.site_login_pair || "")
         .toString()
         .trim();
       const siteLogin = parseSiteLoginKey(siteLoginValue);
-      payload.instapaper_id = instapaperId;
       if (feedId) payload.feed_id = feedId;
       if (lookback) payload.lookback = lookback;
       payload.is_paywalled = isPaywalled;
@@ -374,6 +367,7 @@ function ScheduleForm({
       if (siteLogin) {
         payload.site_login_pair = siteLoginValue;
       }
+
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const url = (payloadState.url || "").toString().trim();
@@ -623,41 +617,6 @@ function ScheduleForm({
       case "rss_poll":
         return (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-instapaper"
-              >
-                {t("job_schedules_field_instapaper_credential")}
-              </label>
-              <select
-                id="schedule-rss-instapaper"
-                className="input"
-                value={payloadState.instapaper_id || ""}
-                onChange={(e) => updatePayload("instapaper_id", e.target.value)}
-                aria-invalid={Boolean(errors["payload.instapaper_id"])}
-                aria-describedby={
-                  errors["payload.instapaper_id"]
-                    ? "schedule-rss-instapaper-error"
-                    : undefined
-                }
-              >
-                <option value="">{t("job_schedules_option_select")}</option>
-                {instapaperCredentials.map((cred) => (
-                  <option key={cred.id} value={cred.id}>
-                    {cred.description}
-                  </option>
-                ))}
-              </select>
-              {errors["payload.instapaper_id"] && (
-                <p
-                  id="schedule-rss-instapaper-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.instapaper_id"]}
-                </p>
-              )}
-            </div>
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"
