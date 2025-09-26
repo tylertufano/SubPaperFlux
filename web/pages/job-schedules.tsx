@@ -199,9 +199,15 @@ function defaultFrequency(jobType: JobType): string {
 }
 
 function jobTypeLabel(
-  jobType: JobType,
+  jobType: JobType | undefined,
   t: ReturnType<typeof useI18n>["t"],
 ): string {
+  if (!jobType) {
+    return t("job_type_unknown");
+  }
+  if (!JOB_TYPES.includes(jobType)) {
+    return t("job_type_unknown");
+  }
   return t(`job_type_${jobType}`);
 }
 
@@ -1375,7 +1381,7 @@ export default function JobSchedulesPage() {
   }
 
   async function handleDelete(schedule: JobScheduleOut) {
-    const label = jobTypeLabel(schedule.jobType as JobType, t);
+    const label = jobTypeLabel(schedule.jobType, t);
     if (
       !window.confirm(t("job_schedules_confirm_delete", { jobType: label }))
     ) {
@@ -1629,7 +1635,7 @@ export default function JobSchedulesPage() {
                     <React.Fragment key={schedule.id}>
                       <tr className="odd:bg-white even:bg-gray-50">
                         <td className="td">
-                          {jobTypeLabel(schedule.jobType as JobType, t)}
+                          {jobTypeLabel(schedule.jobType, t)}
                         </td>
                         <td className="td">{schedule.frequency}</td>
                         <td className="td">

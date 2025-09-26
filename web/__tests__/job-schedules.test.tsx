@@ -253,6 +253,26 @@ describe("JobSchedulesPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders a fallback label when a schedule job type is missing", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [
+          {
+            ...defaultSchedule,
+            id: "schedule-unknown",
+            jobType: undefined,
+          },
+        ],
+      },
+    });
+
+    const table = await screen.findByRole("table", { name: "Scheduled jobs" });
+
+    expect(within(table).getByText("Unknown")).toBeInTheDocument();
+    expect(within(table).queryByText("job_type_undefined")).not.toBeInTheDocument();
+  });
+
   it("submits create schedule form with rss poll payload", async () => {
     const mutate = vi.fn().mockResolvedValue(undefined);
     renderPage({ mutate });

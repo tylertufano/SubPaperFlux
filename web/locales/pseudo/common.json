@@ -202,6 +202,7 @@
   "job_type_rss_poll": "Revisión RSS ✨",
   "job_type_publish": "Publicar ✨",
   "job_type_retention": "Retención ✨",
+  "job_type_unknown": "Desconocido ✨",
   "jobs_badge_rss_poll": "{stored}/{total} guardados{duplicates} ✨",
   "jobs_badge_rss_poll_duplicates": " (+{count} duplicados) ✨",
   "admin_site_settings_description": "Edita el mensaje de bienvenida de la portada ✨",
