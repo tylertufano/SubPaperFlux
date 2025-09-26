@@ -1,5 +1,10 @@
 export function isValidUrl(value: string): boolean {
-  try { new URL(value); return true } catch { return false }
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export function parseJsonSafe<T = any>(value: string): { ok: true; data: T } | { ok: false; error: string } {
