@@ -13,9 +13,17 @@
  */
 
 
+import type { SiteConfigApiOut } from './SiteConfigApiOut'
+import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut'
+import {
+    SiteConfigSeleniumOutFromJSONTyped,
+    SiteConfigSeleniumOutToJSON,
+} from './SiteConfigSeleniumOut'
+
 /**
  * @type ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost
- * 
+ *
  * @export
  */
 export type ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = { loginType: 'api' } & SiteConfigApiOut | { loginType: 'selenium' } & SiteConfigSeleniumOut;
@@ -48,15 +56,15 @@ export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostToJSONTyped
     }
     switch (value['loginType']) {
         case 'api': {
-            const apiValue: SiteConfigApiOut = value;
+            const apiValue = value as SiteConfigApiOut;
             return Object.assign({}, SiteConfigApiOutToJSON(apiValue), { loginType: 'api' } as const);
         }
         case 'selenium': {
-            const seleniumValue: SiteConfigSeleniumOut = value;
+            const seleniumValue = value as SiteConfigSeleniumOut;
             return Object.assign({}, SiteConfigSeleniumOutToJSON(seleniumValue), { loginType: 'selenium' } as const);
         }
         default:
-            return json;
+            return value;
     }
 }
 
