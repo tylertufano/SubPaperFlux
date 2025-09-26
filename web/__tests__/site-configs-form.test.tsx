@@ -72,6 +72,9 @@ const seleniumItem: SiteConfigSeleniumOut = {
   name: 'Example Site',
   siteUrl: 'https://example.com/login',
   ownerUserId: 'user-1',
+  successTextClass: 'alert alert-success',
+  expectedSuccessText: 'Signed in successfully',
+  requiredCookies: ['sessionid'],
   seleniumConfig: {
     usernameSelector: '#username',
     passwordSelector: '#password',
@@ -87,6 +90,9 @@ const apiItem: SiteConfigApiOut = {
   name: 'API Example',
   siteUrl: 'https://api.example/login',
   ownerUserId: null,
+  successTextClass: 'toast toast-success',
+  expectedSuccessText: 'API signed in',
+  requiredCookies: ['session'],
   apiConfig: {
     endpoint: 'https://example.com/api/login',
     method: 'POST',
@@ -115,6 +121,9 @@ export type SiteConfigFormControls = {
   name: HTMLInputElement
   siteUrl: HTMLInputElement
   loginTypeRadios: HTMLInputElement[]
+  successTextClass: HTMLInputElement
+  expectedSuccessText: HTMLInputElement
+  requiredCookies: HTMLInputElement
   usernameSelector?: HTMLInputElement
   passwordSelector?: HTMLInputElement
   loginSelector?: HTMLInputElement
@@ -145,6 +154,9 @@ function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormCon
     loginTypeRadios,
     scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/i }) as HTMLInputElement,
   }
+  base.successTextClass = withinForm.getByLabelText(/Success message CSS class/i) as HTMLInputElement
+  base.expectedSuccessText = withinForm.getByLabelText(/Expected success text/i) as HTMLInputElement
+  base.requiredCookies = withinForm.getByLabelText(/Required cookies/i) as HTMLInputElement
   const usernameSelector = withinForm.queryByLabelText(/Username selector/i) as HTMLInputElement | null
   if (usernameSelector) {
     base.usernameSelector = usernameSelector
@@ -290,9 +302,11 @@ describe('site configs creation validation', () => {
       expect(inputs.usernameSelector).toHaveAttribute('aria-describedby', 'create-site-config-username-selector-error')
       expect(inputs.passwordSelector).toHaveAttribute('aria-describedby', 'create-site-config-password-selector-error')
       expect(inputs.loginSelector).toHaveAttribute('aria-describedby', 'create-site-config-login-selector-error')
+      expect(inputs.requiredCookies).toHaveAttribute('aria-describedby', 'create-site-config-required-cookies-error')
 
       expect(within(form).getByText('Name is required')).toBeInTheDocument()
       expect(within(form).getByText('Valid URL required')).toBeInTheDocument()
+      expect(within(form).getByText('Add at least one cookie to store or require')).toBeInTheDocument()
       expect(within(form).getAllByText('Required')).toHaveLength(3)
       expect(createSiteConfigMock).not.toHaveBeenCalled()
     } finally {
@@ -315,6 +329,21 @@ describe('site configs creation validation', () => {
       fireEvent.submit(form)
 
       expect(apiInputs.apiEndpoint).toHaveAttribute('aria-describedby', 'create-site-config-endpoint-error')
+      expect(apiInputs.requiredCookies).toHaveAttribute('aria-describedby', 'create-site-config-required-cookies-error')
+      expect(withinForm.getByText('Add at least one cookie to store or require')).toBeInTheDocument()
+
+      fireEvent.change(apiInputs.successTextClass, { target: { value: 'alert-success' } })
+      fireEvent.submit(form)
+      expect(apiInputs.expectedSuccessText).toHaveAttribute('aria-describedby', 'create-site-config-expected-success-text-error')
+      expect(withinForm.getByText('Enter expected success text when a CSS class is provided')).toBeInTheDocument()
+
+      fireEvent.change(apiInputs.expectedSuccessText, { target: { value: 'Welcome back' } })
+      fireEvent.change(apiInputs.successTextClass, { target: { value: ' ' } })
+      fireEvent.submit(form)
+      expect(apiInputs.successTextClass).toHaveAttribute('aria-describedby', 'create-site-config-success-text-class-error')
+      expect(withinForm.getByText('Enter a CSS class when expected success text is provided')).toBeInTheDocument()
+
+      fireEvent.change(apiInputs.successTextClass, { target: { value: 'alert-success' } })
 
       fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'notaurl' } })
       fireEvent.submit(form)
@@ -351,6 +380,9 @@ describe('site configs creation success path', () => {
       fireEvent.change(inputs.passwordSelector!, { target: { value: '#password' } })
       fireEvent.change(inputs.loginSelector!, { target: { value: 'button[type="submit"]' } })
       fireEvent.change(inputs.cookiesText!, { target: { value: 'sid, theme , extra' } })
+      fireEvent.change(inputs.successTextClass, { target: { value: 'alert success' } })
+      fireEvent.change(inputs.expectedSuccessText, { target: { value: 'Signed in!' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'sid, theme' } })
 
       createSiteConfigMock.mockResolvedValueOnce({})
 
@@ -363,6 +395,9 @@ describe('site configs creation success path', () => {
           loginType: 'selenium',
           name: 'Acme Login',
           siteUrl: 'https://acme.example/login',
+          successTextClass: 'alert success',
+          expectedSuccessText: 'Signed in!',
+          requiredCookies: ['sid', 'theme'],
           seleniumConfig: {
             usernameSelector: '#username',
             passwordSelector: '#password',
@@ -381,6 +416,9 @@ describe('site configs creation success path', () => {
       fireEvent.change(inputs.passwordSelector!, { target: { value: '#global-pass' } })
       fireEvent.change(inputs.loginSelector!, { target: { value: 'button.global-submit' } })
       fireEvent.change(inputs.cookiesText!, { target: { value: 'token=one, two , three' } })
+      fireEvent.change(inputs.successTextClass, { target: { value: 'alert-global' } })
+      fireEvent.change(inputs.expectedSuccessText, { target: { value: 'Welcome global' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'token, refresh' } })
       fireEvent.click(inputs.scopeGlobal)
 
       fireEvent.submit(form)
@@ -391,6 +429,9 @@ describe('site configs creation success path', () => {
         ownerUserId: null,
         name: 'Global Entry',
         siteUrl: 'https://global.example/login',
+        successTextClass: 'alert-global',
+        expectedSuccessText: 'Welcome global',
+        requiredCookies: ['token', 'refresh'],
       })
     } finally {
       unmount()
@@ -411,6 +452,9 @@ describe('site configs creation success path', () => {
       fireEvent.change(inputs.apiHeaders!, { target: { value: '{"X-Test":"value"}' } })
       fireEvent.change(inputs.apiBody!, { target: { value: '{"username":"{{credential.username}}"}' } })
       fireEvent.change(inputs.apiCookies!, { target: { value: '{"session":"{{credential.password}}"}' } })
+      fireEvent.change(inputs.successTextClass, { target: { value: 'toast-success' } })
+      fireEvent.change(inputs.expectedSuccessText, { target: { value: 'API login ok' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'session, refresh' } })
 
       createSiteConfigMock.mockResolvedValueOnce({})
 
@@ -422,6 +466,9 @@ describe('site configs creation success path', () => {
         loginType: 'api',
         name: 'API Login',
         siteUrl: 'https://api.example/login',
+        successTextClass: 'toast-success',
+        expectedSuccessText: 'API login ok',
+        requiredCookies: ['session', 'refresh'],
         apiConfig: {
           endpoint: 'https://example.com/api/login',
           method: 'POST',
@@ -492,6 +539,8 @@ describe('site configs error handling', () => {
       fireEvent.change(inputs.usernameSelector!, { target: { value: '#username' } })
       fireEvent.change(inputs.passwordSelector!, { target: { value: '#password' } })
       fireEvent.change(inputs.loginSelector!, { target: { value: 'button[type="submit"]' } })
+      fireEvent.change(inputs.cookiesText!, { target: { value: 'sid' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'sid' } })
 
       createSiteConfigMock.mockRejectedValueOnce(new Error('Create failed'))
 
@@ -542,6 +591,9 @@ describe('site configs edit form', () => {
       const usernameInput = withinEditForm.getByLabelText('Username selector') as HTMLInputElement
       const passwordInput = withinEditForm.getByLabelText('Password selector') as HTMLInputElement
       const loginInput = withinEditForm.getByLabelText('Login button selector') as HTMLInputElement
+      const successClassInput = withinEditForm.getByLabelText('Success message CSS class (optional)') as HTMLInputElement
+      const expectedTextInput = withinEditForm.getByLabelText('Expected success text (optional)') as HTMLInputElement
+      const requiredCookiesInput = withinEditForm.getByLabelText('Required cookies (comma-separated)') as HTMLInputElement
       const saveButton = withinEditForm.getByRole('button', { name: 'Save' }) as HTMLButtonElement
 
       fireEvent.change(usernameInput, { target: { value: ' ' } })
@@ -554,6 +606,9 @@ describe('site configs edit form', () => {
 
       fireEvent.change(passwordInput, { target: { value: '#updated-pass' } })
       fireEvent.change(loginInput, { target: { value: 'button.updated-submit' } })
+      fireEvent.change(successClassInput, { target: { value: 'alert-updated' } })
+      fireEvent.change(expectedTextInput, { target: { value: 'Welcome updated' } })
+      fireEvent.change(requiredCookiesInput, { target: { value: 'sessionid, theme' } })
 
       updateSiteConfigMock.mockResolvedValueOnce({})
       mutate.mockClear()
@@ -567,6 +622,9 @@ describe('site configs edit form', () => {
         id: 'config-1',
         name: 'Example Site',
         siteUrl: 'https://example.com/login',
+        successTextClass: 'alert-updated',
+        expectedSuccessText: 'Welcome updated',
+        requiredCookies: ['sessionid', 'theme'],
         seleniumConfig: {
           usernameSelector: '#updated-user',
           passwordSelector: '#updated-pass',

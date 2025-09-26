@@ -224,5 +224,11 @@
   "admin_site_settings_save_pending": "Guardando... ✨",
   "admin_site_settings_reset_button": "Restablecer ✨",
   "admin_site_settings_save_success": "Mensaje actualizado ✨",
-  "admin_site_settings_disabled_message": "Los ajustes del sitio no están disponibles ✨"
+  "admin_site_settings_disabled_message": "Los ajustes del sitio no están disponibles ✨",
+  "site_configs_field_success_text_class_placeholder": "Clase CSS de éxito (opcional) ✨",
+  "site_configs_field_expected_success_text_placeholder": "Texto de éxito esperado (opcional) ✨",
+  "site_configs_field_required_cookies_placeholder": "Cookies requeridas (separadas por coma) ✨",
+  "site_configs_error_success_text_class_required": "Agrega una clase CSS cuando haya texto de éxito ✨",
+  "site_configs_error_expected_success_text_required": "Agrega texto de éxito cuando haya clase CSS ✨",
+  "site_configs_error_required_cookies": "Añade al menos una cookie a guardar o requerir ✨"
 }
