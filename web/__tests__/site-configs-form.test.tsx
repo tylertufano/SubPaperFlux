@@ -314,6 +314,29 @@ describe('site configs creation validation', () => {
     }
   })
 
+  it('rejects site URLs that are not HTTP or HTTPS', async () => {
+    const { form, inputs, unmount } = await setup()
+
+    try {
+      fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'ftp://acme.example/login' } })
+      fireEvent.change(inputs.usernameSelector!, { target: { value: '#username' } })
+      fireEvent.change(inputs.passwordSelector!, { target: { value: '#password' } })
+      fireEvent.change(inputs.loginSelector!, { target: { value: 'button[type="submit"]' } })
+      fireEvent.change(inputs.cookiesText!, { target: { value: 'sid' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'sid' } })
+
+      fireEvent.submit(form)
+
+      await waitFor(() =>
+        expect(within(form).getByText('Valid URL required')).toBeInTheDocument(),
+      )
+      expect(createSiteConfigMock).not.toHaveBeenCalled()
+    } finally {
+      unmount()
+    }
+  })
+
   it('validates API configs including JSON payloads', async () => {
     const { form, withinForm, inputs, unmount } = await setup()
 
