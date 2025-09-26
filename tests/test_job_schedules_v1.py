@@ -179,6 +179,34 @@ def test_validation_errors(client: TestClient):
     retention_errors = retention_missing_resp.json()["details"]["errors"]
     assert any("instapaper" in err.get("msg", "") for err in retention_errors)
 
+def test_create_rss_schedule_without_instapaper(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "rss_poll",
+            "payload": {"feed_id": feed_id},
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    schedule = create_resp.json()
+    assert schedule["payload"].get("feed_id") == feed_id
+    assert "instapaper_id" not in schedule["payload"]
+
 
 def test_run_now_creates_job(client: TestClient):
     create_resp = client.post(

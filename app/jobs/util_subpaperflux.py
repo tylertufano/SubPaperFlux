@@ -329,7 +329,7 @@ def parse_lookback_to_seconds(s: str) -> int:
 
 def poll_rss_and_publish(
     *,
-    instapaper_id: str,
+    instapaper_id: Optional[str] = None,
     feed_id: str,
     lookback: Optional[str] = None,
     is_paywalled: Optional[bool] = None,
@@ -341,10 +341,17 @@ def poll_rss_and_publish(
     from datetime import datetime, timezone, timedelta
 
     resolved_dir = resolve_config_dir()
-    app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json"))
-    instapaper_cfg_file = _load_json(os.path.join(resolved_dir, "credentials.json")).get(instapaper_id) or {}
-    instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or instapaper_cfg_file
-    app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
+    instapaper_cfg: Dict[str, Any] = {}
+    app_creds: Dict[str, Any] = {}
+    if instapaper_id:
+        app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+        credentials_file = _load_json(os.path.join(resolved_dir, "credentials.json"))
+        instapaper_cfg_file = {}
+        if isinstance(credentials_file, dict):
+            instapaper_cfg_file = credentials_file.get(instapaper_id) or {}
+        instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or instapaper_cfg_file
+        app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
+
 
     with get_session_ctx() as session:
         feed = session.get(FeedModel, feed_id)
@@ -485,36 +492,40 @@ def poll_rss_and_publish(
                     existing.raw_html_content = raw_html_content
                     changed = True
 
-                publication_statuses, publication_flags = _merge_publication_structures(
-                    existing_statuses=existing.publication_statuses,
-                    existing_flags=existing.publication_flags,
-                    instapaper_id=instapaper_id,
-                    seen_at=seen_at,
-                    is_paywalled=effective_is_paywalled,
-                    raw_html_content=raw_html_content,
-                )
+                if instapaper_id:
+                    publication_statuses, publication_flags = _merge_publication_structures(
+                        existing_statuses=existing.publication_statuses,
+                        existing_flags=existing.publication_flags,
+                        instapaper_id=instapaper_id,
+                        seen_at=seen_at,
+                        is_paywalled=effective_is_paywalled,
+                        raw_html_content=raw_html_content,
+                    )
 
-                if publication_statuses != existing.publication_statuses:
-                    existing.publication_statuses = publication_statuses
-                    changed = True
+                    if publication_statuses != existing.publication_statuses:
+                        existing.publication_statuses = publication_statuses
+                        changed = True
 
-                if publication_flags != existing.publication_flags:
-                    existing.publication_flags = publication_flags
-                    changed = True
+                    if publication_flags != existing.publication_flags:
+                        existing.publication_flags = publication_flags
+                        changed = True
 
                 if changed:
                     session.add(existing)
                     session.commit()
                 continue
 
-            publication_statuses, publication_flags = _merge_publication_structures(
-                existing_statuses=None,
-                existing_flags=None,
-                instapaper_id=instapaper_id,
-                seen_at=seen_at,
-                is_paywalled=effective_is_paywalled,
-                raw_html_content=raw_html_content,
-            )
+            if instapaper_id:
+                publication_statuses, publication_flags = _merge_publication_structures(
+                    existing_statuses=None,
+                    existing_flags=None,
+                    instapaper_id=instapaper_id,
+                    seen_at=seen_at,
+                    is_paywalled=effective_is_paywalled,
+                    raw_html_content=raw_html_content,
+                )
+            else:
+                publication_statuses, publication_flags = {}, {}
 
             bm = BookmarkModel(
                 owner_user_id=owner_user_id,
