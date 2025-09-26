@@ -7,6 +7,7 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
+import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../sdk/src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost'
 import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
@@ -1074,7 +1075,11 @@ export const v1 = {
   }) => (await getClients()).v1.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost({ scheduleId }),
   copyCredentialV1CredentialsCredIdCopyPost: async ({ credId }: { credId: string }): Promise<Credential> =>
     (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
-  copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
+  copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({
+    configId,
+  }: {
+    configId: string
+  }): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
   getSiteWelcomeSetting: async () => fetchSiteWelcomeSetting(),
   updateSiteWelcomeSetting: async ({
@@ -1246,7 +1251,11 @@ export const siteConfigs = {
     (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
   updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, body }: { configId: string; body: SiteConfigRequest }) =>
     (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, body, xCsrfToken: CSRF }),
-  copySiteConfigToUser: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
+  copySiteConfigToUser: async ({
+    configId,
+  }: {
+    configId: string
+  }): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 }
 

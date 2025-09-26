@@ -82,6 +82,8 @@ export type SiteConfigFormInput = SeleniumSiteConfigForm | ApiSiteConfigForm
 
 export const SUPPORTED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
 
+type SupportedHttpMethod = (typeof SUPPORTED_HTTP_METHODS)[number]
+
 type NormalizedSiteConfigCommonPayload = {
   name: string
   siteUrl: string
@@ -112,7 +114,10 @@ export type NormalizedSiteConfigPayload =
       }
     })
 
-const HTTP_METHODS = new Set(SUPPORTED_HTTP_METHODS)
+const HTTP_METHODS = new Set<string>(SUPPORTED_HTTP_METHODS)
+
+const isSupportedHttpMethod = (method: string): method is SupportedHttpMethod =>
+  HTTP_METHODS.has(method)
 
 export function validateSiteConfig(form: SiteConfigFormInput): {
   errors: Record<string, string>
@@ -215,6 +220,7 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
   const api = form.api_config || { endpoint: '', method: '' }
   const endpoint = api.endpoint?.trim() ?? ''
   const methodRaw = api.method?.trim().toUpperCase() ?? ''
+  let method: SupportedHttpMethod | undefined
 
   if (!endpoint) {
     errors['api.endpoint'] = 'site_configs_error_endpoint_required'
@@ -224,8 +230,10 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
 
   if (!methodRaw) {
     errors['api.method'] = 'site_configs_error_method_required'
-  } else if (!HTTP_METHODS.has(methodRaw)) {
+  } else if (!isSupportedHttpMethod(methodRaw)) {
     errors['api.method'] = 'site_configs_error_method_invalid'
+  } else {
+    method = methodRaw
   }
 
   let headersObject: Record<string, string> | undefined
@@ -287,13 +295,17 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     return { errors }
   }
 
+  if (!method) {
+    throw new Error('Invalid state: HTTP method should be defined when no validation errors are present')
+  }
+
   const payload: NormalizedSiteConfigPayload = {
     loginType: 'api',
     name: trimmedName,
     siteUrl: trimmedUrl,
     apiConfig: {
       endpoint,
-      method: methodRaw as NormalizedSiteConfigPayload['apiConfig']['method'],
+      method,
     },
   }
 
