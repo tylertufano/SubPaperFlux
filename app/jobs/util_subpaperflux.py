@@ -195,7 +195,7 @@ def _merge_publication_structures(
     *,
     existing_statuses: Optional[Dict[str, Any]],
     existing_flags: Optional[Dict[str, Any]],
-    instapaper_id: str,
+    instapaper_id: Optional[str],
     seen_at: str,
     is_paywalled: bool,
     raw_html_content: Optional[str],
@@ -208,16 +208,17 @@ def _merge_publication_structures(
 
     flags = dict(existing_flags or {})
     instapaper_flags = dict(flags.get("instapaper") or {})
-    instapaper_flags.setdefault("created_at", seen_at)
+    instapaper_flags.setdefault("created_at", instapaper_flags.get("last_seen_at") or seen_at)
     instapaper_flags.update(
         {
             "should_publish": True,
-            "credential_id": instapaper_id,
             "is_paywalled": bool(is_paywalled),
             "last_seen_at": seen_at,
             "has_raw_html": bool(raw_html_content) or instapaper_flags.get("has_raw_html", False),
         }
     )
+    if instapaper_id:
+        instapaper_flags["credential_id"] = instapaper_id
     flags["instapaper"] = instapaper_flags
 
     return statuses, flags
@@ -492,40 +493,36 @@ def poll_rss_and_publish(
                     existing.raw_html_content = raw_html_content
                     changed = True
 
-                if instapaper_id:
-                    publication_statuses, publication_flags = _merge_publication_structures(
-                        existing_statuses=existing.publication_statuses,
-                        existing_flags=existing.publication_flags,
-                        instapaper_id=instapaper_id,
-                        seen_at=seen_at,
-                        is_paywalled=effective_is_paywalled,
-                        raw_html_content=raw_html_content,
-                    )
+                publication_statuses, publication_flags = _merge_publication_structures(
+                    existing_statuses=existing.publication_statuses,
+                    existing_flags=existing.publication_flags,
+                    instapaper_id=instapaper_id,
+                    seen_at=seen_at,
+                    is_paywalled=effective_is_paywalled,
+                    raw_html_content=raw_html_content,
+                )
 
-                    if publication_statuses != existing.publication_statuses:
-                        existing.publication_statuses = publication_statuses
-                        changed = True
+                if publication_statuses != existing.publication_statuses:
+                    existing.publication_statuses = publication_statuses
+                    changed = True
 
-                    if publication_flags != existing.publication_flags:
-                        existing.publication_flags = publication_flags
-                        changed = True
+                if publication_flags != existing.publication_flags:
+                    existing.publication_flags = publication_flags
+                    changed = True
 
                 if changed:
                     session.add(existing)
                     session.commit()
                 continue
 
-            if instapaper_id:
-                publication_statuses, publication_flags = _merge_publication_structures(
-                    existing_statuses=None,
-                    existing_flags=None,
-                    instapaper_id=instapaper_id,
-                    seen_at=seen_at,
-                    is_paywalled=effective_is_paywalled,
-                    raw_html_content=raw_html_content,
-                )
-            else:
-                publication_statuses, publication_flags = {}, {}
+            publication_statuses, publication_flags = _merge_publication_structures(
+                existing_statuses=None,
+                existing_flags=None,
+                instapaper_id=instapaper_id,
+                seen_at=seen_at,
+                is_paywalled=effective_is_paywalled,
+                raw_html_content=raw_html_content,
+            )
 
             bm = BookmarkModel(
                 owner_user_id=owner_user_id,

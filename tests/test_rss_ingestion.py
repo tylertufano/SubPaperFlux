@@ -94,7 +94,10 @@ def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
 def test_poll_rss_without_instapaper_credentials(tmp_path, monkeypatch):
     from app import db as dbmod
     from app.db import init_db, get_session
-    from app.jobs.util_subpaperflux import poll_rss_and_publish
+    from app.jobs.util_subpaperflux import (
+        iter_pending_instapaper_bookmarks,
+        poll_rss_and_publish,
+    )
     from app.models import Feed, Bookmark
 
     original_db_url = os.environ.get("DATABASE_URL")
@@ -154,11 +157,53 @@ def test_poll_rss_without_instapaper_credentials(tmp_path, monkeypatch):
             bookmarks = session.exec(select(Bookmark)).all()
             assert len(bookmarks) == 1
             bookmark = bookmarks[0]
+            bookmark_id = bookmark.id
             assert bookmark.instapaper_bookmark_id is None
             assert bookmark.feed_id == feed_id
-            assert bookmark.publication_statuses in ({}, None)
-            assert bookmark.publication_flags in ({}, None)
+            statuses = bookmark.publication_statuses or {}
+            instapaper_status = statuses.get("instapaper") or {}
+            assert instapaper_status.get("status") == "pending"
+            assert instapaper_status.get("updated_at")
+            flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+            assert flags.get("should_publish") is True
+            assert flags.get("is_paywalled") is False
+            assert flags.get("last_seen_at")
+            assert flags.get("has_raw_html") is True
+            assert "credential_id" not in flags or flags.get("credential_id") in (None, "")
             assert bookmark.rss_entry.get("id") == "entry-2"
+
+            pending = iter_pending_instapaper_bookmarks(
+                session,
+                owner_user_id="user-rss",
+                instapaper_id="cred-job",
+                feed_id=feed_id,
+            )
+            assert [bm.url for bm in pending] == ["https://example.com/uncategorized"]
+
+        with next(get_session()) as session:
+            bookmark = session.get(Bookmark, bookmark_id)
+            assert bookmark is not None
+            bookmark.publication_flags = {}
+            bookmark.publication_statuses = {}
+            session.add(bookmark)
+            session.commit()
+
+        dup_res = poll_rss_and_publish(
+            feed_id=feed_id,
+            owner_user_id="user-rss",
+        )
+
+        assert dup_res == {"stored": 0, "duplicates": 1, "total": 1}
+
+        with next(get_session()) as session:
+            bookmark = session.get(Bookmark, bookmark_id)
+            assert bookmark is not None
+            statuses = bookmark.publication_statuses or {}
+            instapaper_status = statuses.get("instapaper") or {}
+            assert instapaper_status.get("status") == "pending"
+            flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+            assert flags.get("should_publish") is True
+            assert flags.get("last_seen_at")
     finally:
         if original_db_url is None:
             os.environ.pop("DATABASE_URL", None)
