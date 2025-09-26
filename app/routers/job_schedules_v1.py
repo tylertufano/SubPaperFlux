@@ -11,6 +11,7 @@ from ..auth import PERMISSION_MANAGE_BOOKMARKS, has_permission
 from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..jobs import known_job_types
+from ..jobs.scheduler import parse_frequency
 from ..models import Job, JobSchedule
 from ..schemas import (
     JobOut,
@@ -87,6 +88,23 @@ def _normalize_owner_identifiers(
         seen.add(key)
         normalized.append(value)
     return normalized
+
+
+def _compute_next_run_at(frequency: str, *, now: Optional[datetime] = None) -> datetime:
+    try:
+        interval = parse_frequency(frequency)
+    except ValueError as exc:  # pragma: no cover - schema validation prevents this
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={"error": "invalid_frequency", "frequency": frequency, "message": str(exc)},
+        ) from exc
+
+    effective_now = now or datetime.now(timezone.utc)
+    if effective_now.tzinfo is None:
+        effective_now = effective_now.replace(tzinfo=timezone.utc)
+    else:
+        effective_now = effective_now.astimezone(timezone.utc)
+    return effective_now + interval
 
 
 def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
@@ -239,11 +257,15 @@ def create_job_schedule(
     owner_id = body.owner_user_id if body.owner_user_id is not None else user_id
     _ensure_manage_permission(session, current_user, owner_id=owner_id)
 
+    next_run_at = body.next_run_at
+    if next_run_at is None:
+        next_run_at = _compute_next_run_at(body.frequency)
+
     schedule = JobSchedule(
         job_type=body.job_type,
         payload=dict(body.payload or {}),
         frequency=body.frequency,
-        next_run_at=body.next_run_at,
+        next_run_at=next_run_at,
         is_active=body.is_active,
         owner_user_id=owner_id,
     )
@@ -272,6 +294,7 @@ def update_job_schedule(
 ):
     schedule = _get_schedule_or_404(session, current_user, schedule_id)
 
+    was_active = bool(schedule.is_active)
     updates = body.model_dump(exclude_unset=True)
     if "job_type" in updates:
         _validate_job_type_or_400(updates["job_type"])
@@ -284,6 +307,10 @@ def update_job_schedule(
         schedule.next_run_at = updates["next_run_at"]
     if "is_active" in updates:
         schedule.is_active = updates["is_active"]
+
+    became_active = bool(schedule.is_active) and not was_active and updates.get("is_active")
+    if became_active and schedule.next_run_at is None:
+        schedule.next_run_at = _compute_next_run_at(schedule.frequency)
 
     session.add(schedule)
     session.commit()
@@ -298,7 +325,10 @@ def toggle_job_schedule(
     session=Depends(get_session),
 ):
     schedule = _get_schedule_or_404(session, current_user, schedule_id)
-    schedule.is_active = not bool(schedule.is_active)
+    was_active = bool(schedule.is_active)
+    schedule.is_active = not was_active
+    if schedule.is_active and not was_active and schedule.next_run_at is None:
+        schedule.next_run_at = _compute_next_run_at(schedule.frequency)
     session.add(schedule)
     session.commit()
     session.refresh(schedule)

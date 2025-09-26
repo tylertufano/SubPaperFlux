@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict
 
@@ -67,6 +67,132 @@ def _sample_payload() -> Dict[str, str]:
     return {
         "site_login_pair": "cred-1::site-1",
     }
+
+
+class _ControlledDateTime(datetime):
+    current: datetime = datetime.now(timezone.utc)
+
+    @classmethod
+    def now(cls, tz=None):  # type: ignore[override]
+        value = cls.current
+        if tz is None:
+            return value.replace(tzinfo=None) if value.tzinfo else value
+        if value.tzinfo is None:
+            return value.replace(tzinfo=tz)
+        return value.astimezone(tz)
+
+
+def _install_controlled_now(monkeypatch, when: datetime):
+    from app.routers import job_schedules_v1
+
+    _ControlledDateTime.current = when
+    monkeypatch.setattr(job_schedules_v1, "datetime", _ControlledDateTime)
+    return _ControlledDateTime
+
+
+def _parse_iso(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _normalize(dt: datetime) -> datetime:
+    return dt.replace(tzinfo=None) if dt.tzinfo else dt
+
+
+def test_create_schedule_defaults_next_run_when_omitted(client: TestClient, monkeypatch):
+    fixed_now = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+    _install_controlled_now(monkeypatch, fixed_now)
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "15m",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+
+    assert created["next_run_at"] is not None
+    next_run_at = _parse_iso(created["next_run_at"])
+    assert next_run_at == _normalize(fixed_now + timedelta(minutes=15))
+
+
+def test_toggle_reactivation_restores_next_run_when_missing(client: TestClient, monkeypatch):
+    base_time = datetime(2024, 1, 2, 8, 30, tzinfo=timezone.utc)
+    controller = _install_controlled_now(monkeypatch, base_time)
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    schedule_id = create_resp.json()["id"]
+
+    pause_resp = client.post(f"/v1/job-schedules/{schedule_id}/toggle")
+    assert pause_resp.status_code == 200
+    assert pause_resp.json()["is_active"] is False
+
+    clear_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"next_run_at": None},
+    )
+    assert clear_resp.status_code == 200
+    assert clear_resp.json()["next_run_at"] is None
+
+    resume_time = datetime(2024, 1, 2, 9, 45, tzinfo=timezone.utc)
+    controller.current = resume_time
+
+    resume_resp = client.post(f"/v1/job-schedules/{schedule_id}/toggle")
+    assert resume_resp.status_code == 200
+    resumed = resume_resp.json()
+    assert resumed["is_active"] is True
+
+    resumed_next_run = _parse_iso(resumed["next_run_at"])
+    assert resumed_next_run == _normalize(resume_time + timedelta(hours=1))
+
+
+def test_patch_reactivation_restores_next_run_when_missing(client: TestClient, monkeypatch):
+    base_time = datetime(2024, 1, 3, 10, 0, tzinfo=timezone.utc)
+    controller = _install_controlled_now(monkeypatch, base_time)
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "30m",
+        },
+    )
+    schedule_id = create_resp.json()["id"]
+
+    pause_resp = client.post(f"/v1/job-schedules/{schedule_id}/toggle")
+    assert pause_resp.status_code == 200
+    assert pause_resp.json()["is_active"] is False
+
+    clear_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"next_run_at": None},
+    )
+    assert clear_resp.status_code == 200
+    assert clear_resp.json()["next_run_at"] is None
+
+    resume_time = datetime(2024, 1, 3, 11, 15, tzinfo=timezone.utc)
+    controller.current = resume_time
+
+    reactivate_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"is_active": True},
+    )
+    assert reactivate_resp.status_code == 200
+    reactivated = reactivate_resp.json()
+    assert reactivated["is_active"] is True
+
+    reactivated_next_run = _parse_iso(reactivated["next_run_at"])
+    assert reactivated_next_run == _normalize(resume_time + timedelta(minutes=30))
 
 
 def test_create_list_get_schedule(client: TestClient):
