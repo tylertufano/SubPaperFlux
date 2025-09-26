@@ -18,7 +18,6 @@ import type { SiteConfigOut } from "../sdk/src/models/SiteConfigOut";
 import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
-import { isValidUrl } from "../lib/validate";
 import { buildSiteLoginOptions, SiteLoginOption } from "../lib/siteLoginOptions";
 type JobType =
   | "login"
@@ -155,10 +154,6 @@ function initPayloadState(
     case "publish":
       return {
         instapaper_id: payload?.instapaper_id ?? "",
-        url: payload?.url ?? "",
-        title: payload?.title ?? "",
-        folder: payload?.folder ?? "",
-        tags_text: Array.isArray(payload?.tags) ? payload.tags.join(", ") : "",
         feed_id: payload?.feed_id ?? "",
       };
     case "retention":
@@ -250,13 +245,6 @@ function ScheduleForm({
 
   function updatePayload(key: string, value: any) {
     setPayloadState((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function parseTags(value: string): string[] {
-    return value
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean);
   }
 
   const loginCredentials = useMemo(
@@ -370,23 +358,16 @@ function ScheduleForm({
 
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
-      const url = (payloadState.url || "").toString().trim();
-      const title = (payloadState.title || "").toString().trim();
-      const folder = (payloadState.folder || "").toString().trim();
-      const tagsText = (payloadState.tags_text || "").toString();
       const feedId = (payloadState.feed_id || "").toString().trim();
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
-      if (!url || !isValidUrl(url))
-        nextErrors["payload.url"] = t("job_schedules_error_url");
       payload.instapaper_id = instapaperId;
-      payload.url = url;
-      if (title) payload.title = title;
-      if (folder) payload.folder = folder;
-      const tags = parseTags(tagsText);
-      if (tags.length > 0) payload.tags = tags;
+      if (!feedId)
+        nextErrors["payload.feed_id"] = t(
+          "job_schedules_error_feed_selection",
+        );
       if (feedId) payload.feed_id = feedId;
     } else if (jobType === "retention") {
       const instapaperId = (
@@ -780,79 +761,6 @@ function ScheduleForm({
             <div className="flex flex-col md:col-span-2">
               <label
                 className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-publish-url"
-              >
-                {t("job_schedules_field_publish_url")}
-              </label>
-              <input
-                id="schedule-publish-url"
-                className="input"
-                value={payloadState.url || ""}
-                onChange={(e) => updatePayload("url", e.target.value)}
-                aria-invalid={Boolean(errors["payload.url"])}
-                aria-describedby={
-                  errors["payload.url"]
-                    ? "schedule-publish-url-error"
-                    : undefined
-                }
-              />
-              {errors["payload.url"] && (
-                <p
-                  id="schedule-publish-url-error"
-                  className="text-sm text-red-600 mt-1"
-                >
-                  {errors["payload.url"]}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-publish-title"
-              >
-                {t("job_schedules_field_publish_title")}
-              </label>
-              <input
-                id="schedule-publish-title"
-                className="input"
-                value={payloadState.title || ""}
-                onChange={(e) => updatePayload("title", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-publish-folder"
-              >
-                {t("job_schedules_field_publish_folder")}
-              </label>
-              <input
-                id="schedule-publish-folder"
-                className="input"
-                value={payloadState.folder || ""}
-                onChange={(e) => updatePayload("folder", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col md:col-span-2">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-publish-tags"
-              >
-                {t("job_schedules_field_publish_tags")}
-              </label>
-              <input
-                id="schedule-publish-tags"
-                className="input"
-                value={payloadState.tags_text || ""}
-                onChange={(e) => updatePayload("tags_text", e.target.value)}
-              />
-              <p className="text-sm text-gray-600 mt-1">
-                {t("job_schedules_field_tags_help")}
-              </p>
-            </div>
-            <div className="flex flex-col md:col-span-2">
-              <label
-                className="text-sm font-medium text-gray-700"
                 htmlFor="schedule-publish-feed"
               >
                 {t("job_schedules_field_publish_feed")}
@@ -862,6 +770,12 @@ function ScheduleForm({
                 className="input"
                 value={payloadState.feed_id || ""}
                 onChange={(e) => updatePayload("feed_id", e.target.value)}
+                aria-invalid={Boolean(errors["payload.feed_id"])}
+                aria-describedby={
+                  errors["payload.feed_id"]
+                    ? "schedule-publish-feed-error"
+                    : undefined
+                }
               >
                 <option value="">{t("job_schedules_option_select")}</option>
                 {feeds.map((feed) => (
@@ -870,6 +784,14 @@ function ScheduleForm({
                   </option>
                 ))}
               </select>
+              {errors["payload.feed_id"] && (
+                <p
+                  id="schedule-publish-feed-error"
+                  className="text-sm text-red-600 mt-1"
+                >
+                  {errors["payload.feed_id"]}
+                </p>
+              )}
             </div>
           </div>
         );

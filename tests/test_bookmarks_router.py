@@ -679,11 +679,11 @@ def test_bulk_publish_stream_success(monkeypatch):
 
     published_urls: list[str] = []
 
-    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
-        published_urls.append(payload["url"])
-        return {"bookmark_id": f"ip-{payload['url'].rsplit('/', 1)[-1]}"}
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        published_urls.append(url)
+        return {"bookmark_id": f"ip-{url.rsplit('/', 1)[-1]}"}
 
-    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+    monkeypatch.setattr(bookmarks_router, "publish_url", fake_publish)
 
     client = TestClient(app)
     body = {
@@ -727,13 +727,13 @@ def test_bulk_publish_stream_failure(monkeypatch):
 
     processed: list[str] = []
 
-    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
-        processed.append(payload["url"])
-        if payload["url"].endswith("/two"):
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        processed.append(url)
+        if url.endswith("/two"):
             raise RuntimeError("Instapaper rejected the URL")
         return {"bookmark_id": "ok"}
 
-    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+    monkeypatch.setattr(bookmarks_router, "publish_url", fake_publish)
 
     client = TestClient(app)
     body = {
@@ -767,11 +767,11 @@ def test_bulk_publish_stream_cancellation(monkeypatch):
 
     processed: list[str] = []
 
-    def fake_publish(*, job_id: str, owner_user_id: str | None, payload: dict):
-        processed.append(payload["url"])
-        return {"bookmark_id": payload["url"]}
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        processed.append(url)
+        return {"bookmark_id": url}
 
-    monkeypatch.setattr(bookmarks_router, "handle_publish", fake_publish)
+    monkeypatch.setattr(bookmarks_router, "publish_url", fake_publish)
 
     call_counter = {"value": 0}
 

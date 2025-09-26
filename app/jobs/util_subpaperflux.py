@@ -664,6 +664,7 @@ def publish_url(
     tags: Optional[List[str]] = None,
     owner_user_id: Optional[str] = None,
     config_dir: Optional[str] = None,
+    raw_html_content: Optional[str] = None,
 ) -> Dict[str, Any]:
     spf = _import_spf()
     resolved_dir = resolve_config_dir(config_dir)
@@ -708,7 +709,7 @@ def publish_url(
         app_creds,
         url,
         title,
-        raw_html_content=None,
+        raw_html_content=raw_html_content,
         categories_from_feed=[],
         instapaper_ini_config=instapaper_ini_config,
         site_config=None,
@@ -718,3 +719,124 @@ def publish_url(
         raise RuntimeError("Instapaper publish failed")
     result["deduped"] = False
     return result
+
+
+def _parse_iso_datetime(value: Any) -> Optional[datetime]:
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if cleaned.endswith("Z"):
+            cleaned = cleaned[:-1] + "+00:00"
+        try:
+            dt = datetime.fromisoformat(cleaned)
+        except ValueError:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    return None
+
+
+def _publication_sort_key(bookmark: BookmarkModel) -> Tuple[str, str, str, str]:
+    flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+    rss_entry = bookmark.rss_entry or {}
+    created = str(flags.get("created_at") or flags.get("last_seen_at") or "")
+    ingested = str(rss_entry.get("ingested_at") or "")
+    published = bookmark.published_at.isoformat() if bookmark.published_at else ""
+    return (created, ingested, published, bookmark.id or "")
+
+
+def iter_pending_instapaper_bookmarks(
+    session,
+    *,
+    owner_user_id: Optional[str],
+    instapaper_id: str,
+    feed_id: str,
+    limit: Optional[int] = None,
+    include_paywalled: Optional[bool] = None,
+) -> List[BookmarkModel]:
+    stmt = select(BookmarkModel).where(BookmarkModel.owner_user_id == owner_user_id)
+    stmt = stmt.where(BookmarkModel.feed_id == feed_id)
+    rows = session.exec(stmt).all()
+    pending: List[BookmarkModel] = []
+    for bookmark in rows:
+        flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+        if not flags.get("should_publish"):
+            continue
+        credential_id = flags.get("credential_id")
+        if credential_id and str(credential_id) != str(instapaper_id):
+            continue
+        if include_paywalled is not None and bool(flags.get("is_paywalled")) != include_paywalled:
+            continue
+        statuses = (bookmark.publication_statuses or {}).get("instapaper") or {}
+        status_value = str(statuses.get("status") or "pending").lower()
+        if status_value == "published":
+            continue
+        pending.append(bookmark)
+    pending.sort(key=_publication_sort_key)
+    if limit is not None:
+        try:
+            parsed_limit = int(limit)
+        except (TypeError, ValueError):
+            parsed_limit = None
+        if parsed_limit is not None and parsed_limit >= 0:
+            pending = pending[:parsed_limit]
+    return pending
+
+
+def apply_publication_result(
+    bookmark: BookmarkModel,
+    *,
+    instapaper_id: str,
+    job_id: str,
+    result: Optional[Dict[str, Any]] = None,
+    error: Optional[BaseException] = None,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
+    statuses = dict(bookmark.publication_statuses or {})
+    instapaper_status = dict(statuses.get("instapaper") or {})
+    instapaper_status["credential_id"] = instapaper_id
+    instapaper_status["updated_at"] = now_iso
+
+    flags = dict(bookmark.publication_flags or {})
+    instapaper_flags = dict(flags.get("instapaper") or {})
+    instapaper_flags.setdefault("should_publish", True)
+    instapaper_flags.setdefault("created_at", instapaper_flags.get("last_seen_at") or now_iso)
+    instapaper_flags.setdefault("credential_id", instapaper_id)
+
+    if result is not None:
+        instapaper_status["status"] = "published"
+        instapaper_status["deduped"] = bool(result.get("deduped"))
+        bookmark_id = result.get("bookmark_id") or instapaper_status.get("bookmark_id")
+        if bookmark_id:
+            instapaper_status["bookmark_id"] = str(bookmark_id)
+            bookmark.instapaper_bookmark_id = str(bookmark_id)
+        content_location = result.get("content_location") or instapaper_status.get("content_location")
+        if content_location:
+            instapaper_status["content_location"] = content_location
+            bookmark.content_location = content_location
+        published_dt = _parse_iso_datetime(result.get("published_at")) or now
+        instapaper_status["published_at"] = published_dt.isoformat()
+        bookmark.published_at = published_dt
+        instapaper_flags["last_published_at"] = published_dt.isoformat()
+        instapaper_flags["last_publish_job_id"] = job_id
+        instapaper_flags.pop("last_error_at", None)
+        instapaper_flags.pop("last_error_message", None)
+    else:
+        message = str(error) if error else "Unknown publication error"
+        instapaper_status["status"] = "error"
+        instapaper_status["error_message"] = message
+        instapaper_flags["last_error_at"] = now_iso
+        instapaper_flags["last_error_message"] = message
+
+    statuses["instapaper"] = instapaper_status
+    flags["instapaper"] = instapaper_flags
+    bookmark.publication_statuses = statuses
+    bookmark.publication_flags = flags
+
+    return instapaper_status, instapaper_flags
