@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import (
@@ -56,35 +56,37 @@ class SeleniumConfig(BaseModel):
     cookies_to_store: List[str] = Field(default_factory=list)
 
 
-class SiteConfig(BaseModel):
-    id: Optional[str] = None
+class ApiConfig(BaseModel):
+    endpoint: AnyHttpUrl
+    method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
+    headers: Dict[str, str] = Field(default_factory=dict)
+    body: Optional[Dict[str, Any]] = None
+    cookies: Dict[str, str] = Field(default_factory=dict)
+
+
+class SiteConfigBase(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     name: str
     site_url: AnyHttpUrl
-    login_type: Literal["selenium", "api"] = "selenium"
-    selenium_config: Optional[SeleniumConfig] = None
-    api_config: Optional[Dict[str, Any]] = None
     owner_user_id: Optional[str] = None  # None means global
 
-    @model_validator(mode="after")
-    def _validate_login_type(self) -> "SiteConfig":  # type: ignore[override]
-        if self.login_type == "selenium":
-            if self.selenium_config is None:
-                raise PydanticCustomError(
-                    "selenium_config_required",
-                    "selenium_config is required when login_type is 'selenium'",
-                )
-        elif self.login_type == "api":
-            if self.api_config is None:
-                raise PydanticCustomError(
-                    "api_config_required",
-                    "api_config is required when login_type is 'api'",
-                )
-        else:  # pragma: no cover - defensive branch
-            raise PydanticCustomError(
-                "invalid_login_type",
-                "login_type must be one of 'selenium' or 'api'",
-            )
-        return self
+
+class SiteConfigCreateBase(SiteConfigBase):
+    id: Optional[str] = None
+
+
+class SiteConfigSelenium(SiteConfigCreateBase):
+    login_type: Literal["selenium"] = "selenium"
+    selenium_config: SeleniumConfig
+
+
+class SiteConfigApi(SiteConfigCreateBase):
+    login_type: Literal["api"] = "api"
+    api_config: ApiConfig
+
+
+SiteConfig = Annotated[Union[SiteConfigSelenium, SiteConfigApi], Field(discriminator="login_type")]
 
 
 class Feed(BaseModel):
@@ -286,14 +288,26 @@ class JobSchedulesPage(BaseModel):
     total_pages: int = 1
 
 
-class SiteConfigOut(BaseModel):
+class SiteConfigOutBase(SiteConfigBase):
+    model_config = ConfigDict(extra="ignore")
+
     id: str
-    name: str
-    site_url: str
-    login_type: Literal["selenium", "api"]
-    selenium_config: Optional[SeleniumConfig] = None
-    api_config: Optional[Dict[str, Any]] = None
-    owner_user_id: Optional[str] = None
+
+
+class SiteConfigSeleniumOut(SiteConfigOutBase):
+    login_type: Literal["selenium"] = "selenium"
+    selenium_config: SeleniumConfig
+
+
+class SiteConfigApiOut(SiteConfigOutBase):
+    login_type: Literal["api"] = "api"
+    api_config: ApiConfig
+
+
+SiteConfigOut = Annotated[
+    Union[SiteConfigSeleniumOut, SiteConfigApiOut],
+    Field(discriminator="login_type"),
+]
 
 
 class SiteConfigsPage(BaseModel):
