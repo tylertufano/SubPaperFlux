@@ -7,6 +7,7 @@ import time
 import requests
 import re
 import logging
+from typing import Any, Dict
 from datetime import datetime, timedelta, timezone
 from glob import glob
 from selenium import webdriver
@@ -1198,27 +1199,242 @@ def get_config_files(path):
         sys.exit(1)
 
 
-def login_and_update(config_name, site_config, login_credentials):
-    """
-    Performs a login using Selenium to get authentication cookies.
-    """
+_TEMPLATE_PATTERN = re.compile(r"{{\s*([a-zA-Z0-9_.-]+)\s*}}")
+
+
+def _render_template(value, context):
+    if isinstance(value, str):
+        def _replace(match):
+            key = match.group(1)
+            return str(context.get(key, match.group(0)))
+
+        return _TEMPLATE_PATTERN.sub(_replace, value)
+    if isinstance(value, dict):
+        return {k: _render_template(v, context) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_render_template(v, context) for v in value]
+    return value
+
+
+def _serialize_requests_cookie(cookie):
+    payload = {"name": cookie.name, "value": cookie.value}
+    if cookie.domain:
+        payload["domain"] = cookie.domain
+    if cookie.path:
+        payload["path"] = cookie.path
+    if cookie.expires is not None:
+        payload["expiry"] = cookie.expires
+    if cookie.secure:
+        payload["secure"] = True
+    httponly = cookie._rest.get("HttpOnly") or cookie._rest.get("httponly")
+    if httponly:
+        payload["httpOnly"] = True
+    return payload
+
+
+def _extract_json_pointer(document, pointer):
+    if document is None or not pointer:
+        return None
+    current = document
+    parts = [part for part in pointer.split(".") if part]
+    for part in parts:
+        if isinstance(current, dict):
+            current = current.get(part)
+        elif isinstance(current, list):
+            try:
+                idx = int(part)
+            except ValueError:
+                return None
+            if idx < 0 or idx >= len(current):
+                return None
+            current = current[idx]
+        else:
+            return None
+        if current is None:
+            return None
+    return current
+
+
+def _execute_api_step(session, step_config, context, config_name, step_name):
+    endpoint = step_config.get("endpoint")
+    method = (step_config.get("method") or "GET").upper()
+    headers = step_config.get("headers") or {}
+    body = step_config.get("body")
+
+    if not endpoint:
+        logging.error(
+            f"API step '{step_name}' for {config_name} is missing an endpoint."
+        )
+        return None
+
+    rendered_headers = _render_template(headers, context) if headers else {}
+    rendered_body = _render_template(body, context) if body is not None else None
+
+    request_kwargs = {"headers": rendered_headers}
+    if method in ("GET", "DELETE") and isinstance(rendered_body, dict):
+        request_kwargs["params"] = rendered_body
+    elif rendered_body is not None:
+        request_kwargs["json"] = rendered_body
+
+    logging.info(
+        f"Performing API {step_name} step for {config_name}: {method} {endpoint}"
+    )
+
+    try:
+        response = session.request(method, endpoint, **request_kwargs)
+    except requests.RequestException as exc:
+        logging.error(
+            f"API {step_name} request failed for {config_name} ({method} {endpoint}): {exc}"
+        )
+        return None
+
+    return response
+
+
+def _login_with_api(config_name, site_config, login_credentials):
+    api_config = dict(site_config.get("api_config") or {})
+    if not api_config:
+        message = f"Missing api_config for {config_name}."
+        logging.error(message)
+        return {"cookies": [], "login_type": "api", "error": message}
+
+    endpoint = api_config.get("endpoint")
+    method = api_config.get("method")
+    if not endpoint or not method:
+        message = (
+            f"API login for {config_name} requires both 'endpoint' and 'method'."
+        )
+        logging.error(message)
+        return {"cookies": [], "login_type": "api", "error": message}
+
+    cookies_to_store = list(api_config.get("cookies_to_store") or [])
+    cookie_map = api_config.get("cookies") or {}
+    if not cookies_to_store and cookie_map:
+        cookies_to_store = list(cookie_map.keys())
+
+    context = dict(login_credentials or {})
+    context.setdefault("username", (login_credentials or {}).get("username"))
+    context.setdefault("password", (login_credentials or {}).get("password"))
+    context.setdefault("config_name", config_name)
+    context.setdefault("site_url", site_config.get("site_url"))
+
+    session = requests.Session()
+    details = {"endpoint": endpoint, "method": method}
+    try:
+        pre_login_steps = api_config.get("pre_login") or []
+        if isinstance(pre_login_steps, dict):
+            pre_login_steps = [pre_login_steps]
+        if pre_login_steps:
+            logging.info(f"Executing {len(pre_login_steps)} pre-login API steps for {config_name}.")
+        for idx, step in enumerate(pre_login_steps):
+            if not isinstance(step, dict):
+                continue
+            response = _execute_api_step(
+                session,
+                {
+                    "endpoint": step.get("endpoint"),
+                    "method": step.get("method"),
+                    "headers": step.get("headers"),
+                    "body": step.get("body"),
+                },
+                context,
+                config_name,
+                f"pre_login[{idx}]",
+            )
+            if response is None:
+                message = f"Pre-login step {idx} failed for {config_name}."
+                return {"cookies": [], "login_type": "api", "error": message}
+            if response.status_code >= 400:
+                message = (
+                    f"Pre-login step {idx} returned status {response.status_code} for {config_name}."
+                )
+                logging.error(message)
+                return {"cookies": [], "login_type": "api", "error": message}
+
+        response = _execute_api_step(
+            session,
+            {
+                "endpoint": endpoint,
+                "method": method,
+                "headers": api_config.get("headers"),
+                "body": api_config.get("body"),
+            },
+            context,
+            config_name,
+            "login",
+        )
+        if response is None:
+            message = f"API login request failed for {config_name}."
+            return {"cookies": [], "login_type": "api", "error": message}
+        details["status_code"] = response.status_code
+        if response.status_code >= 400:
+            message = (
+                f"API login returned status {response.status_code} for {config_name}."
+            )
+            logging.error(message)
+            return {"cookies": [], "login_type": "api", "error": message}
+
+        jar_cookies = {cookie.name: cookie for cookie in session.cookies}
+        serialized: Dict[str, Dict[str, Any]] = {}
+
+        if cookies_to_store:
+            for name in cookies_to_store:
+                cookie_obj = jar_cookies.get(name)
+                if cookie_obj:
+                    serialized[name] = _serialize_requests_cookie(cookie_obj)
+        else:
+            for cookie_obj in session.cookies:
+                serialized[cookie_obj.name] = _serialize_requests_cookie(cookie_obj)
+
+        if cookie_map:
+            body_json = None
+            try:
+                body_json = response.json()
+            except ValueError:
+                logging.debug(
+                    f"API login for {config_name} did not return JSON body for cookie extraction."
+                )
+            for cookie_name, source in cookie_map.items():
+                value = None
+                if isinstance(source, str):
+                    if source.startswith("$."):
+                        value = _extract_json_pointer(body_json, source[2:])
+                    else:
+                        cookie_obj = jar_cookies.get(source)
+                        if cookie_obj:
+                            value = cookie_obj.value
+                if value is not None:
+                    serialized[cookie_name] = {"name": cookie_name, "value": value}
+
+        cookies = list(serialized.values())
+        if not cookies:
+            message = (
+                f"No cookies captured from API login for {config_name}. Check 'cookies_to_store' settings."
+            )
+            logging.error(message)
+            return {"cookies": [], "login_type": "api", "error": message}
+
+        logging.info(
+            f"API login succeeded for {config_name}; captured {len(cookies)} cookies."
+        )
+        details["captured_cookies"] = [cookie["name"] for cookie in cookies]
+        return {"cookies": cookies, "login_type": "api", "details": details}
+    finally:
+        session.close()
+
+
+def _login_with_selenium(config_name, site_config, login_credentials):
     driver = None
     try:
-        # Check if login_credentials or site_config is missing
         if not login_credentials or not site_config:
-            logging.error(
+            message = (
                 f"Missing login credentials or site configuration for {config_name}. Skipping login."
             )
-            return None
+            logging.error(message)
+            return {"cookies": [], "login_type": "selenium", "error": message}
 
         username = login_credentials.get("username")
         password = login_credentials.get("password")
-        login_type = site_config.get("login_type", "selenium")
-        if login_type != "selenium":
-            logging.error(
-                f"Unsupported login type '{login_type}' for {config_name}. Skipping login."
-            )
-            return None
         selenium_config = site_config.get("selenium_config") or {}
         if not selenium_config and site_config.get("username_selector"):
             selenium_config = {
@@ -1234,7 +1450,6 @@ def login_and_update(config_name, site_config, login_credentials):
         login_button_selector = selenium_config.get("login_button_selector")
         cookies_to_store_names = selenium_config.get("cookies_to_store", [])
 
-        # Validate that all required selectors are present
         if not all(
             [
                 username,
@@ -1246,10 +1461,9 @@ def login_and_update(config_name, site_config, login_credentials):
                 cookies_to_store_names,
             ]
         ):
-            logging.error(
-                f"Incomplete login configuration for {config_name}. Skipping login."
-            )
-            return None
+            message = f"Incomplete login configuration for {config_name}. Skipping login."
+            logging.error(message)
+            return {"cookies": [], "login_type": "selenium", "error": message}
 
         logging.info(f"Starting Selenium for {config_name} to perform login...")
 
@@ -1257,25 +1471,19 @@ def login_and_update(config_name, site_config, login_credentials):
         driver.get(site_url)
 
         wait = WebDriverWait(driver, 30)
-
-        # Enter username
         username_field = wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, username_selector))
         )
         username_field.send_keys(username)
 
-        # Enter password
         password_field = driver.find_element(By.CSS_SELECTOR, password_selector)
         password_field.send_keys(password)
 
-        # Click login button
         login_button = driver.find_element(By.CSS_SELECTOR, login_button_selector)
         login_button.click()
 
         logging.info("Login form submitted. Waiting for page to load...")
 
-        # Wait until we see a sign of a successful login, e.g., URL change or a specific element
-        # This is a generic approach; a more robust solution would be site-specific
         try:
             wait.until(EC.url_changes(site_url))
             logging.info(f"Login successful for {config_name} (URL changed).")
@@ -1295,15 +1503,17 @@ def login_and_update(config_name, site_config, login_credentials):
                         f"Login successful for {config_name} (found post-login element)."
                     )
                 except TimeoutException:
-                    logging.error(
+                    message = (
                         f"Login failed for {config_name}. Post-login element not found."
                     )
-                    return None
+                    logging.error(message)
+                    return {"cookies": [], "login_type": "selenium", "error": message}
             else:
-                logging.error(
+                message = (
                     f"Login failed for {config_name}. Neither URL change nor post-login selector succeeded."
                 )
-                return None
+                logging.error(message)
+                return {"cookies": [], "login_type": "selenium", "error": message}
 
         if ENABLE_SCREENSHOTS:
             screenshot_path = os.path.join(
@@ -1313,31 +1523,49 @@ def login_and_update(config_name, site_config, login_credentials):
             driver.save_screenshot(screenshot_path)
             logging.info(f"Screenshot saved to {screenshot_path}.")
 
-        # Get all cookies
         cookies = driver.get_cookies()
-
-        # Filter for cookies we want to store and return them
         filtered_cookies = [c for c in cookies if c["name"] in cookies_to_store_names]
         if not filtered_cookies:
-            logging.error(
+            message = (
                 f"No required cookies found after login for {config_name}. Check 'cookies_to_store' configuration."
             )
-            return None
+            logging.error(message)
+            return {"cookies": [], "login_type": "selenium", "error": message}
 
-        return filtered_cookies
+        return {
+            "cookies": filtered_cookies,
+            "login_type": "selenium",
+            "details": {"cookies_to_store": cookies_to_store_names},
+        }
 
     except WebDriverException as e:
-        logging.error(f"Selenium WebDriver error during login for {config_name}: {e}")
-        return None
+        message = f"Selenium WebDriver error during login for {config_name}: {e}"
+        logging.error(message)
+        return {"cookies": [], "login_type": "selenium", "error": message}
     except Exception as e:
-        logging.error(
-            f"An unexpected error occurred during login for {config_name}: {e}"
-        )
-        return None
+        message = f"An unexpected error occurred during login for {config_name}: {e}"
+        logging.error(message)
+        return {"cookies": [], "login_type": "selenium", "error": message}
     finally:
         if driver:
             driver.quit()
             logging.info("Selenium driver quit.")
+
+
+def login_and_update(config_name, site_config, login_credentials):
+    """Perform login using the configured strategy and return captured cookies."""
+
+    login_type = (site_config or {}).get("login_type", "selenium").lower()
+    logging.info(f"login_and_update dispatcher selected '{login_type}' for {config_name}.")
+
+    if login_type == "selenium":
+        return _login_with_selenium(config_name, site_config, login_credentials)
+    if login_type == "api":
+        return _login_with_api(config_name, site_config, login_credentials)
+
+    message = f"Unsupported login type '{login_type}' for {config_name}."
+    logging.error(message)
+    return {"cookies": [], "login_type": login_type, "error": message}
 
 
 def run_service(
@@ -1509,9 +1737,21 @@ def run_service(
                             f"Triggering login for {config_name}. Reasons: {', '.join(reasons)}"
                         )
 
-                        cookies = login_and_update(
+                        login_result = login_and_update(
                             config_name, site_config, login_credentials
                         )
+
+                        cookies = []
+                        if isinstance(login_result, dict):
+                            cookies = login_result.get("cookies") or []
+                            if not cookies and login_result.get("error"):
+                                logging.error(
+                                    f"Login failed for {config_name}: {login_result.get('error')}"
+                                )
+                        else:
+                            logging.error(
+                                f"Login handler returned unexpected payload for {config_name}."
+                            )
 
                         if cookies:
                             # If a login was successful, update Miniflux immediately
