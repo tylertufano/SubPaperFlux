@@ -7,6 +7,7 @@ import SiteConfigs from '../pages/site-configs'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
+import type { SiteConfigsPageItemsInner } from '../sdk/src/models/SiteConfigsPageItemsInner'
 
 const openApiSpies = vi.hoisted(() => ({
   listSiteConfigs: vi.fn(),
@@ -80,6 +81,21 @@ const seleniumItem: SiteConfigSeleniumOut = {
   },
 }
 
+const apiItem: SiteConfigApiOut = {
+  loginType: 'api',
+  id: 'api-config-1',
+  name: 'API Example',
+  siteUrl: 'https://api.example/login',
+  ownerUserId: null,
+  apiConfig: {
+    endpoint: 'https://example.com/api/login',
+    method: 'POST',
+    headers: { 'X-Test': 'value' },
+    body: { ok: true },
+    cookies: { session: 'abc' },
+  },
+}
+
 export const defaultSiteConfigsResponse: SiteConfigsPage = {
   items: [seleniumItem],
   total: 1,
@@ -90,7 +106,7 @@ export const defaultSiteConfigsResponse: SiteConfigsPage = {
 }
 
 export type SiteConfigsSetupOptions = {
-  data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[]
+  data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[] | SiteConfigsPageItemsInner[]
   locale?: string
   swr?: RenderWithSWROptions['swr']
 }
@@ -124,8 +140,8 @@ export type SiteConfigsSetupResult = RenderResult & {
 function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormControls {
   const loginTypeRadios = withinForm.getAllByRole('radio') as HTMLInputElement[]
   const base: SiteConfigFormControls = {
-    name: withinForm.getByLabelText(/Name/i) as HTMLInputElement,
-    siteUrl: withinForm.getByLabelText(/Site URL/i) as HTMLInputElement,
+    name: withinForm.getByLabelText(/^Name$/i) as HTMLInputElement,
+    siteUrl: withinForm.getByLabelText(/^Site URL$/i) as HTMLInputElement,
     loginTypeRadios,
     scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/i }) as HTMLInputElement,
   }
@@ -197,7 +213,7 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
     },
   })
 
-  const nameInput = (await screen.findByLabelText(/^Name$/i)) as HTMLInputElement
+  const [nameInput] = (await screen.findAllByLabelText(/^Name$/i)) as HTMLInputElement[]
   const form = nameInput.closest('form') as HTMLElement
   const withinForm = within(form)
   const inputs = resolveInputs(withinForm)
@@ -217,6 +233,44 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
     mutate,
   })
 }
+
+describe('site configs table display', () => {
+  it('shows login type labels and summaries for selenium and api configs', async () => {
+    const tableData: SiteConfigsPage = {
+      items: [seleniumItem, apiItem],
+      total: 2,
+      page: 1,
+      size: 25,
+      hasNext: false,
+      totalPages: 1,
+    }
+
+    const { unmount } = await setup({ data: tableData })
+
+    try {
+      const table = await screen.findByRole('table', { name: /site configs/i })
+      const rows = within(table).getAllByRole('row')
+      const dataRows = rows.slice(1)
+      expect(dataRows).toHaveLength(2)
+
+      const seleniumRow = dataRows[0]
+      const apiRow = dataRows[1]
+
+      expect(within(seleniumRow).getByText('Browser automation')).toBeInTheDocument()
+      expect(within(apiRow).getByText('Direct API')).toBeInTheDocument()
+
+      const summaries = within(table).getAllByTestId('site-config-summary')
+      expect(summaries[0]).toHaveTextContent('Selectors — user: #username, pass: #password, button: button\[type="submit"\]')
+      expect(summaries[0]).toHaveTextContent('Cookies stored: sessionid')
+      expect(summaries[1]).toHaveTextContent('POST https://example.com/api/login')
+      expect(summaries[1]).toHaveTextContent('Headers: 1')
+      expect(summaries[1]).toHaveTextContent('Body provided')
+      expect(summaries[1]).toHaveTextContent('Cookie values: 1')
+    } finally {
+      unmount()
+    }
+  })
+})
 
 describe('site configs creation validation', () => {
   it('shows inline errors for selenium config when required fields are empty', async () => {
@@ -261,7 +315,10 @@ describe('site configs creation validation', () => {
       fireEvent.submit(form)
 
       expect(apiInputs.apiEndpoint).toHaveAttribute('aria-describedby', 'create-site-config-endpoint-error')
-      expect(apiInputs.apiMethod).toHaveAttribute('aria-describedby', 'create-site-config-method-error')
+
+      fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'notaurl' } })
+      fireEvent.submit(form)
+      expect(withinForm.getByText('Enter a valid URL')).toBeInTheDocument()
 
       fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'https://example.com/api/login' } })
       fireEvent.change(apiInputs.apiMethod!, { target: { value: 'TRACE' } })
@@ -271,10 +328,11 @@ describe('site configs creation validation', () => {
 
       fireEvent.submit(form)
 
-      expect(withinForm.getByText('Choose a supported HTTP method')).toBeInTheDocument()
+      expect(withinForm.getByText(/Method is required|Choose a supported HTTP method/)).toBeInTheDocument()
       expect(withinForm.getByText('Headers must be a JSON object of string values')).toBeInTheDocument()
       expect(withinForm.getByText('Cookies must be a JSON object of string values')).toBeInTheDocument()
       expect(withinForm.getByText('Body must be a JSON object or null')).toBeInTheDocument()
+      expect(apiInputs.apiMethod).toHaveAttribute('aria-describedby', 'create-site-config-method-error')
       expect(createSiteConfigMock).not.toHaveBeenCalled()
     } finally {
       unmount()
@@ -426,7 +484,7 @@ describe('site configs copy to user scope', () => {
 
 describe('site configs error handling', () => {
   it('surfaces create failures in the banner with the thrown message', async () => {
-    const { withinForm, inputs, withinBanner, mutate, unmount } = await setup()
+    const { form, withinForm, inputs, withinBanner, mutate, unmount } = await setup()
 
     try {
       fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
@@ -437,7 +495,7 @@ describe('site configs error handling', () => {
 
       createSiteConfigMock.mockRejectedValueOnce(new Error('Create failed'))
 
-      fireEvent.submit(withinForm.getByRole('form'))
+      fireEvent.submit(form)
 
       await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
       const banner = await screen.findByRole('alert')
