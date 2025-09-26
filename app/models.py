@@ -262,6 +262,12 @@ class Feed(SQLModel, table=True):
     rss_requires_auth: bool = False
     site_config_id: Optional[str] = Field(default=None, index=True)
     owner_user_id: Optional[str] = Field(default=None, index=True)
+    site_login_credential_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("credential.id", ondelete="SET NULL"), nullable=True
+        ),
+    )
 
 
 class Credential(SQLModel, table=True):

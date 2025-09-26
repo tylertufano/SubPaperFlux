@@ -141,6 +141,7 @@ def list_feeds_v1(
             rss_requires_auth=r.rss_requires_auth,
             site_config_id=r.site_config_id,
             owner_user_id=r.owner_user_id,
+            site_login_credential_id=r.site_login_credential_id,
         )
         for r in rows
     ]

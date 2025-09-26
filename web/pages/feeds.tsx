@@ -40,6 +40,7 @@ export default function Feeds() {
   const [paywalled, setPaywalled] = useState(false)
   const [rssAuth, setRssAuth] = useState(false)
   const [siteConfigId, setSiteConfigId] = useState('')
+  const [siteLoginCredentialId, setSiteLoginCredentialId] = useState('')
   const [siteLoginSelection, setSiteLoginSelection] = useState('')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -65,25 +66,43 @@ export default function Feeds() {
     [loginCredentials, siteConfigs, t],
   )
 
-  const getSelectionForSiteConfig = useCallback((id?: string | null): string => {
-    if (!id) return ''
-    const pairOption = siteLoginOptions.find(opt => opt.type === 'pair' && opt.siteConfigId === id)
-    if (pairOption) return pairOption.value
-    const configOption = siteLoginOptions.find(opt => opt.type === 'config' && opt.siteConfigId === id)
-    return configOption?.value ?? ''
-  }, [siteLoginOptions])
+  const getSelectionForFeed = useCallback(
+    (configId?: string | null, credentialId?: string | null): string => {
+      const normalizedConfig = configId ? String(configId) : ''
+      const normalizedCredential = credentialId ? String(credentialId) : ''
+      if (normalizedConfig && normalizedCredential) {
+        const pairOption = siteLoginOptions.find(
+          opt =>
+            opt.type === 'pair' &&
+            opt.siteConfigId === normalizedConfig &&
+            opt.credentialId === normalizedCredential,
+        )
+        if (pairOption) return pairOption.value
+      }
+      if (normalizedConfig) {
+        const configOption = siteLoginOptions.find(
+          opt => opt.type === 'config' && opt.siteConfigId === normalizedConfig,
+        )
+        if (configOption) return configOption.value
+        const fallbackPair = siteLoginOptions.find(opt => opt.siteConfigId === normalizedConfig)
+        if (fallbackPair) return fallbackPair.value
+      }
+      return ''
+    },
+    [siteLoginOptions],
+  )
 
   useEffect(() => {
-    const nextSelection = getSelectionForSiteConfig(siteConfigId)
+    const nextSelection = getSelectionForFeed(siteConfigId, siteLoginCredentialId)
     if (nextSelection !== siteLoginSelection) {
       setSiteLoginSelection(nextSelection)
     }
-  }, [getSelectionForSiteConfig, siteConfigId, siteLoginSelection])
+  }, [getSelectionForFeed, siteConfigId, siteLoginCredentialId, siteLoginSelection])
 
   useEffect(() => {
     setEditRow((prev: any) => {
       if (!prev) return prev
-      const nextSelection = getSelectionForSiteConfig(prev.siteConfigId)
+      const nextSelection = getSelectionForFeed(prev.siteConfigId, prev.siteLoginCredentialId)
       if (nextSelection && nextSelection !== prev.siteLoginSelection) {
         return { ...prev, siteLoginSelection: nextSelection }
       }
@@ -92,12 +111,31 @@ export default function Feeds() {
       }
       return prev
     })
-  }, [getSelectionForSiteConfig, siteLoginOptions])
+  }, [getSelectionForFeed, siteLoginOptions])
 
   const siteConfigLabelMap = useMemo(
     () => buildSiteConfigLabelMap(siteLoginOptions, siteConfigs),
     [siteLoginOptions, siteConfigs],
   )
+
+  const siteLoginPairLabelMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const option of siteLoginOptions) {
+      if (option.type === 'pair' && option.credentialId) {
+        map.set(`${option.credentialId}::${option.siteConfigId}`, option.label)
+      }
+    }
+    return map
+  }, [siteLoginOptions])
+
+  const credentialLabelMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const cred of loginCredentials) {
+      if (!cred?.id) continue
+      map.set(String(cred.id), cred.description || String(cred.id))
+    }
+    return map
+  }, [loginCredentials])
 
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
@@ -109,8 +147,9 @@ export default function Feeds() {
         isPaywalled: paywalled,
         rssRequiresAuth: rssAuth,
         siteConfigId: siteConfigId || undefined,
+        siteLoginCredentialId: siteLoginCredentialId || undefined,
       } as any })
-      setUrl(''); setLookback(''); setSiteConfigId(''); setSiteLoginSelection(''); setPaywalled(false); setRssAuth(false)
+      setUrl(''); setLookback(''); setSiteConfigId(''); setSiteLoginCredentialId(''); setSiteLoginSelection(''); setPaywalled(false); setRssAuth(false)
       setBanner({ kind: 'success', message: t('feeds_create_success') })
       mutate()
     } catch (e: any) {
@@ -131,13 +170,18 @@ export default function Feeds() {
 
   async function startEdit(f: any) {
     setEditingId(f.id)
+    const rawSiteConfigId = f.site_config_id || f.siteConfigId || ''
+    const rawCredentialId = f.site_login_credential_id || f.siteLoginCredentialId || ''
+    const selection = getSelectionForFeed(rawSiteConfigId, rawCredentialId)
     setEditRow({
       url: f.url || '',
       pollFrequency: f.poll_frequency || f.pollFrequency || '1h',
       initialLookbackPeriod: f.initial_lookback_period || f.initialLookbackPeriod || '',
       isPaywalled: !!(f.is_paywalled ?? f.isPaywalled),
       rssRequiresAuth: !!(f.rss_requires_auth ?? f.rssRequiresAuth),
-      siteConfigId: f.site_config_id || f.siteConfigId || '',
+      siteConfigId: rawSiteConfigId,
+      siteLoginCredentialId: rawCredentialId,
+      siteLoginSelection: selection,
     })
   }
 
@@ -157,6 +201,7 @@ export default function Feeds() {
           isPaywalled: !!editRow.isPaywalled,
           rssRequiresAuth: !!editRow.rssRequiresAuth,
           siteConfigId: editRow.siteConfigId || undefined,
+          siteLoginCredentialId: editRow.siteLoginCredentialId || undefined,
         } as any,
       })
       setBanner({ kind: 'success', message: t('feeds_update_success') })
@@ -252,10 +297,12 @@ export default function Feeds() {
               setSiteLoginSelection(value)
               if (!value) {
                 setSiteConfigId('')
+                setSiteLoginCredentialId('')
                 return
               }
               const option = siteLoginOptions.find(opt => opt.value === value)
               setSiteConfigId(option?.siteConfigId ?? '')
+              setSiteLoginCredentialId(option?.credentialId ?? '')
             }}
           >
             <option value="">{t('feeds_field_site_login_select')}</option>
@@ -319,6 +366,7 @@ export default function Feeds() {
                                 ...editRow,
                                 siteLoginSelection: value,
                                 siteConfigId: option?.siteConfigId ?? '',
+                                siteLoginCredentialId: option?.credentialId ?? '',
                               })
                             }}
                             aria-label={t('feeds_field_site_login_select')}
@@ -346,8 +394,17 @@ export default function Feeds() {
                         <td className="td">{
                           (() => {
                             const id = f.site_config_id || f.siteConfigId
+                            const credentialId = f.site_login_credential_id || f.siteLoginCredentialId
                             if (!id) return ''
                             const key = String(id)
+                            if (credentialId) {
+                              const pairKey = `${credentialId}::${key}`
+                              const pairLabel = siteLoginPairLabelMap.get(pairKey)
+                              if (pairLabel) return pairLabel
+                              const credLabel = credentialLabelMap.get(String(credentialId)) || String(credentialId)
+                              const configLabel = siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
+                              return `${credLabel} • ${configLabel}`
+                            }
                             return siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
                           })()
                         }</td>

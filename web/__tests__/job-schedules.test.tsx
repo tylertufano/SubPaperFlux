@@ -135,6 +135,7 @@ const defaultFeeds = {
       isPaywalled: true,
       rssRequiresAuth: true,
       siteConfigId: "site-1",
+      siteLoginCredentialId: "cred-login",
     },
     {
       id: "feed-2",
