@@ -13,9 +13,20 @@
  */
 
 
+import type { SiteConfigApi } from './SiteConfigApi';
+import {
+    SiteConfigApiFromJSONTyped,
+    SiteConfigApiToJSON,
+} from './SiteConfigApi';
+import type { SiteConfigSelenium } from './SiteConfigSelenium';
+import {
+    SiteConfigSeleniumFromJSONTyped,
+    SiteConfigSeleniumToJSON,
+} from './SiteConfigSelenium';
+
 /**
  * @type ResponseUpdateSiteConfigSiteConfigsConfigIdPut
- * 
+ *
  * @export
  */
 export type ResponseUpdateSiteConfigSiteConfigsConfigIdPut = { loginType: 'api' } & SiteConfigApi | { loginType: 'selenium' } & SiteConfigSelenium;
@@ -52,7 +63,7 @@ export function ResponseUpdateSiteConfigSiteConfigsConfigIdPutToJSONTyped(value?
         case 'selenium':
             return Object.assign({}, SiteConfigSeleniumToJSON(value), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 
