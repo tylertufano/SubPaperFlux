@@ -10,7 +10,11 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobsPage, MeOut, MeUpdate, RoleGrantRequest, SiteConfigsPage, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, RoleGrantRequest, SiteConfigOut, SiteConfigsPage, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
+    organizationId: string;
+    adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
+}
 export interface BulkDeleteBookmarksV1BookmarksBulkDeletePostRequest {
     requestBody: {
         [key: string]: any;
@@ -31,6 +35,15 @@ export interface BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest {
     bulkBookmarkTagUpdate: BulkBookmarkTagUpdate;
     xCsrfToken?: string | null;
 }
+export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
+    userId: string;
+}
+export interface CopyCredentialV1CredentialsCredIdCopyPostRequest {
+    credId: string;
+}
+export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
+    configId: string;
+}
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: string | null;
     tagId?: string | null;
@@ -48,6 +61,15 @@ export interface CountBookmarksV1BookmarksCountGetRequest {
 export interface CreateFolderV1BookmarksFoldersPostRequest {
     folderCreate: FolderCreate;
     xCsrfToken?: string | null;
+}
+export interface CreateJobScheduleV1JobSchedulesPostRequest {
+    jobScheduleCreate: JobScheduleCreate;
+}
+export interface CreateJobScheduleV1JobSchedulesPost0Request {
+    jobScheduleCreate: JobScheduleCreate;
+}
+export interface CreateOrganizationV1AdminOrgsPostRequest {
+    adminOrganizationCreate: AdminOrganizationCreate;
 }
 export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
@@ -71,6 +93,12 @@ export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
     folderId: string;
     xCsrfToken?: string | null;
+}
+export interface DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest {
+    scheduleId: string;
+}
+export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
+    organizationId: string;
 }
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
     roleId: string;
@@ -108,8 +136,14 @@ export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: string;
 }
+export interface GetJobScheduleV1JobSchedulesScheduleIdGetRequest {
+    scheduleId: string;
+}
 export interface GetJobV1JobsJobIdGetRequest {
     jobId: string;
+}
+export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
+    organizationId: string;
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
     roleId: string;
@@ -224,6 +258,20 @@ export interface ListFeedsV1V1FeedsGet0Request {
     page?: number;
     size?: number;
 }
+export interface ListJobSchedulesV1JobSchedulesGetRequest {
+    ownerUserId?: Array<string> | null;
+    jobType?: string | null;
+    isActive?: boolean | null;
+    page?: number;
+    size?: number;
+}
+export interface ListJobSchedulesV1JobSchedulesGet0Request {
+    ownerUserId?: Array<string> | null;
+    jobType?: string | null;
+    isActive?: boolean | null;
+    page?: number;
+    size?: number;
+}
 export interface ListJobsV1JobsGetRequest {
     status?: string | null;
     jobType?: string | null;
@@ -239,6 +287,12 @@ export interface ListJobsV1JobsGet0Request {
     size?: number;
     orderBy?: string;
     orderDir?: string;
+}
+export interface ListOrganizationsV1AdminOrgsGetRequest {
+    page?: number;
+    size?: number;
+    search?: string | null;
+    isDefault?: boolean | null;
 }
 export interface ListRolesV1AdminRolesGetRequest {
     page?: number;
@@ -262,9 +316,14 @@ export interface ListUsersV1AdminUsersGetRequest {
     search?: string | null;
     isActive?: boolean | null;
     role?: string | null;
+    organizationId?: string | null;
 }
 export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
     bookmarkId: string;
+}
+export interface RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest {
+    organizationId: string;
+    userId: string;
 }
 export interface RetryAllJobsV1JobsRetryAllPostRequest {
     requestBody: {
@@ -281,6 +340,9 @@ export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
     userId: string;
     roleName: string;
     confirm?: boolean;
+}
+export interface RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest {
+    scheduleId: string;
 }
 export interface StreamJobsV1JobsStreamGetRequest {
     status?: string | null;
@@ -303,6 +365,9 @@ export interface TestMinifluxV1IntegrationsMinifluxTestPostRequest {
 export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
     configId: string;
 }
+export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
+    scheduleId: string;
+}
 export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
     bookmarkId: string;
     bookmarkFolderUpdate: BookmarkFolderUpdate;
@@ -318,8 +383,16 @@ export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
     folderUpdate: FolderUpdate;
     xCsrfToken?: string | null;
 }
+export interface UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest {
+    scheduleId: string;
+    jobScheduleUpdate: JobScheduleUpdate;
+}
 export interface UpdateMeV1MePatchRequest {
     meUpdate: MeUpdate;
+}
+export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
+    organizationId: string;
+    adminOrganizationUpdate: AdminOrganizationUpdate;
 }
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: string;
@@ -330,9 +403,19 @@ export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
     tagUpdate: TagUpdate;
     xCsrfToken?: string | null;
 }
+export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest {
+    userId: string;
+    adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdate;
+}
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
     userId: string;
     adminUserUpdate: AdminUserUpdate;
+}
+export interface UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+}
+export interface UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest {
+    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
 }
 export interface ValidateJobPayloadV1JobsValidatePostRequest {
     requestBody: {
@@ -343,6 +426,14 @@ export interface ValidateJobPayloadV1JobsValidatePostRequest {
  *
  */
 export declare class V1Api extends runtime.BaseAPI {
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Add a user to an organization
+     */
+    addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost(requestParameters: AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Bulk Delete Bookmarks
      */
@@ -376,6 +467,30 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkTagSummary>>;
     /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Clear user role overrides
+     */
+    clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPostRaw(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
+    /**
+     * Copy Credential
+     */
+    copyCredentialV1CredentialsCredIdCopyPost(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfigOut>>;
+    /**
+     * Copy Site Config V1
+     */
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfigOut>;
+    /**
      * Count Bookmarks
      */
     countBookmarksV1BookmarksCountGetRaw(requestParameters: CountBookmarksV1BookmarksCountGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
@@ -395,6 +510,30 @@ export declare class V1Api extends runtime.BaseAPI {
      * Create Folder
      */
     createFolderV1BookmarksFoldersPost(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPostRaw(requestParameters: CreateJobScheduleV1JobSchedulesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost(requestParameters: CreateJobScheduleV1JobSchedulesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost_1Raw(requestParameters: CreateJobScheduleV1JobSchedulesPost0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost_1(requestParameters: CreateJobScheduleV1JobSchedulesPost0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPostRaw(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Create an organization
+     */
+    createOrganizationV1AdminOrgsPost(requestParameters: CreateOrganizationV1AdminOrgsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Create a role
      */
@@ -456,6 +595,22 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
+     * Delete a job schedule
+     */
+    deleteJobScheduleV1JobSchedulesScheduleIdDeleteRaw(requestParameters: DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+    /**
+     * Delete a job schedule
+     */
+    deleteJobScheduleV1JobSchedulesScheduleIdDelete(requestParameters: DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+    /**
+     * Delete an organization
+     */
+    deleteOrganizationV1AdminOrgsOrganizationIdDelete(requestParameters: DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
      * Delete a role
      */
     deleteRoleV1AdminRolesRoleIdDeleteRaw(requestParameters: DeleteRoleV1AdminRolesRoleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
@@ -512,6 +667,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     getBookmarkV1BookmarksBookmarkIdGet(requestParameters: GetBookmarkV1BookmarksBookmarkIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarkOut>;
     /**
+     * Get a job schedule
+     */
+    getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
+    /**
+     * Get a job schedule
+     */
+    getJobScheduleV1JobSchedulesScheduleIdGet(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
+    /**
      * Get a single job by id.
      * Get job
      */
@@ -529,6 +692,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Get current user profile
      */
     getMeV1MeGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Get organization details
+     */
+    getOrganizationV1AdminOrgsOrganizationIdGet(requestParameters: GetOrganizationV1AdminOrgsOrganizationIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Get role details
      */
@@ -562,6 +733,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     getUserV1AdminUsersUserIdGet(requestParameters: GetUserV1AdminUsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
     /**
+     * Retrieve the public welcome message
+     */
+    getWelcomeSettingV1SiteSettingsWelcomeGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>>;
+    /**
+     * Retrieve the public welcome message
+     */
+    getWelcomeSettingV1SiteSettingsWelcomeGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut>;
+    /**
      * Grant a role to a user
      */
     grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters: GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
@@ -580,11 +759,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_1Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
+    headBookmarksV1BookmarksHead_2Raw(requestParameters: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_1(requestParameters?: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
+    headBookmarksV1BookmarksHead_2(requestParameters?: HeadBookmarksV1BookmarksHead0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Integrations Status
      */
@@ -616,11 +795,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_2Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>>;
+    listBookmarksV1BookmarksGet_3Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>>;
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_2(requestParameters?: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage>;
+    listBookmarksV1BookmarksGet_3(requestParameters?: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage>;
     /**
      * List credentials
      */
@@ -632,11 +811,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet_3Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>>;
+    listCredentialsV1V1CredentialsGet_4Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>>;
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet_3(requestParameters?: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage>;
+    listCredentialsV1V1CredentialsGet_4(requestParameters?: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage>;
     /**
      * List feeds
      */
@@ -648,11 +827,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet_4Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>>;
+    listFeedsV1V1FeedsGet_5Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>>;
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet_4(requestParameters?: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage>;
+    listFeedsV1V1FeedsGet_5(requestParameters?: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage>;
     /**
      * List Folders
      */
@@ -661,6 +840,22 @@ export declare class V1Api extends runtime.BaseAPI {
      * List Folders
      */
     listFoldersV1BookmarksFoldersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FolderOut>>;
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGetRaw(requestParameters: ListJobSchedulesV1JobSchedulesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>>;
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet(requestParameters?: ListJobSchedulesV1JobSchedulesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage>;
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>>;
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet_6(requestParameters?: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage>;
     /**
      * List jobs with filters, pagination, and sorting.
      * List jobs
@@ -675,12 +870,20 @@ export declare class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_5Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>>;
+    listJobsV1JobsGet_7Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>>;
     /**
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_5(requestParameters?: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage>;
+    listJobsV1JobsGet_7(requestParameters?: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage>;
+    /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGetRaw(requestParameters: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationsPage>>;
+    /**
+     * List organizations
+     */
+    listOrganizationsV1AdminOrgsGet(requestParameters?: ListOrganizationsV1AdminOrgsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationsPage>;
     /**
      * List roles
      */
@@ -730,6 +933,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string>;
     /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Remove a user from an organization
+     */
+    removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete(requestParameters: RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
+    /**
      * Requeue all failed/dead jobs optionally filtered by type.
      * Retry all jobs
      */
@@ -769,6 +980,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Revoke a role from a user
      */
     revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete(requestParameters: RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
+     * Enqueue a job for immediate execution
+     */
+    runJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRaw(requestParameters: RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobOut>>;
+    /**
+     * Enqueue a job for immediate execution
+     */
+    runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost(requestParameters: RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobOut>;
     /**
      * Server-sent events stream of jobs list.
      * Stream jobs
@@ -816,6 +1035,14 @@ export declare class V1Api extends runtime.BaseAPI {
         [key: string]: any;
     }>;
     /**
+     * Toggle schedule active state
+     */
+    toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
+    /**
+     * Toggle schedule active state
+     */
+    toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
+    /**
      * Update Bookmark Folder
      */
     updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>>;
@@ -840,6 +1067,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     updateFolderV1BookmarksFoldersFolderIdPut(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
     /**
+     * Update a job schedule
+     */
+    updateJobScheduleV1JobSchedulesScheduleIdPatchRaw(requestParameters: UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
+    /**
+     * Update a job schedule
+     */
+    updateJobScheduleV1JobSchedulesScheduleIdPatch(requestParameters: UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
+    /**
      * Update current user profile
      */
     updateMeV1MePatchRaw(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeOut>>;
@@ -847,6 +1082,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Update current user profile
      */
     updateMeV1MePatch(requestParameters: UpdateMeV1MePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeOut>;
+    /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminOrganizationDetail>>;
+    /**
+     * Update an organization
+     */
+    updateOrganizationV1AdminOrgsOrganizationIdPatch(requestParameters: UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminOrganizationDetail>;
     /**
      * Update a role
      */
@@ -864,6 +1107,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     updateTagV1BookmarksTagsTagIdPut(requestParameters: UpdateTagV1BookmarksTagsTagIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TagOut>;
     /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
+    /**
+     * Update user role overrides
+     */
+    updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch(requestParameters: UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
+    /**
      * Update a user
      */
     updateUserV1AdminUsersUserIdPatchRaw(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>>;
@@ -871,6 +1122,22 @@ export declare class V1Api extends runtime.BaseAPI {
      * Update a user
      */
     updateUserV1AdminUsersUserIdPatch(requestParameters: UpdateUserV1AdminUsersUserIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUserOut>;
+    /**
+     * Partially update the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>>;
+    /**
+     * Partially update the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePatch(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut>;
+    /**
+     * Create or replace the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>>;
+    /**
+     * Create or replace the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePut(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteWelcomeSettingOut>;
     /**
      * Dry-run validation per job type
      * Validate a job payload

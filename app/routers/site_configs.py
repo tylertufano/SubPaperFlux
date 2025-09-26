@@ -1,21 +1,32 @@
 from typing import Dict, List, Optional, Tuple
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import TypeAdapter
 from sqlalchemy import func
-from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..auth.oidc import get_current_user
 from ..auth import (
     PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
     PERMISSION_READ_GLOBAL_SITE_CONFIGS,
     has_permission,
 )
-from ..schemas import SiteConfig as SiteConfigSchema
-from ..db import get_session
-from ..security.csrf import csrf_protect
-from ..models import SiteConfig as SiteConfigModel, SiteLoginType
-from ..util.quotas import enforce_user_quota
+from ..auth.oidc import get_current_user
 from ..config import is_user_mgmt_enforce_enabled
+from ..db import get_session
+from ..models import SiteConfig as SiteConfigModel, SiteLoginType
+from ..schemas import SiteConfig as SiteConfigSchema
+from ..security.csrf import csrf_protect
+from ..util.quotas import enforce_user_quota
+
+
+_site_config_adapter = TypeAdapter(SiteConfigSchema)
+
+
+def _login_type_value(value: SiteLoginType | str) -> str:
+    if isinstance(value, SiteLoginType):
+        return value.value
+    return SiteLoginType(value).value
 
 
 def _normalize_login_payload(
@@ -83,7 +94,7 @@ def _normalize_login_payload(
 
 def _serialize_site_config(model: SiteConfigModel) -> SiteConfigSchema:
     payload = model.model_dump(mode="json")
-    return SiteConfigSchema.model_validate(payload)
+    return _site_config_adapter.validate_python(payload)
 
 
 def _summarize_login_payload(
@@ -94,7 +105,7 @@ def _summarize_login_payload(
     if login_type == SiteLoginType.SELENIUM:
         selenium = selenium_config or {}
         return {
-            "login_type": login_type.value,
+            "login_type": _login_type_value(login_type),
             "selectors": {
                 key: selenium.get(key)
                 for key in (
@@ -109,7 +120,7 @@ def _summarize_login_payload(
 
     api = api_config or {}
     return {
-        "login_type": login_type.value,
+        "login_type": _login_type_value(login_type),
         "endpoint": api.get("endpoint"),
         "method": api.get("method"),
         "has_headers": bool(api.get("headers")),
@@ -317,6 +328,7 @@ def delete_site_config(config_id: str, current_user=Depends(get_current_user), s
         )
         if not allowed_cross:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
     record_audit_log(
         session,
         entity_type="setting",
@@ -327,7 +339,7 @@ def delete_site_config(config_id: str, current_user=Depends(get_current_user), s
         details={
             "name": model.name,
             "site_url": model.site_url,
-            "login_type": model.login_type.value,
+            "login_type": _login_type_value(model.login_type),
         },
     )
     session.delete(model)

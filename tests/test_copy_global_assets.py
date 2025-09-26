@@ -168,6 +168,29 @@ def _insert_global_site_config():
         return record
 
 
+def _insert_global_api_site_config():
+    from app.db import get_session
+    from app.models import SiteConfig, SiteLoginType
+
+    with next(get_session()) as session:
+        record = SiteConfig(
+            name="Global API Login",
+            site_url="https://global.example.com/api",
+            login_type=SiteLoginType.API,
+            api_config={
+                "endpoint": "https://global.example.com/api/login",
+                "method": "POST",
+                "headers": {"X-Mode": "global"},
+                "cookies": {"session": "shared"},
+            },
+            owner_user_id=None,
+        )
+        session.add(record)
+        session.commit()
+        session.refresh(record)
+        return record
+
+
 def _create_user_credential(
     *, description="User credential", site_config_id: Optional[str] = None
 ):
@@ -278,6 +301,39 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
         assert audit.actor_user_id == USER_ID
         assert audit.details["source_config_id"] == global_config.id
         assert audit.details["name"] == global_config.name
+
+
+def test_copy_global_api_site_config_creates_user_owned_clone(copy_client):
+    global_api_config = _insert_global_api_site_config()
+
+    response = copy_client.post(f"/v1/site-configs/{global_api_config.id}/copy")
+    assert response.status_code == 201
+
+    payload = response.json()
+    assert payload["login_type"] == "api"
+    assert payload["owner_user_id"] == USER_ID
+    assert payload["api_config"]["endpoint"] == global_api_config.api_config.get("endpoint")
+    assert payload["api_config"]["headers"] == global_api_config.api_config.get("headers")
+
+    from app.db import get_session
+    from app.models import AuditLog, SiteConfig
+
+    with next(get_session()) as session:
+        clone = session.get(SiteConfig, payload["id"])
+        assert clone is not None
+        assert clone.owner_user_id == USER_ID
+        assert clone.api_config == global_api_config.api_config
+
+        audit = session.exec(
+            select(AuditLog)
+            .where(AuditLog.entity_type == "setting")
+            .where(AuditLog.entity_id == clone.id)
+            .where(AuditLog.action == "copy")
+        ).one()
+        assert audit.owner_user_id == USER_ID
+        assert audit.actor_user_id == USER_ID
+        assert audit.details["source_config_id"] == global_api_config.id
+        assert audit.details["name"] == global_api_config.name
 
 
 def test_copy_global_credential_creates_user_owned_clone(copy_client):

@@ -461,6 +461,82 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['jobScheduleCreate'] == null) {
+                throw new runtime.RequiredError('jobScheduleCreate', 'Required parameter "jobScheduleCreate" was null or undefined when calling createJobScheduleV1JobSchedulesPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.JobScheduleCreateToJSON)(requestParameters['jobScheduleCreate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobScheduleOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.createJobScheduleV1JobSchedulesPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost_1Raw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['jobScheduleCreate'] == null) {
+                throw new runtime.RequiredError('jobScheduleCreate', 'Required parameter "jobScheduleCreate" was null or undefined when calling createJobScheduleV1JobSchedulesPost_1().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.JobScheduleCreateToJSON)(requestParameters['jobScheduleCreate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobScheduleOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Create a job schedule
+     */
+    createJobScheduleV1JobSchedulesPost_1(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.createJobScheduleV1JobSchedulesPost_1Raw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Create an organization
      */
     createOrganizationV1AdminOrgsPostRaw(requestParameters, initOverrides) {
@@ -759,6 +835,42 @@ class V1Api extends runtime.BaseAPI {
     deleteFolderV1BookmarksFoldersFolderIdDelete(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides);
+        });
+    }
+    /**
+     * Delete a job schedule
+     */
+    deleteJobScheduleV1JobSchedulesScheduleIdDeleteRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['scheduleId'] == null) {
+                throw new runtime.RequiredError('scheduleId', 'Required parameter "scheduleId" was null or undefined when calling deleteJobScheduleV1JobSchedulesScheduleIdDelete().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/{schedule_id}`;
+            urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'DELETE',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.VoidApiResponse(response);
+        });
+    }
+    /**
+     * Delete a job schedule
+     */
+    deleteJobScheduleV1JobSchedulesScheduleIdDelete(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.deleteJobScheduleV1JobSchedulesScheduleIdDeleteRaw(requestParameters, initOverrides);
         });
     }
     /**
@@ -1110,6 +1222,43 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Get a job schedule
+     */
+    getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['scheduleId'] == null) {
+                throw new runtime.RequiredError('scheduleId', 'Required parameter "scheduleId" was null or undefined when calling getJobScheduleV1JobSchedulesScheduleIdGet().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/{schedule_id}`;
+            urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobScheduleOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Get a job schedule
+     */
+    getJobScheduleV1JobSchedulesScheduleIdGet(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Get a single job by id.
      * Get job
      */
@@ -1356,6 +1505,32 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Retrieve the public welcome message
+     */
+    getWelcomeSettingV1SiteSettingsWelcomeGetRaw(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            const headerParameters = {};
+            let urlPath = `/v1/site-settings/welcome`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteWelcomeSettingOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Retrieve the public welcome message
+     */
+    getWelcomeSettingV1SiteSettingsWelcomeGet(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.getWelcomeSettingV1SiteSettingsWelcomeGetRaw(initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Grant a role to a user
      */
     grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters, initOverrides) {
@@ -1472,7 +1647,7 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides) {
+    headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters['search'] != null) {
@@ -1534,9 +1709,9 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_1(requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead_2(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides);
+            const response = yield this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1723,7 +1898,7 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides) {
+    listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters['page'] != null) {
@@ -1795,9 +1970,9 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_2(requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet_3(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides);
+            const response = yield this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1849,7 +2024,7 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet_3Raw(requestParameters, initOverrides) {
+    listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters['includeGlobal'] != null) {
@@ -1885,9 +2060,9 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet_3(requestParameters = {}, initOverrides) {
+    listCredentialsV1V1CredentialsGet_4(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listCredentialsV1V1CredentialsGet_3Raw(requestParameters, initOverrides);
+            const response = yield this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1936,7 +2111,7 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet_4Raw(requestParameters, initOverrides) {
+    listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters['ownerUserIds'] != null) {
@@ -1969,9 +2144,9 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet_4(requestParameters = {}, initOverrides) {
+    listFeedsV1V1FeedsGet_5(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listFeedsV1V1FeedsGet_4Raw(requestParameters, initOverrides);
+            const response = yield this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2005,6 +2180,102 @@ class V1Api extends runtime.BaseAPI {
     listFoldersV1BookmarksFoldersGet(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listFoldersV1BookmarksFoldersGetRaw(initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters['ownerUserId'] != null) {
+                queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+            }
+            if (requestParameters['jobType'] != null) {
+                queryParameters['job_type'] = requestParameters['jobType'];
+            }
+            if (requestParameters['isActive'] != null) {
+                queryParameters['is_active'] = requestParameters['isActive'];
+            }
+            if (requestParameters['page'] != null) {
+                queryParameters['page'] = requestParameters['page'];
+            }
+            if (requestParameters['size'] != null) {
+                queryParameters['size'] = requestParameters['size'];
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobSchedulesPageFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listJobSchedulesV1JobSchedulesGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters['ownerUserId'] != null) {
+                queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+            }
+            if (requestParameters['jobType'] != null) {
+                queryParameters['job_type'] = requestParameters['jobType'];
+            }
+            if (requestParameters['isActive'] != null) {
+                queryParameters['is_active'] = requestParameters['isActive'];
+            }
+            if (requestParameters['page'] != null) {
+                queryParameters['page'] = requestParameters['page'];
+            }
+            if (requestParameters['size'] != null) {
+                queryParameters['size'] = requestParameters['size'];
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobSchedulesPageFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * List job schedules
+     */
+    listJobSchedulesV1JobSchedulesGet_6(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2065,7 +2336,7 @@ class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_5Raw(requestParameters, initOverrides) {
+    listJobsV1JobsGet_7Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters['status'] != null) {
@@ -2108,9 +2379,9 @@ class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_5(requestParameters = {}, initOverrides) {
+    listJobsV1JobsGet_7(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listJobsV1JobsGet_5Raw(requestParameters, initOverrides);
+            const response = yield this.listJobsV1JobsGet_7Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2614,6 +2885,43 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Enqueue a job for immediate execution
+     */
+    runJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['scheduleId'] == null) {
+                throw new runtime.RequiredError('scheduleId', 'Required parameter "scheduleId" was null or undefined when calling runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/{schedule_id}/run-now`;
+            urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Enqueue a job for immediate execution
+     */
+    runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Server-sent events stream of jobs list.
      * Stream jobs
      */
@@ -2785,6 +3093,43 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Toggle schedule active state
+     */
+    toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['scheduleId'] == null) {
+                throw new runtime.RequiredError('scheduleId', 'Required parameter "scheduleId" was null or undefined when calling toggleJobScheduleV1JobSchedulesScheduleIdTogglePost().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/{schedule_id}/toggle`;
+            urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'POST',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobScheduleOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Toggle schedule active state
+     */
+    toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Update Bookmark Folder
      */
     updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
@@ -2916,6 +3261,48 @@ class V1Api extends runtime.BaseAPI {
     updateFolderV1BookmarksFoldersFolderIdPut(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Update a job schedule
+     */
+    updateJobScheduleV1JobSchedulesScheduleIdPatchRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['scheduleId'] == null) {
+                throw new runtime.RequiredError('scheduleId', 'Required parameter "scheduleId" was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch().');
+            }
+            if (requestParameters['jobScheduleUpdate'] == null) {
+                throw new runtime.RequiredError('jobScheduleUpdate', 'Required parameter "jobScheduleUpdate" was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/job-schedules/{schedule_id}`;
+            urlPath = urlPath.replace(`{${"schedule_id"}}`, encodeURIComponent(String(requestParameters['scheduleId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PATCH',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.JobScheduleUpdateToJSON)(requestParameters['jobScheduleUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.JobScheduleOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Update a job schedule
+     */
+    updateJobScheduleV1JobSchedulesScheduleIdPatch(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateJobScheduleV1JobSchedulesScheduleIdPatchRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -3167,6 +3554,82 @@ class V1Api extends runtime.BaseAPI {
     updateUserV1AdminUsersUserIdPatch(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateUserV1AdminUsersUserIdPatchRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Partially update the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['siteWelcomeSettingUpdate'] == null) {
+                throw new runtime.RequiredError('siteWelcomeSettingUpdate', 'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePatch().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/site-settings/welcome`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PATCH',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.SiteWelcomeSettingUpdateToJSON)(requestParameters['siteWelcomeSettingUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteWelcomeSettingOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Partially update the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePatch(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Create or replace the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['siteWelcomeSettingUpdate'] == null) {
+                throw new runtime.RequiredError('siteWelcomeSettingUpdate', 'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePut().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/site-settings/welcome`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PUT',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.SiteWelcomeSettingUpdateToJSON)(requestParameters['siteWelcomeSettingUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteWelcomeSettingOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Create or replace the welcome message
+     */
+    updateWelcomeSettingV1SiteSettingsWelcomePut(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

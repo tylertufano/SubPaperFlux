@@ -11,6 +11,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AdminUserRoleOverridesFromJSON, AdminUserRoleOverridesToJSON, } from './AdminUserRoleOverrides';
+import { AdminUserOrganizationFromJSON, AdminUserOrganizationToJSON, } from './AdminUserOrganization';
+import { AdminUserOrganizationMembershipFromJSON, AdminUserOrganizationMembershipToJSON, } from './AdminUserOrganizationMembership';
 /**
  * Check if a given object implements the AdminUserOut interface.
  */
@@ -48,6 +51,10 @@ export function AdminUserOutFromJSONTyped(json, ignoreDiscriminator) {
         'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
         'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
         'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'roleOverrides': json['role_overrides'] == null ? undefined : AdminUserRoleOverridesFromJSON(json['role_overrides']),
+        'organizationIds': json['organization_ids'] == null ? undefined : json['organization_ids'],
+        'organizationMemberships': json['organization_memberships'] == null ? undefined : (json['organization_memberships'].map(AdminUserOrganizationMembershipFromJSON)),
+        'organizations': json['organizations'] == null ? undefined : (json['organizations'].map(AdminUserOrganizationFromJSON)),
     };
 }
 export function AdminUserOutToJSON(json) {
@@ -74,5 +81,9 @@ export function AdminUserOutToJSONTyped(value, ignoreDiscriminator = false) {
         'quota_site_configs': value['quotaSiteConfigs'],
         'quota_feeds': value['quotaFeeds'],
         'quota_api_tokens': value['quotaApiTokens'],
+        'role_overrides': AdminUserRoleOverridesToJSON(value['roleOverrides']),
+        'organization_ids': value['organizationIds'],
+        'organization_memberships': value['organizationMemberships'] == null ? undefined : (value['organizationMemberships'].map(AdminUserOrganizationMembershipToJSON)),
+        'organizations': value['organizations'] == null ? undefined : (value['organizations'].map(AdminUserOrganizationToJSON)),
     };
 }

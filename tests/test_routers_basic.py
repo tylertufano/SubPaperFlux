@@ -72,6 +72,17 @@ def test_credentials_and_siteconfigs(client):
             },
             owner_user_id="u1",
         )
+        api_user_site = SiteConfig(
+            name="User API Site",
+            site_url="https://api-user.example.com/login",
+            login_type=SiteLoginType.API,
+            api_config={
+                "endpoint": "https://api-user.example.com/login",
+                "method": "POST",
+                "headers": {"X-Test": "1"},
+            },
+            owner_user_id="u1",
+        )
         global_site = SiteConfig(
             name="Global Site",
             site_url="https://global.example.com/login",
@@ -85,9 +96,11 @@ def test_credentials_and_siteconfigs(client):
             owner_user_id=None,
         )
         session.add(user_site)
+        session.add(api_user_site)
         session.add(global_site)
         session.commit()
         session.refresh(user_site)
+        session.refresh(api_user_site)
         session.refresh(global_site)
 
     # Create a credential (site_login)
@@ -208,25 +221,67 @@ def test_credentials_and_siteconfigs(client):
     assert r3.status_code == 201
     sc = r3.json()
     assert sc["name"] == "Demo"
+    assert sc["selenium_config"]["username_selector"] == "#u"
 
     # Update site config
-    updated_payload = dict(sc)
-    updated_payload["name"] = "Demo Updated"
+    updated_payload = {
+        **sc,
+        "name": "Demo Updated",
+        "selenium_config": {
+            **sc["selenium_config"],
+            "login_button_selector": "button.new",
+        },
+    }
     r_update_sc = client.put(f"/site-configs/{sc['id']}", json=updated_payload)
     assert r_update_sc.status_code == 200
-    assert r_update_sc.json()["name"] == "Demo Updated"
+    updated_response = r_update_sc.json()
+    assert updated_response["name"] == "Demo Updated"
+    assert updated_response["selenium_config"]["login_button_selector"] == "button.new"
 
     # Delete site config
     r_delete_sc = client.delete(f"/site-configs/{sc['id']}")
     assert r_delete_sc.status_code == 204
 
+    # Create an API site config
+    api_payload = {
+        "name": "API Demo",
+        "site_url": "https://api.example.com/login",
+        "login_type": "api",
+        "api_config": {
+            "endpoint": "https://api.example.com/login",
+            "method": "POST",
+            "headers": {"X-Env": "prod"},
+            "cookies": {"sid": "abc"},
+        },
+    }
+    r_api = client.post("/site-configs", json=api_payload)
+    assert r_api.status_code == 201
+    api_sc = r_api.json()
+    assert api_sc["api_config"]["endpoint"] == "https://api.example.com/login"
+
+    api_update_payload = {
+        **api_sc,
+        "api_config": {
+            **api_sc["api_config"],
+            "method": "PUT",
+            "headers": {"X-Env": "stage"},
+        },
+    }
+    r_api_update = client.put(f"/site-configs/{api_sc['id']}", json=api_update_payload)
+    assert r_api_update.status_code == 200
+    assert r_api_update.json()["api_config"]["method"] == "PUT"
+
+    r_api_delete = client.delete(f"/site-configs/{api_sc['id']}")
+    assert r_api_delete.status_code == 204
+
     # List v1 site-configs
     r4 = client.get("/v1/site-configs")
     assert r4.status_code == 200
     scs = r4.json()
-    assert scs["total"] == 2
+    assert scs["total"] == 3
     site_ids = {item["id"] for item in scs["items"]}
     assert user_site.id in site_ids
+    assert api_user_site.id in site_ids
     assert global_site.id in site_ids
 
     # Verify audit logs recorded
@@ -246,7 +301,14 @@ def test_credentials_and_siteconfigs(client):
             .where(AuditLog.entity_type == "setting")
             .order_by(AuditLog.created_at)
         ).all()
-        assert [log.action for log in setting_logs] == ["create", "update", "delete"]
+        assert [log.action for log in setting_logs] == [
+            "create",
+            "update",
+            "delete",
+            "create",
+            "update",
+            "delete",
+        ]
 
     r_admin_audit = client.get("/v1/admin/audit")
     assert r_admin_audit.status_code == 200
@@ -276,19 +338,12 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
         assert cred_resp.status_code == 201
         global_cred = cred_resp.json()
 
-        sc_resp = client.post(
-            "/site-configs",
-            json={
-                "name": "Global Config",
-                "site_url": "https://example.com/global",
-                "username_selector": "#user",
-                "password_selector": "#pass",
-                "login_button_selector": "button",
-                "cookies_to_store": ["sid"],
-            },
+        global_sc = _create_site_config(
+            client,
+            owner=None,
+            name="Global Config",
+            site_url="https://example.com/global",
         )
-        assert sc_resp.status_code == 201
-        global_sc = sc_resp.json()
 
         from app.auth.oidc import get_current_user
 
@@ -322,20 +377,12 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
     is_user_mgmt_enforce_enabled.cache_clear()
     client.app.state.cache_user_mgmt_flags()
     try:
-        sc_resp = client.post(
-            "/site-configs",
-            json={
-                "name": "Owned Config",
-                "site_url": "https://example.com/owned",
-                "username_selector": "#u",
-                "password_selector": "#p",
-                "login_button_selector": "button",
-                "cookies_to_store": ["sid"],
-                "owner_user_id": "u1",
-            },
+        owned_sc = _create_site_config(
+            client,
+            owner="u1",
+            name="Owned Config",
+            site_url="https://example.com/owned",
         )
-        assert sc_resp.status_code == 201
-        owned_sc = sc_resp.json()
 
         cred_resp = client.post(
             "/credentials",
@@ -379,20 +426,12 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
 
-        tenant_sc_resp = client.post(
-            "/site-configs",
-            json={
-                "name": "Tenant Config",
-                "site_url": "https://example.com/tenant",
-                "username_selector": "#user",
-                "password_selector": "#pass",
-                "login_button_selector": "button",
-                "cookies_to_store": ["sid"],
-                "owner_user_id": "tenant",
-            },
+        tenant_sc = _create_site_config(
+            client,
+            owner="tenant",
+            name="Tenant Config",
+            site_url="https://example.com/tenant",
         )
-        assert tenant_sc_resp.status_code == 201
-        tenant_sc = tenant_sc_resp.json()
         other_cred_resp = client.post(
             "/credentials",
             json={
@@ -444,14 +483,23 @@ def test_admin_feed_creation_defaults_to_requester(client):
         assert stored.owner_user_id == "u1"
 
 
-def _create_site_config(client, *, owner: str = "u1") -> dict:
+def _create_site_config(
+    client,
+    *,
+    owner: str | None = "u1",
+    name: str = "Example Site",
+    site_url: str = "https://example.com",
+) -> dict:
     payload = {
-        "name": "Example Site",
-        "site_url": "https://example.com",
-        "username_selector": "#user",
-        "password_selector": "#pass",
-        "login_button_selector": "button[type=submit]",
-        "cookies_to_store": ["sid"],
+        "name": name,
+        "site_url": site_url,
+        "login_type": "selenium",
+        "selenium_config": {
+            "username_selector": "#user",
+            "password_selector": "#pass",
+            "login_button_selector": "button[type=submit]",
+            "cookies_to_store": ["sid"],
+        },
         "owner_user_id": owner,
     }
     resp = client.post("/site-configs", json=payload)

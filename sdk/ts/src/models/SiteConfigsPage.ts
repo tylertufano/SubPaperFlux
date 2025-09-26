@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { SiteConfigOut } from './SiteConfigOut';
+import type { SiteConfigsPageItemsInner } from './SiteConfigsPageItemsInner';
 import {
-    SiteConfigOutFromJSON,
-    SiteConfigOutFromJSONTyped,
-    SiteConfigOutToJSON,
-    SiteConfigOutToJSONTyped,
-} from './SiteConfigOut';
+    SiteConfigsPageItemsInnerFromJSON,
+    SiteConfigsPageItemsInnerFromJSONTyped,
+    SiteConfigsPageItemsInnerToJSON,
+    SiteConfigsPageItemsInnerToJSONTyped,
+} from './SiteConfigsPageItemsInner';
 
 /**
  * 
@@ -29,10 +29,10 @@ import {
 export interface SiteConfigsPage {
     /**
      * 
-     * @type {Array<SiteConfigOut>}
+     * @type {Array<SiteConfigsPageItemsInner>}
      * @memberof SiteConfigsPage
      */
-    items: Array<SiteConfigOut>;
+    items: Array<SiteConfigsPageItemsInner>;
     /**
      * 
      * @type {number}
@@ -86,7 +86,7 @@ export function SiteConfigsPageFromJSONTyped(json: any, ignoreDiscriminator: boo
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(SiteConfigOutFromJSON)),
+        'items': ((json['items'] as Array<any>).map(SiteConfigsPageItemsInnerFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
@@ -106,7 +106,7 @@ export function SiteConfigsPageToJSONTyped(value?: SiteConfigsPage | null, ignor
 
     return {
         
-        'items': ((value['items'] as Array<any>).map(SiteConfigOutToJSON)),
+        'items': ((value['items'] as Array<any>).map(SiteConfigsPageItemsInnerToJSON)),
         'total': value['total'],
         'page': value['page'],
         'size': value['size'],

@@ -1,7 +1,7 @@
 {
-  "name": "@subpaperflux/web-sdk",
+  "name": "@subpaperflux/sdk",
   "version": "0.1.0",
-  "description": "OpenAPI client for @subpaperflux/web-sdk",
+  "description": "OpenAPI client for @subpaperflux/sdk",
   "author": "OpenAPI-Generator",
   "repository": {
     "type": "git",

@@ -2,39 +2,222 @@ import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, siteConfigs as site } from '../lib/openapi'
 import { useMemo, useState } from 'react'
-import { validateSiteConfig } from '../lib/validate'
+import {
+  isValidUrl,
+  validateSiteConfig,
+  type SiteConfigFormInput,
+  type SeleniumSiteConfigForm,
+  type ApiSiteConfigForm,
+  type NormalizedSiteConfigPayload,
+} from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
+import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
+import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../sdk/src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost'
+import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
+
+const API_METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
+
+type SiteConfigFormState = (SiteConfigFormInput & { id?: string; ownerUserId?: string | null })
+
+type LocalizedErrors = Record<string, string>
+
+type SiteConfigList = SiteConfigsPage | Array<SiteConfigApiOut | SiteConfigSeleniumOut>
+
+type LoginType = 'selenium' | 'api'
+
+function createEmptyForm(loginType: 'selenium'): SiteConfigFormState
+function createEmptyForm(loginType: 'api'): SiteConfigFormState
+function createEmptyForm(loginType: LoginType): SiteConfigFormState {
+  if (loginType === 'selenium') {
+    const base: SeleniumSiteConfigForm = {
+      name: '',
+      site_url: '',
+      login_type: 'selenium',
+      selenium_config: {
+        username_selector: '',
+        password_selector: '',
+        login_button_selector: '',
+        post_login_selector: '',
+        cookies_to_store: '',
+      },
+    }
+    return base
+  }
+  const base: ApiSiteConfigForm = {
+    name: '',
+    site_url: '',
+    login_type: 'api',
+    api_config: {
+      endpoint: '',
+      method: 'POST',
+      headers: '',
+      body: '',
+      cookies: '',
+    },
+  }
+  return base
+}
+
+function isSeleniumConfig(value: any): value is SiteConfigSeleniumOut {
+  return value && typeof value === 'object' && value.loginType === 'selenium'
+}
+
+function isApiConfig(value: any): value is SiteConfigApiOut {
+  return value && typeof value === 'object' && value.loginType === 'api'
+}
+
+function normalizeSeleniumConfig(config: SiteConfigSeleniumOut): SiteConfigFormState {
+  const cookies = config.seleniumConfig?.cookiesToStore ?? []
+  return {
+    id: config.id,
+    ownerUserId: config.ownerUserId ?? null,
+    name: config.name,
+    site_url: config.siteUrl,
+    login_type: 'selenium',
+    selenium_config: {
+      username_selector: config.seleniumConfig?.usernameSelector ?? '',
+      password_selector: config.seleniumConfig?.passwordSelector ?? '',
+      login_button_selector: config.seleniumConfig?.loginButtonSelector ?? '',
+      post_login_selector: config.seleniumConfig?.postLoginSelector ?? '',
+      cookies_to_store: cookies.length ? cookies.join(',') : '',
+    },
+  }
+}
+
+function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
+  const stringify = (value: Record<string, any> | null | undefined) => {
+    if (value == null) return value === null ? 'null' : ''
+    try {
+      return JSON.stringify(value, null, 2)
+    } catch {
+      return ''
+    }
+  }
+  return {
+    id: config.id,
+    ownerUserId: config.ownerUserId ?? null,
+    name: config.name,
+    site_url: config.siteUrl,
+    login_type: 'api',
+    api_config: {
+      endpoint: config.apiConfig?.endpoint ?? '',
+      method: config.apiConfig?.method ?? 'POST',
+      headers: stringify(config.apiConfig?.headers as Record<string, string> | undefined),
+      body: stringify(config.apiConfig?.body as Record<string, any> | null | undefined),
+      cookies: stringify(config.apiConfig?.cookies as Record<string, string> | undefined),
+    },
+  }
+}
+
+function toFormState(config: SiteConfigSeleniumOut | SiteConfigApiOut): SiteConfigFormState {
+  if (isApiConfig(config)) return normalizeApiConfig(config)
+  return normalizeSeleniumConfig(config)
+}
+
+function localizeErrors(errors: Record<string, string>, translate: ReturnType<typeof useI18n>['t']): LocalizedErrors {
+  const result: LocalizedErrors = {}
+  for (const [key, value] of Object.entries(errors)) {
+    if (!value) continue
+    result[key] = translate(value as any)
+  }
+  return result
+}
+
+function firstErrorMessage(errors: LocalizedErrors): string | undefined {
+  return Object.values(errors).find((message) => Boolean(message && message.trim()))
+}
+
+function isFormReady(form: SiteConfigFormState): boolean {
+  if (!form.name?.trim()) return false
+  if (!form.site_url?.trim() || !isValidUrl(form.site_url)) return false
+  if (form.login_type === 'selenium') {
+    const config = form.selenium_config
+    return Boolean(
+      config?.username_selector?.trim() &&
+      config?.password_selector?.trim() &&
+      config?.login_button_selector?.trim(),
+    )
+  }
+  const config = form.api_config
+  const method = config?.method?.trim().toUpperCase()
+  return Boolean(config?.endpoint?.trim() && method && API_METHOD_OPTIONS.includes(method as typeof API_METHOD_OPTIONS[number]))
+}
+
+function prepareSubmission(
+  form: SiteConfigFormState,
+  translate: ReturnType<typeof useI18n>['t'],
+): { submission?: SiteConfigRequest; errors: LocalizedErrors; payload?: NormalizedSiteConfigPayload } {
+  const result = validateSiteConfig(form)
+  const errors = localizeErrors(result.errors, translate)
+  if (!result.payload) {
+    return { errors }
+  }
+  const submission = { ...result.payload } as SiteConfigRequest
+  return { errors, submission, payload: result.payload }
+}
 
 export default function SiteConfigs() {
   const { t } = useI18n()
   const router = useRouter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
-  const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], () => v1.listSiteConfigsV1V1SiteConfigsGet({}))
-  const [form, setForm] = useState({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
-  const [createErrors, setCreateErrors] = useState<Record<string,string>>({})
+  const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], async (): Promise<SiteConfigList> =>
+    v1.listSiteConfigsV1V1SiteConfigsGet({}),
+  )
+  const [form, setForm] = useState<SiteConfigFormState>(() => createEmptyForm('selenium'))
+  const [createErrors, setCreateErrors] = useState<LocalizedErrors>({})
   const [scopeGlobal, setScopeGlobal] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [copyingId, setCopyingId] = useState<string | null>(null)
-  const [editing, setEditing] = useState<any | null>(null)
-  const [editErrors, setEditErrors] = useState<Record<string,string>>({})
+  const [editing, setEditing] = useState<SiteConfigFormState | null>(null)
+  const [editErrors, setEditErrors] = useState<LocalizedErrors>({})
+
+  function updateCreateLoginType(type: LoginType) {
+    setForm((current) => {
+      if (current.login_type === type) return current
+      const next = createEmptyForm(type)
+      next.name = current.name
+      next.site_url = current.site_url
+      return next
+    })
+    setCreateErrors({})
+  }
+
+  function updateEditLoginType(type: LoginType) {
+    setEditing((current) => {
+      if (!current) return current
+      if (current.login_type === type) return current
+      const next = createEmptyForm(type)
+      next.name = current.name
+      next.site_url = current.site_url
+      next.id = current.id
+      next.ownerUserId = current.ownerUserId
+      return next
+    })
+    setEditErrors({})
+  }
 
   async function create() {
-    const body: any = {
-      ...form,
-      cookies_to_store: form.cookies_to_store.split(',').map(s => s.trim()).filter(Boolean)
+    const { submission, errors, payload } = prepareSubmission(form, t)
+    setCreateErrors(errors)
+    if (!submission || !payload) {
+      const message = firstErrorMessage(errors) || t('site_configs_error_invalid_form')
+      setBanner({ kind: 'error', message })
+      return
     }
+    submission.ownerUserId = scopeGlobal ? null : undefined
     try {
-      const err = validateSiteConfig(body)
-      if (err) { setBanner({ kind: 'error', message: err }); return }
-      await site.createSiteConfigSiteConfigsPost({ siteConfig: { ...body, ownerUserId: scopeGlobal ? null : undefined } })
-      setForm({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
+      await site.createSiteConfigSiteConfigsPost({ body: submission })
+      setForm(createEmptyForm(form.login_type))
       setScopeGlobal(false)
+      setCreateErrors({})
       setBanner({ kind: 'success', message: t('site_configs_create_success') })
-      mutate()
-    } catch (e: any) {
-      setBanner({ kind: 'error', message: e.message || String(e) })
+      await mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: err?.message || String(err) })
     }
   }
 
@@ -43,9 +226,9 @@ export default function SiteConfigs() {
     try {
       await site.deleteSiteConfigSiteConfigsConfigIdDelete({ configId: id })
       setBanner({ kind: 'success', message: t('site_configs_delete_success') })
-      mutate()
-    } catch (e: any) {
-      setBanner({ kind: 'error', message: e.message || String(e) })
+      await mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: err?.message || String(err) })
     }
   }
 
@@ -53,20 +236,20 @@ export default function SiteConfigs() {
     setBanner(null)
     setCopyingId(configId)
     try {
-      const copied = await site.copySiteConfigToUser({ configId })
+      const copied: ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = await site.copySiteConfigToUser({ configId })
       const appendConfig = (candidate: any) => {
         const list = Array.isArray(candidate) ? candidate : []
         const exists = list.some((item: any) => item?.id === copied.id)
         return exists ? { list, added: false } : { list: [...list, copied], added: true }
       }
-      const applyToPage = (page: any) => {
-        if (!page || typeof page !== 'object') return page
-        const { list, added } = appendConfig(page.items)
+      const applyToPage = (page: SiteConfigList) => {
+        if (!page || typeof page !== 'object' || !('items' in page)) return page
+        const { list, added } = appendConfig((page as SiteConfigsPage).items)
         if (!added) return page
-        const nextTotal = typeof page.total === 'number' ? page.total + 1 : page.total
-        return { ...page, items: list, total: nextTotal }
+        const nextTotal = typeof (page as SiteConfigsPage).total === 'number' ? (page as SiteConfigsPage).total + 1 : (page as SiteConfigsPage).total
+        return { ...(page as SiteConfigsPage), items: list, total: nextTotal }
       }
-      await mutate((current: any) => {
+      await mutate((current: SiteConfigList | undefined) => {
         if (Array.isArray(current)) {
           const { list, added } = appendConfig(current)
           return added ? list : current
@@ -83,23 +266,278 @@ export default function SiteConfigs() {
             return applyToPage(data)
           }
         }
-        return current
+        return current as any
       }, { revalidate: false })
       setBanner({ kind: 'success', message: t('copy_to_workspace_success') })
-    } catch (e: any) {
-      const reason = e?.message || String(e)
+    } catch (err: any) {
+      const reason = err?.message || String(err)
       setBanner({ kind: 'error', message: t('copy_to_workspace_error', { reason }) })
     } finally {
       setCopyingId(null)
     }
   }
+
+  async function saveEditing() {
+    if (!editing) return
+    const { submission, errors, payload } = prepareSubmission(editing, t)
+    setEditErrors(errors)
+    if (!submission || !payload || !editing.id) {
+      const message = firstErrorMessage(errors) || t('site_configs_error_invalid_form')
+      setBanner({ kind: 'error', message })
+      return
+    }
+    submission.id = editing.id
+    submission.ownerUserId = editing.ownerUserId ?? null
+    try {
+      await site.updateSiteConfigSiteConfigsConfigIdPut({ configId: editing.id, body: submission })
+      setBanner({ kind: 'success', message: t('site_configs_update_success') })
+      setEditing(null)
+      setEditErrors({})
+      await mutate()
+    } catch (err: any) {
+      setBanner({ kind: 'error', message: err?.message || String(err) })
+    }
+  }
+
+  const renderSeleniumFields = (
+    current: SiteConfigFormState,
+    errors: LocalizedErrors,
+    onChange: (updater: (prev: SiteConfigFormState) => SiteConfigFormState) => void,
+    setErrors: (updater: (prev: LocalizedErrors) => LocalizedErrors) => void,
+    prefix: 'create' | 'edit',
+  ) => {
+    const config = current.selenium_config
+    const idPrefix = `${prefix}-site-config`
+    return (
+      <>
+        <div>
+          <input
+            id={`${idPrefix}-username-selector`}
+            className="input"
+            placeholder={t('site_configs_field_username_selector_placeholder')}
+            aria-label={t('site_configs_field_username_selector_placeholder')}
+            aria-invalid={Boolean(errors['selenium.username_selector'])}
+            aria-describedby={errors['selenium.username_selector'] ? `${idPrefix}-username-selector-error` : undefined}
+            value={config?.username_selector ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({
+                ...prev,
+                selenium_config: { ...prev.selenium_config, username_selector: value },
+              }))
+              setErrors((prev) => ({ ...prev, 'selenium.username_selector': value.trim() ? '' : t('site_configs_error_required') }))
+            }}
+          />
+          {errors['selenium.username_selector'] && (
+            <div id={`${idPrefix}-username-selector-error`} className="text-sm text-red-600">{errors['selenium.username_selector']}</div>
+          )}
+        </div>
+        <div>
+          <input
+            id={`${idPrefix}-password-selector`}
+            className="input"
+            placeholder={t('site_configs_field_password_selector_placeholder')}
+            aria-label={t('site_configs_field_password_selector_placeholder')}
+            aria-invalid={Boolean(errors['selenium.password_selector'])}
+            aria-describedby={errors['selenium.password_selector'] ? `${idPrefix}-password-selector-error` : undefined}
+            value={config?.password_selector ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({
+                ...prev,
+                selenium_config: { ...prev.selenium_config, password_selector: value },
+              }))
+              setErrors((prev) => ({ ...prev, 'selenium.password_selector': value.trim() ? '' : t('site_configs_error_required') }))
+            }}
+          />
+          {errors['selenium.password_selector'] && (
+            <div id={`${idPrefix}-password-selector-error`} className="text-sm text-red-600">{errors['selenium.password_selector']}</div>
+          )}
+        </div>
+        <div>
+          <input
+            id={`${idPrefix}-login-selector`}
+            className="input"
+            placeholder={t('site_configs_field_login_selector_placeholder')}
+            aria-label={t('site_configs_field_login_selector_placeholder')}
+            aria-invalid={Boolean(errors['selenium.login_button_selector'])}
+            aria-describedby={errors['selenium.login_button_selector'] ? `${idPrefix}-login-selector-error` : undefined}
+            value={config?.login_button_selector ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({
+                ...prev,
+                selenium_config: { ...prev.selenium_config, login_button_selector: value },
+              }))
+              setErrors((prev) => ({ ...prev, 'selenium.login_button_selector': value.trim() ? '' : t('site_configs_error_required') }))
+            }}
+          />
+          {errors['selenium.login_button_selector'] && (
+            <div id={`${idPrefix}-login-selector-error`} className="text-sm text-red-600">{errors['selenium.login_button_selector']}</div>
+          )}
+        </div>
+        <div>
+          <input
+            id={`${idPrefix}-post-login-selector`}
+            className="input"
+            placeholder={t('site_configs_field_post_login_selector_placeholder')}
+            aria-label={t('site_configs_field_post_login_selector_placeholder')}
+            value={config?.post_login_selector ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({
+                ...prev,
+                selenium_config: { ...prev.selenium_config, post_login_selector: value },
+              }))
+            }}
+          />
+        </div>
+        <input
+          id={`${idPrefix}-cookies`}
+          className="input md:col-span-2"
+          placeholder={t('site_configs_field_cookies_placeholder')}
+          aria-label={t('site_configs_field_cookies_placeholder')}
+          value={config?.cookies_to_store ?? ''}
+          onChange={(e) => {
+            const value = e.target.value
+            onChange((prev) => ({
+              ...prev,
+              selenium_config: { ...prev.selenium_config, cookies_to_store: value },
+            }))
+          }}
+        />
+      </>
+    )
+  }
+
+  const renderApiFields = (
+    current: SiteConfigFormState,
+    errors: LocalizedErrors,
+    onChange: (updater: (prev: SiteConfigFormState) => SiteConfigFormState) => void,
+    setErrors: (updater: (prev: LocalizedErrors) => LocalizedErrors) => void,
+    prefix: 'create' | 'edit',
+  ) => {
+    const config = current.api_config
+    const idPrefix = `${prefix}-site-config`
+    return (
+      <>
+        <div>
+          <input
+            id={`${idPrefix}-endpoint`}
+            className="input"
+            placeholder={t('site_configs_field_endpoint_placeholder')}
+            aria-label={t('site_configs_field_endpoint_placeholder')}
+            aria-invalid={Boolean(errors['api.endpoint'])}
+            aria-describedby={errors['api.endpoint'] ? `${idPrefix}-endpoint-error` : undefined}
+            value={config?.endpoint ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
+              setErrors((prev) => ({ ...prev, 'api.endpoint': value.trim() ? '' : t('site_configs_error_endpoint_required') }))
+            }}
+          />
+          {errors['api.endpoint'] && (
+            <div id={`${idPrefix}-endpoint-error`} className="text-sm text-red-600">{errors['api.endpoint']}</div>
+          )}
+        </div>
+        <div>
+          <label className="sr-only" htmlFor={`${idPrefix}-method`}>
+            {t('site_configs_field_method_placeholder')}
+          </label>
+          <select
+            id={`${idPrefix}-method`}
+            className="input"
+            value={config?.method ?? 'POST'}
+            aria-invalid={Boolean(errors['api.method'])}
+            aria-describedby={errors['api.method'] ? `${idPrefix}-method-error` : undefined}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, method: value } }))
+              setErrors((prev) => ({ ...prev, 'api.method': '' }))
+            }}
+          >
+            {API_METHOD_OPTIONS.map((method) => (
+              <option key={method} value={method}>{method}</option>
+            ))}
+          </select>
+          {errors['api.method'] && (
+            <div id={`${idPrefix}-method-error`} className="text-sm text-red-600">{errors['api.method']}</div>
+          )}
+        </div>
+        <div className="md:col-span-2">
+          <textarea
+            id={`${idPrefix}-headers`}
+            className="input h-28"
+            placeholder={t('site_configs_field_headers_placeholder')}
+            aria-label={t('site_configs_field_headers_placeholder')}
+            aria-invalid={Boolean(errors['api.headers'])}
+            aria-describedby={errors['api.headers'] ? `${idPrefix}-headers-error` : undefined}
+            value={config?.headers ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, headers: value } }))
+              setErrors((prev) => ({ ...prev, 'api.headers': '' }))
+            }}
+          />
+          {errors['api.headers'] && (
+            <div id={`${idPrefix}-headers-error`} className="text-sm text-red-600">{errors['api.headers']}</div>
+          )}
+        </div>
+        <div className="md:col-span-2">
+          <textarea
+            id={`${idPrefix}-body`}
+            className="input h-28"
+            placeholder={t('site_configs_field_body_placeholder')}
+            aria-label={t('site_configs_field_body_placeholder')}
+            aria-invalid={Boolean(errors['api.body'])}
+            aria-describedby={errors['api.body'] ? `${idPrefix}-body-error` : undefined}
+            value={config?.body ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, body: value } }))
+              setErrors((prev) => ({ ...prev, 'api.body': '' }))
+            }}
+          />
+          {errors['api.body'] && (
+            <div id={`${idPrefix}-body-error`} className="text-sm text-red-600">{errors['api.body']}</div>
+          )}
+        </div>
+        <div className="md:col-span-2">
+          <textarea
+            id={`${idPrefix}-cookies-json`}
+            className="input h-28"
+            placeholder={t('site_configs_field_cookies_json_placeholder')}
+            aria-label={t('site_configs_field_cookies_json_placeholder')}
+            aria-invalid={Boolean(errors['api.cookies'])}
+            aria-describedby={errors['api.cookies'] ? `${idPrefix}-cookies-json-error` : undefined}
+            value={config?.cookies ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies: value } }))
+              setErrors((prev) => ({ ...prev, 'api.cookies': '' }))
+            }}
+          />
+          {errors['api.cookies'] && (
+            <div id={`${idPrefix}-cookies-json-error`} className="text-sm text-red-600">{errors['api.cookies']}</div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  const listItems = Array.isArray(data) ? data : (data as SiteConfigsPage | undefined)?.items ?? []
+
   return (
     <div>
       <Nav />
       <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <h2 id="site-configs-heading" className="text-xl font-semibold mb-3">{t('site_configs_title')}</h2>
-        {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
+        {banner && (
+          <div className="mb-3">
+            <Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} />
+          </div>
+        )}
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
         <form
@@ -113,6 +551,33 @@ export default function SiteConfigs() {
             {t('site_configs_create_heading')}
             <span className="ml-2 text-gray-500 cursor-help" title={t('site_configs_create_help')}>?</span>
           </h3>
+          <div className="md:col-span-2">
+            <fieldset>
+              <legend className="text-sm font-medium mb-1">{t('site_configs_field_login_type_label')}</legend>
+              <div className="flex flex-wrap gap-4">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="create-login-type"
+                    value="selenium"
+                    checked={form.login_type === 'selenium'}
+                    onChange={() => updateCreateLoginType('selenium')}
+                  />
+                  {t('site_configs_login_type_selenium')}
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="create-login-type"
+                    value="api"
+                    checked={form.login_type === 'api'}
+                    onChange={() => updateCreateLoginType('api')}
+                  />
+                  {t('site_configs_login_type_api')}
+                </label>
+              </div>
+            </fieldset>
+          </div>
           <div>
             <input
               id="create-site-config-name"
@@ -122,7 +587,11 @@ export default function SiteConfigs() {
               aria-invalid={Boolean(createErrors.name)}
               aria-describedby={createErrors.name ? 'create-site-config-name-error' : undefined}
               value={form.name}
-              onChange={e => { const v=e.target.value; setForm({ ...form, name: v }); setCreateErrors(prev=>({ ...prev, name: v.trim()? '' : t('site_configs_error_name_required') })) }}
+              onChange={(e) => {
+                const value = e.target.value
+                setForm((prev) => ({ ...prev, name: value }))
+                setCreateErrors((prev) => ({ ...prev, name: value.trim() ? '' : t('site_configs_error_name_required') }))
+              }}
             />
             {createErrors.name && <div id="create-site-config-name-error" className="text-sm text-red-600">{createErrors.name}</div>}
           </div>
@@ -135,70 +604,25 @@ export default function SiteConfigs() {
               aria-invalid={Boolean(createErrors.site_url)}
               aria-describedby={createErrors.site_url ? 'create-site-config-url-error' : undefined}
               value={form.site_url}
-              onChange={e => { const v=e.target.value; setForm({ ...form, site_url: v }); setCreateErrors(prev=>({ ...prev, site_url: v.startsWith('http')? '' : t('site_configs_error_url_invalid') })) }}
+              onChange={(e) => {
+                const value = e.target.value
+                setForm((prev) => ({ ...prev, site_url: value }))
+                setCreateErrors((prev) => ({ ...prev, site_url: value && isValidUrl(value) ? '' : t('site_configs_error_url_invalid') }))
+              }}
             />
             {createErrors.site_url && <div id="create-site-config-url-error" className="text-sm text-red-600">{createErrors.site_url}</div>}
           </div>
-          <div>
-            <input
-              id="create-site-config-username-selector"
-              className="input"
-              placeholder={t('site_configs_field_username_selector_placeholder')}
-              aria-label={t('site_configs_field_username_selector_placeholder')}
-              aria-invalid={Boolean(createErrors.username_selector)}
-              aria-describedby={createErrors.username_selector ? 'create-site-config-username-selector-error' : undefined}
-              value={form.username_selector}
-              onChange={e => { const v=e.target.value; setForm({ ...form, username_selector: v }); setCreateErrors(prev=>({ ...prev, username_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-            />
-            {createErrors.username_selector && <div id="create-site-config-username-selector-error" className="text-sm text-red-600">{createErrors.username_selector}</div>}
-          </div>
-          <div>
-            <input
-              id="create-site-config-password-selector"
-              className="input"
-              placeholder={t('site_configs_field_password_selector_placeholder')}
-              aria-label={t('site_configs_field_password_selector_placeholder')}
-              aria-invalid={Boolean(createErrors.password_selector)}
-              aria-describedby={createErrors.password_selector ? 'create-site-config-password-selector-error' : undefined}
-              value={form.password_selector}
-              onChange={e => { const v=e.target.value; setForm({ ...form, password_selector: v }); setCreateErrors(prev=>({ ...prev, password_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-            />
-            {createErrors.password_selector && <div id="create-site-config-password-selector-error" className="text-sm text-red-600">{createErrors.password_selector}</div>}
-          </div>
-          <div>
-            <input
-              id="create-site-config-login-selector"
-              className="input"
-              placeholder={t('site_configs_field_login_selector_placeholder')}
-              aria-label={t('site_configs_field_login_selector_placeholder')}
-              aria-invalid={Boolean(createErrors.login_button_selector)}
-              aria-describedby={createErrors.login_button_selector ? 'create-site-config-login-selector-error' : undefined}
-              value={form.login_button_selector}
-              onChange={e => { const v=e.target.value; setForm({ ...form, login_button_selector: v }); setCreateErrors(prev=>({ ...prev, login_button_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-            />
-            {createErrors.login_button_selector && <div id="create-site-config-login-selector-error" className="text-sm text-red-600">{createErrors.login_button_selector}</div>}
-          </div>
-          <input
-            id="create-site-config-cookies"
-            className="input md:col-span-2"
-            placeholder={t('site_configs_field_cookies_placeholder')}
-            aria-label={t('site_configs_field_cookies_placeholder')}
-            value={form.cookies_to_store}
-            onChange={e => setForm({ ...form, cookies_to_store: e.target.value })}
-          />
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={scopeGlobal} onChange={e => setScopeGlobal(e.target.checked)} /> {t('site_configs_scope_global_label')}</label>
+          {form.login_type === 'selenium'
+            ? renderSeleniumFields(form, createErrors, setForm, setCreateErrors, 'create')
+            : renderApiFields(form, createErrors, setForm, setCreateErrors, 'create')}
+          <label className="inline-flex items-center gap-2 md:col-span-2">
+            <input type="checkbox" checked={scopeGlobal} onChange={(e) => setScopeGlobal(e.target.checked)} />
+            {t('site_configs_scope_global_label')}
+          </label>
           <button
             type="submit"
             className="btn"
-            disabled={
-              !(
-                (form.name || '').trim() &&
-                (form.site_url || '').startsWith('http') &&
-                (form.username_selector || '').trim() &&
-                (form.password_selector || '').trim() &&
-                (form.login_button_selector || '').trim()
-              )
-            }
+            disabled={!isFormReady(form)}
             title={t('form_fill_required')}
           >
             {t('btn_create')}
@@ -206,7 +630,7 @@ export default function SiteConfigs() {
         </form>
         {data && (
           <div className="card p-0 overflow-hidden">
-            {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
+            {(!('items' in (data as any)) && !Array.isArray(data)) || listItems.length === 0 ? (
               <div className="p-4">
                 <EmptyState
                   icon={<span>🛠️</span>}
@@ -219,151 +643,149 @@ export default function SiteConfigs() {
                 />
               </div>
             ) : (
-            <table className="table" role="table" aria-label={t('site_configs_table_label')}>
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="th" scope="col">{t('name_label')}</th>
-                  <th className="th" scope="col">{t('url_label')}</th>
-                  <th className="th" scope="col">{t('scope_label')}</th>
-                  <th className="th" scope="col">{t('actions_label')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.items || data).map((sc: any) => (
-                  <tr key={sc.id} className="odd:bg-white even:bg-gray-50">
-                    <td className="td">{sc.name}</td>
-                    <td className="td">{sc.site_url}</td>
-                    <td className="td">{sc.owner_user_id ? t('scope_user') : t('scope_global')}</td>
-                    <td className="td flex gap-2">
-                      {!sc.owner_user_id && (
+              <table className="table" role="table" aria-label={t('site_configs_table_label')}>
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="th" scope="col">{t('name_label')}</th>
+                    <th className="th" scope="col">{t('url_label')}</th>
+                    <th className="th" scope="col">{t('scope_label')}</th>
+                    <th className="th" scope="col">{t('actions_label')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listItems.map((sc: any) => (
+                    <tr key={sc.id} className="odd:bg-white even:bg-gray-50">
+                      <td className="td">{sc.name}</td>
+                      <td className="td">{sc.siteUrl}</td>
+                      <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
+                      <td className="td flex gap-2">
+                        {!sc.ownerUserId && (
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => copyToUser(sc.id)}
+                            disabled={copyingId === sc.id}
+                            aria-busy={copyingId === sc.id}
+                          >
+                            {t('copy_to_workspace')}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="btn"
-                          onClick={() => copyToUser(sc.id)}
-                          disabled={copyingId === sc.id}
-                          aria-busy={copyingId === sc.id}
+                          onClick={async () => {
+                            try {
+                              const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
+                              setBanner({ kind: result.ok ? 'success' : 'error', message: t('site_configs_test_result', { result: JSON.stringify(result) }) })
+                            } catch (err: any) {
+                              setBanner({ kind: 'error', message: err?.message || String(err) })
+                            }
+                          }}
                         >
-                          {t('copy_to_workspace')}
+                          {t('site_configs_test_button')}
                         </button>
-                      )}
-                      <button type="button" className="btn" onClick={async () => { try { const r = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id }); setBanner({ kind: r.ok ? 'success' : 'error', message: t('site_configs_test_result', { result: JSON.stringify(r) }) }) } catch (e: any) { setBanner({ kind: 'error', message: e.message || String(e) }) } }}>{t('site_configs_test_button')}</button>
-                      <button type="button" className="btn" onClick={() => setEditing({ ...sc, cookies_to_store: (sc.cookies_to_store || []).join(',') })}>{t('btn_edit')}</button>
-                      <button type="button" className="btn" onClick={() => del(sc.id)}>{t('btn_delete')}</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            if (isApiConfig(sc) || isSeleniumConfig(sc)) {
+                              setEditing(toFormState(sc))
+                              setEditErrors({})
+                            }
+                          }}
+                        >
+                          {t('btn_edit')}
+                        </button>
+                        <button type="button" className="btn" onClick={() => del(sc.id)}>{t('btn_delete')}</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
-          )}
-          {editing && (
-            <div className="card p-4 mt-3 grid grid-cols-1 md:grid-cols-2 gap-2" role="form" aria-labelledby="edit-site-config-heading">
-              <h3 id="edit-site-config-heading" className="font-semibold md:col-span-2">{t('site_configs_edit_heading')}</h3>
-              <div>
-                <input
-                  id="edit-site-config-name"
-                  className="input"
-                  placeholder={t('site_configs_field_name_placeholder')}
-                  aria-label={t('site_configs_field_name_placeholder')}
-                  aria-invalid={Boolean(editErrors.name)}
-                  aria-describedby={editErrors.name ? 'edit-site-config-name-error' : undefined}
-                  value={editing.name}
-                  onChange={e => { const v=e.target.value; setEditing({ ...editing, name: v }); setEditErrors(prev=>({ ...prev, name: v.trim()? '' : t('site_configs_error_name_required') })) }}
-                />
-                {editErrors.name && <div id="edit-site-config-name-error" className="text-sm text-red-600">{editErrors.name}</div>}
-              </div>
-              <div>
-                <input
-                  id="edit-site-config-url"
-                  className="input"
-                  placeholder={t('site_configs_field_url_placeholder')}
-                  aria-label={t('site_configs_field_url_placeholder')}
-                  aria-invalid={Boolean(editErrors.site_url)}
-                  aria-describedby={editErrors.site_url ? 'edit-site-config-url-error' : undefined}
-                  value={editing.site_url}
-                  onChange={e => { const v=e.target.value; setEditing({ ...editing, site_url: v }); setEditErrors(prev=>({ ...prev, site_url: v.startsWith('http')? '' : t('site_configs_error_url_invalid') })) }}
-                />
-                {editErrors.site_url && <div id="edit-site-config-url-error" className="text-sm text-red-600">{editErrors.site_url}</div>}
-              </div>
-              <div>
-                <input
-                  id="edit-site-config-username-selector"
-                  className="input"
-                  placeholder={t('site_configs_field_username_selector_placeholder')}
-                  aria-label={t('site_configs_field_username_selector_placeholder')}
-                  aria-invalid={Boolean(editErrors.username_selector)}
-                  aria-describedby={editErrors.username_selector ? 'edit-site-config-username-selector-error' : undefined}
-                  value={editing.username_selector}
-                  onChange={e => { const v=e.target.value; setEditing({ ...editing, username_selector: v }); setEditErrors(prev=>({ ...prev, username_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-                />
-                {editErrors.username_selector && <div id="edit-site-config-username-selector-error" className="text-sm text-red-600">{editErrors.username_selector}</div>}
-              </div>
-              <div>
-                <input
-                  id="edit-site-config-password-selector"
-                  className="input"
-                  placeholder={t('site_configs_field_password_selector_placeholder')}
-                  aria-label={t('site_configs_field_password_selector_placeholder')}
-                  aria-invalid={Boolean(editErrors.password_selector)}
-                  aria-describedby={editErrors.password_selector ? 'edit-site-config-password-selector-error' : undefined}
-                  value={editing.password_selector}
-                  onChange={e => { const v=e.target.value; setEditing({ ...editing, password_selector: v }); setEditErrors(prev=>({ ...prev, password_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-                />
-                {editErrors.password_selector && <div id="edit-site-config-password-selector-error" className="text-sm text-red-600">{editErrors.password_selector}</div>}
-              </div>
-              <div>
-                <input
-                  id="edit-site-config-login-selector"
-                  className="input"
-                  placeholder={t('site_configs_field_login_selector_placeholder')}
-                  aria-label={t('site_configs_field_login_selector_placeholder')}
-                  aria-invalid={Boolean(editErrors.login_button_selector)}
-                  aria-describedby={editErrors.login_button_selector ? 'edit-site-config-login-selector-error' : undefined}
-                  value={editing.login_button_selector}
-                  onChange={e => { const v=e.target.value; setEditing({ ...editing, login_button_selector: v }); setEditErrors(prev=>({ ...prev, login_button_selector: v.trim()? '' : t('site_configs_error_required') })) }}
-                />
-                {editErrors.login_button_selector && <div id="edit-site-config-login-selector-error" className="text-sm text-red-600">{editErrors.login_button_selector}</div>}
-              </div>
-              <input
-                id="edit-site-config-cookies"
-                className="input md:col-span-2"
-                placeholder={t('site_configs_field_cookies_placeholder')}
-                aria-label={t('site_configs_field_cookies_placeholder')}
-                value={editing.cookies_to_store}
-                onChange={e => setEditing({ ...editing, cookies_to_store: e.target.value })}
-              />
-              <div className="md:col-span-2 flex gap-2">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={
-                    !(
-                      (editing.name || '').trim() &&
-                      (editing.site_url || '').startsWith('http') &&
-                      (editing.username_selector || '').trim() &&
-                      (editing.password_selector || '').trim() &&
-                      (editing.login_button_selector || '').trim()
-                    )
-                  }
-                  title={t('form_fill_required')}
-                  onClick={async () => {
-                  const body: any = { ...editing, cookies_to_store: String(editing.cookies_to_store || '').split(',').map((s: string) => s.trim()).filter(Boolean) }
-                  const err = validateSiteConfig(body)
-                  if (err) { setBanner({ kind: 'error', message: err }); return }
-                  try {
-                    await site.updateSiteConfigSiteConfigsConfigIdPut({ configId: editing.id, siteConfig: body })
-                    setBanner({ kind: 'success', message: t('site_configs_update_success') })
-                    setEditing(null)
-                    mutate()
-                  } catch (e: any) {
-                    setBanner({ kind: 'error', message: e?.message || String(e) })
-                  }
-                }}>{t('btn_save')}</button>
-                <button type="button" className="btn" onClick={() => setEditing(null)}>{t('btn_cancel')}</button>
-              </div>
+        )}
+        {editing && (
+          <div className="card p-4 mt-3 grid grid-cols-1 md:grid-cols-2 gap-2" role="form" aria-labelledby="edit-site-config-heading">
+            <h3 id="edit-site-config-heading" className="font-semibold md:col-span-2">{t('site_configs_edit_heading')}</h3>
+            <div className="md:col-span-2">
+              <fieldset>
+                <legend className="text-sm font-medium mb-1">{t('site_configs_field_login_type_label')}</legend>
+                <div className="flex flex-wrap gap-4">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="edit-login-type"
+                      value="selenium"
+                      checked={editing.login_type === 'selenium'}
+                      onChange={() => updateEditLoginType('selenium')}
+                    />
+                    {t('site_configs_login_type_selenium')}
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="edit-login-type"
+                      value="api"
+                      checked={editing.login_type === 'api'}
+                      onChange={() => updateEditLoginType('api')}
+                    />
+                    {t('site_configs_login_type_api')}
+                  </label>
+                </div>
+              </fieldset>
             </div>
-          )}
+            <div>
+              <input
+                id="edit-site-config-name"
+                className="input"
+                placeholder={t('site_configs_field_name_placeholder')}
+                aria-label={t('site_configs_field_name_placeholder')}
+                aria-invalid={Boolean(editErrors.name)}
+                aria-describedby={editErrors.name ? 'edit-site-config-name-error' : undefined}
+                value={editing.name}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditing((prev) => prev ? { ...prev, name: value } : prev)
+                  setEditErrors((prev) => ({ ...prev, name: value.trim() ? '' : t('site_configs_error_name_required') }))
+                }}
+              />
+              {editErrors.name && <div id="edit-site-config-name-error" className="text-sm text-red-600">{editErrors.name}</div>}
+            </div>
+            <div>
+              <input
+                id="edit-site-config-url"
+                className="input"
+                placeholder={t('site_configs_field_url_placeholder')}
+                aria-label={t('site_configs_field_url_placeholder')}
+                aria-invalid={Boolean(editErrors.site_url)}
+                aria-describedby={editErrors.site_url ? 'edit-site-config-url-error' : undefined}
+                value={editing.site_url}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditing((prev) => prev ? { ...prev, site_url: value } : prev)
+                  setEditErrors((prev) => ({ ...prev, site_url: value && isValidUrl(value) ? '' : t('site_configs_error_url_invalid') }))
+                }}
+              />
+              {editErrors.site_url && <div id="edit-site-config-url-error" className="text-sm text-red-600">{editErrors.site_url}</div>}
+            </div>
+            {editing.login_type === 'selenium'
+              ? renderSeleniumFields(editing, editErrors, (updater) => setEditing((prev) => prev ? updater(prev) : prev), setEditErrors, 'edit')
+              : renderApiFields(editing, editErrors, (updater) => setEditing((prev) => prev ? updater(prev) : prev), setEditErrors, 'edit')}
+            <div className="md:col-span-2 flex gap-2">
+              <button
+                type="button"
+                className="btn"
+                disabled={!isFormReady(editing)}
+                title={t('form_fill_required')}
+                onClick={saveEditing}
+              >
+                {t('btn_save')}
+              </button>
+              <button type="button" className="btn" onClick={() => setEditing(null)}>{t('btn_cancel')}</button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

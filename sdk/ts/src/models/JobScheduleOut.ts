@@ -69,6 +69,18 @@ export interface JobScheduleOut {
     lastJobId?: string | null;
     /**
      * 
+     * @type {string}
+     * @memberof JobScheduleOut
+     */
+    lastError?: string | null;
+    /**
+     * 
+     * @type {Date}
+     * @memberof JobScheduleOut
+     */
+    lastErrorAt?: Date | null;
+    /**
+     * 
      * @type {boolean}
      * @memberof JobScheduleOut
      */
@@ -104,6 +116,8 @@ export function JobScheduleOutFromJSONTyped(json: any, ignoreDiscriminator: bool
         'nextRunAt': json['next_run_at'] == null ? undefined : (new Date(json['next_run_at'])),
         'lastRunAt': json['last_run_at'] == null ? undefined : (new Date(json['last_run_at'])),
         'lastJobId': json['last_job_id'] == null ? undefined : json['last_job_id'],
+        'lastError': json['last_error'] == null ? undefined : json['last_error'],
+        'lastErrorAt': json['last_error_at'] == null ? undefined : (new Date(json['last_error_at'])),
         'isActive': json['is_active'] == null ? undefined : json['is_active'],
     };
 }
@@ -127,6 +141,8 @@ export function JobScheduleOutToJSONTyped(value?: JobScheduleOut | null, ignoreD
         'next_run_at': value['nextRunAt'] === null ? null : ((value['nextRunAt'] as any)?.toISOString()),
         'last_run_at': value['lastRunAt'] === null ? null : ((value['lastRunAt'] as any)?.toISOString()),
         'last_job_id': value['lastJobId'],
+        'last_error': value['lastError'],
+        'last_error_at': value['lastErrorAt'] === null ? null : ((value['lastErrorAt'] as any)?.toISOString()),
         'is_active': value['isActive'],
     };
 }

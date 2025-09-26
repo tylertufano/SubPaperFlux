@@ -23,5 +23,6 @@ __exportStar(require("./FeedsApi"), exports);
 __exportStar(require("./JobsApi"), exports);
 __exportStar(require("./MeApi"), exports);
 __exportStar(require("./SiteConfigsApi"), exports);
+__exportStar(require("./SiteSettingsApi"), exports);
 __exportStar(require("./StatusApi"), exports);
 __exportStar(require("./V1Api"), exports);

@@ -7,6 +7,7 @@ import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
+import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
 import { auth } from '../auth'
@@ -1239,9 +1240,12 @@ export const creds = {
 }
 
 export const siteConfigs = {
-  createSiteConfigSiteConfigsPost: async ({ siteConfig }: { siteConfig: any }) => (await getClients()).sites.createSiteConfigSiteConfigsPost({ siteConfig, xCsrfToken: CSRF }),
-  deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) => (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
-  updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, siteConfig }: { configId: string; siteConfig: any }) => (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, siteConfig, xCsrfToken: CSRF }),
+  createSiteConfigSiteConfigsPost: async ({ body }: { body: SiteConfigRequest }) =>
+    (await getClients()).sites.createSiteConfigSiteConfigsPost({ body, xCsrfToken: CSRF }),
+  deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) =>
+    (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
+  updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, body }: { configId: string; body: SiteConfigRequest }) =>
+    (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, body, xCsrfToken: CSRF }),
   copySiteConfigToUser: async ({ configId }: { configId: string }): Promise<SiteConfigOut> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 }

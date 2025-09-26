@@ -30,7 +30,7 @@ export interface BookmarkOut {
      * @type {string}
      * @memberof BookmarkOut
      */
-    instapaperBookmarkId: string;
+    instapaperBookmarkId?: string | null;
     /**
      * 
      * @type {string}
@@ -61,6 +61,30 @@ export interface BookmarkOut {
      * @memberof BookmarkOut
      */
     publishedAt?: string | null;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    rssEntry?: { [key: string]: any; };
+    /**
+     * 
+     * @type {string}
+     * @memberof BookmarkOut
+     */
+    rawHtmlContent?: string | null;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    publicationStatuses?: { [key: string]: any; };
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    publicationFlags?: { [key: string]: any; };
 }
 
 /**
@@ -68,7 +92,6 @@ export interface BookmarkOut {
  */
 export function instanceOfBookmarkOut(value: object): value is BookmarkOut {
     if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('instapaperBookmarkId' in value) || value['instapaperBookmarkId'] === undefined) return false;
     return true;
 }
 
@@ -83,12 +106,16 @@ export function BookmarkOutFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return {
         
         'id': json['id'],
-        'instapaperBookmarkId': json['instapaper_bookmark_id'],
+        'instapaperBookmarkId': json['instapaper_bookmark_id'] == null ? undefined : json['instapaper_bookmark_id'],
         'title': json['title'] == null ? undefined : json['title'],
         'url': json['url'] == null ? undefined : json['url'],
         'contentLocation': json['content_location'] == null ? undefined : json['content_location'],
         'feedId': json['feed_id'] == null ? undefined : json['feed_id'],
         'publishedAt': json['published_at'] == null ? undefined : json['published_at'],
+        'rssEntry': json['rss_entry'] == null ? undefined : json['rss_entry'],
+        'rawHtmlContent': json['raw_html_content'] == null ? undefined : json['raw_html_content'],
+        'publicationStatuses': json['publication_statuses'] == null ? undefined : json['publication_statuses'],
+        'publicationFlags': json['publication_flags'] == null ? undefined : json['publication_flags'],
     };
 }
 
@@ -110,6 +137,10 @@ export function BookmarkOutToJSONTyped(value?: BookmarkOut | null, ignoreDiscrim
         'content_location': value['contentLocation'],
         'feed_id': value['feedId'],
         'published_at': value['publishedAt'],
+        'rss_entry': value['rssEntry'],
+        'raw_html_content': value['rawHtmlContent'],
+        'publication_statuses': value['publicationStatuses'],
+        'publication_flags': value['publicationFlags'],
     };
 }
 

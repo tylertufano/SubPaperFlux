@@ -5,5 +5,6 @@ export * from './FeedsApi';
 export * from './JobsApi';
 export * from './MeApi';
 export * from './SiteConfigsApi';
+export * from './SiteSettingsApi';
 export * from './StatusApi';
 export * from './V1Api';
