@@ -248,12 +248,9 @@ describe("JobSchedulesPage", () => {
     ) as HTMLInputElement;
     fireEvent.change(frequencyInput, { target: { value: "2h" } });
 
-    const instapaperSelect = screen.getByLabelText(
-      "Instapaper credential",
-    ) as HTMLSelectElement;
-    fireEvent.change(instapaperSelect, { target: { value: "cred-1" } });
-
-    const feedSelect = screen.getByLabelText("Saved feed") as HTMLSelectElement;
+    const feedSelect = (await screen.findByLabelText(
+      "Saved feed",
+    )) as HTMLSelectElement;
     fireEvent.change(feedSelect, { target: { value: "feed-1" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Create schedule" }));
@@ -267,19 +264,51 @@ describe("JobSchedulesPage", () => {
         frequency: "2h",
         isActive: true,
         payload: expect.objectContaining({
-          instapaper_id: "cred-1",
           feed_id: "feed-1",
         }),
       }),
     });
     const createdPayload =
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.instapaper_id).toBeUndefined();
     expect(createdPayload.site_login_pair).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Schedule created.",
     );
+  });
+
+  it("sends normalized credential identifiers when creating login schedules", async () => {
+    renderPage();
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form");
+    expect(createForm).toBeTruthy();
+
+    const jobTypeSelect = within(createForm as HTMLElement).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "login" } });
+
+    const siteLoginSelect = await waitFor(() =>
+      within(createForm as HTMLElement).getByLabelText("Site login credential"),
+    );
+    fireEvent.change(siteLoginSelect, {
+      target: { value: "cred-login::site-1" },
+    });
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).toHaveBeenCalledTimes(1),
+    );
+
+    const createdPayload =
+      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.site_login_pair).toBe("cred-login::site-1");
   });
 
   it("loads existing schedule for editing and saves updates", async () => {
