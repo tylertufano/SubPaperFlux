@@ -770,11 +770,21 @@ export default function SiteConfigs() {
     )
   }
 
-  function normalizeListItem(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut): SiteConfigsPageItemsInner {
+  function normalizeListItem(
+    value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut,
+  ): SiteConfigsPageItemsInner {
     if (isApiConfig(value)) {
-      return { ...value, loginType: 'api' }
+      const normalizedApi: SiteConfigsPageItemsInner = {
+        ...(value as SiteConfigApiOut),
+        loginType: 'api' as const,
+      }
+      return normalizedApi
     }
-    return { ...value, loginType: 'selenium' }
+    const normalizedSelenium: SiteConfigsPageItemsInner = {
+      ...(value as SiteConfigSeleniumOut),
+      loginType: 'selenium' as const,
+    }
+    return normalizedSelenium
   }
 
   const listItems = Array.isArray(data)
