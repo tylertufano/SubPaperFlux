@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from sqlalchemy import func
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import select
@@ -13,11 +13,109 @@ from ..auth import (
 from ..schemas import SiteConfig as SiteConfigSchema
 from ..db import get_session
 from ..security.csrf import csrf_protect
-from ..models import SiteConfig as SiteConfigModel
+from ..models import SiteConfig as SiteConfigModel, SiteLoginType
 from ..util.quotas import enforce_user_quota
 from ..config import is_user_mgmt_enforce_enabled
 
 
+def _normalize_login_payload(
+    login_type: Optional[str | SiteLoginType],
+    selenium_config: Optional[Dict[str, object]],
+    api_config: Optional[Dict[str, object]],
+) -> Tuple[SiteLoginType, Optional[Dict[str, object]], Optional[Dict[str, object]]]:
+    if isinstance(login_type, SiteLoginType):
+        login_type_value = login_type
+    else:
+        try:
+            login_type_value = SiteLoginType(login_type or "")
+        except ValueError as exc:  # pragma: no cover - defensive branch
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Unsupported login_type",
+            ) from exc
+
+    if login_type_value == SiteLoginType.SELENIUM:
+        config = dict(selenium_config or {})
+        required = ["username_selector", "password_selector", "login_button_selector"]
+        missing = [key for key in required if not config.get(key)]
+        if missing:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"selenium_config missing required fields: {', '.join(missing)}",
+            )
+        cookies = config.get("cookies_to_store")
+        if cookies is not None and not isinstance(cookies, list):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="selenium_config.cookies_to_store must be a list",
+            )
+        config["cookies_to_store"] = list(cookies or [])
+        return login_type_value, config, None
+
+    if login_type_value == SiteLoginType.API:
+        config = dict(api_config or {})
+        endpoint = config.get("endpoint")
+        method = config.get("method")
+        if not endpoint or not method:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="api_config requires endpoint and method",
+            )
+        headers = config.get("headers")
+        if headers is not None and not isinstance(headers, dict):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="api_config.headers must be an object",
+            )
+        cookies = config.get("cookies")
+        if cookies is not None and not isinstance(cookies, dict):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="api_config.cookies must be an object",
+            )
+        return login_type_value, None, config
+
+    raise HTTPException(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Unsupported login_type",
+    )
+
+
+def _serialize_site_config(model: SiteConfigModel) -> SiteConfigSchema:
+    payload = model.model_dump(mode="json")
+    return SiteConfigSchema.model_validate(payload)
+
+
+def _summarize_login_payload(
+    login_type: SiteLoginType,
+    selenium_config: Optional[Dict[str, object]],
+    api_config: Optional[Dict[str, object]],
+) -> Dict[str, object]:
+    if login_type == SiteLoginType.SELENIUM:
+        selenium = selenium_config or {}
+        return {
+            "login_type": login_type.value,
+            "selectors": {
+                key: selenium.get(key)
+                for key in (
+                    "username_selector",
+                    "password_selector",
+                    "login_button_selector",
+                    "post_login_selector",
+                )
+            },
+            "cookies_to_store_count": len(selenium.get("cookies_to_store") or []),
+        }
+
+    api = api_config or {}
+    return {
+        "login_type": login_type.value,
+        "endpoint": api.get("endpoint"),
+        "method": api.get("method"),
+        "has_headers": bool(api.get("headers")),
+        "has_body": bool(api.get("body")),
+        "cookies_to_store": list((api.get("cookies") or {}).keys()),
+    }
 router = APIRouter()
 
 
@@ -47,14 +145,27 @@ def list_site_configs(current_user=Depends(get_current_user), session=Depends(ge
         )
         stmt2 = select(SiteConfigModel).where(SiteConfigModel.owner_user_id.is_(None))
         results += session.exec(stmt2).all()
-    return results
+    return [_serialize_site_config(model) for model in results]
 
 
 @router.post("/", response_model=SiteConfigSchema, status_code=status.HTTP_201_CREATED, dependencies=[Depends(csrf_protect)])
 def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
     payload = body.model_dump(mode="json")
     payload.pop("id", None)
-    model = SiteConfigModel(**payload)
+    login_type, selenium_config, api_config = _normalize_login_payload(
+        payload.get("login_type"),
+        payload.get("selenium_config"),
+        payload.get("api_config"),
+    )
+    payload.pop("login_type", None)
+    payload.pop("selenium_config", None)
+    payload.pop("api_config", None)
+    model = SiteConfigModel(
+        **payload,
+        login_type=login_type,
+        selenium_config=selenium_config,
+        api_config=api_config,
+    )
     # Only admins may create global configs (owner_user_id None)
     if model.owner_user_id is None:
         allowed_global = _ensure_permission(
@@ -85,12 +196,14 @@ def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_
         details={
             "name": model.name,
             "site_url": model.site_url,
-            "cookies_to_store": list(model.cookies_to_store or []),
+            "login_payload": _summarize_login_payload(
+                model.login_type, model.selenium_config, model.api_config
+            ),
         },
     )
     session.commit()
     session.refresh(model)
-    return model
+    return _serialize_site_config(model)
 
 
 @router.get("/{config_id}", response_model=SiteConfigSchema)
@@ -106,7 +219,7 @@ def get_site_config(config_id: str, current_user=Depends(get_current_user), sess
         )
     elif model.owner_user_id != current_user["sub"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    return model
+    return _serialize_site_config(model)
 
 
 @router.put("/{config_id}", response_model=SiteConfigSchema, dependencies=[Depends(csrf_protect)])
@@ -135,8 +248,29 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
     update_payload = body.model_dump(exclude_unset=True, mode="json")
     update_payload.pop("id", None)
     original = model.model_dump(mode="json")
-    for k, v in update_payload.items():
-        setattr(model, k, v)
+
+    login_type, selenium_config, api_config = _normalize_login_payload(
+        update_payload.get("login_type", model.login_type),
+        update_payload.get("selenium_config", model.selenium_config),
+        update_payload.get("api_config", model.api_config),
+    )
+
+    changed_fields = set(update_payload.keys())
+
+    if login_type != model.login_type:
+        changed_fields.add("login_type")
+    if selenium_config != (model.selenium_config or None):
+        changed_fields.add("selenium_config")
+    if api_config != (model.api_config or None):
+        changed_fields.add("api_config")
+
+    for field in ("name", "site_url", "owner_user_id"):
+        if field in update_payload:
+            setattr(model, field, update_payload[field])
+
+    model.login_type = login_type
+    model.selenium_config = selenium_config
+    model.api_config = api_config
     session.add(model)
     record_audit_log(
         session,
@@ -148,13 +282,16 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
         details={
             "name": model.name,
             "site_url": model.site_url,
-            "updated_fields": sorted(update_payload.keys()),
+            "updated_fields": sorted(changed_fields),
             "owner_changed": original.get("owner_user_id") != model.owner_user_id,
+            "login_payload": _summarize_login_payload(
+                model.login_type, model.selenium_config, model.api_config
+            ),
         },
     )
     session.commit()
     session.refresh(model)
-    return model
+    return _serialize_site_config(model)
 
 
 @router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(csrf_protect)])
@@ -187,7 +324,11 @@ def delete_site_config(config_id: str, current_user=Depends(get_current_user), s
         action="delete",
         owner_user_id=model.owner_user_id,
         actor_user_id=current_user["sub"],
-        details={"name": model.name, "site_url": model.site_url},
+        details={
+            "name": model.name,
+            "site_url": model.site_url,
+            "login_type": model.login_type.value,
+        },
     )
     session.delete(model)
     session.commit()

@@ -17,12 +17,7 @@ from ..auth import (
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig, SiteLoginType
-from ..schemas import (
-    SiteConfigApiOut,
-    SiteConfigOut,
-    SiteConfigSeleniumOut,
-    SiteConfigsPage,
-)
+from ..schemas import SiteConfigOut, SiteConfigsPage
 from ..util.quotas import enforce_user_quota
 
 
@@ -39,21 +34,7 @@ def _ensure_permission(
 
 
 def _site_config_to_schema(model: SiteConfig) -> SiteConfigOut:
-    if model.login_type == SiteLoginType.SELENIUM:
-        return SiteConfigSeleniumOut(
-            id=model.id,
-            name=model.name,
-            site_url=model.site_url,
-            owner_user_id=model.owner_user_id,
-            selenium_config=model.selenium_config,
-        )
-    return SiteConfigApiOut(
-        id=model.id,
-        name=model.name,
-        site_url=model.site_url,
-        owner_user_id=model.owner_user_id,
-        api_config=model.api_config,
-    )
+    return SiteConfigOut.model_validate(model.model_dump(mode="json"))
 
 
 @router.get("/", response_model=SiteConfigsPage, summary="List site configs")
@@ -122,7 +103,12 @@ def test_site_config(
             PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
         )
     if sc.login_type != SiteLoginType.SELENIUM:
-        return {"ok": False, "error": "unsupported_login_type"}
+        return {
+            "ok": False,
+            "status": "skipped",
+            "reason": "login_type_not_selenium",
+            "login_type": sc.login_type.value,
+        }
     selectors = sc.selenium_config or {}
     url = sc.site_url
     try:
@@ -202,12 +188,15 @@ def copy_site_config_v1(
         .where(SiteConfig.owner_user_id == user_id),
     )
 
+    selenium_payload = copy.deepcopy(source.selenium_config) if source.login_type == SiteLoginType.SELENIUM else None
+    api_payload = copy.deepcopy(source.api_config) if source.login_type == SiteLoginType.API else None
+
     clone = SiteConfig(
         name=source.name,
         site_url=source.site_url,
         login_type=source.login_type,
-        selenium_config=copy.deepcopy(source.selenium_config),
-        api_config=copy.deepcopy(source.api_config),
+        selenium_config=selenium_payload,
+        api_config=api_payload,
         owner_user_id=user_id,
     )
 
@@ -224,6 +213,7 @@ def copy_site_config_v1(
             "source_config_id": source.id,
             "name": clone.name,
             "site_url": clone.site_url,
+            "login_type": clone.login_type.value,
         },
     )
 
