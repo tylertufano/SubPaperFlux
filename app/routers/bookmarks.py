@@ -37,8 +37,10 @@ from ..models import (
     Folder,
     Tag,
 )
-from ..jobs.publish import handle_publish
-from ..jobs.util_subpaperflux import get_instapaper_oauth_session
+from ..jobs.util_subpaperflux import (
+    get_instapaper_oauth_session,
+    publish_url,
+)
 from ..schemas import (
     BookmarkFolderSummary,
     BookmarkFolderUpdate,
@@ -1768,32 +1770,28 @@ async def _bulk_publish_event_stream(
                     }
                 )
                 continue
-            payload = {
+            publish_kwargs = {
+                "owner_user_id": user_id,
                 "config_dir": config_dir,
-                "instapaper_id": instapaper_id,
-                "url": url,
             }
             title = item.get("title")
             if isinstance(title, str) and title:
-                payload["title"] = title
+                publish_kwargs["title"] = title
             folder = item.get("folder")
             if isinstance(folder, str) and folder:
-                payload["folder"] = folder
+                publish_kwargs["folder"] = folder
             tags = _normalise_tags(item.get("tags"))
             if tags:
-                payload["tags"] = tags
-            feed_id = item.get("feed_id") or item.get("feedId")
-            if isinstance(feed_id, str) and feed_id:
-                payload["feed_id"] = feed_id
-            published_at = item.get("published_at") or item.get("publishedAt")
-            if isinstance(published_at, str) and published_at:
-                payload["published_at"] = published_at
+                publish_kwargs["tags"] = tags
+            raw_html = item.get("raw_html_content") or item.get("rawHtmlContent")
+            if isinstance(raw_html, str) and raw_html:
+                publish_kwargs["raw_html_content"] = raw_html
             try:
                 result = await asyncio.to_thread(
-                    handle_publish,
-                    job_id=f"bulk-{uuid4().hex}",
-                    owner_user_id=user_id,
-                    payload=payload,
+                    publish_url,
+                    str(instapaper_id),
+                    url,
+                    **publish_kwargs,
                 )
             except Exception as exc:  # noqa: BLE001 - surface raw error to caller
                 logging.exception("Bulk publish failed for url=%s user=%s", url, user_id)

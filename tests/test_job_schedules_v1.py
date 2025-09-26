@@ -108,6 +108,20 @@ def test_update_schedule_fields(client: TestClient):
     )
     schedule_id = create_resp.json()["id"]
 
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
     update_resp = client.patch(
         f"/v1/job-schedules/{schedule_id}",
         json={
@@ -126,7 +140,7 @@ def test_update_schedule_fields(client: TestClient):
             "job_type": "publish",
             "payload": {
                 "instapaper_id": "insta-1",
-                "url": "https://example.com/article",
+                "feed_id": feed_id,
             },
         },
     )
@@ -134,6 +148,7 @@ def test_update_schedule_fields(client: TestClient):
     second = second_update_resp.json()
     assert second["job_type"] == "publish"
     assert second["payload"]["instapaper_id"] == "insta-1"
+    assert second["payload"]["feed_id"] == feed_id
 
     toggle_resp = client.post(f"/v1/job-schedules/{schedule_id}/toggle")
     assert toggle_resp.status_code == 200
