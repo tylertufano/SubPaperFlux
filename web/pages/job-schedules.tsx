@@ -14,7 +14,7 @@ import {
 } from "../lib/rbac";
 import type { JobScheduleOut } from "../sdk/src/models/JobScheduleOut";
 import type { Credential } from "../sdk/src/models/Credential";
-import type { SiteConfigOut } from "../sdk/src/models/SiteConfigOut";
+import type { SiteConfigsPageItemsInner } from "../sdk/src/models/SiteConfigsPageItemsInner";
 import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
@@ -54,7 +54,7 @@ type ScheduleFormProps = {
   mode: ScheduleFormMode;
   initialSchedule?: ExtendedJobSchedule;
   credentials: Credential[];
-  siteConfigs: SiteConfigOut[];
+  siteConfigs: SiteConfigsPageItemsInner[];
   feeds: FeedOut[];
   onSubmit: (values: ScheduleFormResult) => Promise<void>;
   onCancel?: () => void;

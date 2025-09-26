@@ -1,5 +1,5 @@
 import type { Credential } from '../sdk/src/models/Credential'
-import type { SiteConfigOut } from '../sdk/src/models/SiteConfigOut'
+type SiteConfigSummary = { id?: string | null; name?: string | null }
 
 export type SiteLoginOption = {
   value: string
@@ -30,11 +30,11 @@ export function resolveCredentialSiteConfigId(credential: Credential): string | 
 
 export function buildSiteLoginOptions(
   loginCredentials: Credential[],
-  siteConfigs: SiteConfigOut[],
+  siteConfigs: SiteConfigSummary[],
   configOnlySuffix?: string,
 ): SiteLoginOption[] {
   const options: SiteLoginOption[] = []
-  const siteConfigMap = new Map<string, SiteConfigOut>()
+  const siteConfigMap = new Map<string, SiteConfigSummary>()
   for (const config of siteConfigs) {
     if (config?.id == null) continue
     const id = String(config.id)
@@ -78,7 +78,7 @@ export function buildSiteLoginOptions(
 
 export function buildSiteConfigLabelMap(
   options: SiteLoginOption[],
-  siteConfigs: SiteConfigOut[],
+  siteConfigs: SiteConfigSummary[],
 ): Map<string, string> {
   const labelMap = new Map<string, string>()
   for (const option of options) {

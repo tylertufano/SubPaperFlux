@@ -26,14 +26,15 @@ const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
 
 type SiteConfigFormState = (SiteConfigFormInput & { id?: string; ownerUserId?: string | null })
 
+type SeleniumFormState = Extract<SiteConfigFormState, { login_type: 'selenium' }>
+type ApiFormState = Extract<SiteConfigFormState, { login_type: 'api' }>
+
 type LocalizedErrors = Record<string, string>
 
 type SiteConfigList = SiteConfigsPage | Array<SiteConfigsPageItemsInner>
 
 type LoginType = 'selenium' | 'api'
 
-function createEmptyForm(loginType: 'selenium'): SiteConfigFormState
-function createEmptyForm(loginType: 'api'): SiteConfigFormState
 function createEmptyForm(loginType: LoginType): SiteConfigFormState {
   if (loginType === 'selenium') {
     const base: SeleniumSiteConfigForm = {
@@ -366,13 +367,16 @@ export default function SiteConfigs() {
   }
 
   const renderSeleniumFields = (
-    current: SiteConfigFormState,
+    current: SeleniumFormState,
     errors: LocalizedErrors,
     onChange: (updater: (prev: SiteConfigFormState) => SiteConfigFormState) => void,
     setErrors: (updater: (prev: LocalizedErrors) => LocalizedErrors) => void,
     prefix: 'create' | 'edit',
   ) => {
     const config = current.selenium_config
+    const update = (updater: (prev: SeleniumFormState) => SeleniumFormState) => {
+      onChange((prev) => updater(prev as SeleniumFormState))
+    }
     const idPrefix = `${prefix}-site-config`
     return (
       <>
@@ -387,7 +391,7 @@ export default function SiteConfigs() {
             value={config?.username_selector ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({
+              update((prev) => ({
                 ...prev,
                 selenium_config: { ...prev.selenium_config, username_selector: value },
               }))
@@ -409,7 +413,7 @@ export default function SiteConfigs() {
             value={config?.password_selector ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({
+              update((prev) => ({
                 ...prev,
                 selenium_config: { ...prev.selenium_config, password_selector: value },
               }))
@@ -431,7 +435,7 @@ export default function SiteConfigs() {
             value={config?.login_button_selector ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({
+              update((prev) => ({
                 ...prev,
                 selenium_config: { ...prev.selenium_config, login_button_selector: value },
               }))
@@ -451,7 +455,7 @@ export default function SiteConfigs() {
             value={config?.post_login_selector ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({
+              update((prev) => ({
                 ...prev,
                 selenium_config: { ...prev.selenium_config, post_login_selector: value },
               }))
@@ -466,7 +470,7 @@ export default function SiteConfigs() {
           value={config?.cookies_to_store ?? ''}
           onChange={(e) => {
             const value = e.target.value
-            onChange((prev) => ({
+            update((prev) => ({
               ...prev,
               selenium_config: { ...prev.selenium_config, cookies_to_store: value },
             }))
@@ -483,13 +487,16 @@ export default function SiteConfigs() {
   }
 
   const renderApiFields = (
-    current: SiteConfigFormState,
+    current: ApiFormState,
     errors: LocalizedErrors,
     onChange: (updater: (prev: SiteConfigFormState) => SiteConfigFormState) => void,
     setErrors: (updater: (prev: LocalizedErrors) => LocalizedErrors) => void,
     prefix: 'create' | 'edit',
   ) => {
     const config = current.api_config
+    const update = (updater: (prev: ApiFormState) => ApiFormState) => {
+      onChange((prev) => updater(prev as ApiFormState))
+    }
     const idPrefix = `${prefix}-site-config`
     return (
       <>
@@ -504,7 +511,7 @@ export default function SiteConfigs() {
             value={config?.endpoint ?? ''}
           onChange={(e) => {
             const value = e.target.value
-            onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
+            update((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
             const trimmed = value.trim()
             let message = ''
             if (!trimmed) {
@@ -531,7 +538,7 @@ export default function SiteConfigs() {
             aria-describedby={errors['api.method'] ? `${idPrefix}-method-error` : undefined}
             onChange={(e) => {
               const value = e.target.value.toUpperCase()
-              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, method: value } }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, method: value } }))
               setErrors((prev) => ({ ...prev, 'api.method': '' }))
             }}
           >
@@ -554,7 +561,7 @@ export default function SiteConfigs() {
             value={config?.headers ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, headers: value } }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, headers: value } }))
               setErrors((prev) => ({ ...prev, 'api.headers': '' }))
             }}
           />
@@ -573,7 +580,7 @@ export default function SiteConfigs() {
             value={config?.body ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, body: value } }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, body: value } }))
               setErrors((prev) => ({ ...prev, 'api.body': '' }))
             }}
           />
@@ -592,7 +599,7 @@ export default function SiteConfigs() {
             value={config?.cookies ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies: value } }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies: value } }))
               setErrors((prev) => ({
                 ...prev,
                 'api.cookies': '',
