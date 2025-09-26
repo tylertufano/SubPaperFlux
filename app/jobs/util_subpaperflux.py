@@ -14,6 +14,7 @@ from ..models import (
     Credential as CredentialModel,
     Feed as FeedModel,
     SiteConfig as SiteConfigModel,
+    SiteLoginType,
 )
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
 
@@ -72,12 +73,16 @@ def format_site_login_pair_id(credential_id: str, site_config_id: str) -> str:
 
 def parse_site_login_pair_id(pair_id: str) -> Tuple[str, str]:
     if not isinstance(pair_id, str) or _SITE_LOGIN_PAIR_DELIMITER not in pair_id:
-        raise ValueError("site_login_pair must be in '<credential>::<site_config>' format")
+        raise ValueError(
+            "site_login_pair must be in '<credential>::<site_config>' format"
+        )
     credential_id, site_config_id = pair_id.split(_SITE_LOGIN_PAIR_DELIMITER, 1)
     credential_id = credential_id.strip()
     site_config_id = site_config_id.strip()
     if not credential_id or not site_config_id:
-        raise ValueError("site_login_pair must include credential and site config identifiers")
+        raise ValueError(
+            "site_login_pair must include credential and site config identifiers"
+        )
     return credential_id, site_config_id
 
 
@@ -90,7 +95,9 @@ def _compute_expiry_hint(cookies: List[Dict[str, Any]]) -> Optional[float]:
     return min(expiries) if expiries else None
 
 
-def _get_db_credential(credential_id: str, owner_user_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def _get_db_credential(
+    credential_id: str, owner_user_id: Optional[str]
+) -> Optional[Dict[str, Any]]:
     if not credential_id:
         return None
     with get_session_ctx() as session:
@@ -103,11 +110,14 @@ def _get_db_credential(credential_id: str, owner_user_id: Optional[str]) -> Opti
     return None
 
 
-def _get_db_credential_by_kind(kind: str, owner_user_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def _get_db_credential_by_kind(
+    kind: str, owner_user_id: Optional[str]
+) -> Optional[Dict[str, Any]]:
     with get_session_ctx() as session:
         # Prefer user-scoped record, then global (owner_user_id is NULL)
         stmt_user = select(CredentialModel).where(
-            (CredentialModel.kind == kind) & (CredentialModel.owner_user_id == owner_user_id)
+            (CredentialModel.kind == kind)
+            & (CredentialModel.owner_user_id == owner_user_id)
         )
         rec = session.exec(stmt_user).first()
         if rec:
@@ -156,7 +166,9 @@ def _resolve_site_login_context(
             if cred_record.kind != "site_login":
                 raise ValueError("credential must be of kind 'site_login'")
             if owner_user_id is not None and cred_record.owner_user_id != owner_user_id:
-                raise ValueError("site_login credential does not belong to requesting user")
+                raise ValueError(
+                    "site_login credential does not belong to requesting user"
+                )
             try:
                 credential_data = decrypt_dict(cred_record.data or {})
             except Exception:
@@ -165,8 +177,14 @@ def _resolve_site_login_context(
         if not credential_data:
             credential_data = creds_file.get(site_login_credential_id) or {}
         if not site_config_id:
-            site_config_id = credential_data.get("site_config_id") or expected_site_config_id
-        if expected_site_config_id and site_config_id and site_config_id != expected_site_config_id:
+            site_config_id = (
+                credential_data.get("site_config_id") or expected_site_config_id
+            )
+        if (
+            expected_site_config_id
+            and site_config_id
+            and site_config_id != expected_site_config_id
+        ):
             raise ValueError("site_login_pair references mismatched site config")
 
         site_config: Dict[str, Any] = {}
@@ -176,14 +194,49 @@ def _resolve_site_login_context(
         if sc_record:
             site_config = {
                 "site_url": sc_record.site_url,
-                "username_selector": sc_record.username_selector,
-                "password_selector": sc_record.password_selector,
-                "login_button_selector": sc_record.login_button_selector,
-                "post_login_selector": sc_record.post_login_selector,
-                "cookies_to_store": sc_record.cookies_to_store or [],
+                "login_type": sc_record.login_type.value
+                if isinstance(sc_record.login_type, SiteLoginType)
+                else sc_record.login_type,
             }
+            if site_config["login_type"] == SiteLoginType.SELENIUM.value:
+                selenium_cfg = sc_record.selenium_config or {}
+                site_config["selenium_config"] = {
+                    "username_selector": selenium_cfg.get("username_selector")
+                    or sc_record.username_selector,
+                    "password_selector": selenium_cfg.get("password_selector")
+                    or sc_record.password_selector,
+                    "login_button_selector": selenium_cfg.get("login_button_selector")
+                    or sc_record.login_button_selector,
+                    "post_login_selector": selenium_cfg.get("post_login_selector")
+                    or sc_record.post_login_selector,
+                    "cookies_to_store": selenium_cfg.get("cookies_to_store")
+                    or sc_record.cookies_to_store
+                    or [],
+                }
+            elif site_config["login_type"] == SiteLoginType.API.value:
+                site_config["api_config"] = sc_record.api_config or {}
         elif site_config_id:
             site_config = sites_file.get(site_config_id) or {}
+            if site_config.get("selenium_config") is None and site_config.get(
+                "username_selector"
+            ):
+                site_config = {
+                    "site_url": site_config.get("site_url"),
+                    "login_type": site_config.get("login_type", "selenium"),
+                    "selenium_config": {
+                        "username_selector": site_config.get("username_selector"),
+                        "password_selector": site_config.get("password_selector"),
+                        "login_button_selector": site_config.get(
+                            "login_button_selector"
+                        ),
+                        "post_login_selector": site_config.get("post_login_selector"),
+                        "cookies_to_store": site_config.get("cookies_to_store", []),
+                    },
+                }
+            site_config.setdefault("login_type", "selenium")
+            if site_config.get("login_type") == "selenium":
+                selenium_payload = site_config.setdefault("selenium_config", {})
+                selenium_payload.setdefault("cookies_to_store", [])
 
     if not credential_data or not site_config or not site_config_id:
         raise ValueError("Missing login credentials or site config for provided IDs")
@@ -208,13 +261,16 @@ def _merge_publication_structures(
 
     flags = dict(existing_flags or {})
     instapaper_flags = dict(flags.get("instapaper") or {})
-    instapaper_flags.setdefault("created_at", instapaper_flags.get("last_seen_at") or seen_at)
+    instapaper_flags.setdefault(
+        "created_at", instapaper_flags.get("last_seen_at") or seen_at
+    )
     instapaper_flags.update(
         {
             "should_publish": True,
             "is_paywalled": bool(is_paywalled),
             "last_seen_at": seen_at,
-            "has_raw_html": bool(raw_html_content) or instapaper_flags.get("has_raw_html", False),
+            "has_raw_html": bool(raw_html_content)
+            or instapaper_flags.get("has_raw_html", False),
         }
     )
     if instapaper_id:
@@ -231,9 +287,11 @@ def perform_login_and_save_cookies(
 ) -> Dict[str, Any]:
     spf = _import_spf()
 
-    credential_id, site_config_id, login_credentials, site_config = _resolve_site_login_context(
-        site_login_pair_id=site_login_pair_id,
-        owner_user_id=owner_user_id,
+    credential_id, site_config_id, login_credentials, site_config = (
+        _resolve_site_login_context(
+            site_login_pair_id=site_login_pair_id,
+            owner_user_id=owner_user_id,
+        )
     )
 
     cookies = spf.login_and_update(site_config_id, site_config, login_credentials)
@@ -273,6 +331,7 @@ def perform_login_and_save_cookies(
     logging.info("Saved cookies to DB for pair=%s", pair_id)
     return {"site_login_pair": pair_id, "cookies_saved": len(cookies)}
 
+
 def _decode_cookie_blob(blob: Optional[Any]) -> List[Dict[str, Any]]:
     payload = blob
     if isinstance(payload, str):
@@ -292,7 +351,9 @@ def _decode_cookie_blob(blob: Optional[Any]) -> List[Dict[str, Any]]:
     return []
 
 
-def _get_cookies_for_pair(credential_id: str, site_config_id: str) -> List[Dict[str, Any]]:
+def _get_cookies_for_pair(
+    credential_id: str, site_config_id: str
+) -> List[Dict[str, Any]]:
     if not credential_id or not site_config_id:
         return []
     with get_session_ctx() as session:
@@ -322,11 +383,16 @@ def get_cookies_for_site_login_pair(
             raise ValueError("site_login_pair references mismatched site config")
     return _get_cookies_for_pair(credential_id, site_config_id)
 
+
 def parse_lookback_to_seconds(s: str) -> int:
     import re
+
     v = int(re.findall(r"\d+", s)[0])
     u = re.findall(r"[a-z]", s)[0].lower()
-    return v if u == "s" else v*60 if u == "m" else v*3600 if u == "h" else v*86400
+    return (
+        v if u == "s" else v * 60 if u == "m" else v * 3600 if u == "h" else v * 86400
+    )
+
 
 def poll_rss_and_publish(
     *,
@@ -345,14 +411,20 @@ def poll_rss_and_publish(
     instapaper_cfg: Dict[str, Any] = {}
     app_creds: Dict[str, Any] = {}
     if instapaper_id:
-        app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+        app_creds_file = (
+            _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+        )
         credentials_file = _load_json(os.path.join(resolved_dir, "credentials.json"))
         instapaper_cfg_file = {}
         if isinstance(credentials_file, dict):
             instapaper_cfg_file = credentials_file.get(instapaper_id) or {}
-        instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or instapaper_cfg_file
-        app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
-
+        instapaper_cfg = (
+            _get_db_credential(instapaper_id, owner_user_id) or instapaper_cfg_file
+        )
+        app_creds = (
+            _get_db_credential_by_kind("instapaper_app", owner_user_id)
+            or app_creds_file
+        )
 
     with get_session_ctx() as session:
         feed = session.get(FeedModel, feed_id)
@@ -382,23 +454,29 @@ def poll_rss_and_publish(
 
     effective_lookback = lookback or feed_lookback or "24h"
     effective_is_paywalled = feed_is_paywalled if is_paywalled is None else is_paywalled
-    effective_requires_auth = feed_requires_auth if rss_requires_auth is None else rss_requires_auth
+    effective_requires_auth = (
+        feed_requires_auth if rss_requires_auth is None else rss_requires_auth
+    )
 
     # Build INI-like sections
-    instapaper_ini = IniSection({
-        "folder": "",
-        "resolve_final_url": True,
-        "sanitize_content": True,
-        "add_default_tag": True,
-        "add_categories_as_tags": True,
-    })
-    rss_ini = IniSection({
-        "feed_url": feed_url,
-        "poll_frequency": feed_poll_frequency,
-        "initial_lookback_period": effective_lookback,
-        "is_paywalled": effective_is_paywalled,
-        "rss_requires_auth": effective_requires_auth,
-    })
+    instapaper_ini = IniSection(
+        {
+            "folder": "",
+            "resolve_final_url": True,
+            "sanitize_content": True,
+            "add_default_tag": True,
+            "add_categories_as_tags": True,
+        }
+    )
+    rss_ini = IniSection(
+        {
+            "feed_url": feed_url,
+            "poll_frequency": feed_poll_frequency,
+            "initial_lookback_period": effective_lookback,
+            "is_paywalled": effective_is_paywalled,
+            "rss_requires_auth": effective_requires_auth,
+        }
+    )
 
     # State with last_rss_timestamp set by lookback
     now = datetime.now(timezone.utc)
@@ -416,13 +494,20 @@ def poll_rss_and_publish(
     site_cfg = None
     cookies: List[Dict[str, Any]] = []
     if site_login_pair_id:
-        _, resolved_site_config_id, _, resolved_site_config = _resolve_site_login_context(
-            site_login_pair_id=site_login_pair_id,
-            owner_user_id=owner_user_id,
-            config_dir=resolved_dir,
+        _, resolved_site_config_id, _, resolved_site_config = (
+            _resolve_site_login_context(
+                site_login_pair_id=site_login_pair_id,
+                owner_user_id=owner_user_id,
+                config_dir=resolved_dir,
+            )
         )
+        cookies_to_store = []
+        if resolved_site_config.get("login_type", "selenium") == "selenium":
+            cookies_to_store = (resolved_site_config.get("selenium_config") or {}).get(
+                "cookies_to_store"
+            ) or []
         site_cfg = {
-            "sanitizing_criteria": resolved_site_config.get("cookies_to_store") or [],
+            "sanitizing_criteria": cookies_to_store,
         }
         cookies = get_cookies_for_site_login_pair(site_login_pair_id, owner_user_id)
     elif feed_site_config:
@@ -495,7 +580,9 @@ def poll_rss_and_publish(
                     existing.rss_entry = merged_metadata
                     changed = True
 
-                if raw_html_content and raw_html_content != (existing.raw_html_content or ""):
+                if raw_html_content and raw_html_content != (
+                    existing.raw_html_content or ""
+                ):
                     existing.raw_html_content = raw_html_content
                     changed = True
 
@@ -569,11 +656,22 @@ def get_instapaper_oauth_session(owner_user_id: Optional[str]):
     from requests_oauthlib import OAuth1Session
 
     with get_session_ctx() as session:
-        stmt = select(CredentialModel).where((CredentialModel.owner_user_id == owner_user_id) & (CredentialModel.kind == "instapaper"))
+        stmt = select(CredentialModel).where(
+            (CredentialModel.owner_user_id == owner_user_id)
+            & (CredentialModel.kind == "instapaper")
+        )
         rec = session.exec(stmt).first()
-        app_stmt_user = select(CredentialModel).where((CredentialModel.owner_user_id == owner_user_id) & (CredentialModel.kind == "instapaper_app"))
-        app_stmt_global = select(CredentialModel).where((CredentialModel.owner_user_id.is_(None)) & (CredentialModel.kind == "instapaper_app"))
-        app = session.exec(app_stmt_user).first() or session.exec(app_stmt_global).first()
+        app_stmt_user = select(CredentialModel).where(
+            (CredentialModel.owner_user_id == owner_user_id)
+            & (CredentialModel.kind == "instapaper_app")
+        )
+        app_stmt_global = select(CredentialModel).where(
+            (CredentialModel.owner_user_id.is_(None))
+            & (CredentialModel.kind == "instapaper_app")
+        )
+        app = (
+            session.exec(app_stmt_user).first() or session.exec(app_stmt_global).first()
+        )
     if not rec or not app:
         return None
     user_data = decrypt_dict(rec.data or {})
@@ -587,15 +685,26 @@ def get_instapaper_oauth_session(owner_user_id: Optional[str]):
 
 
 def get_instapaper_oauth_session_for_id(
-    instapaper_cred_id: str, owner_user_id: Optional[str], config_dir: Optional[str] = None
+    instapaper_cred_id: str,
+    owner_user_id: Optional[str],
+    config_dir: Optional[str] = None,
 ):
     """Create OAuth1Session for a specific instapaper credential id (user-scoped)."""
     from requests_oauthlib import OAuth1Session
+
     with get_session_ctx() as session:
         rec = session.get(CredentialModel, instapaper_cred_id)
-        app_stmt_user = select(CredentialModel).where((CredentialModel.owner_user_id == owner_user_id) & (CredentialModel.kind == "instapaper_app"))
-        app_stmt_global = select(CredentialModel).where((CredentialModel.owner_user_id.is_(None)) & (CredentialModel.kind == "instapaper_app"))
-        app = session.exec(app_stmt_user).first() or session.exec(app_stmt_global).first()
+        app_stmt_user = select(CredentialModel).where(
+            (CredentialModel.owner_user_id == owner_user_id)
+            & (CredentialModel.kind == "instapaper_app")
+        )
+        app_stmt_global = select(CredentialModel).where(
+            (CredentialModel.owner_user_id.is_(None))
+            & (CredentialModel.kind == "instapaper_app")
+        )
+        app = (
+            session.exec(app_stmt_user).first() or session.exec(app_stmt_global).first()
+        )
     if not rec or rec.owner_user_id != owner_user_id:
         return None
     user_data = decrypt_dict(rec.data or {})
@@ -607,7 +716,9 @@ def get_instapaper_oauth_session_for_id(
             app_data = {}
     if not app_data:
         resolved_dir = resolve_config_dir(config_dir)
-        app_data = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+        app_data = (
+            _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json")) or {}
+        )
     if not app_data:
         return None
     return OAuth1Session(
@@ -618,7 +729,9 @@ def get_instapaper_oauth_session_for_id(
     )
 
 
-def get_miniflux_config(miniflux_cred_id: str, owner_user_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def get_miniflux_config(
+    miniflux_cred_id: str, owner_user_id: Optional[str]
+) -> Optional[Dict[str, Any]]:
     with get_session_ctx() as session:
         rec = session.get(CredentialModel, miniflux_cred_id)
     if not rec or rec.owner_user_id != owner_user_id or rec.kind != "miniflux":
@@ -636,7 +749,9 @@ def push_miniflux_cookies(
     spf = _import_spf()
     resolved_dir = resolve_config_dir()
     creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
-    miniflux_cfg = _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
+    miniflux_cfg = (
+        _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
+    )
 
     credential_id, site_config_id, _, _ = _resolve_site_login_context(
         site_login_pair_id=site_login_pair_id,
@@ -650,8 +765,11 @@ def push_miniflux_cookies(
     pair_id = format_site_login_pair_id(credential_id, site_config_id)
     ids_str = ",".join(str(i) for i in feed_ids)
     from ..util.ratelimit import limiter as _limiter
+
     _limiter.wait("miniflux")
-    spf.update_miniflux_feed_with_cookies(miniflux_cfg, cookies, config_name=pair_id, feed_ids_str=ids_str)
+    spf.update_miniflux_feed_with_cookies(
+        miniflux_cfg, cookies, config_name=pair_id, feed_ids_str=ids_str
+    )
     return {
         "feed_ids": feed_ids,
         "site_login_pair": pair_id,
@@ -674,19 +792,28 @@ def publish_url(
     creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
     app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json"))
     # Fetch user-scoped Instapaper tokens and (optionally) app creds from DB
-    instapaper_cfg = _get_db_credential(instapaper_id, owner_user_id) or creds.get(instapaper_id) or {}
-    app_creds = _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
+    instapaper_cfg = (
+        _get_db_credential(instapaper_id, owner_user_id)
+        or creds.get(instapaper_id)
+        or {}
+    )
+    app_creds = (
+        _get_db_credential_by_kind("instapaper_app", owner_user_id) or app_creds_file
+    )
 
-    instapaper_ini_config = IniSection({
-        "folder": folder,
-        "tags": ",".join(tags) if tags else "",
-        "resolve_final_url": True,
-        "sanitize_content": True,
-        "add_default_tag": True,
-        "add_categories_as_tags": False,
-    })
+    instapaper_ini_config = IniSection(
+        {
+            "folder": folder,
+            "tags": ",".join(tags) if tags else "",
+            "resolve_final_url": True,
+            "sanitize_content": True,
+            "add_default_tag": True,
+            "add_categories_as_tags": False,
+        }
+    )
 
     from ..util.ratelimit import limiter
+
     limiter.wait("instapaper")
     # Idempotency check for direct publish
     try:
@@ -695,17 +822,27 @@ def publish_url(
         window_sec = 86400
     if owner_user_id and window_sec > 0:
         from datetime import datetime, timezone, timedelta
+
         since = datetime.now(timezone.utc) - timedelta(seconds=window_sec)
         with get_session_ctx() as session:
             from sqlmodel import select
+
             stmt = select(BookmarkModel).where(
                 (BookmarkModel.owner_user_id == owner_user_id)
                 & (BookmarkModel.url == url)
-                & ((BookmarkModel.published_at.is_(None)) | (BookmarkModel.published_at >= since))
+                & (
+                    (BookmarkModel.published_at.is_(None))
+                    | (BookmarkModel.published_at >= since)
+                )
             )
             exists = session.exec(stmt).first()
             if exists:
-                return {"bookmark_id": exists.instapaper_bookmark_id, "title": title, "content_location": None, "deduped": True}
+                return {
+                    "bookmark_id": exists.instapaper_bookmark_id,
+                    "title": title,
+                    "content_location": None,
+                    "deduped": True,
+                }
 
     result = spf.publish_to_instapaper(
         instapaper_cfg,
@@ -772,7 +909,10 @@ def iter_pending_instapaper_bookmarks(
         credential_id = flags.get("credential_id")
         if credential_id and str(credential_id) != str(instapaper_id):
             continue
-        if include_paywalled is not None and bool(flags.get("is_paywalled")) != include_paywalled:
+        if (
+            include_paywalled is not None
+            and bool(flags.get("is_paywalled")) != include_paywalled
+        ):
             continue
         statuses = (bookmark.publication_statuses or {}).get("instapaper") or {}
         status_value = str(statuses.get("status") or "pending").lower()
@@ -809,7 +949,9 @@ def apply_publication_result(
     flags = dict(bookmark.publication_flags or {})
     instapaper_flags = dict(flags.get("instapaper") or {})
     instapaper_flags.setdefault("should_publish", True)
-    instapaper_flags.setdefault("created_at", instapaper_flags.get("last_seen_at") or now_iso)
+    instapaper_flags.setdefault(
+        "created_at", instapaper_flags.get("last_seen_at") or now_iso
+    )
     instapaper_flags.setdefault("credential_id", instapaper_id)
 
     if result is not None:
@@ -819,7 +961,9 @@ def apply_publication_result(
         if bookmark_id:
             instapaper_status["bookmark_id"] = str(bookmark_id)
             bookmark.instapaper_bookmark_id = str(bookmark_id)
-        content_location = result.get("content_location") or instapaper_status.get("content_location")
+        content_location = result.get("content_location") or instapaper_status.get(
+            "content_location"
+        )
         if content_location:
             instapaper_status["content_location"] = content_location
             bookmark.content_location = content_location

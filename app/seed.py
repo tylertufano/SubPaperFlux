@@ -3,6 +3,7 @@
 Usage:
   DATABASE_URL=... python -m app.seed
 """
+
 from __future__ import annotations
 
 import os
@@ -10,7 +11,7 @@ from sqlmodel import Session
 
 from .auth import ensure_admin_role
 from .db import engine, init_db
-from .models import SiteConfig, Credential, Feed
+from .models import SiteConfig, Credential, Feed, SiteLoginType
 from .organization_defaults import (
     ensure_default_organization,
     ensure_organization_membership,
@@ -76,10 +77,13 @@ def seed(user_id: str = "demo-user") -> None:
         sc_global = SiteConfig(
             name="Example Global",
             site_url="https://example.com/login",
-            username_selector="#user",
-            password_selector="#pass",
-            login_button_selector="button[type='submit']",
-            cookies_to_store=["sessionid"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "button[type='submit']",
+                "cookies_to_store": ["sessionid"],
+            },
             owner_user_id=None,
         )
         session.add(sc_global)
@@ -88,10 +92,13 @@ def seed(user_id: str = "demo-user") -> None:
         sc_user = SiteConfig(
             name="Example User",
             site_url="https://example.org/login",
-            username_selector="#email",
-            password_selector="#password",
-            login_button_selector="button[type='submit']",
-            cookies_to_store=["csrftoken", "sessionid"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#email",
+                "password_selector": "#password",
+                "login_button_selector": "button[type='submit']",
+                "cookies_to_store": ["csrftoken", "sessionid"],
+            },
             owner_user_id=user_id,
         )
         session.add(sc_user)
@@ -117,4 +124,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

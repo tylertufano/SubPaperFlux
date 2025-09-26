@@ -13,7 +13,7 @@ from app.jobs.util_subpaperflux import (
     get_cookies_for_site_login_pair,
     perform_login_and_save_cookies,
 )
-from app.models import Cookie, Credential, SiteConfig
+from app.models import Cookie, Credential, SiteConfig, SiteLoginType
 from app.security.crypto import decrypt_dict
 
 
@@ -39,12 +39,12 @@ def _setup_env(monkeypatch, tmp_path: Path) -> None:
 def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 
-    dummy_spf = DummySPFModule([
-        {"name": "session", "value": "abc", "expiry": 123.0},
-    ])
-    monkeypatch.setattr(
-        "app.jobs.util_subpaperflux._import_spf", lambda: dummy_spf
+    dummy_spf = DummySPFModule(
+        [
+            {"name": "session", "value": "abc", "expiry": 123.0},
+        ]
     )
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: dummy_spf)
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -59,10 +59,13 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
             id="sc_test",
             name="Example",
             site_url="https://example.com",
-            username_selector="#user",
-            password_selector="#pass",
-            login_button_selector="#submit",
-            cookies_to_store=["session"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["session"],
+            },
             owner_user_id="user-1",
         )
         session.add(credential)
@@ -86,7 +89,11 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
         assert cookie.credential_id == "cred_test"
         assert cookie.site_config_id == "sc_test"
         assert isinstance(cookie.encrypted_cookies, str)
-        decrypted = decrypt_dict(json.loads(cookie.encrypted_cookies)) if cookie.encrypted_cookies else {}
+        decrypted = (
+            decrypt_dict(json.loads(cookie.encrypted_cookies))
+            if cookie.encrypted_cookies
+            else {}
+        )
         assert decrypted.get("cookies") == [
             {"name": "session", "value": "abc", "expiry": 123.0},
         ]

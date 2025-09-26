@@ -1,4 +1,5 @@
-from typing import Optional, List, Dict
+from enum import Enum
+from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -81,12 +82,8 @@ class Organization(SQLModel, table=True):
     )
 
     id: str = Field(default_factory=lambda: gen_id("org"), primary_key=True)
-    slug: str = Field(
-        sa_column=Column(String(length=255), nullable=False, index=True)
-    )
-    name: str = Field(
-        sa_column=Column(String(length=255), nullable=False, index=True)
-    )
+    slug: str = Field(sa_column=Column(String(length=255), nullable=False, index=True))
+    name: str = Field(sa_column=Column(String(length=255), nullable=False, index=True))
     description: Optional[str] = Field(
         default=None,
         sa_column=Column(Text, nullable=True),
@@ -159,7 +156,9 @@ class Role(SQLModel, table=True):
 
 class UserRole(SQLModel, table=True):
     __tablename__ = "user_roles"
-    __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_user_roles_user_role"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "role_id", name="uq_user_roles_user_role"),
+    )
 
     user_id: str = Field(
         sa_column=Column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
@@ -186,7 +185,9 @@ class ApiToken(SQLModel, table=True):
 
     id: str = Field(default_factory=lambda: gen_id("tok"), primary_key=True)
     user_id: str = Field(
-        sa_column=Column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+        sa_column=Column(
+            ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        )
     )
     name: str = Field(index=True)
     description: Optional[str] = None
@@ -214,17 +215,113 @@ class ApiToken(SQLModel, table=True):
     )
 
 
+class SiteLoginType(str, Enum):
+    SELENIUM = "selenium"
+    API = "api"
+
+
 class SiteConfig(SQLModel, table=True):
     __tablename__ = "siteconfig"
     id: str = Field(default_factory=lambda: gen_id("sc"), primary_key=True)
     name: str
     site_url: str
-    username_selector: str
-    password_selector: str
-    login_button_selector: str
-    post_login_selector: Optional[str] = None
-    cookies_to_store: List[str] = Field(default_factory=list, sa_column=Column(JSON))
+    login_type: SiteLoginType = Field(
+        default=SiteLoginType.SELENIUM,
+        sa_column=Column(
+            String(length=32),
+            nullable=False,
+            server_default=SiteLoginType.SELENIUM.value,
+        ),
+    )
+    selenium_config: Optional[Dict[str, Any]] = Field(
+        default=None, sa_column=Column(JSON, nullable=True)
+    )
+    api_config: Optional[Dict[str, Any]] = Field(
+        default=None, sa_column=Column(JSON, nullable=True)
+    )
     owner_user_id: Optional[str] = Field(default=None, index=True)  # None => global
+
+    def __init__(self, **data: Any):  # type: ignore[override]
+        selenium_config = data.pop("selenium_config", None)
+        api_config = data.pop("api_config", None)
+        legacy_fields = {}
+        for key in (
+            "username_selector",
+            "password_selector",
+            "login_button_selector",
+            "post_login_selector",
+            "cookies_to_store",
+        ):
+            if key in data:
+                legacy_fields[key] = data.pop(key)
+        super().__init__(**data)
+        merged_config: Dict[str, Any] = dict(selenium_config or {})
+        if legacy_fields:
+            merged_config.update(legacy_fields)
+        if (
+            "cookies_to_store" in merged_config
+            and merged_config["cookies_to_store"] is None
+        ):
+            merged_config["cookies_to_store"] = []
+        self.selenium_config = merged_config or None
+        self.api_config = dict(api_config or {}) or None
+
+    def _get_selenium_value(self, key: str) -> Optional[Any]:
+        config = self.selenium_config or {}
+        value = config.get(key)
+        if key == "cookies_to_store":
+            return list(value or [])
+        return value
+
+    def _set_selenium_value(self, key: str, value: Any) -> None:
+        config = dict(self.selenium_config or {})
+        if value is None and key != "cookies_to_store":
+            config.pop(key, None)
+        else:
+            if key == "cookies_to_store":
+                value = list(value or [])
+            config[key] = value
+        self.selenium_config = config or None
+
+    @property
+    def username_selector(self) -> Optional[str]:
+        return self._get_selenium_value("username_selector")
+
+    @username_selector.setter
+    def username_selector(self, value: Optional[str]) -> None:
+        self._set_selenium_value("username_selector", value)
+
+    @property
+    def password_selector(self) -> Optional[str]:
+        return self._get_selenium_value("password_selector")
+
+    @password_selector.setter
+    def password_selector(self, value: Optional[str]) -> None:
+        self._set_selenium_value("password_selector", value)
+
+    @property
+    def login_button_selector(self) -> Optional[str]:
+        return self._get_selenium_value("login_button_selector")
+
+    @login_button_selector.setter
+    def login_button_selector(self, value: Optional[str]) -> None:
+        self._set_selenium_value("login_button_selector", value)
+
+    @property
+    def post_login_selector(self) -> Optional[str]:
+        return self._get_selenium_value("post_login_selector")
+
+    @post_login_selector.setter
+    def post_login_selector(self, value: Optional[str]) -> None:
+        self._set_selenium_value("post_login_selector", value)
+
+    @property
+    def cookies_to_store(self) -> List[str]:
+        return list(self._get_selenium_value("cookies_to_store") or [])
+
+    @cookies_to_store.setter
+    def cookies_to_store(self, value: Optional[List[str]]) -> None:
+        self._set_selenium_value("cookies_to_store", value or [])
 
 
 class SiteSetting(SQLModel, table=True):
@@ -319,9 +416,7 @@ class JobSchedule(SQLModel, table=True):
         sa_column=Column(String, nullable=True, index=True),
     )
     payload: Dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
-    frequency: str = Field(
-        sa_column=Column(String(length=255), nullable=False)
-    )
+    frequency: str = Field(sa_column=Column(String(length=255), nullable=False))
     next_run_at: Optional[datetime] = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True, index=True),
@@ -412,7 +507,9 @@ class Bookmark(SQLModel, table=True):
 
 class Tag(SQLModel, table=True):
     __tablename__ = "tag"
-    __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_tag_owner_name"),)
+    __table_args__ = (
+        UniqueConstraint("owner_user_id", "name", name="uq_tag_owner_name"),
+    )
 
     id: str = Field(default_factory=lambda: gen_id("tag"), primary_key=True)
     owner_user_id: Optional[str] = Field(
@@ -428,7 +525,9 @@ class Tag(SQLModel, table=True):
 
 class Folder(SQLModel, table=True):
     __tablename__ = "folder"
-    __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_folder_owner_name"),)
+    __table_args__ = (
+        UniqueConstraint("owner_user_id", "name", name="uq_folder_owner_name"),
+    )
 
     id: str = Field(default_factory=lambda: gen_id("fld"), primary_key=True)
     owner_user_id: Optional[str] = Field(
@@ -447,7 +546,9 @@ class BookmarkTagLink(SQLModel, table=True):
     __tablename__ = "bookmark_tag_link"
 
     bookmark_id: str = Field(
-        sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True)
+        sa_column=Column(
+            ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True
+        )
     )
     tag_id: str = Field(
         sa_column=Column(
@@ -462,7 +563,9 @@ class BookmarkFolderLink(SQLModel, table=True):
     __tablename__ = "bookmark_folder_link"
 
     bookmark_id: str = Field(
-        sa_column=Column(ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True)
+        sa_column=Column(
+            ForeignKey("bookmark.id", ondelete="CASCADE"), primary_key=True
+        )
     )
     folder_id: str = Field(
         sa_column=Column(

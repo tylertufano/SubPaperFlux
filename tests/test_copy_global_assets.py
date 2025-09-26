@@ -98,7 +98,7 @@ def _insert_global_credential(*, site_config_id: Optional[str] = None):
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     plain = {
         "username": "global-user",
@@ -116,11 +116,14 @@ def _insert_global_credential(*, site_config_id: Optional[str] = None):
                 site_config = SiteConfig(
                     name="Global Login",
                     site_url="https://global.example.com/login",
-                    username_selector="#global-user",
-                    password_selector="#global-pass",
-                    login_button_selector="#login",
-                    post_login_selector=".dashboard",
-                    cookies_to_store=["sid", "csrftoken"],
+                    login_type=SiteLoginType.SELENIUM,
+                    selenium_config={
+                        "username_selector": "#global-user",
+                        "password_selector": "#global-pass",
+                        "login_button_selector": "#login",
+                        "post_login_selector": ".dashboard",
+                        "cookies_to_store": ["sid", "csrftoken"],
+                    },
                     owner_user_id=None,
                 )
                 session.add(site_config)
@@ -143,17 +146,20 @@ def _insert_global_credential(*, site_config_id: Optional[str] = None):
 
 def _insert_global_site_config():
     from app.db import get_session
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         record = SiteConfig(
             name="Global Login",
             site_url="https://global.example.com/login",
-            username_selector="#global-user",
-            password_selector="#global-pass",
-            login_button_selector="#login",  # pragma: allowlist secret
-            post_login_selector=".dashboard",
-            cookies_to_store=["sid", "csrftoken"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#global-user",
+                "password_selector": "#global-pass",
+                "login_button_selector": "#login",  # pragma: allowlist secret
+                "post_login_selector": ".dashboard",
+                "cookies_to_store": ["sid", "csrftoken"],
+            },
             owner_user_id=None,
         )
         session.add(record)
@@ -162,11 +168,13 @@ def _insert_global_site_config():
         return record
 
 
-def _create_user_credential(*, description="User credential", site_config_id: Optional[str] = None):
+def _create_user_credential(
+    *, description="User credential", site_config_id: Optional[str] = None
+):
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         target_site_config_id = site_config_id
@@ -178,11 +186,14 @@ def _create_user_credential(*, description="User credential", site_config_id: Op
                 site_config = SiteConfig(
                     name="User Login",
                     site_url="https://user.example.com/login",
-                    username_selector="#user",
-                    password_selector="#pass",
-                    login_button_selector="#submit",
-                    post_login_selector=".app",
-                    cookies_to_store=["sid"],
+                    login_type=SiteLoginType.SELENIUM,
+                    selenium_config={
+                        "username_selector": "#user",
+                        "password_selector": "#pass",
+                        "login_button_selector": "#submit",
+                        "post_login_selector": ".app",
+                        "cookies_to_store": ["sid"],
+                    },
                     owner_user_id=USER_ID,
                 )
                 session.add(site_config)
@@ -205,17 +216,20 @@ def _create_user_credential(*, description="User credential", site_config_id: Op
 
 def _create_user_site_config(name="User Login"):
     from app.db import get_session
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         record = SiteConfig(
             name=name,
             site_url="https://user.example.com/login",
-            username_selector="#user",
-            password_selector="#pass",
-            login_button_selector="#submit",
-            post_login_selector=".app",
-            cookies_to_store=["sid"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "post_login_selector": ".app",
+                "cookies_to_store": ["sid"],
+            },
             owner_user_id=USER_ID,
         )
         session.add(record)
@@ -235,7 +249,9 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
     assert payload["owner_user_id"] == USER_ID
     assert payload["name"] == global_config.name
     assert payload["site_url"] == global_config.site_url
-    assert payload["cookies_to_store"] == global_config.cookies_to_store
+    assert (
+        payload["selenium_config"]["cookies_to_store"] == global_config.cookies_to_store
+    )
 
     from app.db import get_session
     from app.models import AuditLog, SiteConfig
@@ -266,7 +282,9 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
 
 def test_copy_global_credential_creates_user_owned_clone(copy_client):
     global_config = _insert_global_site_config()
-    global_credential, plain = _insert_global_credential(site_config_id=global_config.id)
+    global_credential, plain = _insert_global_credential(
+        site_config_id=global_config.id
+    )
 
     response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
     assert response.status_code == 201
@@ -313,7 +331,9 @@ def test_copy_global_assets_respects_quota_limits(copy_client):
     global_credential, _ = _insert_global_credential(site_config_id=global_config.id)
 
     user_config = _create_user_site_config(name="Existing config")
-    _create_user_credential(description="Existing credential", site_config_id=user_config.id)
+    _create_user_credential(
+        description="Existing credential", site_config_id=user_config.id
+    )
 
     cred_response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
     assert cred_response.status_code == 403
@@ -337,5 +357,7 @@ def test_copy_global_assets_respects_quota_limits(copy_client):
         owned_configs = [c for c in configs if c.owner_user_id == USER_ID]
         assert len(owned_configs) == 1
 
-        audit_entries = session.exec(select(AuditLog).where(AuditLog.action == "copy")).all()
+        audit_entries = session.exec(
+            select(AuditLog).where(AuditLog.action == "copy")
+        ).all()
         assert audit_entries == []
