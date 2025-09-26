@@ -9,6 +9,7 @@ import {
   type SeleniumSiteConfigForm,
   type ApiSiteConfigForm,
   type NormalizedSiteConfigPayload,
+  SUPPORTED_HTTP_METHODS,
 } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
@@ -16,16 +17,18 @@ import { useRouter } from 'next/router'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
+import type { SiteConfigsPageItemsInner } from '../sdk/src/models/SiteConfigsPageItemsInner'
 import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../sdk/src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost'
 import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
 
-const API_METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
+const API_METHOD_OPTIONS = SUPPORTED_HTTP_METHODS
+const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
 
 type SiteConfigFormState = (SiteConfigFormInput & { id?: string; ownerUserId?: string | null })
 
 type LocalizedErrors = Record<string, string>
 
-type SiteConfigList = SiteConfigsPage | Array<SiteConfigApiOut | SiteConfigSeleniumOut>
+type SiteConfigList = SiteConfigsPage | Array<SiteConfigsPageItemsInner>
 
 type LoginType = 'selenium' | 'api'
 
@@ -63,11 +66,17 @@ function createEmptyForm(loginType: LoginType): SiteConfigFormState {
 }
 
 function isSeleniumConfig(value: any): value is SiteConfigSeleniumOut {
-  return value && typeof value === 'object' && value.loginType === 'selenium'
+  if (!value || typeof value !== 'object') return false
+  if ('loginType' in value && (value as any).loginType === 'selenium') return true
+  if ('seleniumConfig' in value && value.seleniumConfig) return true
+  return false
 }
 
 function isApiConfig(value: any): value is SiteConfigApiOut {
-  return value && typeof value === 'object' && value.loginType === 'api'
+  if (!value || typeof value !== 'object') return false
+  if ('loginType' in value && (value as any).loginType === 'api') return true
+  if ('apiConfig' in value && value.apiConfig) return true
+  return false
 }
 
 function normalizeSeleniumConfig(config: SiteConfigSeleniumOut): SiteConfigFormState {
@@ -105,7 +114,7 @@ function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
     login_type: 'api',
     api_config: {
       endpoint: config.apiConfig?.endpoint ?? '',
-      method: config.apiConfig?.method ?? 'POST',
+      method: (config.apiConfig?.method ?? 'POST').toUpperCase(),
       headers: stringify(config.apiConfig?.headers as Record<string, string> | undefined),
       body: stringify(config.apiConfig?.body as Record<string, any> | null | undefined),
       cookies: stringify(config.apiConfig?.cookies as Record<string, string> | undefined),
@@ -143,8 +152,14 @@ function isFormReady(form: SiteConfigFormState): boolean {
     )
   }
   const config = form.api_config
+  const endpoint = config?.endpoint?.trim()
   const method = config?.method?.trim().toUpperCase()
-  return Boolean(config?.endpoint?.trim() && method && API_METHOD_OPTIONS.includes(method as typeof API_METHOD_OPTIONS[number]))
+  return Boolean(
+    endpoint &&
+    isValidUrl(endpoint) &&
+    method &&
+    API_METHOD_SET.has(method as (typeof API_METHOD_OPTIONS)[number]),
+  )
 }
 
 function prepareSubmission(
@@ -237,10 +252,13 @@ export default function SiteConfigs() {
     setCopyingId(configId)
     try {
       const copied: ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = await site.copySiteConfigToUser({ configId })
+      const normalizedCopied = normalizeListItem(copied)
       const appendConfig = (candidate: any) => {
-        const list = Array.isArray(candidate) ? candidate : []
-        const exists = list.some((item: any) => item?.id === copied.id)
-        return exists ? { list, added: false } : { list: [...list, copied], added: true }
+        const list: SiteConfigsPageItemsInner[] = Array.isArray(candidate)
+          ? candidate.map(normalizeListItem)
+          : []
+        const exists = list.some((item) => item?.id === normalizedCopied.id)
+        return exists ? { list, added: false } : { list: [...list, normalizedCopied], added: true }
       }
       const applyToPage = (page: SiteConfigList) => {
         if (!page || typeof page !== 'object' || !('items' in page)) return page
@@ -430,12 +448,19 @@ export default function SiteConfigs() {
             aria-invalid={Boolean(errors['api.endpoint'])}
             aria-describedby={errors['api.endpoint'] ? `${idPrefix}-endpoint-error` : undefined}
             value={config?.endpoint ?? ''}
-            onChange={(e) => {
-              const value = e.target.value
-              onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
-              setErrors((prev) => ({ ...prev, 'api.endpoint': value.trim() ? '' : t('site_configs_error_endpoint_required') }))
-            }}
-          />
+          onChange={(e) => {
+            const value = e.target.value
+            onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
+            const trimmed = value.trim()
+            let message = ''
+            if (!trimmed) {
+              message = t('site_configs_error_endpoint_required')
+            } else if (!isValidUrl(trimmed)) {
+              message = t('site_configs_error_endpoint_invalid')
+            }
+            setErrors((prev) => ({ ...prev, 'api.endpoint': message }))
+          }}
+        />
           {errors['api.endpoint'] && (
             <div id={`${idPrefix}-endpoint-error`} className="text-sm text-red-600">{errors['api.endpoint']}</div>
           )}
@@ -451,7 +476,7 @@ export default function SiteConfigs() {
             aria-invalid={Boolean(errors['api.method'])}
             aria-describedby={errors['api.method'] ? `${idPrefix}-method-error` : undefined}
             onChange={(e) => {
-              const value = e.target.value
+              const value = e.target.value.toUpperCase()
               onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, method: value } }))
               setErrors((prev) => ({ ...prev, 'api.method': '' }))
             }}
@@ -525,7 +550,70 @@ export default function SiteConfigs() {
     )
   }
 
-  const listItems = Array.isArray(data) ? data : (data as SiteConfigsPage | undefined)?.items ?? []
+  function resolveLoginTypeLabel(value: LoginType): string {
+    return value === 'api' ? t('site_configs_login_type_api') : t('site_configs_login_type_selenium')
+  }
+
+  function resolveLoginType(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut): LoginType {
+    return isApiConfig(value) ? 'api' : 'selenium'
+  }
+
+  function renderConfigSummary(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut) {
+    if (isApiConfig(value)) {
+      const apiConfig = value.apiConfig
+      const method = apiConfig?.method ?? ''
+      const endpoint = apiConfig?.endpoint ?? ''
+      const headersCount = apiConfig?.headers ? Object.keys(apiConfig.headers).length : 0
+      const cookiesCount = apiConfig?.cookies ? Object.keys(apiConfig.cookies).length : 0
+      const body = apiConfig?.body
+      const hasBody = body !== undefined
+      const isBodyNull = body === null
+      return (
+        <div className="text-sm text-gray-600 space-y-1" data-testid="site-config-summary">
+          <div>{t('site_configs_summary_api_request', { method, endpoint })}</div>
+          {headersCount > 0 && (
+            <div>{t('site_configs_summary_headers_count', { count: headersCount })}</div>
+          )}
+          {hasBody && (
+            <div>
+              {isBodyNull ? t('site_configs_summary_body_null') : t('site_configs_summary_body_present')}
+            </div>
+          )}
+          {cookiesCount > 0 && (
+            <div>{t('site_configs_summary_cookies_count', { count: cookiesCount })}</div>
+          )}
+        </div>
+      )
+    }
+    const seleniumConfig = value.seleniumConfig
+    const username = seleniumConfig?.usernameSelector ?? ''
+    const password = seleniumConfig?.passwordSelector ?? ''
+    const loginButton = seleniumConfig?.loginButtonSelector ?? ''
+    const postLogin = seleniumConfig?.postLoginSelector ?? ''
+    const cookies = seleniumConfig?.cookiesToStore?.length
+      ? seleniumConfig.cookiesToStore.join(', ')
+      : ''
+    return (
+      <div className="text-sm text-gray-600 space-y-1" data-testid="site-config-summary">
+        <div>
+          {t('site_configs_summary_selenium', { username, password, button: loginButton })}
+        </div>
+        {postLogin && <div>{t('site_configs_summary_post_login', { selector: postLogin })}</div>}
+        {cookies && <div>{t('site_configs_summary_cookies', { cookies })}</div>}
+      </div>
+    )
+  }
+
+  function normalizeListItem(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut): SiteConfigsPageItemsInner {
+    if (isApiConfig(value)) {
+      return { ...value, loginType: 'api' }
+    }
+    return { ...value, loginType: 'selenium' }
+  }
+
+  const listItems = Array.isArray(data)
+    ? (data as SiteConfigsPageItemsInner[]).map(normalizeListItem)
+    : (data as SiteConfigsPage | undefined)?.items?.map(normalizeListItem) ?? []
 
   return (
     <div>
@@ -648,22 +736,28 @@ export default function SiteConfigs() {
                   <tr>
                     <th className="th" scope="col">{t('name_label')}</th>
                     <th className="th" scope="col">{t('url_label')}</th>
+                    <th className="th" scope="col">{t('site_configs_column_type')}</th>
+                    <th className="th" scope="col">{t('site_configs_column_details')}</th>
                     <th className="th" scope="col">{t('scope_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {listItems.map((sc: any) => (
-                    <tr key={sc.id} className="odd:bg-white even:bg-gray-50">
-                      <td className="td">{sc.name}</td>
-                      <td className="td">{sc.siteUrl}</td>
-                      <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
-                      <td className="td flex gap-2">
-                        {!sc.ownerUserId && (
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => copyToUser(sc.id)}
+                  {listItems.map((sc: SiteConfigsPageItemsInner) => {
+                    const loginType = resolveLoginType(sc)
+                    return (
+                      <tr key={sc.id} className="odd:bg-white even:bg-gray-50">
+                        <td className="td">{sc.name}</td>
+                        <td className="td">{sc.siteUrl}</td>
+                        <td className="td">{resolveLoginTypeLabel(loginType)}</td>
+                        <td className="td">{renderConfigSummary(sc)}</td>
+                        <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
+                        <td className="td flex gap-2">
+                          {!sc.ownerUserId && (
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={() => copyToUser(sc.id)}
                             disabled={copyingId === sc.id}
                             aria-busy={copyingId === sc.id}
                           >
@@ -698,8 +792,9 @@ export default function SiteConfigs() {
                         </button>
                         <button type="button" className="btn" onClick={() => del(sc.id)}>{t('btn_delete')}</button>
                       </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             )}

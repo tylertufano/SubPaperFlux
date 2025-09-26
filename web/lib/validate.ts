@@ -76,6 +76,8 @@ export type ApiSiteConfigForm = {
 
 export type SiteConfigFormInput = SeleniumSiteConfigForm | ApiSiteConfigForm
 
+export const SUPPORTED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
+
 export type NormalizedSiteConfigPayload =
   | {
       loginType: 'selenium'
@@ -95,14 +97,14 @@ export type NormalizedSiteConfigPayload =
       siteUrl: string
       apiConfig: {
         endpoint: string
-        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+        method: (typeof SUPPORTED_HTTP_METHODS)[number]
         headers?: Record<string, string>
         body?: Record<string, any> | null
         cookies?: Record<string, string>
       }
     }
 
-const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+const HTTP_METHODS = new Set(SUPPORTED_HTTP_METHODS)
 
 export function validateSiteConfig(form: SiteConfigFormInput): {
   errors: Record<string, string>
@@ -176,6 +178,8 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
 
   if (!endpoint) {
     errors['api.endpoint'] = 'site_configs_error_endpoint_required'
+  } else if (!isValidUrl(endpoint)) {
+    errors['api.endpoint'] = 'site_configs_error_endpoint_invalid'
   }
 
   if (!methodRaw) {
