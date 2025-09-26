@@ -71,7 +71,9 @@ JSON Files
     - `method`: HTTP method to call (`GET`, `POST`, `PUT`, `PATCH`, or `DELETE`).
     - `headers`: Optional object of static or templated request headers.
     - `body`: Optional JSON object sent as the request body. Values can include `{{username}}` and `{{password}}` placeholders that the worker replaces with the credential at runtime.
+    - `cookies_to_store`: Optional list of cookie names to capture directly from the HTTP response. If omitted, the worker falls back to the keys provided in `cookies`.
     - `cookies`: Optional object describing which cookies to keep from the response. Keys are the names you want to persist; values describe how to extract them (for example a response cookie key or JSON pointer).
+    - `pre_login`: Optional single object or array of objects shaped like `endpoint`/`method`/`headers`/`body`. These requests run before the main login call and are useful for CSRF token priming.
 
   Example:
 
@@ -103,6 +105,7 @@ JSON Files
           "username": "{{username}}",
           "password": "{{password}}"
         },
+        "cookies_to_store": ["sessionid"],
         "cookies": {
           "sessionid": "$.data.session.id"
         }
@@ -110,6 +113,8 @@ JSON Files
     }
   }
   ```
+
+  The worker logs the selected login path (`selenium` or `api`) so it is easy to trace which flow executed during troubleshooting.
 
 INI Files
 - Each feed is defined by an INI with the sections below:

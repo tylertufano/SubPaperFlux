@@ -143,7 +143,7 @@ def _resolve_site_login_context(
     site_login_credential_id: Optional[str] = None,
     owner_user_id: Optional[str],
     config_dir: Optional[str] = None,
-) -> Tuple[str, str, Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[str, str, str, Dict[str, Any], Dict[str, Any]]:
     expected_site_config_id: Optional[str] = None
     if site_login_pair_id:
         cred_id, expected_site_config_id = parse_site_login_pair_id(site_login_pair_id)
@@ -160,6 +160,7 @@ def _resolve_site_login_context(
 
     credential_data: Dict[str, Any] = {}
     site_config_id: Optional[str] = None
+    login_type: str = SiteLoginType.SELENIUM.value
     with get_session_ctx() as session:
         cred_record = session.get(CredentialModel, site_login_credential_id)
         if cred_record is not None:
@@ -198,6 +199,7 @@ def _resolve_site_login_context(
                 if isinstance(sc_record.login_type, SiteLoginType)
                 else sc_record.login_type,
             }
+            login_type = site_config["login_type"] or SiteLoginType.SELENIUM.value
             if site_config["login_type"] == SiteLoginType.SELENIUM.value:
                 selenium_cfg = sc_record.selenium_config or {}
                 site_config["selenium_config"] = {
@@ -214,7 +216,8 @@ def _resolve_site_login_context(
                     or [],
                 }
             elif site_config["login_type"] == SiteLoginType.API.value:
-                site_config["api_config"] = sc_record.api_config or {}
+                api_cfg = sc_record.api_config or {}
+                site_config["api_config"] = dict(api_cfg)
         elif site_config_id:
             site_config = sites_file.get(site_config_id) or {}
             if site_config.get("selenium_config") is None and site_config.get(
@@ -234,14 +237,27 @@ def _resolve_site_login_context(
                     },
                 }
             site_config.setdefault("login_type", "selenium")
-            if site_config.get("login_type") == "selenium":
+            login_type = site_config.get("login_type", "selenium")
+            if login_type == "selenium":
                 selenium_payload = site_config.setdefault("selenium_config", {})
                 selenium_payload.setdefault("cookies_to_store", [])
+            elif login_type == "api":
+                api_payload = site_config.setdefault("api_config", {})
+                if isinstance(api_payload, dict):
+                    site_config["api_config"] = dict(api_payload)
 
     if not credential_data or not site_config or not site_config_id:
         raise ValueError("Missing login credentials or site config for provided IDs")
 
-    return site_login_credential_id, site_config_id, credential_data, site_config
+    login_type = (site_config.get("login_type") or login_type or "selenium").lower()
+
+    return (
+        site_login_credential_id,
+        site_config_id,
+        login_type,
+        credential_data,
+        site_config,
+    )
 
 
 def _merge_publication_structures(
@@ -287,16 +303,35 @@ def perform_login_and_save_cookies(
 ) -> Dict[str, Any]:
     spf = _import_spf()
 
-    credential_id, site_config_id, login_credentials, site_config = (
-        _resolve_site_login_context(
-            site_login_pair_id=site_login_pair_id,
-            owner_user_id=owner_user_id,
-        )
+    (
+        credential_id,
+        site_config_id,
+        login_type,
+        login_credentials,
+        site_config,
+    ) = _resolve_site_login_context(
+        site_login_pair_id=site_login_pair_id,
+        owner_user_id=owner_user_id,
     )
 
-    cookies = spf.login_and_update(site_config_id, site_config, login_credentials)
+    logging.info(
+        "Dispatching %s login for site_config=%s", login_type, site_config_id
+    )
+
+    login_result = spf.login_and_update(
+        site_config_id, site_config, login_credentials
+    )
+
+    if not isinstance(login_result, dict):
+        raise RuntimeError("Login handler returned unexpected payload")
+
+    resolved_login_type = login_result.get("login_type", login_type)
+    cookies = login_result.get("cookies") or []
     if not cookies:
-        raise RuntimeError("Login did not return any cookies")
+        error_message = login_result.get("error") or "Login did not return any cookies"
+        raise RuntimeError(
+            f"{resolved_login_type} login failed for site_config={site_config_id}: {error_message}"
+        )
 
     # Backward-compat: previously wrote to cookie_state.json. Now store in DB.
     pair_id = format_site_login_pair_id(credential_id, site_config_id)
@@ -329,7 +364,17 @@ def perform_login_and_save_cookies(
             session.add(new)
         session.commit()
     logging.info("Saved cookies to DB for pair=%s", pair_id)
-    return {"site_login_pair": pair_id, "cookies_saved": len(cookies)}
+    logging.info(
+        "Saved %s cookies for site_config=%s via %s login",
+        len(cookies),
+        site_config_id,
+        resolved_login_type,
+    )
+    return {
+        "site_login_pair": pair_id,
+        "cookies_saved": len(cookies),
+        "login_type": resolved_login_type,
+    }
 
 
 def _decode_cookie_blob(blob: Optional[Any]) -> List[Dict[str, Any]]:
@@ -494,7 +539,7 @@ def poll_rss_and_publish(
     site_cfg = None
     cookies: List[Dict[str, Any]] = []
     if site_login_pair_id:
-        _, resolved_site_config_id, _, resolved_site_config = (
+        _, resolved_site_config_id, resolved_login_type, _, resolved_site_config = (
             _resolve_site_login_context(
                 site_login_pair_id=site_login_pair_id,
                 owner_user_id=owner_user_id,
@@ -502,7 +547,7 @@ def poll_rss_and_publish(
             )
         )
         cookies_to_store = []
-        if resolved_site_config.get("login_type", "selenium") == "selenium":
+        if resolved_login_type == "selenium":
             cookies_to_store = (resolved_site_config.get("selenium_config") or {}).get(
                 "cookies_to_store"
             ) or []
@@ -753,7 +798,7 @@ def push_miniflux_cookies(
         _get_db_credential(miniflux_id, owner_user_id) or creds.get(miniflux_id) or {}
     )
 
-    credential_id, site_config_id, _, _ = _resolve_site_login_context(
+    credential_id, site_config_id, _, _, _ = _resolve_site_login_context(
         site_login_pair_id=site_login_pair_id,
         owner_user_id=owner_user_id,
         config_dir=resolved_dir,
