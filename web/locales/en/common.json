@@ -286,6 +286,7 @@
   "job_type_rss_poll": "RSS poll",
   "job_type_publish": "Publish",
   "job_type_retention": "Retention",
+  "job_type_unknown": "Unknown",
   "credentials_title": "Credentials",
   "site_configs_title": "Site Configs",
   "feeds_title": "Feeds",
