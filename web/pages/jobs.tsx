@@ -179,23 +179,41 @@ export default function Jobs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((j: any) => (
-                    <React.Fragment key={j.id}>
-                      <tr key={j.id} className="odd:bg-white even:bg-gray-50">
-                        <td className="td">{j.id}</td>
-                        <td className="td">{j.type}</td>
-                        <td className="td">
-                          {j.status}
-                          {j.type === 'publish' && (j.details?.deduped === true) && (
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">{t('jobs_badge_deduped')}</span>
-                          )}
-                          {j.type === 'rss_poll' && (j.details?.published != null) && (
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">
-                              {formatNumberValue(j.details?.published, numberFormatter, '0')}/
-                              {formatNumberValue(j.details?.total, numberFormatter, '0')}
-                            </span>
-                          )}
-                        </td>
+                  {data.items.map((j: any) => {
+                    const rssStored = j.details?.stored
+                    const rssTotal = j.details?.total
+                    const rssDuplicates = j.details?.duplicates
+                    const showRssPollBadge =
+                      j.type === 'rss_poll' && (rssStored != null || rssTotal != null)
+                    const formattedStored = formatNumberValue(rssStored, numberFormatter, '0')
+                    const formattedTotal = formatNumberValue(rssTotal, numberFormatter, '0')
+                    const duplicatesSuffix =
+                      rssDuplicates != null && rssDuplicates > 0
+                        ? t('jobs_badge_rss_poll_duplicates', {
+                            count: formatNumberValue(rssDuplicates, numberFormatter, '0'),
+                          })
+                        : ''
+
+                    return (
+                      <React.Fragment key={j.id}>
+                        <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                          <td className="td">{j.id}</td>
+                          <td className="td">{j.type}</td>
+                          <td className="td">
+                            {j.status}
+                            {j.type === 'publish' && (j.details?.deduped === true) && (
+                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">{t('jobs_badge_deduped')}</span>
+                            )}
+                            {showRssPollBadge && (
+                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">
+                                {t('jobs_badge_rss_poll', {
+                                  stored: formattedStored,
+                                  total: formattedTotal,
+                                  duplicates: duplicatesSuffix,
+                                })}
+                              </span>
+                            )}
+                          </td>
                         <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
                         <td className="td">
                           {j.last_error || ''}
@@ -252,7 +270,8 @@ export default function Jobs() {
                         </tr>
                       )}
                     </React.Fragment>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
               )}
