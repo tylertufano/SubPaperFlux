@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Optional
 
 import pytest
 from fastapi.testclient import TestClient
@@ -293,3 +294,134 @@ def test_bookmark_tag_update_enforcement(api_context):
         assert guest_update.status_code == 403
     else:
         assert guest_update.status_code == 404
+
+
+def _create_site_config_for_user(user_id: str) -> str:
+    from app.db import get_session
+    from app.models import SiteConfig
+
+    with next(get_session()) as session:
+        config = SiteConfig(
+            name=f"{user_id}-config",
+            site_url=f"https://{user_id}.example.com/login",
+            username_selector="#username",
+            password_selector="#password",
+            login_button_selector="#login",
+            owner_user_id=user_id,
+        )
+        session.add(config)
+        session.commit()
+        session.refresh(config)
+        return config.id
+
+
+def _create_feed_with_owner_site_config(context: SimpleNamespace):
+    create_resp = context.request_as(
+        context.owner,
+        "POST",
+        "/feeds/",
+        json={
+            "url": "https://example.com/feeds/owned.xml",
+            "site_config_id": context.owner_site_config_id,
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    return create_resp.json()
+
+
+def _build_feed_update_payload(
+    feed: dict,
+    *,
+    site_config_id: str,
+    credential_id: Optional[str] = None,
+) -> dict:
+    payload = {
+        "id": feed["id"],
+        "url": str(feed["url"]),
+        "poll_frequency": feed.get("poll_frequency") or "1h",
+        "initial_lookback_period": feed.get("initial_lookback_period"),
+        "is_paywalled": feed.get("is_paywalled", False),
+        "rss_requires_auth": feed.get("rss_requires_auth", False),
+        "site_config_id": site_config_id,
+    }
+    if credential_id:
+        payload["site_login_credential_id"] = credential_id
+    return payload
+
+
+def test_feed_creation_rejects_foreign_site_config(api_context):
+    context = api_context
+
+    other_config_id = _create_site_config_for_user(context.admin["sub"])
+
+    create_resp = context.request_as(
+        context.owner,
+        "POST",
+        "/feeds/",
+        json={
+            "url": "https://example.com/feeds/other-config.xml",
+            "site_config_id": other_config_id,
+        },
+    )
+
+    assert create_resp.status_code == 422
+    assert "site_config_id" in create_resp.text
+
+
+def test_feed_update_rejects_foreign_site_config(api_context):
+    context = api_context
+
+    feed = _create_feed_with_owner_site_config(context)
+    other_config_id = _create_site_config_for_user(context.admin["sub"])
+
+    update_payload = _build_feed_update_payload(feed, site_config_id=other_config_id)
+
+    update_resp = context.request_as(
+        context.owner,
+        "PUT",
+        f"/feeds/{feed['id']}",
+        json=update_payload,
+    )
+
+    assert update_resp.status_code == 422
+    assert "site_config_id" in update_resp.text
+
+
+def test_feed_creation_rejects_global_site_config_without_permission(api_context):
+    context = api_context
+    if not context.enforce:
+        pytest.skip("Permission enforcement disabled")
+
+    create_resp = context.request_as(
+        context.owner,
+        "POST",
+        "/feeds/",
+        json={
+            "url": "https://example.com/feeds/global-config.xml",
+            "site_config_id": context.global_site_config_id,
+        },
+    )
+
+    assert create_resp.status_code == 403
+
+
+def test_feed_update_rejects_global_site_config_without_permission(api_context):
+    context = api_context
+    if not context.enforce:
+        pytest.skip("Permission enforcement disabled")
+
+    feed = _create_feed_with_owner_site_config(context)
+
+    update_payload = _build_feed_update_payload(
+        feed,
+        site_config_id=context.global_site_config_id,
+    )
+
+    update_resp = context.request_as(
+        context.owner,
+        "PUT",
+        f"/feeds/{feed['id']}",
+        json=update_payload,
+    )
+
+    assert update_resp.status_code == 403
