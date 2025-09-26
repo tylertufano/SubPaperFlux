@@ -465,7 +465,7 @@
   "site_configs_delete_success": "Site config deleted",
   "site_configs_update_success": "Site config updated",
   "site_configs_create_heading": "Create Site Config",
-  "site_configs_create_help": "Provide CSS selectors for the login form and any cookies to persist.",
+  "site_configs_create_help": "Choose a login type, then provide either browser selectors or API request details along with the cookies to persist.",
   "site_configs_field_login_type_label": "Login type",
   "site_configs_login_type_selenium": "Browser automation",
   "site_configs_login_type_api": "Direct API",

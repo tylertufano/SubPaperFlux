@@ -57,12 +57,59 @@ JSON Files
   ```
 
 - `site_configs.json` (dictionary keyed by your `site_config_id`)
-  - site_url: Login page URL.
-  - username_selector: CSS selector for the username input.
-  - password_selector: CSS selector for the password input.
-  - login_button_selector: CSS selector for the submit button.
-  - cookies_to_store: Array of cookie names to capture and reuse.
-  - post_login_selector: Optional CSS selector expected after login (for success check).
+  - `name`: Friendly label that appears in the dashboard.
+  - `site_url`: Base URL for the site or application.
+  - `login_type`: One of `selenium` or `api`. This flag controls which nested payload is validated and executed during logins.
+  - For `login_type = "selenium"`, provide a `selenium_config` object containing:
+    - `username_selector`: CSS selector for the username input.
+    - `password_selector`: CSS selector for the password input.
+    - `login_button_selector`: CSS selector for the submit button.
+    - `post_login_selector`: Optional selector the worker waits for after submitting the form. This extra check only runs for Selenium logins.
+    - `cookies_to_store`: Array of cookie names to persist. Omit or set to an empty array to capture every cookie returned by the browser session.
+  - For `login_type = "api"`, provide an `api_config` object containing:
+    - `endpoint`: Absolute URL that receives the login request.
+    - `method`: HTTP method to call (`GET`, `POST`, `PUT`, `PATCH`, or `DELETE`).
+    - `headers`: Optional object of static or templated request headers.
+    - `body`: Optional JSON object sent as the request body. Values can include `{{username}}` and `{{password}}` placeholders that the worker replaces with the credential at runtime.
+    - `cookies`: Optional object describing which cookies to keep from the response. Keys are the names you want to persist; values describe how to extract them (for example a response cookie key or JSON pointer).
+
+  Example:
+
+  ```json
+  {
+    "selenium_site": {
+      "name": "Example News Login",
+      "site_url": "https://example.com/login",
+      "login_type": "selenium",
+      "selenium_config": {
+        "username_selector": "#username",
+        "password_selector": "#password",
+        "login_button_selector": "button[type='submit']",
+        "post_login_selector": "nav .user-avatar",
+        "cookies_to_store": ["sessionid", "csrftoken"]
+      }
+    },
+    "api_site": {
+      "name": "Example API Login",
+      "site_url": "https://example.com/app",
+      "login_type": "api",
+      "api_config": {
+        "endpoint": "https://example.com/api/v1/login",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "username": "{{username}}",
+          "password": "{{password}}"
+        },
+        "cookies": {
+          "sessionid": "$.data.session.id"
+        }
+      }
+    }
+  }
+  ```
 
 INI Files
 - Each feed is defined by an INI with the sections below:
