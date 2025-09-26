@@ -1,6 +1,6 @@
 # SubPaperFlux
 
-SubPaperFlux continuously bridges RSS feeds and Instapaper, with optional paywall-aware fetching and Miniflux cookie updates. It can log in to sites via headless Chrome to capture authentication cookies, push those cookies to Miniflux feeds, poll RSS for new entries, and publish them to Instapaper. It maintains lightweight state per INI file so it can run as a long‑lived service.
+SubPaperFlux continuously bridges RSS feeds and Instapaper, with optional paywall-aware fetching and Miniflux cookie updates. It can log in to sites via headless Chrome to capture authentication cookies, push those cookies to Miniflux feeds, poll RSS for new entries (storing them locally as bookmarks), and publish them to Instapaper. It maintains lightweight state per INI file so it can run as a long‑lived service.
 
 This repo contains the main service script `subpaperflux.py`, a Dockerfile for a slim runtime, and example configuration formats.
 
@@ -8,14 +8,14 @@ This repo contains the main service script `subpaperflux.py`, a Dockerfile for a
 - Headless logins: Uses Selenium + Chrome to authenticate and capture cookies.
 - Miniflux integration: Updates specified Miniflux feeds with fresh cookies.
 - RSS polling: Fetches and filters feed entries using flexible schedules and lookbacks.
-- Instapaper publishing: Sends URLs or full HTML (for paywalled content) to Instapaper, with folder and tag support.
-- Stateful operation: Tracks last poll time, last processed entry, and local bookmark cache for sync/purge.
+- Instapaper publishing: Consumes stored bookmarks and sends URLs or full HTML (for paywalled content) to Instapaper, with folder and tag support.
+- Stateful operation: Tracks last poll time, last processed entry, and a local bookmark cache for sync/purge.
 - Retention and purge: Optional retention to delete old Instapaper bookmarks.
 
 **How It Works**
 - You provide an INI file per feed with references to JSON config blocks.
-- On a schedule, the service optionally logs in (headless), updates Miniflux cookies, polls the RSS feed, then publishes new items to Instapaper.
-- State is stored per INI as a `.ctrl` file next to your INI; cookies are cached in `cookie_state.json`.
+- On a schedule, the service optionally logs in (headless), updates Miniflux cookies, polls the RSS feed (saving matching entries as bookmarks), then publishes new items to Instapaper.
+- State is stored per INI as a `.ctrl` file next to your INI; cookies are cached in a database-backed store keyed by the `site_login_id`/`site_config_id` pair from your config.
 
 Requirements
 - Python 3.11+ (Docker image uses Python 3.12 slim).
@@ -28,7 +28,7 @@ Configuration Overview
   - `credentials.json`: IDs and secrets for logins, Instapaper, and Miniflux. Instapaper entries should start with placeholders; complete the onboarding flow in the UI to exchange the username/password for tokens and persist them.
   - `site_configs.json`: Site‑specific login selectors and cookie names.
   - `instapaper_app_creds.json`: Instapaper app consumer key/secret.
-  - `cookie_state.json`: Automatically managed cache of cookies (created/updated by the service).
+  - Database-backed cookie store: Automatically managed cache of cookies bound to the site login/site config pair (created/updated by the service).
   - `your_feed.ini`: One or more INI files describing each feed.
   - `your_feed.ctrl`: Automatically managed state file per INI (created/updated by the service).
 
@@ -84,7 +84,7 @@ INI Files
   [INSTAPAPER_CONFIG]
   folder = My Articles                 ; optional folder name
   resolve_final_url = true             ; follow redirects before publishing
-  retention = 30d                      ; optional; delete items older than this
+  retention = 30d                      ; optional; deletes items older than this via the Instapaper credential (per-feed filter)
 
   [MINIFLUX_CONFIG]
   feed_ids = 1,2,3                     ; target feeds to receive cookies
@@ -115,7 +115,7 @@ Running with Docker
 Operational Details
 - Headless browser: Uses Chrome with `--headless=new`; no X server required.
 - WebDriver: `webdriver-manager` auto‑downloads a compatible ChromeDriver at runtime.
-- Cookies: Captured cookies are filtered by `cookies_to_store` and cached in `cookie_state.json` with timestamps.
+- Cookies: Captured cookies are filtered by `cookies_to_store` and cached in the database-backed cookie store keyed by the site login/site config pair, along with timestamps.
 - State: The `.ctrl` file tracks last poll times and a local bookmark cache for sync/purge.
 - Error handling: Network and parsing errors are logged; the service continues polling.
 
@@ -318,9 +318,9 @@ Credentials (DB-backed)
 Job Types (preview)
 - `login`: payload `{ "site_login_pair": "<credId>::<siteId>" }`
 - `miniflux_refresh`: payload `{ "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "site_login_pair": "<credId>::<siteId>" }`
-- `rss_poll`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }`
-- `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "url": "https://...", "title": "Optional", "folder": "Optional" }`
-- `retention`: payload `{ "older_than": "30d" }`
+- `rss_poll`: payload `{ "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }` (collects matching entries and stores them as bookmarks in the local cache)
+- `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "<DB_FEED_ID>", "folder": "Optional" }` (consumes stored bookmarks for the feed and sends them to Instapaper; requires the Instapaper credential plus feed reference rather than individual URLs)
+- `retention`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "older_than": "30d", "feed_id": "Optional" }` (requires an Instapaper credential and can optionally scope to a specific feed when pruning)
 
 Notes: Handlers dispatch real work using the existing subpaperflux functions. Publish persists bookmark metadata (including published timestamps when available); retention deletes old bookmarks in Instapaper and removes them from the DB. Jobs retry up to `WORKER_MAX_ATTEMPTS` with last error tracked on the job.
 
