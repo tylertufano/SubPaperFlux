@@ -47,10 +47,14 @@ export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostToJSONTyped
         return value;
     }
     switch (value['loginType']) {
-        case 'api':
-            return Object.assign({}, SiteConfigApiOutToJSON(value), { loginType: 'api' } as const);
-        case 'selenium':
-            return Object.assign({}, SiteConfigSeleniumOutToJSON(value), { loginType: 'selenium' } as const);
+        case 'api': {
+            const apiValue: SiteConfigApiOut = value;
+            return Object.assign({}, SiteConfigApiOutToJSON(apiValue), { loginType: 'api' } as const);
+        }
+        case 'selenium': {
+            const seleniumValue: SiteConfigSeleniumOut = value;
+            return Object.assign({}, SiteConfigSeleniumOutToJSON(seleniumValue), { loginType: 'selenium' } as const);
+        }
         default:
             return json;
     }
