@@ -109,6 +109,9 @@ def api_context(request, monkeypatch):
                 "password_selector": "#password",
                 "login_button_selector": "#login",
             },
+            success_text_class="alert alert-global",
+            expected_success_text="Global success",
+            required_cookies=["session"],
             owner_user_id=None,
         )
         owner_config = SiteConfig(
@@ -120,6 +123,9 @@ def api_context(request, monkeypatch):
                 "password_selector": "#password",
                 "login_button_selector": "#login",
             },
+            success_text_class="alert alert-owner",
+            expected_success_text="Owner success",
+            required_cookies=["session"],
             owner_user_id=owner_identity["sub"],
         )
         session.add(global_config)
@@ -339,6 +345,9 @@ def _create_site_config_for_user(user_id: str) -> str:
                 "password_selector": "#password",
                 "login_button_selector": "#login",
             },
+            success_text_class="alert alert-user",
+            expected_success_text="User success",
+            required_cookies=["session"],
             owner_user_id=user_id,
         )
         session.add(config)

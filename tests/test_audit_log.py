@@ -80,6 +80,9 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
                 "login_button_selector": "#submit",
                 "cookies_to_store": ["session"],
             },
+            success_text_class="alert alert-audit",
+            expected_success_text="Audit success",
+            required_cookies=["session"],
             owner_user_id="admin",
         )
         session.add(site_config)
@@ -153,6 +156,9 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
             "login_button_selector": "button[type='submit']",
             "cookies_to_store": ["session"],
         },
+        "success_text_class": "alert alert-audit",
+        "expected_success_text": "Demo success",
+        "required_cookies": ["session"],
     }
     created = admin_client.post("/site-configs", json=create_payload)
     assert created.status_code == 201
