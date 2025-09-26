@@ -146,10 +146,13 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
     create_payload = {
         "name": "Demo Site",
         "site_url": "https://example.com/login",
-        "username_selector": "#username",
-        "password_selector": "#password",
-        "login_button_selector": "button[type='submit']",
-        "cookies_to_store": ["session"],
+        "login_type": "selenium",
+        "selenium_config": {
+            "username_selector": "#username",
+            "password_selector": "#password",
+            "login_button_selector": "button[type='submit']",
+            "cookies_to_store": ["session"],
+        },
     }
     created = admin_client.post("/site-configs", json=create_payload)
     assert created.status_code == 201

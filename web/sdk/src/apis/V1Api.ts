@@ -57,8 +57,8 @@ import type {
   JobsPage,
   MeOut,
   MeUpdate,
+  ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost,
   RoleGrantRequest,
-  SiteConfigOut,
   SiteConfigsPage,
   SiteWelcomeSettingOut,
   SiteWelcomeSettingUpdate,
@@ -152,10 +152,10 @@ import {
     MeOutToJSON,
     MeUpdateFromJSON,
     MeUpdateToJSON,
+    ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON,
+    ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostToJSON,
     RoleGrantRequestFromJSON,
     RoleGrantRequestToJSON,
-    SiteConfigOutFromJSON,
-    SiteConfigOutToJSON,
     SiteConfigsPageFromJSON,
     SiteConfigsPageToJSON,
     SiteWelcomeSettingOutFromJSON,
@@ -1010,7 +1010,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * Copy Site Config V1
      */
-    async copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfigOut>> {
+    async copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost>> {
         if (requestParameters['configId'] == null) {
             throw new runtime.RequiredError(
                 'configId',
@@ -1041,13 +1041,13 @@ export class V1Api extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigOutFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON(jsonValue));
     }
 
     /**
      * Copy Site Config V1
      */
-    async copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfigOut> {
+    async copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost> {
         const response = await this.copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides);
         return await response.value();
     }

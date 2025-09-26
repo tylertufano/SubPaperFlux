@@ -119,6 +119,21 @@ def test_site_config_quota_enforced(quota_client):
     resp_blocked = quota_client.post("/site-configs", json=payload)
     assert resp_blocked.status_code == 403
 
+    api_payload = {
+        "name": "API Example",
+        "site_url": "https://api.example.com",
+        "login_type": "api",
+        "api_config": {
+            "endpoint": "https://api.example.com/login",
+            "method": "POST",
+            "headers": {"X-Test": "1"},
+        },
+        "owner_user_id": "quota-user",
+    }
+
+    resp_api = quota_client.post("/site-configs", json=api_payload)
+    assert resp_api.status_code == 403
+
 
 def test_feed_quota_enforced(quota_client):
     _seed_user(quota_feeds=1)

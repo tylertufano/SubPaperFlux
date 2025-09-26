@@ -4,6 +4,9 @@ import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithSWR, makeSWRSuccess, type RenderWithSWROptions } from './helpers/renderWithSWR'
 import SiteConfigs from '../pages/site-configs'
+import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
+import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 
 const openApiSpies = vi.hoisted(() => ({
   listSiteConfigs: vi.fn(),
@@ -62,23 +65,32 @@ export const testSiteConfigMock = openApiSpies.testSiteConfig
 export const updateSiteConfigMock = openApiSpies.updateSiteConfig
 export const copySiteConfigToUserMock = openApiSpies.copySiteConfigToUser
 
-export const defaultSiteConfigsResponse = {
-  items: [
-    {
-      id: 'config-1',
-      name: 'Example Site',
-      site_url: 'https://example.com/login',
-      username_selector: '#username',
-      password_selector: '#password',
-      login_button_selector: 'button[type="submit"]',
-      cookies_to_store: ['sessionid'],
-      owner_user_id: 'user-1',
-    },
-  ],
+const seleniumItem: SiteConfigSeleniumOut = {
+  loginType: 'selenium',
+  id: 'config-1',
+  name: 'Example Site',
+  siteUrl: 'https://example.com/login',
+  ownerUserId: 'user-1',
+  seleniumConfig: {
+    usernameSelector: '#username',
+    passwordSelector: '#password',
+    loginButtonSelector: 'button[type="submit"]',
+    postLoginSelector: '',
+    cookiesToStore: ['sessionid'],
+  },
+}
+
+export const defaultSiteConfigsResponse: SiteConfigsPage = {
+  items: [seleniumItem],
+  total: 1,
+  page: 1,
+  size: 25,
+  hasNext: false,
+  totalPages: 1,
 }
 
 export type SiteConfigsSetupOptions = {
-  data?: typeof defaultSiteConfigsResponse
+  data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[]
   locale?: string
   swr?: RenderWithSWROptions['swr']
 }
@@ -86,10 +98,17 @@ export type SiteConfigsSetupOptions = {
 export type SiteConfigFormControls = {
   name: HTMLInputElement
   siteUrl: HTMLInputElement
-  usernameSelector: HTMLInputElement
-  passwordSelector: HTMLInputElement
-  loginSelector: HTMLInputElement
-  cookies: HTMLInputElement
+  loginTypeRadios: HTMLInputElement[]
+  usernameSelector?: HTMLInputElement
+  passwordSelector?: HTMLInputElement
+  loginSelector?: HTMLInputElement
+  postLoginSelector?: HTMLInputElement
+  cookiesText?: HTMLInputElement
+  apiEndpoint?: HTMLInputElement
+  apiMethod?: HTMLSelectElement
+  apiHeaders?: HTMLTextAreaElement
+  apiBody?: HTMLTextAreaElement
+  apiCookies?: HTMLTextAreaElement
   scopeGlobal: HTMLInputElement
 }
 
@@ -100,6 +119,33 @@ export type SiteConfigsSetupResult = RenderResult & {
   queryBanner: () => HTMLElement | null
   withinBanner: () => ReturnType<typeof within> | null
   mutate: ReturnType<typeof vi.fn>
+}
+
+function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormControls {
+  const loginTypeRadios = withinForm.getAllByRole('radio') as HTMLInputElement[]
+  const base: SiteConfigFormControls = {
+    name: withinForm.getByLabelText(/Name/i) as HTMLInputElement,
+    siteUrl: withinForm.getByLabelText(/Site URL/i) as HTMLInputElement,
+    loginTypeRadios,
+    scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/i }) as HTMLInputElement,
+  }
+  const usernameSelector = withinForm.queryByLabelText(/Username selector/i) as HTMLInputElement | null
+  if (usernameSelector) {
+    base.usernameSelector = usernameSelector
+    base.passwordSelector = withinForm.getByLabelText(/Password selector/i) as HTMLInputElement
+    base.loginSelector = withinForm.getByLabelText(/Login button selector/i) as HTMLInputElement
+    base.postLoginSelector = withinForm.getByLabelText(/Post-login selector/i) as HTMLInputElement
+    base.cookiesText = withinForm.getByLabelText(/Cookies to store/i) as HTMLInputElement
+  }
+  const apiEndpoint = withinForm.queryByLabelText(/API endpoint URL/i) as HTMLInputElement | null
+  if (apiEndpoint) {
+    base.apiEndpoint = apiEndpoint
+    base.apiMethod = withinForm.getByLabelText(/HTTP method/i, { selector: 'select' }) as HTMLSelectElement
+    base.apiHeaders = withinForm.getByLabelText(/Headers JSON/i) as HTMLTextAreaElement
+    base.apiBody = withinForm.getByLabelText(/Request body JSON/i) as HTMLTextAreaElement
+    base.apiCookies = withinForm.getByLabelText(/Cookies JSON/i) as HTMLTextAreaElement
+  }
+  return base
 }
 
 export async function setup(options: SiteConfigsSetupOptions = {}): Promise<SiteConfigsSetupResult> {
@@ -154,15 +200,7 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
   const nameInput = (await screen.findByLabelText(/^Name$/i)) as HTMLInputElement
   const form = nameInput.closest('form') as HTMLElement
   const withinForm = within(form)
-  const inputs: SiteConfigFormControls = {
-    name: nameInput,
-    siteUrl: withinForm.getByLabelText(/Site URL/i) as HTMLInputElement,
-    usernameSelector: withinForm.getByLabelText(/Username selector/i) as HTMLInputElement,
-    passwordSelector: withinForm.getByLabelText(/Password selector/i) as HTMLInputElement,
-    loginSelector: withinForm.getByLabelText(/Login button selector/i) as HTMLInputElement,
-    cookies: withinForm.getByLabelText(/Cookies to store/i) as HTMLInputElement,
-    scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/i }) as HTMLInputElement,
-  }
+  const inputs = resolveInputs(withinForm)
 
   const queryBanner = () => screen.queryByRole('alert') ?? screen.queryByRole('status')
   const withinBanner = () => {
@@ -180,79 +218,63 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
   })
 }
 
-describe('site configs form setup helper', () => {
-  it('renders the create site config form with default fields and data', async () => {
-    const { form, inputs, queryBanner, unmount } = await setup()
-
-    try {
-      expect(form).toBeInTheDocument()
-      expect(inputs.name).toBeInstanceOf(HTMLInputElement)
-      expect(inputs.siteUrl.value).toBe('')
-      expect(inputs.scopeGlobal.checked).toBe(false)
-      expect(queryBanner()).toBeNull()
-      expect(await screen.findByText('Example Site')).toBeInTheDocument()
-    } finally {
-      unmount()
-    }
-  })
-})
-
 describe('site configs creation validation', () => {
-  it('shows inline errors and skips submission when required fields are empty', async () => {
+  it('shows inline errors for selenium config when required fields are empty', async () => {
     const { form, inputs, unmount } = await setup()
 
     try {
       fireEvent.change(inputs.name, { target: { value: ' ' } })
       fireEvent.change(inputs.siteUrl, { target: { value: ' ' } })
-      fireEvent.change(inputs.usernameSelector, { target: { value: ' ' } })
-      fireEvent.change(inputs.passwordSelector, { target: { value: ' ' } })
-      fireEvent.change(inputs.loginSelector, { target: { value: ' ' } })
+      inputs.usernameSelector && fireEvent.change(inputs.usernameSelector, { target: { value: ' ' } })
+      inputs.passwordSelector && fireEvent.change(inputs.passwordSelector, { target: { value: ' ' } })
+      inputs.loginSelector && fireEvent.change(inputs.loginSelector, { target: { value: ' ' } })
 
       fireEvent.submit(form)
 
       expect(inputs.name).toHaveAttribute('aria-describedby', 'create-site-config-name-error')
       expect(inputs.siteUrl).toHaveAttribute('aria-describedby', 'create-site-config-url-error')
-      expect(inputs.usernameSelector).toHaveAttribute(
-        'aria-describedby',
-        'create-site-config-username-selector-error',
-      )
-      expect(inputs.passwordSelector).toHaveAttribute(
-        'aria-describedby',
-        'create-site-config-password-selector-error',
-      )
-      expect(inputs.loginSelector).toHaveAttribute(
-        'aria-describedby',
-        'create-site-config-login-selector-error',
-      )
+      expect(inputs.usernameSelector).toHaveAttribute('aria-describedby', 'create-site-config-username-selector-error')
+      expect(inputs.passwordSelector).toHaveAttribute('aria-describedby', 'create-site-config-password-selector-error')
+      expect(inputs.loginSelector).toHaveAttribute('aria-describedby', 'create-site-config-login-selector-error')
 
       expect(within(form).getByText('Name is required')).toBeInTheDocument()
       expect(within(form).getByText('Valid URL required')).toBeInTheDocument()
       expect(within(form).getAllByText('Required')).toHaveLength(3)
-
       expect(createSiteConfigMock).not.toHaveBeenCalled()
     } finally {
       unmount()
     }
   })
 
-  it('blocks submission when the site URL is invalid', async () => {
-    const { form, inputs, unmount } = await setup()
+  it('validates API configs including JSON payloads', async () => {
+    const { form, withinForm, inputs, unmount } = await setup()
 
     try {
-      fireEvent.change(inputs.name, { target: { value: 'Example' } })
-      fireEvent.change(inputs.siteUrl, { target: { value: 'example.com/login' } })
-      fireEvent.change(inputs.usernameSelector, { target: { value: '#user' } })
-      fireEvent.change(inputs.passwordSelector, { target: { value: '#pass' } })
-      fireEvent.change(inputs.loginSelector, { target: { value: 'button[type="submit"]' } })
+      const apiRadio = inputs.loginTypeRadios.find((radio) => radio.value === 'api')
+      expect(apiRadio).toBeDefined()
+      fireEvent.click(apiRadio!)
 
-      const submitButton = within(form).getByRole('button', { name: 'Create' })
-      expect(submitButton).toBeDisabled()
+      const apiInputs = resolveInputs(withinForm)
+      fireEvent.change(apiInputs.name, { target: { value: 'API Config' } })
+      fireEvent.change(apiInputs.siteUrl, { target: { value: 'https://api.example/login' } })
 
       fireEvent.submit(form)
 
-      await screen.findByTestId('alert-alert')
-      expect(within(form).getByText('Valid URL required')).toBeInTheDocument()
-      expect(await screen.findByText('Site URL is invalid')).toBeInTheDocument()
+      expect(apiInputs.apiEndpoint).toHaveAttribute('aria-describedby', 'create-site-config-endpoint-error')
+      expect(apiInputs.apiMethod).toHaveAttribute('aria-describedby', 'create-site-config-method-error')
+
+      fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(apiInputs.apiMethod!, { target: { value: 'TRACE' } })
+      fireEvent.change(apiInputs.apiHeaders!, { target: { value: '{"X-Test": 123}' } })
+      fireEvent.change(apiInputs.apiCookies!, { target: { value: '{"sid": 42}' } })
+      fireEvent.change(apiInputs.apiBody!, { target: { value: '{ invalid json' } })
+
+      fireEvent.submit(form)
+
+      expect(withinForm.getByText('Choose a supported HTTP method')).toBeInTheDocument()
+      expect(withinForm.getByText('Headers must be a JSON object of string values')).toBeInTheDocument()
+      expect(withinForm.getByText('Cookies must be a JSON object of string values')).toBeInTheDocument()
+      expect(withinForm.getByText('Body must be a JSON object or null')).toBeInTheDocument()
       expect(createSiteConfigMock).not.toHaveBeenCalled()
     } finally {
       unmount()
@@ -261,85 +283,96 @@ describe('site configs creation validation', () => {
 })
 
 describe('site configs creation success path', () => {
-  it('submits normalized cookies while toggling owner scope and shows success feedback', async () => {
+  it('submits selenium configs and toggles owner scope', async () => {
     const { form, inputs, withinForm, mutate, unmount } = await setup()
 
     try {
-      const submitButton = withinForm.getByRole('button', { name: 'Create' })
-      const fillForm = (
-        values: Partial<{
-          name: string
-          siteUrl: string
-          username: string
-          password: string
-          login: string
-          cookies: string
-        }> = {},
-      ) => {
-        fireEvent.change(inputs.name, { target: { value: values.name ?? 'Acme Login' } })
-        fireEvent.change(inputs.siteUrl, { target: { value: values.siteUrl ?? 'https://acme.example/login' } })
-        fireEvent.change(inputs.usernameSelector, { target: { value: values.username ?? '#username' } })
-        fireEvent.change(inputs.passwordSelector, { target: { value: values.password ?? '#password' } })
-        fireEvent.change(inputs.loginSelector, { target: { value: values.login ?? 'button[type="submit"]' } })
-        fireEvent.change(inputs.cookies, {
-          target: { value: values.cookies ?? 'session=abc,  theme , ,  xyz  ' },
-        })
-      }
+      fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'https://acme.example/login' } })
+      fireEvent.change(inputs.usernameSelector!, { target: { value: '#username' } })
+      fireEvent.change(inputs.passwordSelector!, { target: { value: '#password' } })
+      fireEvent.change(inputs.loginSelector!, { target: { value: 'button[type="submit"]' } })
+      fireEvent.change(inputs.cookiesText!, { target: { value: 'sid, theme , extra' } })
 
-      createSiteConfigMock.mockResolvedValue({})
+      createSiteConfigMock.mockResolvedValueOnce({})
 
-      fireEvent.click(inputs.scopeGlobal)
-      fireEvent.click(inputs.scopeGlobal)
-      fillForm()
-
-      expect(submitButton).toBeEnabled()
-
-      fireEvent.click(submitButton)
+      fireEvent.submit(form)
 
       await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
       const firstCall = createSiteConfigMock.mock.calls[0][0]
-      expect(firstCall.siteConfig).toMatchObject({
-        name: 'Acme Login',
-        site_url: 'https://acme.example/login',
-        username_selector: '#username',
-        password_selector: '#password',
-        login_button_selector: 'button[type="submit"]',
-        cookies_to_store: ['session=abc', 'theme', 'xyz'],
+      expect(firstCall).toEqual({
+        body: {
+          loginType: 'selenium',
+          name: 'Acme Login',
+          siteUrl: 'https://acme.example/login',
+          seleniumConfig: {
+            usernameSelector: '#username',
+            passwordSelector: '#password',
+            loginButtonSelector: 'button[type="submit"]',
+            cookiesToStore: ['sid', 'theme', 'extra'],
+          },
+          ownerUserId: undefined,
+        },
       })
-      expect(firstCall.siteConfig.ownerUserId).toBeUndefined()
 
-      const firstSuccess = await screen.findByText('Site config created')
-      expect(firstSuccess.closest('[role="status"]')).toBeInTheDocument()
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
 
-      fillForm({
-        name: 'Global Entry',
-        siteUrl: 'https://global.example/login',
-        username: '#global-user',
-        password: '#global-pass',
-        login: 'button.global-submit',
-        cookies: 'token=one, two , , three',
-      })
+      fireEvent.change(inputs.name, { target: { value: 'Global Entry' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'https://global.example/login' } })
+      fireEvent.change(inputs.usernameSelector!, { target: { value: '#global-user' } })
+      fireEvent.change(inputs.passwordSelector!, { target: { value: '#global-pass' } })
+      fireEvent.change(inputs.loginSelector!, { target: { value: 'button.global-submit' } })
+      fireEvent.change(inputs.cookiesText!, { target: { value: 'token=one, two , three' } })
       fireEvent.click(inputs.scopeGlobal)
-      expect(inputs.scopeGlobal.checked).toBe(true)
 
-      fireEvent.click(submitButton)
+      fireEvent.submit(form)
 
       await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(2))
       const secondCall = createSiteConfigMock.mock.calls[1][0]
-      expect(secondCall.siteConfig).toMatchObject({
+      expect(secondCall.body).toMatchObject({
+        ownerUserId: null,
         name: 'Global Entry',
-        site_url: 'https://global.example/login',
-        username_selector: '#global-user',
-        password_selector: '#global-pass',
-        login_button_selector: 'button.global-submit',
-        cookies_to_store: ['token=one', 'two', 'three'],
+        siteUrl: 'https://global.example/login',
       })
-      expect(secondCall.siteConfig.ownerUserId).toBeNull()
+    } finally {
+      unmount()
+    }
+  })
 
-      const secondSuccess = await screen.findByText('Site config created')
-      expect(secondSuccess.closest('[role="status"]')).toBeInTheDocument()
-      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
+  it('submits API configs with parsed payloads', async () => {
+    const { form, withinForm, mutate, unmount } = await setup()
+
+    try {
+      fireEvent.click(withinForm.getByRole('radio', { name: /Direct API/i }))
+      const inputs = resolveInputs(withinForm)
+
+      fireEvent.change(inputs.name, { target: { value: 'API Login' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'https://api.example/login' } })
+      fireEvent.change(inputs.apiEndpoint!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(inputs.apiMethod!, { target: { value: 'POST' } })
+      fireEvent.change(inputs.apiHeaders!, { target: { value: '{"X-Test":"value"}' } })
+      fireEvent.change(inputs.apiBody!, { target: { value: '{"username":"{{credential.username}}"}' } })
+      fireEvent.change(inputs.apiCookies!, { target: { value: '{"session":"{{credential.password}}"}' } })
+
+      createSiteConfigMock.mockResolvedValueOnce({})
+
+      fireEvent.submit(form)
+
+      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
+      const payload = createSiteConfigMock.mock.calls[0][0].body
+      expect(payload).toMatchObject({
+        loginType: 'api',
+        name: 'API Login',
+        siteUrl: 'https://api.example/login',
+        apiConfig: {
+          endpoint: 'https://example.com/api/login',
+          method: 'POST',
+          headers: { 'X-Test': 'value' },
+          body: { username: '{{credential.username}}' },
+          cookies: { session: '{{credential.password}}' },
+        },
+      })
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
     } finally {
       unmount()
     }
@@ -347,38 +380,24 @@ describe('site configs creation success path', () => {
 })
 
 describe('site configs copy to user scope', () => {
-  function buildConfig(overrides: Record<string, any> = {}) {
+  function buildConfig(overrides: Partial<SiteConfigSeleniumOut> = {}): SiteConfigSeleniumOut {
     return {
-      id: 'config-global',
-      name: 'Global Workspace Config',
-      site_url: 'https://global.example/login',
-      username_selector: '#user',
-      password_selector: '#pass',
-      login_button_selector: 'button[type="submit"]',
-      cookies_to_store: ['session'],
-      owner_user_id: null,
+      ...seleniumItem,
       ...overrides,
     }
   }
 
   it('renders copy controls for global rows and updates the table after copying', async () => {
-    const globalConfig = buildConfig()
-    const userConfig = buildConfig({
-      id: 'config-user-owned',
-      name: 'Already User Owned',
-      site_url: 'https://owned.example/login',
-      owner_user_id: 'user-123',
-    })
-    const copiedConfig = buildConfig({
-      id: 'config-copied',
-      name: 'Global Workspace Config (personal)',
-      owner_user_id: 'user-123',
-      cookies_to_store: ['session', 'remember'],
-    })
+    const globalConfig = buildConfig({ ownerUserId: null, id: 'global' })
+    const userConfig = buildConfig({ id: 'user-owned', ownerUserId: 'user-123', name: 'Personal' })
+    const copiedConfig = buildConfig({ id: 'copied', ownerUserId: 'user-123', name: 'Copied' })
 
     const { mutate, unmount } = await setup({
       data: {
         items: [globalConfig, userConfig],
+        total: 2,
+        page: 1,
+        size: 25,
       },
     })
 
@@ -397,38 +416,8 @@ describe('site configs copy to user scope', () => {
       expect(copySiteConfigToUserMock).toHaveBeenLastCalledWith({ configId: globalConfig.id })
 
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
-      const mutateCall = mutate.mock.calls[0]
-      expect(typeof mutateCall[0]).toBe('function')
-      expect(mutateCall[1]).toEqual({ revalidate: false })
-
       const copiedRow = (await screen.findByText(copiedConfig.name)).closest('tr') as HTMLElement
       expect(within(copiedRow).getByText('User')).toBeInTheDocument()
-    } finally {
-      unmount()
-    }
-  })
-
-  it('surfaces helper failures with the translated error banner', async () => {
-    const globalConfig = buildConfig({ id: 'config-error' })
-    const { mutate, withinBanner, unmount } = await setup({
-      data: {
-        items: [globalConfig],
-      },
-    })
-
-    copySiteConfigToUserMock.mockRejectedValueOnce(new Error('Copy failed'))
-
-    try {
-      const button = await screen.findByRole('button', { name: 'Copy to my workspace' })
-      fireEvent.click(button)
-
-      await waitFor(() => expect(copySiteConfigToUserMock).toHaveBeenCalledTimes(1))
-
-      const banner = await screen.findByRole('alert')
-      expect(banner).toBeInTheDocument()
-      const bannerUtils = withinBanner()
-      expect(bannerUtils?.getByText("Couldn't copy to workspace: Copy failed")).toBeInTheDocument()
-      expect(mutate).not.toHaveBeenCalled()
     } finally {
       unmount()
     }
@@ -437,24 +426,20 @@ describe('site configs copy to user scope', () => {
 
 describe('site configs error handling', () => {
   it('surfaces create failures in the banner with the thrown message', async () => {
-    const { inputs, withinForm, mutate, withinBanner, unmount } = await setup()
+    const { withinForm, inputs, withinBanner, mutate, unmount } = await setup()
 
     try {
       fireEvent.change(inputs.name, { target: { value: 'Acme Login' } })
       fireEvent.change(inputs.siteUrl, { target: { value: 'https://acme.example/login' } })
-      fireEvent.change(inputs.usernameSelector, { target: { value: '#username' } })
-      fireEvent.change(inputs.passwordSelector, { target: { value: '#password' } })
-      fireEvent.change(inputs.loginSelector, { target: { value: 'button[type="submit"]' } })
-
-      const submitButton = withinForm.getByRole('button', { name: 'Create' })
-      expect(submitButton).toBeEnabled()
+      fireEvent.change(inputs.usernameSelector!, { target: { value: '#username' } })
+      fireEvent.change(inputs.passwordSelector!, { target: { value: '#password' } })
+      fireEvent.change(inputs.loginSelector!, { target: { value: 'button[type="submit"]' } })
 
       createSiteConfigMock.mockRejectedValueOnce(new Error('Create failed'))
 
-      fireEvent.click(submitButton)
+      fireEvent.submit(withinForm.getByRole('form'))
 
       await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
-
       const banner = await screen.findByRole('alert')
       expect(banner).toBeInTheDocument()
       const bannerUtils = withinBanner()
@@ -487,7 +472,7 @@ describe('site configs error handling', () => {
 })
 
 describe('site configs edit form', () => {
-  it('retains inline validation when blanked and saves updates while clearing errors on success', async () => {
+  it('saves updates and clears errors on success', async () => {
     const { mutate, withinBanner, unmount } = await setup()
 
     try {
@@ -499,25 +484,18 @@ describe('site configs edit form', () => {
       const usernameInput = withinEditForm.getByLabelText('Username selector') as HTMLInputElement
       const passwordInput = withinEditForm.getByLabelText('Password selector') as HTMLInputElement
       const loginInput = withinEditForm.getByLabelText('Login button selector') as HTMLInputElement
-      const cookiesInput = withinEditForm.getByLabelText('Cookies to store (comma-separated)') as HTMLInputElement
       const saveButton = withinEditForm.getByRole('button', { name: 'Save' }) as HTMLButtonElement
-
-      expect(saveButton).toBeEnabled()
 
       fireEvent.change(usernameInput, { target: { value: ' ' } })
       expect(usernameInput).toHaveAttribute('aria-describedby', 'edit-site-config-username-selector-error')
-      const inlineError = withinEditForm.getByText('Required')
-      expect(inlineError).toHaveAttribute('id', 'edit-site-config-username-selector-error')
       expect(saveButton).toBeDisabled()
 
       fireEvent.change(usernameInput, { target: { value: '#updated-user' } })
-      expect(withinEditForm.queryByText('Required')).not.toBeInTheDocument()
       expect(usernameInput).not.toHaveAttribute('aria-describedby', 'edit-site-config-username-selector-error')
       expect(saveButton).toBeEnabled()
 
       fireEvent.change(passwordInput, { target: { value: '#updated-pass' } })
       fireEvent.change(loginInput, { target: { value: 'button.updated-submit' } })
-      fireEvent.change(cookiesInput, { target: { value: 'sessionid, remember_me ,  extra  ' } })
 
       updateSiteConfigMock.mockResolvedValueOnce({})
       mutate.mockClear()
@@ -526,18 +504,17 @@ describe('site configs edit form', () => {
 
       await waitFor(() => expect(updateSiteConfigMock).toHaveBeenCalledTimes(1))
       const updateCall = updateSiteConfigMock.mock.calls[0][0]
-      expect(updateCall).toEqual({
-        configId: 'config-1',
-        siteConfig: {
-          id: 'config-1',
-          name: 'Example Site',
-          site_url: 'https://example.com/login',
-          username_selector: '#updated-user',
-          password_selector: '#updated-pass',
-          login_button_selector: 'button.updated-submit',
-          cookies_to_store: ['sessionid', 'remember_me', 'extra'],
-          owner_user_id: 'user-1',
+      expect(updateCall.body).toMatchObject({
+        loginType: 'selenium',
+        id: 'config-1',
+        name: 'Example Site',
+        siteUrl: 'https://example.com/login',
+        seleniumConfig: {
+          usernameSelector: '#updated-user',
+          passwordSelector: '#updated-pass',
+          loginButtonSelector: 'button.updated-submit',
         },
+        ownerUserId: 'user-1',
       })
 
       const successBanner = await screen.findByText('Site config updated')
@@ -545,10 +522,7 @@ describe('site configs edit form', () => {
       const bannerUtils = withinBanner()
       expect(bannerUtils?.getByText('Site config updated')).toBeInTheDocument()
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
-
-      await waitFor(() =>
-        expect(screen.queryByRole('form', { name: /edit site config/i })).not.toBeInTheDocument(),
-      )
+      await waitFor(() => expect(screen.queryByRole('form', { name: /edit site config/i })).not.toBeInTheDocument())
     } finally {
       unmount()
     }

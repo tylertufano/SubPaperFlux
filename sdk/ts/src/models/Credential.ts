@@ -44,13 +44,13 @@ export interface Credential {
      */
     data: { [key: string]: any; };
     /**
-     *
+     * 
      * @type {string}
      * @memberof Credential
      */
     ownerUserId?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Credential
      */

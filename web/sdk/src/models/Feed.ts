@@ -67,6 +67,12 @@ export interface Feed {
      * @memberof Feed
      */
     ownerUserId?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Feed
+     */
+    siteLoginCredentialId?: string | null;
 }
 
 /**
@@ -95,6 +101,7 @@ export function FeedFromJSONTyped(json: any, ignoreDiscriminator: boolean): Feed
         'rssRequiresAuth': json['rss_requires_auth'] == null ? undefined : json['rss_requires_auth'],
         'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
         'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'siteLoginCredentialId': json['site_login_credential_id'] == null ? undefined : json['site_login_credential_id'],
     };
 }
 
@@ -117,6 +124,7 @@ export function FeedToJSONTyped(value?: Feed | null, ignoreDiscriminator: boolea
         'rss_requires_auth': value['rssRequiresAuth'],
         'site_config_id': value['siteConfigId'],
         'owner_user_id': value['ownerUserId'],
+        'site_login_credential_id': value['siteLoginCredentialId'],
     };
 }
 

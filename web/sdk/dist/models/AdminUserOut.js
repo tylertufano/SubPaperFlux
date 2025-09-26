@@ -18,6 +18,9 @@ exports.AdminUserOutFromJSON = AdminUserOutFromJSON;
 exports.AdminUserOutFromJSONTyped = AdminUserOutFromJSONTyped;
 exports.AdminUserOutToJSON = AdminUserOutToJSON;
 exports.AdminUserOutToJSONTyped = AdminUserOutToJSONTyped;
+const AdminUserRoleOverrides_1 = require("./AdminUserRoleOverrides");
+const AdminUserOrganization_1 = require("./AdminUserOrganization");
+const AdminUserOrganizationMembership_1 = require("./AdminUserOrganizationMembership");
 /**
  * Check if a given object implements the AdminUserOut interface.
  */
@@ -55,6 +58,10 @@ function AdminUserOutFromJSONTyped(json, ignoreDiscriminator) {
         'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
         'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
         'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'roleOverrides': json['role_overrides'] == null ? undefined : (0, AdminUserRoleOverrides_1.AdminUserRoleOverridesFromJSON)(json['role_overrides']),
+        'organizationIds': json['organization_ids'] == null ? undefined : json['organization_ids'],
+        'organizationMemberships': json['organization_memberships'] == null ? undefined : (json['organization_memberships'].map(AdminUserOrganizationMembership_1.AdminUserOrganizationMembershipFromJSON)),
+        'organizations': json['organizations'] == null ? undefined : (json['organizations'].map(AdminUserOrganization_1.AdminUserOrganizationFromJSON)),
     };
 }
 function AdminUserOutToJSON(json) {
@@ -81,5 +88,9 @@ function AdminUserOutToJSONTyped(value, ignoreDiscriminator = false) {
         'quota_site_configs': value['quotaSiteConfigs'],
         'quota_feeds': value['quotaFeeds'],
         'quota_api_tokens': value['quotaApiTokens'],
+        'role_overrides': (0, AdminUserRoleOverrides_1.AdminUserRoleOverridesToJSON)(value['roleOverrides']),
+        'organization_ids': value['organizationIds'],
+        'organization_memberships': value['organizationMemberships'] == null ? undefined : (value['organizationMemberships'].map(AdminUserOrganizationMembership_1.AdminUserOrganizationMembershipToJSON)),
+        'organizations': value['organizations'] == null ? undefined : (value['organizations'].map(AdminUserOrganization_1.AdminUserOrganizationToJSON)),
     };
 }

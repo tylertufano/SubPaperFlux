@@ -9,6 +9,9 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import type { AdminUserRoleOverrides } from './AdminUserRoleOverrides';
+import type { AdminUserOrganization } from './AdminUserOrganization';
+import type { AdminUserOrganizationMembership } from './AdminUserOrganizationMembership';
 /**
  *
  * @export
@@ -105,6 +108,30 @@ export interface AdminUserOut {
      * @memberof AdminUserOut
      */
     quotaApiTokens?: number | null;
+    /**
+     *
+     * @type {AdminUserRoleOverrides}
+     * @memberof AdminUserOut
+     */
+    roleOverrides?: AdminUserRoleOverrides;
+    /**
+     *
+     * @type {Array<string>}
+     * @memberof AdminUserOut
+     */
+    organizationIds?: Array<string>;
+    /**
+     *
+     * @type {Array<AdminUserOrganizationMembership>}
+     * @memberof AdminUserOut
+     */
+    organizationMemberships?: Array<AdminUserOrganizationMembership>;
+    /**
+     *
+     * @type {Array<AdminUserOrganization>}
+     * @memberof AdminUserOut
+     */
+    organizations?: Array<AdminUserOrganization>;
 }
 /**
  * Check if a given object implements the AdminUserOut interface.

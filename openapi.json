@@ -153,7 +153,21 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/SiteConfig"
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/SiteConfigSelenium"
+                      },
+                      {
+                        "$ref": "#/components/schemas/SiteConfigApi"
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "login_type",
+                      "mapping": {
+                        "selenium": "#/components/schemas/SiteConfigSelenium",
+                        "api": "#/components/schemas/SiteConfigApi"
+                      }
+                    }
                   },
                   "title": "Response List Site Configs Site Configs  Get"
                 }
@@ -206,7 +220,22 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteConfig"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SiteConfigSelenium"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SiteConfigApi"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "login_type",
+                  "mapping": {
+                    "selenium": "#/components/schemas/SiteConfigSelenium",
+                    "api": "#/components/schemas/SiteConfigApi"
+                  }
+                },
+                "title": "Body"
               }
             }
           }
@@ -217,7 +246,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteConfig"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteConfigSelenium"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteConfigApi"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "login_type",
+                    "mapping": {
+                      "selenium": "#/components/schemas/SiteConfigSelenium",
+                      "api": "#/components/schemas/SiteConfigApi"
+                    }
+                  },
+                  "title": "Response Create Site Config Site Configs  Post"
                 }
               }
             }
@@ -264,7 +308,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteConfig"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteConfigSelenium"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteConfigApi"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "login_type",
+                    "mapping": {
+                      "selenium": "#/components/schemas/SiteConfigSelenium",
+                      "api": "#/components/schemas/SiteConfigApi"
+                    }
+                  },
+                  "title": "Response Get Site Config Site Configs  Config Id  Get"
                 }
               }
             }
@@ -324,7 +383,22 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteConfig"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SiteConfigSelenium"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SiteConfigApi"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "login_type",
+                  "mapping": {
+                    "selenium": "#/components/schemas/SiteConfigSelenium",
+                    "api": "#/components/schemas/SiteConfigApi"
+                  }
+                },
+                "title": "Body"
               }
             }
           }
@@ -335,7 +409,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteConfig"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteConfigSelenium"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteConfigApi"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "login_type",
+                    "mapping": {
+                      "selenium": "#/components/schemas/SiteConfigSelenium",
+                      "api": "#/components/schemas/SiteConfigApi"
+                    }
+                  },
+                  "title": "Response Update Site Config Site Configs  Config Id  Put"
                 }
               }
             }
@@ -4227,7 +4316,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteConfigOut"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteConfigSeleniumOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteConfigApiOut"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "login_type",
+                    "mapping": {
+                      "selenium": "#/components/schemas/SiteConfigSeleniumOut",
+                      "api": "#/components/schemas/SiteConfigApiOut"
+                    }
+                  },
+                  "title": "Response Copy Site Config V1 V1 Site Configs  Config Id  Copy Post"
                 }
               }
             }
@@ -11476,6 +11580,59 @@
         ],
         "title": "AdminUsersPage"
       },
+      "ApiConfig": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Endpoint"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ],
+            "title": "Method"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Headers"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "cookies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Cookies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "endpoint",
+          "method"
+        ],
+        "title": "ApiConfig"
+      },
       "ApiTokenCreate": {
         "properties": {
           "name": {
@@ -12314,6 +12471,17 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "site_login_credential_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Credential Id"
           }
         },
         "type": "object",
@@ -12378,6 +12546,17 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "site_login_credential_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Credential Id"
           }
         },
         "type": "object",
@@ -13123,9 +13302,21 @@
         "type": "object",
         "title": "RoleGrantRequest"
       },
-      "SiteConfig": {
+      "SeleniumConfig": {
         "properties": {
-          "id": {
+          "username_selector": {
+            "type": "string",
+            "title": "Username Selector"
+          },
+          "password_selector": {
+            "type": "string",
+            "title": "Password Selector"
+          },
+          "login_button_selector": {
+            "type": "string",
+            "title": "Login Button Selector"
+          },
+          "post_login_selector": {
             "anyOf": [
               {
                 "type": "string"
@@ -13134,8 +13325,26 @@
                 "type": "null"
               }
             ],
-            "title": "Id"
+            "title": "Post Login Selector"
           },
+          "cookies_to_store": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cookies To Store"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username_selector",
+          "password_selector",
+          "login_button_selector"
+        ],
+        "title": "SeleniumConfig"
+      },
+      "SiteConfigApi": {
+        "properties": {
           "name": {
             "type": "string",
             "title": "Name"
@@ -13146,36 +13355,6 @@
             "format": "uri",
             "title": "Site Url"
           },
-          "username_selector": {
-            "type": "string",
-            "title": "Username Selector"
-          },
-          "password_selector": {
-            "type": "string",
-            "title": "Password Selector"
-          },
-          "login_button_selector": {
-            "type": "string",
-            "title": "Login Button Selector"
-          },
-          "post_login_selector": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Post Login Selector"
-          },
-          "cookies_to_store": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cookies To Store"
-          },
           "owner_user_id": {
             "anyOf": [
               {
@@ -13186,61 +13365,47 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "login_type": {
+            "type": "string",
+            "const": "api",
+            "title": "Login Type",
+            "default": "api"
+          },
+          "api_config": {
+            "$ref": "#/components/schemas/ApiConfig"
           }
         },
         "type": "object",
         "required": [
           "name",
           "site_url",
-          "username_selector",
-          "password_selector",
-          "login_button_selector"
+          "api_config"
         ],
-        "title": "SiteConfig"
+        "title": "SiteConfigApi"
       },
-      "SiteConfigOut": {
+      "SiteConfigApiOut": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
           "name": {
             "type": "string",
             "title": "Name"
           },
           "site_url": {
             "type": "string",
+            "minLength": 1,
+            "format": "uri",
             "title": "Site Url"
-          },
-          "username_selector": {
-            "type": "string",
-            "title": "Username Selector"
-          },
-          "password_selector": {
-            "type": "string",
-            "title": "Password Selector"
-          },
-          "login_button_selector": {
-            "type": "string",
-            "title": "Login Button Selector"
-          },
-          "post_login_selector": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Post Login Selector"
-          },
-          "cookies_to_store": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cookies To Store"
           },
           "owner_user_id": {
             "anyOf": [
@@ -13252,24 +13417,147 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "login_type": {
+            "type": "string",
+            "const": "api",
+            "title": "Login Type",
+            "default": "api"
+          },
+          "api_config": {
+            "$ref": "#/components/schemas/ApiConfig"
           }
         },
         "type": "object",
         "required": [
-          "id",
           "name",
           "site_url",
-          "username_selector",
-          "password_selector",
-          "login_button_selector"
+          "id",
+          "api_config"
         ],
-        "title": "SiteConfigOut"
+        "title": "SiteConfigApiOut"
+      },
+      "SiteConfigSelenium": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "site_url": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Site Url"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner User Id"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "login_type": {
+            "type": "string",
+            "const": "selenium",
+            "title": "Login Type",
+            "default": "selenium"
+          },
+          "selenium_config": {
+            "$ref": "#/components/schemas/SeleniumConfig"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "site_url",
+          "selenium_config"
+        ],
+        "title": "SiteConfigSelenium"
+      },
+      "SiteConfigSeleniumOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "site_url": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Site Url"
+          },
+          "owner_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner User Id"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "login_type": {
+            "type": "string",
+            "const": "selenium",
+            "title": "Login Type",
+            "default": "selenium"
+          },
+          "selenium_config": {
+            "$ref": "#/components/schemas/SeleniumConfig"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "site_url",
+          "id",
+          "selenium_config"
+        ],
+        "title": "SiteConfigSeleniumOut"
       },
       "SiteConfigsPage": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/SiteConfigOut"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SiteConfigSeleniumOut"
+                },
+                {
+                  "$ref": "#/components/schemas/SiteConfigApiOut"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "login_type",
+                "mapping": {
+                  "api": "#/components/schemas/SiteConfigApiOut",
+                  "selenium": "#/components/schemas/SiteConfigSeleniumOut"
+                }
+              }
             },
             "type": "array",
             "title": "Items"

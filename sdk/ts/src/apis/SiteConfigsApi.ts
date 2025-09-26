@@ -15,18 +15,30 @@
 
 import * as runtime from '../runtime';
 import type {
+  Body,
   HTTPValidationError,
-  SiteConfig,
+  ListSiteConfigsSiteConfigsGet200ResponseInner,
+  ResponseCreateSiteConfigSiteConfigsPost,
+  ResponseGetSiteConfigSiteConfigsConfigIdGet,
+  ResponseUpdateSiteConfigSiteConfigsConfigIdPut,
 } from '../models/index';
 import {
+    BodyFromJSON,
+    BodyToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
-    SiteConfigFromJSON,
-    SiteConfigToJSON,
+    ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON,
+    ListSiteConfigsSiteConfigsGet200ResponseInnerToJSON,
+    ResponseCreateSiteConfigSiteConfigsPostFromJSON,
+    ResponseCreateSiteConfigSiteConfigsPostToJSON,
+    ResponseGetSiteConfigSiteConfigsConfigIdGetFromJSON,
+    ResponseGetSiteConfigSiteConfigsConfigIdGetToJSON,
+    ResponseUpdateSiteConfigSiteConfigsConfigIdPutFromJSON,
+    ResponseUpdateSiteConfigSiteConfigsConfigIdPutToJSON,
 } from '../models/index';
 
 export interface CreateSiteConfigSiteConfigsPostRequest {
-    siteConfig: SiteConfig;
+    body: Body;
     xCsrfToken?: string | null;
 }
 
@@ -45,7 +57,7 @@ export interface ListSiteConfigsSiteConfigsGetRequest {
 
 export interface UpdateSiteConfigSiteConfigsConfigIdPutRequest {
     configId: string;
-    siteConfig: SiteConfig;
+    body: Body;
     xCsrfToken?: string | null;
 }
 
@@ -57,11 +69,11 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * Create Site Config
      */
-    async createSiteConfigSiteConfigsPostRaw(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
-        if (requestParameters['siteConfig'] == null) {
+    async createSiteConfigSiteConfigsPostRaw(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseCreateSiteConfigSiteConfigsPost>> {
+        if (requestParameters['body'] == null) {
             throw new runtime.RequiredError(
-                'siteConfig',
-                'Required parameter "siteConfig" was null or undefined when calling createSiteConfigSiteConfigsPost().'
+                'body',
+                'Required parameter "body" was null or undefined when calling createSiteConfigSiteConfigsPost().'
             );
         }
 
@@ -91,16 +103,16 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteConfigToJSON(requestParameters['siteConfig']),
+            body: BodyToJSON(requestParameters['body']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ResponseCreateSiteConfigSiteConfigsPostFromJSON(jsonValue));
     }
 
     /**
      * Create Site Config
      */
-    async createSiteConfigSiteConfigsPost(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig> {
+    async createSiteConfigSiteConfigsPost(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseCreateSiteConfigSiteConfigsPost> {
         const response = await this.createSiteConfigSiteConfigsPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -156,7 +168,7 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * Get Site Config
      */
-    async getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
+    async getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseGetSiteConfigSiteConfigsConfigIdGet>> {
         if (requestParameters['configId'] == null) {
             throw new runtime.RequiredError(
                 'configId',
@@ -187,13 +199,13 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ResponseGetSiteConfigSiteConfigsConfigIdGetFromJSON(jsonValue));
     }
 
     /**
      * Get Site Config
      */
-    async getSiteConfigSiteConfigsConfigIdGet(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig> {
+    async getSiteConfigSiteConfigsConfigIdGet(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseGetSiteConfigSiteConfigsConfigIdGet> {
         const response = await this.getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -201,7 +213,7 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * List Site Configs
      */
-    async listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SiteConfig>>> {
+    async listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ListSiteConfigsSiteConfigsGet200ResponseInner>>> {
         const queryParameters: any = {};
 
         if (requestParameters['includeGlobal'] != null) {
@@ -228,13 +240,13 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SiteConfigFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON));
     }
 
     /**
      * List Site Configs
      */
-    async listSiteConfigsSiteConfigsGet(requestParameters: ListSiteConfigsSiteConfigsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SiteConfig>> {
+    async listSiteConfigsSiteConfigsGet(requestParameters: ListSiteConfigsSiteConfigsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ListSiteConfigsSiteConfigsGet200ResponseInner>> {
         const response = await this.listSiteConfigsSiteConfigsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -242,7 +254,7 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * Update Site Config
      */
-    async updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>> {
+    async updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseUpdateSiteConfigSiteConfigsConfigIdPut>> {
         if (requestParameters['configId'] == null) {
             throw new runtime.RequiredError(
                 'configId',
@@ -250,10 +262,10 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['siteConfig'] == null) {
+        if (requestParameters['body'] == null) {
             throw new runtime.RequiredError(
-                'siteConfig',
-                'Required parameter "siteConfig" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().'
+                'body',
+                'Required parameter "body" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().'
             );
         }
 
@@ -284,16 +296,16 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteConfigToJSON(requestParameters['siteConfig']),
+            body: BodyToJSON(requestParameters['body']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ResponseUpdateSiteConfigSiteConfigsConfigIdPutFromJSON(jsonValue));
     }
 
     /**
      * Update Site Config
      */
-    async updateSiteConfigSiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig> {
+    async updateSiteConfigSiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseUpdateSiteConfigSiteConfigsConfigIdPut> {
         const response = await this.updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -4,16 +4,17 @@ from typing import Optional
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import TypeAdapter
 from sqlalchemy import func
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..auth.oidc import get_current_user
 from ..auth import (
     PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
     PERMISSION_READ_GLOBAL_SITE_CONFIGS,
     has_permission,
 )
+from ..auth.oidc import get_current_user
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig, SiteLoginType
@@ -22,6 +23,8 @@ from ..util.quotas import enforce_user_quota
 
 
 router = APIRouter(prefix="/v1/site-configs", tags=["v1"])
+
+_site_config_out_adapter = TypeAdapter(SiteConfigOut)
 
 
 def _ensure_permission(
@@ -34,7 +37,7 @@ def _ensure_permission(
 
 
 def _site_config_to_schema(model: SiteConfig) -> SiteConfigOut:
-    return SiteConfigOut.model_validate(model.model_dump(mode="json"))
+    return _site_config_out_adapter.validate_python(model.model_dump(mode="json"))
 
 
 @router.get("/", response_model=SiteConfigsPage, summary="List site configs")
@@ -102,12 +105,13 @@ def test_site_config(
             current_user,
             PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
         )
-    if sc.login_type != SiteLoginType.SELENIUM:
+    login_type = SiteLoginType(sc.login_type)
+    if login_type != SiteLoginType.SELENIUM:
         return {
             "ok": False,
             "status": "skipped",
             "reason": "login_type_not_selenium",
-            "login_type": sc.login_type.value,
+            "login_type": login_type.value,
         }
     selectors = sc.selenium_config or {}
     url = sc.site_url
@@ -188,13 +192,23 @@ def copy_site_config_v1(
         .where(SiteConfig.owner_user_id == user_id),
     )
 
-    selenium_payload = copy.deepcopy(source.selenium_config) if source.login_type == SiteLoginType.SELENIUM else None
-    api_payload = copy.deepcopy(source.api_config) if source.login_type == SiteLoginType.API else None
+    source_login_type = SiteLoginType(source.login_type)
+
+    selenium_payload = (
+        copy.deepcopy(source.selenium_config)
+        if source_login_type == SiteLoginType.SELENIUM
+        else None
+    )
+    api_payload = (
+        copy.deepcopy(source.api_config)
+        if source_login_type == SiteLoginType.API
+        else None
+    )
 
     clone = SiteConfig(
         name=source.name,
         site_url=source.site_url,
-        login_type=source.login_type,
+        login_type=source_login_type,
         selenium_config=selenium_payload,
         api_config=api_payload,
         owner_user_id=user_id,
@@ -213,7 +227,7 @@ def copy_site_config_v1(
             "source_config_id": source.id,
             "name": clone.name,
             "site_url": clone.site_url,
-            "login_type": clone.login_type.value,
+            "login_type": SiteLoginType(clone.login_type).value,
         },
     )
 
