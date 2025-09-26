@@ -50,6 +50,24 @@ export interface SiteConfigApi {
      * @type {string}
      * @memberof SiteConfigApi
      */
+    successTextClass?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SiteConfigApi
+     */
+    expectedSuccessText?: string;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof SiteConfigApi
+     */
+    requiredCookies?: Array<string>;
+    /**
+     * 
+     * @type {string}
+     * @memberof SiteConfigApi
+     */
     id?: string | null;
     /**
      * 
@@ -98,6 +116,9 @@ export function SiteConfigApiFromJSONTyped(json: any, ignoreDiscriminator: boole
         'name': json['name'],
         'siteUrl': json['site_url'],
         'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'successTextClass': json['success_text_class'] == null ? undefined : json['success_text_class'],
+        'expectedSuccessText': json['expected_success_text'] == null ? undefined : json['expected_success_text'],
+        'requiredCookies': json['required_cookies'] == null ? undefined : json['required_cookies'],
         'id': json['id'] == null ? undefined : json['id'],
         'loginType': json['login_type'] == null ? undefined : json['login_type'],
         'apiConfig': ApiConfigFromJSON(json['api_config']),
@@ -118,6 +139,9 @@ export function SiteConfigApiToJSONTyped(value?: SiteConfigApi | null, ignoreDis
         'name': value['name'],
         'site_url': value['siteUrl'],
         'owner_user_id': value['ownerUserId'],
+        'success_text_class': value['successTextClass'],
+        'expected_success_text': value['expectedSuccessText'],
+        'required_cookies': value['requiredCookies'],
         'id': value['id'],
         'login_type': value['loginType'],
         'api_config': ApiConfigToJSON(value['apiConfig']),

@@ -198,6 +198,9 @@ def _resolve_site_login_context(
                 "login_type": sc_record.login_type.value
                 if isinstance(sc_record.login_type, SiteLoginType)
                 else sc_record.login_type,
+                "success_text_class": sc_record.success_text_class or "",
+                "expected_success_text": sc_record.expected_success_text or "",
+                "required_cookies": list(sc_record.required_cookies or []),
             }
             login_type = site_config["login_type"] or SiteLoginType.SELENIUM.value
             if site_config["login_type"] == SiteLoginType.SELENIUM.value:
@@ -237,6 +240,9 @@ def _resolve_site_login_context(
                     },
                 }
             site_config.setdefault("login_type", "selenium")
+            site_config.setdefault("success_text_class", "")
+            site_config.setdefault("expected_success_text", "")
+            site_config.setdefault("required_cookies", [])
             login_type = site_config.get("login_type", "selenium")
             if login_type == "selenium":
                 selenium_payload = site_config.setdefault("selenium_config", {})
@@ -245,6 +251,11 @@ def _resolve_site_login_context(
                 api_payload = site_config.setdefault("api_config", {})
                 if isinstance(api_payload, dict):
                     site_config["api_config"] = dict(api_payload)
+
+    site_config.setdefault("success_text_class", "")
+    site_config.setdefault("expected_success_text", "")
+    site_config.setdefault("required_cookies", [])
+    site_config["required_cookies"] = list(site_config.get("required_cookies") or [])
 
     if not credential_data or not site_config or not site_config_id:
         raise ValueError("Missing login credentials or site config for provided IDs")

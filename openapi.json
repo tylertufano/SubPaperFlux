@@ -13366,6 +13366,23 @@
             ],
             "title": "Owner User Id"
           },
+          "success_text_class": {
+            "type": "string",
+            "title": "Success Text Class",
+            "default": ""
+          },
+          "expected_success_text": {
+            "type": "string",
+            "title": "Expected Success Text",
+            "default": ""
+          },
+          "required_cookies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Cookies"
+          },
           "id": {
             "anyOf": [
               {
@@ -13418,6 +13435,23 @@
             ],
             "title": "Owner User Id"
           },
+          "success_text_class": {
+            "type": "string",
+            "title": "Success Text Class",
+            "default": ""
+          },
+          "expected_success_text": {
+            "type": "string",
+            "title": "Expected Success Text",
+            "default": ""
+          },
+          "required_cookies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Cookies"
+          },
           "id": {
             "type": "string",
             "title": "Id"
@@ -13463,6 +13497,23 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "success_text_class": {
+            "type": "string",
+            "title": "Success Text Class",
+            "default": ""
+          },
+          "expected_success_text": {
+            "type": "string",
+            "title": "Expected Success Text",
+            "default": ""
+          },
+          "required_cookies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Cookies"
           },
           "id": {
             "anyOf": [
@@ -13515,6 +13566,23 @@
               }
             ],
             "title": "Owner User Id"
+          },
+          "success_text_class": {
+            "type": "string",
+            "title": "Success Text Class",
+            "default": ""
+          },
+          "expected_success_text": {
+            "type": "string",
+            "title": "Expected Success Text",
+            "default": ""
+          },
+          "required_cookies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Cookies"
           },
           "id": {
             "type": "string",
