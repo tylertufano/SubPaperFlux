@@ -76,6 +76,9 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
                 "login_button_selector": "#submit",
                 "cookies_to_store": ["session"],
             },
+            success_text_class="alert alert-success",
+            expected_success_text="Signed in",
+            required_cookies=["session"],
             owner_user_id="user-1",
         )
         session.add(credential)
@@ -183,6 +186,9 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
                 "cookies_to_store": ["session_token"],
                 "cookies": {"refresh_token": "$.data.tokens.refresh"},
             },
+            success_text_class="toast toast-success",
+            expected_success_text="API signed in",
+            required_cookies=["session_token", "refresh_token"],
             owner_user_id="user-1",
         )
         session.add(credential)
@@ -235,6 +241,9 @@ def test_perform_login_and_save_cookies_surface_error(monkeypatch, tmp_path):
                 "login_button_selector": "#submit",
                 "cookies_to_store": ["session"],
             },
+            success_text_class="alert alert-danger",
+            expected_success_text="Error state",
+            required_cookies=["session"],
             owner_user_id="user-1",
         )
         session.add(credential)

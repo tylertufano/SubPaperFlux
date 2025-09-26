@@ -124,6 +124,9 @@ def _insert_global_credential(*, site_config_id: Optional[str] = None):
                         "post_login_selector": ".dashboard",
                         "cookies_to_store": ["sid", "csrftoken"],
                     },
+                    success_text_class="alert alert-global",
+                    expected_success_text="Global success message",
+                    required_cookies=["sid", "csrftoken"],
                     owner_user_id=None,
                 )
                 session.add(site_config)
@@ -160,6 +163,9 @@ def _insert_global_site_config():
                 "post_login_selector": ".dashboard",
                 "cookies_to_store": ["sid", "csrftoken"],
             },
+            success_text_class="alert alert-global",
+            expected_success_text="Global success message",
+            required_cookies=["sid", "csrftoken"],
             owner_user_id=None,
         )
         session.add(record)
@@ -183,6 +189,9 @@ def _insert_global_api_site_config():
                 "headers": {"X-Mode": "global"},
                 "cookies": {"session": "shared"},
             },
+            success_text_class="toast toast-global",
+            expected_success_text="API global success",
+            required_cookies=["session"],
             owner_user_id=None,
         )
         session.add(record)
@@ -217,6 +226,9 @@ def _create_user_credential(
                         "post_login_selector": ".app",
                         "cookies_to_store": ["sid"],
                     },
+                    success_text_class="alert alert-user",
+                    expected_success_text="User success message",
+                    required_cookies=["sid"],
                     owner_user_id=USER_ID,
                 )
                 session.add(site_config)
@@ -253,6 +265,9 @@ def _create_user_site_config(name="User Login"):
                 "post_login_selector": ".app",
                 "cookies_to_store": ["sid"],
             },
+            success_text_class="alert alert-user",
+            expected_success_text="User success message",
+            required_cookies=["sid"],
             owner_user_id=USER_ID,
         )
         session.add(record)
@@ -275,6 +290,9 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
     assert (
         payload["selenium_config"]["cookies_to_store"] == global_config.cookies_to_store
     )
+    assert payload["success_text_class"] == global_config.success_text_class
+    assert payload["expected_success_text"] == global_config.expected_success_text
+    assert payload["required_cookies"] == global_config.required_cookies
 
     from app.db import get_session
     from app.models import AuditLog, SiteConfig
@@ -287,6 +305,9 @@ def test_copy_global_site_config_creates_user_owned_clone(copy_client):
         assert clone.password_selector == global_config.password_selector
         assert clone.login_button_selector == global_config.login_button_selector
         assert clone.cookies_to_store == global_config.cookies_to_store
+        assert clone.success_text_class == global_config.success_text_class
+        assert clone.expected_success_text == global_config.expected_success_text
+        assert clone.required_cookies == global_config.required_cookies
 
         records = session.exec(select(SiteConfig)).all()
         assert len(records) == 2
@@ -314,6 +335,9 @@ def test_copy_global_api_site_config_creates_user_owned_clone(copy_client):
     assert payload["owner_user_id"] == USER_ID
     assert payload["api_config"]["endpoint"] == global_api_config.api_config.get("endpoint")
     assert payload["api_config"]["headers"] == global_api_config.api_config.get("headers")
+    assert payload["success_text_class"] == global_api_config.success_text_class
+    assert payload["expected_success_text"] == global_api_config.expected_success_text
+    assert payload["required_cookies"] == global_api_config.required_cookies
 
     from app.db import get_session
     from app.models import AuditLog, SiteConfig
@@ -323,6 +347,9 @@ def test_copy_global_api_site_config_creates_user_owned_clone(copy_client):
         assert clone is not None
         assert clone.owner_user_id == USER_ID
         assert clone.api_config == global_api_config.api_config
+        assert clone.success_text_class == global_api_config.success_text_class
+        assert clone.expected_success_text == global_api_config.expected_success_text
+        assert clone.required_cookies == global_api_config.required_cookies
 
         audit = session.exec(
             select(AuditLog)

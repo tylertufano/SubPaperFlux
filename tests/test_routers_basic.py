@@ -70,6 +70,9 @@ def test_credentials_and_siteconfigs(client):
                 "login_button_selector": "#submit",
                 "cookies_to_store": ["sid"],
             },
+            success_text_class="alert alert-user",
+            expected_success_text="Welcome User Site",
+            required_cookies=["sid", "csrf"],
             owner_user_id="u1",
         )
         api_user_site = SiteConfig(
@@ -81,6 +84,9 @@ def test_credentials_and_siteconfigs(client):
                 "method": "POST",
                 "headers": {"X-Test": "1"},
             },
+            success_text_class="toast toast-user",
+            expected_success_text="API login complete",
+            required_cookies=["api_session"],
             owner_user_id="u1",
         )
         global_site = SiteConfig(
@@ -93,6 +99,9 @@ def test_credentials_and_siteconfigs(client):
                 "login_button_selector": "button[type='submit']",
                 "cookies_to_store": ["sid"],
             },
+            success_text_class="alert alert-global",
+            expected_success_text="Welcome Global User",
+            required_cookies=["sid"],
             owner_user_id=None,
         )
         session.add(user_site)
@@ -216,12 +225,18 @@ def test_credentials_and_siteconfigs(client):
             "login_button_selector": "button[type='submit']",
             "cookies_to_store": ["sid"],
         },
+        "success_text_class": "alert alert-success",
+        "expected_success_text": "Signed in as Demo",
+        "required_cookies": ["sid", "csrf"],
     }
     r3 = client.post("/site-configs", json=payload)
     assert r3.status_code == 201
     sc = r3.json()
     assert sc["name"] == "Demo"
     assert sc["selenium_config"]["username_selector"] == "#u"
+    assert sc["success_text_class"] == payload["success_text_class"]
+    assert sc["expected_success_text"] == payload["expected_success_text"]
+    assert sc["required_cookies"] == payload["required_cookies"]
 
     # Update site config
     updated_payload = {
@@ -231,12 +246,18 @@ def test_credentials_and_siteconfigs(client):
             **sc["selenium_config"],
             "login_button_selector": "button.new",
         },
+        "success_text_class": "alert alert-info",
+        "expected_success_text": "You are logged in",
+        "required_cookies": ["sid"],
     }
     r_update_sc = client.put(f"/site-configs/{sc['id']}", json=updated_payload)
     assert r_update_sc.status_code == 200
     updated_response = r_update_sc.json()
     assert updated_response["name"] == "Demo Updated"
     assert updated_response["selenium_config"]["login_button_selector"] == "button.new"
+    assert updated_response["success_text_class"] == "alert alert-info"
+    assert updated_response["expected_success_text"] == "You are logged in"
+    assert updated_response["required_cookies"] == ["sid"]
 
     # Delete site config
     r_delete_sc = client.delete(f"/site-configs/{sc['id']}")
@@ -253,11 +274,17 @@ def test_credentials_and_siteconfigs(client):
             "headers": {"X-Env": "prod"},
             "cookies": {"sid": "abc"},
         },
+        "success_text_class": "toast toast-success",
+        "expected_success_text": "API login ok",
+        "required_cookies": ["sid"],
     }
     r_api = client.post("/site-configs", json=api_payload)
     assert r_api.status_code == 201
     api_sc = r_api.json()
     assert api_sc["api_config"]["endpoint"] == "https://api.example.com/login"
+    assert api_sc["success_text_class"] == api_payload["success_text_class"]
+    assert api_sc["expected_success_text"] == api_payload["expected_success_text"]
+    assert api_sc["required_cookies"] == api_payload["required_cookies"]
 
     api_update_payload = {
         **api_sc,
@@ -266,10 +293,16 @@ def test_credentials_and_siteconfigs(client):
             "method": "PUT",
             "headers": {"X-Env": "stage"},
         },
+        "expected_success_text": "API login updated",
+        "success_text_class": "toast toast-info",
+        "required_cookies": ["sid", "refresh"],
     }
     r_api_update = client.put(f"/site-configs/{api_sc['id']}", json=api_update_payload)
     assert r_api_update.status_code == 200
     assert r_api_update.json()["api_config"]["method"] == "PUT"
+    assert r_api_update.json()["expected_success_text"] == "API login updated"
+    assert r_api_update.json()["success_text_class"] == "toast toast-info"
+    assert r_api_update.json()["required_cookies"] == ["sid", "refresh"]
 
     r_api_delete = client.delete(f"/site-configs/{api_sc['id']}")
     assert r_api_delete.status_code == 204
@@ -500,6 +533,9 @@ def _create_site_config(
             "login_button_selector": "button[type=submit]",
             "cookies_to_store": ["sid"],
         },
+        "success_text_class": "alert alert-owner" if owner else "alert alert-global",
+        "expected_success_text": "Logged in successfully",
+        "required_cookies": ["sid"],
         "owner_user_id": owner,
     }
     resp = client.post("/site-configs", json=payload)

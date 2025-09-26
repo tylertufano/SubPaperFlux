@@ -110,6 +110,9 @@ def test_site_config_quota_enforced(quota_client):
             "post_login_selector": None,
             "cookies_to_store": [],
         },
+        "success_text_class": "alert alert-primary",
+        "expected_success_text": "Signed in",
+        "required_cookies": [],
         "owner_user_id": "quota-user",
     }
 
@@ -128,6 +131,9 @@ def test_site_config_quota_enforced(quota_client):
             "method": "POST",
             "headers": {"X-Test": "1"},
         },
+        "success_text_class": "toast toast-primary",
+        "expected_success_text": "API signed in",
+        "required_cookies": ["session"],
         "owner_user_id": "quota-user",
     }
 
