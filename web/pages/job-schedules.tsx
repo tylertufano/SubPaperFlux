@@ -46,6 +46,7 @@ type SiteLoginSelection = {
 };
 
 type ExtendedJobSchedule = JobScheduleOut & {
+  jobType: JobType;
   lastError?: string | null;
   lastErrorAt?: Date | null;
 };
@@ -171,7 +172,7 @@ function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   const jobType = schedule.jobType ?? schedule.job_type;
   return {
     ...schedule,
-    jobType: jobType as JobType | undefined,
+    jobType: (jobType ?? schedule.jobType) as JobType,
     nextRunAt: parseDateValue(schedule.nextRunAt),
     lastRunAt: parseDateValue(schedule.lastRunAt),
     lastErrorAt: parseDateValue(schedule.lastErrorAt),
@@ -1276,7 +1277,10 @@ export default function JobSchedulesPage() {
   }
 
   const schedules: ExtendedJobSchedule[] = useMemo(
-    () => (data?.items ?? []).map((schedule) => normalizeJobSchedule(schedule)),
+    () =>
+      (data?.items ?? []).map((schedule: RawJobSchedule) =>
+        normalizeJobSchedule(schedule),
+      ),
     [data],
   );
   const credentials = credentialsData?.items ?? [];
