@@ -1,5 +1,6 @@
 {
-    "my_site": {
+    "selenium_site": {
+        "name": "Example News Login",
         "site_url": "https://example.com/login",
         "login_type": "selenium",
         "selenium_config": {
@@ -7,7 +8,32 @@
             "password_selector": "#password",
             "login_button_selector": "button[type='submit']",
             "post_login_selector": "nav .user-avatar",
-            "cookies_to_store": ["sessionid", "csrftoken"],
-        },
+            "cookies_to_store": [
+                "sessionid",
+                "csrftoken"
+            ]
+        }
+    },
+    "api_site": {
+        "name": "Example API Login",
+        "site_url": "https://example.com/app",
+        "login_type": "api",
+        "api_config": {
+            "endpoint": "https://example.com/api/v1/login",
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json",
+                "X-Custom-Header": "{{custom_header}}"
+            },
+            "body": {
+                "username": "{{username}}",
+                "password": "{{password}}",
+                "remember_me": true
+            },
+            "cookies": {
+                "sessionid": "$.data.session.id",
+                "refresh_token": "$.data.tokens.refresh"
+            }
+        }
     }
 }
