@@ -61,6 +61,7 @@ class Feed(BaseModel):
     rss_requires_auth: bool = False
     site_config_id: Optional[str] = None
     owner_user_id: Optional[str] = None
+    site_login_credential_id: Optional[str] = None
 
 
 class Credential(BaseModel):
@@ -289,6 +290,7 @@ class FeedOut(BaseModel):
     rss_requires_auth: bool = False
     site_config_id: Optional[str] = None
     owner_user_id: Optional[str] = None
+    site_login_credential_id: Optional[str] = None
 
 
 class FeedsPage(BaseModel):

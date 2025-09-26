@@ -640,12 +640,41 @@ function ScheduleForm({
                     const candidateId = feed.id ? String(feed.id) : null;
                     return Boolean(candidateId && candidateId === value);
                   });
-                  if (selected?.siteConfigId) {
-                    const autoPair = siteLoginOptions.find(
-                      (option) => option.siteConfigId === String(selected.siteConfigId),
-                    );
-                    if (!payloadState.site_login_pair && autoPair) {
-                      updatePayload("site_login_pair", autoPair.value);
+                  if (selected) {
+                    const selectedConfigId =
+                      selected.site_config_id ?? selected.siteConfigId ?? null;
+                    const selectedCredentialId =
+                      selected.site_login_credential_id ??
+                      selected.siteLoginCredentialId ??
+                      null;
+                    if (selectedConfigId) {
+                      const normalizedConfig = String(selectedConfigId);
+                      let autoPair = undefined as SiteLoginOption | undefined;
+                      if (selectedCredentialId) {
+                        const normalizedCredential = String(selectedCredentialId);
+                        autoPair = siteLoginOptions.find(
+                          (option) =>
+                            option.siteConfigId === normalizedConfig &&
+                            option.credentialId === normalizedCredential,
+                        );
+                      }
+                      if (!autoPair) {
+                        autoPair = siteLoginOptions.find(
+                          (option) =>
+                            option.siteConfigId === normalizedConfig &&
+                            option.type === "pair",
+                        );
+                      }
+                      if (!autoPair) {
+                        autoPair = siteLoginOptions.find(
+                          (option) => option.siteConfigId === normalizedConfig,
+                        );
+                      }
+                      if (!payloadState.site_login_pair && autoPair) {
+                        updatePayload("site_login_pair", autoPair.value);
+                      }
+                    } else if (payloadState.site_login_pair) {
+                      updatePayload("site_login_pair", "");
                     }
                   } else if (payloadState.site_login_pair) {
                     updatePayload("site_login_pair", "");

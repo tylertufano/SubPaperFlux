@@ -366,6 +366,7 @@ def poll_rss_and_publish(
         feed_is_paywalled = feed.is_paywalled
         feed_requires_auth = feed.rss_requires_auth
         feed_site_config_id = feed.site_config_id
+        feed_site_login_credential_id = feed.site_login_credential_id
         feed_site_config = None
         if feed_site_config_id:
             sc = session.get(SiteConfigModel, feed_site_config_id)
@@ -373,6 +374,11 @@ def poll_rss_and_publish(
                 feed_site_config = {
                     "sanitizing_criteria": sc.cookies_to_store or [],
                 }
+
+    if not site_login_pair_id and feed_site_login_credential_id and feed_site_config_id:
+        site_login_pair_id = format_site_login_pair_id(
+            str(feed_site_login_credential_id), str(feed_site_config_id)
+        )
 
     effective_lookback = lookback or feed_lookback or "24h"
     effective_is_paywalled = feed_is_paywalled if is_paywalled is None else is_paywalled

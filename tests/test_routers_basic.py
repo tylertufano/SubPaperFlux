@@ -412,6 +412,118 @@ def test_admin_feed_creation_defaults_to_requester(client):
         assert stored.owner_user_id == "u1"
 
 
+def _create_site_config(client, *, owner: str = "u1") -> dict:
+    payload = {
+        "name": "Example Site",
+        "site_url": "https://example.com",
+        "username_selector": "#user",
+        "password_selector": "#pass",
+        "login_button_selector": "button[type=submit]",
+        "cookies_to_store": ["sid"],
+        "owner_user_id": owner,
+    }
+    resp = client.post("/site-configs", json=payload)
+    assert resp.status_code == 201, resp.text
+    return resp.json()
+
+
+def _create_site_login_credential(client, *, site_config_id: str, owner: str = "u1") -> dict:
+    payload = {
+        "kind": "site_login",
+        "description": f"Login for {owner}",
+        "data": {"username": owner, "password": "pw"},
+        "owner_user_id": owner,
+        "site_config_id": site_config_id,
+    }
+    resp = client.post("/credentials", json=payload)
+    assert resp.status_code == 201, resp.text
+    return resp.json()
+
+
+def test_feed_creation_with_site_login_credential(client):
+    site_config = _create_site_config(client)
+    credential = _create_site_login_credential(client, site_config_id=site_config["id"])
+
+    resp = client.post(
+        "/feeds/",
+        json={
+            "url": "https://example.com/paywalled.xml",
+            "site_login_credential_id": credential["id"],
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    payload = resp.json()
+    assert payload["site_login_credential_id"] == credential["id"]
+    assert payload["site_config_id"] == site_config["id"]
+
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        stored = session.get(Feed, payload["id"])
+        assert stored is not None
+        assert stored.site_login_credential_id == credential["id"]
+        assert stored.site_config_id == site_config["id"]
+
+
+def test_feed_update_allows_switching_site_login_credential(client):
+    site_config = _create_site_config(client)
+    first_cred = _create_site_login_credential(client, site_config_id=site_config["id"])
+    second_cred = _create_site_login_credential(client, site_config_id=site_config["id"])
+
+    create_resp = client.post(
+        "/feeds/",
+        json={
+            "url": "https://example.com/primary.xml",
+            "site_login_credential_id": first_cred["id"],
+        },
+    )
+    assert create_resp.status_code == 201
+    feed = create_resp.json()
+
+    update_resp = client.put(
+        f"/feeds/{feed['id']}",
+        json={
+            "id": feed["id"],
+            "url": str(feed["url"]),
+            "poll_frequency": feed.get("poll_frequency") or "1h",
+            "initial_lookback_period": feed.get("initial_lookback_period"),
+            "is_paywalled": feed.get("is_paywalled", False),
+            "rss_requires_auth": feed.get("rss_requires_auth", False),
+            "site_login_credential_id": second_cred["id"],
+        },
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    updated = update_resp.json()
+    assert updated["site_login_credential_id"] == second_cred["id"]
+    assert updated["site_config_id"] == site_config["id"]
+
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        stored = session.get(Feed, feed["id"])
+        assert stored is not None
+        assert stored.site_login_credential_id == second_cred["id"]
+
+
+def test_feed_creation_rejects_mismatched_site_login_configuration(client):
+    site_config = _create_site_config(client)
+    other_config = _create_site_config(client, owner="u2")
+    credential = _create_site_login_credential(client, site_config_id=site_config["id"])
+
+    resp = client.post(
+        "/feeds/",
+        json={
+            "url": "https://example.com/invalid.xml",
+            "site_login_credential_id": credential["id"],
+            "site_config_id": other_config["id"],
+        },
+    )
+    assert resp.status_code == 422
+    assert "site_config_id" in resp.text or "site_login_credential_id" in resp.text
+
+
 def test_instapaper_login_success(monkeypatch, client):
     from app.db import get_session
     from app.models import AuditLog, Credential

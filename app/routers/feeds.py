@@ -4,12 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select
 
 from ..auth.oidc import get_current_user
-from ..auth import PERMISSION_MANAGE_BOOKMARKS, has_permission
+from ..auth import (
+    PERMISSION_MANAGE_BOOKMARKS,
+    PERMISSION_READ_GLOBAL_CREDENTIALS,
+    has_permission,
+)
 from ..schemas import Feed as FeedSchema
 from ..db import get_session
-from ..models import Feed as FeedModel
+from ..models import Credential as CredentialModel, Feed as FeedModel
 from ..util.quotas import enforce_user_quota
 from ..config import is_user_mgmt_enforce_enabled
+from .credentials import _validate_site_config_assignment
 
 
 router = APIRouter()
@@ -84,6 +89,86 @@ def _resolve_owner(
     return default_owner
 
 
+def _normalize_optional(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        trimmed = value.strip()
+        return trimmed or None
+    return str(value)
+
+
+def _validate_site_login_configuration(
+    session,
+    current_user,
+    *,
+    owner_id: Optional[str],
+    site_config_id: Optional[str],
+    site_login_credential_id: Optional[str],
+) -> tuple[Optional[str], Optional[str]]:
+    normalized_site_config_id = _normalize_optional(site_config_id)
+    normalized_credential_id = _normalize_optional(site_login_credential_id)
+
+    credential_owner_id = owner_id
+
+    if normalized_credential_id:
+        credential = session.get(CredentialModel, normalized_credential_id)
+        if not credential:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_login_credential_id is invalid",
+            )
+        if credential.kind != "site_login":
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_login_credential_id must reference a site_login credential",
+            )
+
+        credential_owner_id = credential.owner_user_id
+        if credential_owner_id is None:
+            allowed_global = has_permission(
+                session,
+                current_user,
+                PERMISSION_READ_GLOBAL_CREDENTIALS,
+                owner_id=None,
+            )
+            if not allowed_global:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        else:
+            if owner_id != credential_owner_id:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="site_login_credential_id does not belong to the feed owner",
+                )
+
+        if normalized_site_config_id:
+            if credential.site_config_id and credential.site_config_id != normalized_site_config_id:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="site_config_id does not match site_login_credential_id",
+                )
+        else:
+            normalized_site_config_id = credential.site_config_id
+
+        if not normalized_site_config_id:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_login_credential_id requires an associated site_config_id",
+            )
+    else:
+        credential_owner_id = owner_id
+
+    if normalized_site_config_id:
+        _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=normalized_site_config_id,
+            credential_owner_id=credential_owner_id,
+        )
+
+    return normalized_site_config_id, normalized_credential_id
+
+
 @router.get("", response_model=List[FeedSchema])
 @router.get("/", response_model=List[FeedSchema])
 def list_feeds(current_user=Depends(get_current_user), session=Depends(get_session)):
@@ -105,6 +190,15 @@ def create_feed(body: FeedSchema, current_user=Depends(get_current_user), sessio
         owner_specified=owner_specified,
     )
     payload["owner_user_id"] = owner_id
+    normalized_site_config_id, normalized_credential_id = _validate_site_login_configuration(
+        session,
+        current_user,
+        owner_id=owner_id,
+        site_config_id=payload.get("site_config_id"),
+        site_login_credential_id=payload.get("site_login_credential_id"),
+    )
+    payload["site_config_id"] = normalized_site_config_id
+    payload["site_login_credential_id"] = normalized_credential_id
     model = FeedModel(**payload)
     if owner_id is not None:
         enforce_user_quota(
@@ -173,12 +267,20 @@ def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current
             )
         model.owner_user_id = new_owner
     # Update allowed fields
-    model.url = body.url
+    model.url = str(body.url)
     model.poll_frequency = body.poll_frequency
     model.initial_lookback_period = body.initial_lookback_period
     model.is_paywalled = body.is_paywalled
     model.rss_requires_auth = body.rss_requires_auth
-    model.site_config_id = body.site_config_id
+    normalized_site_config_id, normalized_credential_id = _validate_site_login_configuration(
+        session,
+        current_user,
+        owner_id=model.owner_user_id,
+        site_config_id=body.site_config_id,
+        site_login_credential_id=body.site_login_credential_id,
+    )
+    model.site_config_id = normalized_site_config_id
+    model.site_login_credential_id = normalized_credential_id
     session.add(model)
     session.commit()
     session.refresh(model)
