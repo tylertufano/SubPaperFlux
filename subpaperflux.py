@@ -163,6 +163,7 @@ def normalize_site_config_payload(site_config):
     normalized = dict(site_config)
     login_type = normalized.get("login_type") or "selenium"
     normalized["login_type"] = login_type
+    required_cookies: list[str] = list(normalized.get("required_cookies") or [])
     if login_type == "selenium":
         selenium_cfg = normalized.get("selenium_config") or {}
         if not selenium_cfg and normalized.get("username_selector"):
@@ -175,8 +176,17 @@ def normalize_site_config_payload(site_config):
             }
         selenium_cfg.setdefault("cookies_to_store", [])
         normalized["selenium_config"] = selenium_cfg
+        if not required_cookies:
+            required_cookies = list(selenium_cfg.get("cookies_to_store") or [])
     elif login_type == "api":
-        normalized.setdefault("api_config", {})
+        api_cfg = normalized.setdefault("api_config", {})
+        if not required_cookies:
+            required_cookies = list(api_cfg.get("cookies_to_store") or [])
+            if not required_cookies:
+                cookie_map = api_cfg.get("cookies") or {}
+                if cookie_map:
+                    required_cookies = list(cookie_map.keys())
+    normalized["required_cookies"] = required_cookies
     return normalized
 
 
@@ -349,15 +359,15 @@ def save_cookies_to_json(config_dir, cookies_state):
         logging.error(f"Could not save cookies state to {cookie_file_path}. Error: {e}")
 
 
-def check_cookies_expiry(cookies, cookies_to_store_names=None):
+def check_cookies_expiry(cookies, required_cookie_names=None):
     """
     Checks if any cookie in the list that is required by the current
     configuration has a Unix timestamp that is in the past.
     Returns True if any required cookie is expired, False otherwise.
     """
     cookies_to_check = cookies
-    if cookies_to_store_names and isinstance(cookies_to_store_names, list):
-        cookies_to_check = [c for c in cookies if c["name"] in cookies_to_store_names]
+    if required_cookie_names and isinstance(required_cookie_names, list):
+        cookies_to_check = [c for c in cookies if c["name"] in required_cookie_names]
 
     current_time = time.time()
     for cookie in cookies_to_check:
@@ -1311,6 +1321,9 @@ def _login_with_api(config_name, site_config, login_credentials):
     cookie_map = api_config.get("cookies") or {}
     if not cookies_to_store and cookie_map:
         cookies_to_store = list(cookie_map.keys())
+    required_cookie_names = list(site_config.get("required_cookies") or [])
+    if not required_cookie_names:
+        required_cookie_names = list(cookies_to_store)
 
     context = dict(login_credentials or {})
     context.setdefault("username", (login_credentials or {}).get("username"))
@@ -1414,13 +1427,66 @@ def _login_with_api(config_name, site_config, login_credentials):
             logging.error(message)
             return {"cookies": [], "login_type": "api", "error": message}
 
+        if required_cookie_names:
+            available_names = {cookie["name"] for cookie in cookies}
+            missing_required = [
+                name for name in required_cookie_names if name not in available_names
+            ]
+            if missing_required:
+                message = (
+                    f"Missing required cookies after API login for {config_name}: {', '.join(missing_required)}."
+                )
+                logging.error(message)
+                return {"cookies": [], "login_type": "api", "error": message}
+
         logging.info(
             f"API login succeeded for {config_name}; captured {len(cookies)} cookies."
         )
         details["captured_cookies"] = [cookie["name"] for cookie in cookies]
+        details["required_cookies"] = required_cookie_names
+        details["cookies_to_store"] = cookies_to_store
         return {"cookies": cookies, "login_type": "api", "details": details}
     finally:
         session.close()
+
+
+def _verify_success_text(wait, success_text_class, expected_success_text, config_name):
+    """Validate that the configured success text appears on the page."""
+
+    class_name = (success_text_class or "").strip()
+    expected_text = (expected_success_text or "").strip()
+    if not class_name or not expected_text:
+        return True
+
+    class_tokens = [token for token in class_name.split(" ") if token]
+    if not class_tokens:
+        logging.warning(
+            f"Success text class configured for {config_name} is empty after stripping."
+        )
+        return False
+
+    selector = "." + ".".join(class_tokens)
+    try:
+        element = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+    except TimeoutException:
+        logging.error(
+            f"Login failed for {config_name}. Success text element '{selector}' not found."
+        )
+        return False
+
+    actual_text = (element.text or "").strip()
+    if expected_text not in actual_text:
+        logging.error(
+            f"Login failed for {config_name}. Expected success text '{expected_text}' not found within '{actual_text}'."
+        )
+        return False
+
+    logging.info(
+        f"Login success text verified for {config_name} using selector '{selector}'."
+    )
+    return True
 
 
 def _login_with_selenium(config_name, site_config, login_credentials):
@@ -1449,6 +1515,9 @@ def _login_with_selenium(config_name, site_config, login_credentials):
         password_selector = selenium_config.get("password_selector")
         login_button_selector = selenium_config.get("login_button_selector")
         cookies_to_store_names = selenium_config.get("cookies_to_store", [])
+        required_cookie_names = list(site_config.get("required_cookies") or [])
+        if not required_cookie_names:
+            required_cookie_names = list(cookies_to_store_names)
 
         if not all(
             [
@@ -1515,6 +1584,19 @@ def _login_with_selenium(config_name, site_config, login_credentials):
                 logging.error(message)
                 return {"cookies": [], "login_type": "selenium", "error": message}
 
+        success_text_class = site_config.get("success_text_class")
+        expected_success_text = site_config.get("expected_success_text")
+        if not _verify_success_text(
+            wait, success_text_class, expected_success_text, config_name
+        ):
+            return {
+                "cookies": [],
+                "login_type": "selenium",
+                "error": (
+                    f"Success text verification failed for {config_name}."
+                ),
+            }
+
         if ENABLE_SCREENSHOTS:
             screenshot_path = os.path.join(
                 log_dir,
@@ -1524,8 +1606,21 @@ def _login_with_selenium(config_name, site_config, login_credentials):
             logging.info(f"Screenshot saved to {screenshot_path}.")
 
         cookies = driver.get_cookies()
+        missing_required = []
+        if required_cookie_names:
+            available_names = {cookie.get("name") for cookie in cookies}
+            missing_required = [
+                name for name in required_cookie_names if name not in available_names
+            ]
+        if missing_required:
+            message = (
+                f"Missing required cookies after login for {config_name}: {', '.join(missing_required)}."
+            )
+            logging.error(message)
+            return {"cookies": [], "login_type": "selenium", "error": message}
+
         filtered_cookies = [c for c in cookies if c["name"] in cookies_to_store_names]
-        if not filtered_cookies:
+        if cookies_to_store_names and not filtered_cookies:
             message = (
                 f"No required cookies found after login for {config_name}. Check 'cookies_to_store' configuration."
             )
@@ -1535,7 +1630,10 @@ def _login_with_selenium(config_name, site_config, login_credentials):
         return {
             "cookies": filtered_cookies,
             "login_type": "selenium",
-            "details": {"cookies_to_store": cookies_to_store_names},
+            "details": {
+                "cookies_to_store": cookies_to_store_names,
+                "required_cookies": required_cookie_names,
+            },
         }
 
     except WebDriverException as e:
@@ -1653,16 +1751,19 @@ def run_service(
                     cookies_to_store_names = (
                         selenium_cfg.get("cookies_to_store", []) if site_config else []
                     )
+                    required_cookie_names = (
+                        site_config.get("required_cookies") or cookies_to_store_names
+                    )
                     cookies_expired = check_cookies_expiry(
-                        cached_cookies, cookies_to_store_names
+                        cached_cookies, required_cookie_names
                     )
 
                     required_cookie_missing = False
-                    if cookies_to_store_names:
+                    if required_cookie_names:
                         cached_cookie_names = {c["name"] for c in cached_cookies}
                         if not all(
                             name in cached_cookie_names
-                            for name in cookies_to_store_names
+                            for name in required_cookie_names
                         ):
                             required_cookie_missing = True
 
@@ -1683,12 +1784,12 @@ def run_service(
                             poll_frequency_str
                         )
 
-                    if cached_cookies and cookies_to_store_names:
+                    if cached_cookies and required_cookie_names:
                         min_expiry_timestamp = float("inf")
                         required_cookies_with_expiry = [
                             c
                             for c in cached_cookies
-                            if c.get("name") in cookies_to_store_names
+                            if c.get("name") in required_cookie_names
                             and c.get("expiry")
                         ]
                         if required_cookies_with_expiry:

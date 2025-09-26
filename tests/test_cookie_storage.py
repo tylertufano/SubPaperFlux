@@ -4,6 +4,7 @@ import base64
 import json
 import os
 from pathlib import Path
+from typing import Optional
 
 import pytest
 import requests
@@ -202,12 +203,81 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
     )
 
     assert result["login_type"] == "api"
-    assert result["cookies_saved"] == 2
+    assert result["cookies_saved"] == 1
 
     stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
-    cookie_map = {cookie["name"]: cookie for cookie in stored_cookies}
-    assert cookie_map["session_token"]["value"] == "abc123"
-    assert cookie_map["refresh_token"]["value"] == "refresh123"
+    assert {cookie["name"] for cookie in stored_cookies} == {"session_token"}
+    session_cookie = stored_cookies[0]
+    assert session_cookie["value"] == "abc123"
+    assert session_cookie.get("domain") == "api.example.com"
+    assert session_cookie.get("path") == "/"
+
+    # The refresh token is required for success but not persisted because it is not in cookies_to_store
+    assert all(cookie["name"] != "refresh_token" for cookie in stored_cookies)
+
+
+def test_perform_login_and_save_cookies_missing_required_cookie(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: subpaperflux)
+
+    class MissingRefreshSession:
+        def __init__(self):
+            self.cookies = requests.cookies.RequestsCookieJar()
+
+        def request(self, method, url, headers=None, params=None, json=None):
+            self.cookies.set("session_token", "abc123", domain="api.example.com", path="/")
+            response = requests.Response()
+            response.status_code = 200
+            response._content = jsonlib.dumps({"data": {}}).encode()
+            response.url = url
+            return response
+
+        def close(self):
+            pass
+
+    jsonlib = json
+    monkeypatch.setattr("subpaperflux.requests.Session", lambda: MissingRefreshSession())
+
+    with get_session_ctx() as session:
+        credential = Credential(
+            id="cred_api_missing",
+            kind="site_login",
+            description="API Credential Missing Required",
+            data={"username": "bob", "password": "builder"},
+            owner_user_id="user-1",
+            site_config_id="sc_api_missing",
+        )
+        site_config = SiteConfig(
+            id="sc_api_missing",
+            name="API Example Missing",
+            site_url="https://api.example.com",
+            login_type=SiteLoginType.API,
+            api_config={
+                "endpoint": "https://api.example.com/login",
+                "method": "POST",
+                "headers": {"Content-Type": "application/json"},
+                "cookies_to_store": ["session_token"],
+                "cookies": {"refresh_token": "$.data.tokens.refresh"},
+            },
+            success_text_class="toast toast-success",
+            expected_success_text="API signed in",
+            required_cookies=["session_token", "refresh_token"],
+            owner_user_id="user-1",
+        )
+        session.add(credential)
+        session.add(site_config)
+        session.commit()
+
+    pair_id = format_site_login_pair_id("cred_api_missing", "sc_api_missing")
+
+    with pytest.raises(RuntimeError) as exc:
+        perform_login_and_save_cookies(
+            site_login_pair_id=pair_id,
+            owner_user_id="user-1",
+        )
+
+    assert "Missing required cookies after API login" in str(exc.value)
 
 
 def test_perform_login_and_save_cookies_surface_error(monkeypatch, tmp_path):
@@ -258,3 +328,52 @@ def test_perform_login_and_save_cookies_surface_error(monkeypatch, tmp_path):
         )
 
     assert "boom" in str(exc.value)
+
+
+class _FakeElement:
+    def __init__(self, text: str):
+        self.text = text
+
+
+class _FakeWait:
+    def __init__(self, element=None, exc: Optional[Exception] = None):
+        self.element = element
+        self.exc = exc
+        self.calls = 0
+
+    def until(self, condition):  # pragma: no cover - condition unused in tests
+        self.calls += 1
+        if self.exc:
+            raise self.exc
+        return self.element
+
+
+def test_verify_success_text_success(monkeypatch):
+    wait = _FakeWait(element=_FakeElement("Signed in successfully"))
+    assert subpaperflux._verify_success_text(
+        wait,
+        "alert alert-success",
+        "Signed in",
+        "demo_site",
+    )
+    assert wait.calls == 1
+
+
+def test_verify_success_text_mismatch(monkeypatch):
+    wait = _FakeWait(element=_FakeElement("Something went wrong"))
+    assert not subpaperflux._verify_success_text(
+        wait,
+        "alert alert-success",
+        "Signed in",
+        "demo_site",
+    )
+
+
+def test_verify_success_text_timeout(monkeypatch):
+    wait = _FakeWait(exc=subpaperflux.TimeoutException("timeout"))
+    assert not subpaperflux._verify_success_text(
+        wait,
+        "alert alert-success",
+        "Signed in",
+        "demo_site",
+    )
