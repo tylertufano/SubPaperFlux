@@ -94,6 +94,9 @@ def _normalize_login_payload(
 
 def _serialize_site_config(model: SiteConfigModel) -> SiteConfigSchema:
     payload = model.model_dump(mode="json")
+    payload["success_text_class"] = payload.get("success_text_class") or ""
+    payload["expected_success_text"] = payload.get("expected_success_text") or ""
+    payload["required_cookies"] = list(payload.get("required_cookies") or [])
     return _site_config_adapter.validate_python(payload)
 
 
@@ -171,6 +174,9 @@ def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_
     payload.pop("login_type", None)
     payload.pop("selenium_config", None)
     payload.pop("api_config", None)
+    payload["success_text_class"] = payload.get("success_text_class") or ""
+    payload["expected_success_text"] = payload.get("expected_success_text") or ""
+    payload["required_cookies"] = list(payload.get("required_cookies") or [])
     model = SiteConfigModel(
         **payload,
         login_type=login_type,
@@ -275,9 +281,19 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
     if api_config != (model.api_config or None):
         changed_fields.add("api_config")
 
-    for field in ("name", "site_url", "owner_user_id"):
+    for field in (
+        "name",
+        "site_url",
+        "owner_user_id",
+        "success_text_class",
+        "expected_success_text",
+        "required_cookies",
+    ):
         if field in update_payload:
-            setattr(model, field, update_payload[field])
+            value = update_payload[field]
+            if field == "required_cookies":
+                value = list(value or [])
+            setattr(model, field, value)
 
     model.login_type = login_type
     model.selenium_config = selenium_config

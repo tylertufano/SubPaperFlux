@@ -2,6 +2,11 @@
     "selenium_site": {
         "name": "Example News Login",
         "site_url": "https://example.com/login",
+        "success_text_class": "alert alert-success",
+        "expected_success_text": "Signed in as {{username}}",
+        "required_cookies": [
+            "sessionid"
+        ],
         "login_type": "selenium",
         "selenium_config": {
             "username_selector": "#username",
@@ -17,6 +22,12 @@
     "api_site": {
         "name": "Example API Login",
         "site_url": "https://example.com/app",
+        "success_text_class": "toast toast-success",
+        "expected_success_text": "Welcome back!",
+        "required_cookies": [
+            "sessionid",
+            "refresh_token"
+        ],
         "login_type": "api",
         "api_config": {
             "endpoint": "https://example.com/api/v1/login",

@@ -225,6 +225,18 @@ class SiteConfig(SQLModel, table=True):
     id: str = Field(default_factory=lambda: gen_id("sc"), primary_key=True)
     name: str
     site_url: str
+    success_text_class: str = Field(
+        default="",
+        sa_column=Column(String(length=255), nullable=True, server_default=""),
+    )
+    expected_success_text: str = Field(
+        default="",
+        sa_column=Column(Text, nullable=True, server_default=""),
+    )
+    required_cookies: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSON, nullable=True, server_default="[]"),
+    )
     login_type: SiteLoginType = Field(
         default=SiteLoginType.SELENIUM,
         sa_column=Column(
@@ -242,6 +254,7 @@ class SiteConfig(SQLModel, table=True):
     owner_user_id: Optional[str] = Field(default=None, index=True)  # None => global
 
     def __init__(self, **data: Any):  # type: ignore[override]
+        required_cookies = data.pop("required_cookies", None)
         selenium_config = data.pop("selenium_config", None)
         api_config = data.pop("api_config", None)
         legacy_fields = {}
@@ -255,6 +268,7 @@ class SiteConfig(SQLModel, table=True):
             if key in data:
                 legacy_fields[key] = data.pop(key)
         super().__init__(**data)
+        self.required_cookies = list(required_cookies or [])
         merged_config: Dict[str, Any] = dict(selenium_config or {})
         if legacy_fields:
             merged_config.update(legacy_fields)

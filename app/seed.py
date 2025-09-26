@@ -77,6 +77,9 @@ def seed(user_id: str = "demo-user") -> None:
         sc_global = SiteConfig(
             name="Example Global",
             site_url="https://example.com/login",
+            success_text_class="alert alert-success",
+            expected_success_text="Welcome back!",
+            required_cookies=["sessionid"],
             login_type=SiteLoginType.SELENIUM,
             selenium_config={
                 "username_selector": "#user",
@@ -92,6 +95,9 @@ def seed(user_id: str = "demo-user") -> None:
         sc_user = SiteConfig(
             name="Example User",
             site_url="https://example.org/login",
+            success_text_class="flash-message success",
+            expected_success_text="You are signed in",
+            required_cookies=["csrftoken", "sessionid"],
             login_type=SiteLoginType.SELENIUM,
             selenium_config={
                 "username_selector": "#email",
