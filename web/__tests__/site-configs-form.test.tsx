@@ -300,11 +300,11 @@ describe('site configs creation success path', () => {
       const firstCall = createSiteConfigMock.mock.calls[0][0]
       expect(firstCall.siteConfig).toMatchObject({
         name: 'Acme Login',
-        site_url: 'https://acme.example/login',
-        username_selector: '#username',
-        password_selector: '#password',
-        login_button_selector: 'button[type="submit"]',
-        cookies_to_store: ['session=abc', 'theme', 'xyz'],
+        siteUrl: 'https://acme.example/login',
+        usernameSelector: '#username',
+        passwordSelector: '#password',
+        loginButtonSelector: 'button[type="submit"]',
+        cookiesToStore: ['session=abc', 'theme', 'xyz'],
       })
       expect(firstCall.siteConfig.ownerUserId).toBeUndefined()
 
@@ -329,11 +329,11 @@ describe('site configs creation success path', () => {
       const secondCall = createSiteConfigMock.mock.calls[1][0]
       expect(secondCall.siteConfig).toMatchObject({
         name: 'Global Entry',
-        site_url: 'https://global.example/login',
-        username_selector: '#global-user',
-        password_selector: '#global-pass',
-        login_button_selector: 'button.global-submit',
-        cookies_to_store: ['token=one', 'two', 'three'],
+        siteUrl: 'https://global.example/login',
+        usernameSelector: '#global-user',
+        passwordSelector: '#global-pass',
+        loginButtonSelector: 'button.global-submit',
+        cookiesToStore: ['token=one', 'two', 'three'],
       })
       expect(secondCall.siteConfig.ownerUserId).toBeNull()
 
@@ -529,14 +529,13 @@ describe('site configs edit form', () => {
       expect(updateCall).toEqual({
         configId: 'config-1',
         siteConfig: {
-          id: 'config-1',
           name: 'Example Site',
-          site_url: 'https://example.com/login',
-          username_selector: '#updated-user',
-          password_selector: '#updated-pass',
-          login_button_selector: 'button.updated-submit',
-          cookies_to_store: ['sessionid', 'remember_me', 'extra'],
-          owner_user_id: 'user-1',
+          siteUrl: 'https://example.com/login',
+          usernameSelector: '#updated-user',
+          passwordSelector: '#updated-pass',
+          loginButtonSelector: 'button.updated-submit',
+          cookiesToStore: ['sessionid', 'remember_me', 'extra'],
+          ownerUserId: 'user-1',
         },
       })
 

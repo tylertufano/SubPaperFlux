@@ -20,6 +20,20 @@ export default function SiteConfigs() {
   const [editing, setEditing] = useState<any | null>(null)
   const [editErrors, setEditErrors] = useState<Record<string,string>>({})
 
+  const toApiSiteConfig = (input: any) => {
+    const payload: Record<string, any> = {
+      name: input.name,
+      siteUrl: input.site_url,
+      usernameSelector: input.username_selector,
+      passwordSelector: input.password_selector,
+      loginButtonSelector: input.login_button_selector,
+      cookiesToStore: Array.isArray(input.cookies_to_store) ? input.cookies_to_store : [],
+    }
+    if (input.post_login_selector) payload.postLoginSelector = input.post_login_selector
+    if (input.owner_user_id !== undefined) payload.ownerUserId = input.owner_user_id
+    return payload
+  }
+
   async function create() {
     const body: any = {
       ...form,
@@ -28,7 +42,8 @@ export default function SiteConfigs() {
     try {
       const err = validateSiteConfig(body)
       if (err) { setBanner({ kind: 'error', message: err }); return }
-      await site.createSiteConfigSiteConfigsPost({ siteConfig: { ...body, ownerUserId: scopeGlobal ? null : undefined } })
+      const apiPayload = { ...toApiSiteConfig(body), ownerUserId: scopeGlobal ? null : undefined }
+      await site.createSiteConfigSiteConfigsPost({ siteConfig: apiPayload })
       setForm({ name: '', site_url: '', username_selector: '', password_selector: '', login_button_selector: '', cookies_to_store: '' })
       setScopeGlobal(false)
       setBanner({ kind: 'success', message: t('site_configs_create_success') })
@@ -352,7 +367,8 @@ export default function SiteConfigs() {
                   const err = validateSiteConfig(body)
                   if (err) { setBanner({ kind: 'error', message: err }); return }
                   try {
-                    await site.updateSiteConfigSiteConfigsConfigIdPut({ configId: editing.id, siteConfig: body })
+                    const apiPayload = toApiSiteConfig(body)
+                    await site.updateSiteConfigSiteConfigsConfigIdPut({ configId: editing.id, siteConfig: apiPayload })
                     setBanner({ kind: 'success', message: t('site_configs_update_success') })
                     setEditing(null)
                     mutate()
