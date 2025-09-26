@@ -48,9 +48,15 @@ export function validateCredential(
   return null
 }
 
-export type SeleniumSiteConfigForm = {
+type SiteConfigCommonForm = {
   name: string
   site_url: string
+  success_text_class: string
+  expected_success_text: string
+  required_cookies: string
+}
+
+export type SeleniumSiteConfigForm = SiteConfigCommonForm & {
   login_type: 'selenium'
   selenium_config: {
     username_selector: string
@@ -61,9 +67,7 @@ export type SeleniumSiteConfigForm = {
   }
 }
 
-export type ApiSiteConfigForm = {
-  name: string
-  site_url: string
+export type ApiSiteConfigForm = SiteConfigCommonForm & {
   login_type: 'api'
   api_config: {
     endpoint: string
@@ -78,11 +82,17 @@ export type SiteConfigFormInput = SeleniumSiteConfigForm | ApiSiteConfigForm
 
 export const SUPPORTED_HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
 
+type NormalizedSiteConfigCommonPayload = {
+  name: string
+  siteUrl: string
+  successTextClass?: string
+  expectedSuccessText?: string
+  requiredCookies?: string[]
+}
+
 export type NormalizedSiteConfigPayload =
-  | {
+  | (NormalizedSiteConfigCommonPayload & {
       loginType: 'selenium'
-      name: string
-      siteUrl: string
       seleniumConfig: {
         usernameSelector: string
         passwordSelector: string
@@ -90,11 +100,9 @@ export type NormalizedSiteConfigPayload =
         postLoginSelector?: string | null
         cookiesToStore?: string[]
       }
-    }
-  | {
+    })
+  | (NormalizedSiteConfigCommonPayload & {
       loginType: 'api'
-      name: string
-      siteUrl: string
       apiConfig: {
         endpoint: string
         method: (typeof SUPPORTED_HTTP_METHODS)[number]
@@ -102,7 +110,7 @@ export type NormalizedSiteConfigPayload =
         body?: Record<string, any> | null
         cookies?: Record<string, string>
       }
-    }
+    })
 
 const HTTP_METHODS = new Set(SUPPORTED_HTTP_METHODS)
 
@@ -120,6 +128,25 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
   const trimmedUrl = typeof form.site_url === 'string' ? form.site_url.trim() : ''
   if (!trimmedUrl || !isValidUrl(trimmedUrl)) {
     errors.site_url = 'site_configs_error_url_invalid'
+  }
+
+  const successTextClass = typeof form.success_text_class === 'string' ? form.success_text_class.trim() : ''
+  const expectedSuccessText = typeof form.expected_success_text === 'string' ? form.expected_success_text.trim() : ''
+  const requiredCookiesRaw = typeof form.required_cookies === 'string' ? form.required_cookies : ''
+  const requiredCookies = Array.from(
+    new Set(
+      requiredCookiesRaw
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  )
+
+  if (successTextClass && !expectedSuccessText) {
+    errors.expected_success_text = 'site_configs_error_expected_success_text_required'
+  }
+  if (expectedSuccessText && !successTextClass) {
+    errors.success_text_class = 'site_configs_error_success_text_class_required'
   }
 
   if (form.login_type === 'selenium') {
@@ -150,26 +177,39 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
       .map((value) => value.trim())
       .filter((value) => value.length > 0)
 
+    if (cookies.length === 0 && requiredCookies.length === 0) {
+      errors.required_cookies = 'site_configs_error_required_cookies'
+    }
+
     const hasErrors = Object.values(errors).some(Boolean)
     if (hasErrors) {
       return { errors }
     }
 
-    return {
-      errors,
-      payload: {
-        loginType: 'selenium',
-        name: trimmedName,
-        siteUrl: trimmedUrl,
-        seleniumConfig: {
-          usernameSelector: username,
-          passwordSelector: password,
-          loginButtonSelector: loginButton,
-          postLoginSelector: postLogin ? postLogin : undefined,
-          cookiesToStore: cookies.length > 0 ? cookies : undefined,
-        },
+    const payload: NormalizedSiteConfigPayload = {
+      loginType: 'selenium',
+      name: trimmedName,
+      siteUrl: trimmedUrl,
+      seleniumConfig: {
+        usernameSelector: username,
+        passwordSelector: password,
+        loginButtonSelector: loginButton,
+        postLoginSelector: postLogin ? postLogin : undefined,
+        cookiesToStore: cookies.length > 0 ? cookies : undefined,
       },
     }
+
+    if (successTextClass) {
+      payload.successTextClass = successTextClass
+    }
+    if (expectedSuccessText) {
+      payload.expectedSuccessText = expectedSuccessText
+    }
+    if (requiredCookies.length > 0) {
+      payload.requiredCookies = requiredCookies
+    }
+
+    return { errors, payload }
   }
 
   const api = form.api_config || { endpoint: '', method: '' }
@@ -222,6 +262,11 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     }
   }
 
+  const storedCookieNames = cookiesObject ? Object.keys(cookiesObject) : []
+  if (storedCookieNames.length === 0 && requiredCookies.length === 0) {
+    errors.required_cookies = 'site_configs_error_required_cookies'
+  }
+
   let bodyObject: Record<string, any> | null | undefined
   const bodyRaw = api.body?.trim()
   if (bodyRaw) {
@@ -260,6 +305,16 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
   }
   if (bodyObject !== undefined) {
     payload.apiConfig.body = bodyObject
+  }
+
+  if (successTextClass) {
+    payload.successTextClass = successTextClass
+  }
+  if (expectedSuccessText) {
+    payload.expectedSuccessText = expectedSuccessText
+  }
+  if (requiredCookies.length > 0) {
+    payload.requiredCookies = requiredCookies
   }
 
   return { errors, payload }

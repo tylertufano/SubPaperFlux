@@ -39,6 +39,9 @@ function createEmptyForm(loginType: LoginType): SiteConfigFormState {
     const base: SeleniumSiteConfigForm = {
       name: '',
       site_url: '',
+      success_text_class: '',
+      expected_success_text: '',
+      required_cookies: '',
       login_type: 'selenium',
       selenium_config: {
         username_selector: '',
@@ -53,6 +56,9 @@ function createEmptyForm(loginType: LoginType): SiteConfigFormState {
   const base: ApiSiteConfigForm = {
     name: '',
     site_url: '',
+    success_text_class: '',
+    expected_success_text: '',
+    required_cookies: '',
     login_type: 'api',
     api_config: {
       endpoint: '',
@@ -86,6 +92,9 @@ function normalizeSeleniumConfig(config: SiteConfigSeleniumOut): SiteConfigFormS
     ownerUserId: config.ownerUserId ?? null,
     name: config.name,
     site_url: config.siteUrl,
+    success_text_class: config.successTextClass ?? '',
+    expected_success_text: config.expectedSuccessText ?? '',
+    required_cookies: config.requiredCookies?.length ? config.requiredCookies.join(',') : '',
     login_type: 'selenium',
     selenium_config: {
       username_selector: config.seleniumConfig?.usernameSelector ?? '',
@@ -111,6 +120,9 @@ function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
     ownerUserId: config.ownerUserId ?? null,
     name: config.name,
     site_url: config.siteUrl,
+    success_text_class: config.successTextClass ?? '',
+    expected_success_text: config.expectedSuccessText ?? '',
+    required_cookies: config.requiredCookies?.length ? config.requiredCookies.join(',') : '',
     login_type: 'api',
     api_config: {
       endpoint: config.apiConfig?.endpoint ?? '',
@@ -143,23 +155,31 @@ function firstErrorMessage(errors: LocalizedErrors): string | undefined {
 function isFormReady(form: SiteConfigFormState): boolean {
   if (!form.name?.trim()) return false
   if (!form.site_url?.trim() || !isValidUrl(form.site_url)) return false
+  const requiredCookiesRaw = form.required_cookies ?? ''
+  const hasRequiredCookies = requiredCookiesRaw
+    .split(',')
+    .map((value) => value.trim())
+    .some((value) => value.length > 0)
   if (form.login_type === 'selenium') {
     const config = form.selenium_config
-    return Boolean(
-      config?.username_selector?.trim() &&
-      config?.password_selector?.trim() &&
-      config?.login_button_selector?.trim(),
-    )
+    if (!config?.username_selector?.trim()) return false
+    if (!config?.password_selector?.trim()) return false
+    if (!config?.login_button_selector?.trim()) return false
+    const storedCookiesRaw = config?.cookies_to_store ?? ''
+    const hasStoredCookies = storedCookiesRaw
+      .split(',')
+      .map((value) => value.trim())
+      .some((value) => value.length > 0)
+    return hasStoredCookies || hasRequiredCookies
   }
   const config = form.api_config
   const endpoint = config?.endpoint?.trim()
   const method = config?.method?.trim().toUpperCase()
-  return Boolean(
-    endpoint &&
-    isValidUrl(endpoint) &&
-    method &&
-    API_METHOD_SET.has(method as (typeof API_METHOD_OPTIONS)[number]),
-  )
+  if (!endpoint || !isValidUrl(endpoint)) return false
+  if (!method || !API_METHOD_SET.has(method as (typeof API_METHOD_OPTIONS)[number])) return false
+  const storedCookiesRaw = config?.cookies ?? ''
+  const hasStoredCookies = Boolean(storedCookiesRaw.trim())
+  return hasStoredCookies || hasRequiredCookies
 }
 
 function prepareSubmission(
@@ -196,6 +216,9 @@ export default function SiteConfigs() {
       const next = createEmptyForm(type)
       next.name = current.name
       next.site_url = current.site_url
+      next.success_text_class = current.success_text_class
+      next.expected_success_text = current.expected_success_text
+      next.required_cookies = current.required_cookies
       return next
     })
     setCreateErrors({})
@@ -210,6 +233,9 @@ export default function SiteConfigs() {
       next.site_url = current.site_url
       next.id = current.id
       next.ownerUserId = current.ownerUserId
+      next.success_text_class = current.success_text_class
+      next.expected_success_text = current.expected_success_text
+      next.required_cookies = current.required_cookies
       return next
     })
     setEditErrors({})
@@ -317,6 +343,28 @@ export default function SiteConfigs() {
     }
   }
 
+  const hasCommaSeparatedValues = (value: string | undefined) =>
+    (value ?? '')
+      .split(',')
+      .map((part) => part.trim())
+      .some((part) => part.length > 0)
+
+  const hasAnyCookies = (
+    state: SiteConfigFormState,
+    overrides: { stored?: string; required?: string } = {},
+  ) => {
+    const requiredRaw = overrides.required ?? state.required_cookies ?? ''
+    if (hasCommaSeparatedValues(requiredRaw)) {
+      return true
+    }
+    if (state.login_type === 'selenium') {
+      const storedRaw = overrides.stored ?? state.selenium_config?.cookies_to_store ?? ''
+      return hasCommaSeparatedValues(storedRaw)
+    }
+    const storedRaw = overrides.stored ?? state.api_config?.cookies ?? ''
+    return Boolean(storedRaw.trim())
+  }
+
   const renderSeleniumFields = (
     current: SiteConfigFormState,
     errors: LocalizedErrors,
@@ -421,6 +469,12 @@ export default function SiteConfigs() {
             onChange((prev) => ({
               ...prev,
               selenium_config: { ...prev.selenium_config, cookies_to_store: value },
+            }))
+            setErrors((prev) => ({
+              ...prev,
+              required_cookies: hasAnyCookies(current, { stored: value })
+                ? ''
+                : t('site_configs_error_required_cookies'),
             }))
           }}
         />
@@ -539,11 +593,116 @@ export default function SiteConfigs() {
             onChange={(e) => {
               const value = e.target.value
               onChange((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies: value } }))
-              setErrors((prev) => ({ ...prev, 'api.cookies': '' }))
+              setErrors((prev) => ({
+                ...prev,
+                'api.cookies': '',
+                required_cookies: hasAnyCookies(current, { stored: value })
+                  ? ''
+                  : t('site_configs_error_required_cookies'),
+              }))
             }}
           />
           {errors['api.cookies'] && (
             <div id={`${idPrefix}-cookies-json-error`} className="text-sm text-red-600">{errors['api.cookies']}</div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  const renderSharedFields = (
+    current: SiteConfigFormState,
+    errors: LocalizedErrors,
+    onChange: (updater: (prev: SiteConfigFormState) => SiteConfigFormState) => void,
+    setErrors: (updater: (prev: LocalizedErrors) => LocalizedErrors) => void,
+    prefix: 'create' | 'edit',
+  ) => {
+    const idPrefix = `${prefix}-site-config`
+    const successClassId = `${idPrefix}-success-text-class`
+    const expectedTextId = `${idPrefix}-expected-success-text`
+    const requiredCookiesId = `${idPrefix}-required-cookies`
+    return (
+      <>
+        <div>
+          <input
+            id={successClassId}
+            className="input"
+            placeholder={t('site_configs_field_success_text_class_placeholder')}
+            aria-label={t('site_configs_field_success_text_class_placeholder')}
+            aria-invalid={Boolean(errors.success_text_class)}
+            aria-describedby={errors.success_text_class ? `${successClassId}-error` : undefined}
+            value={current.success_text_class ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, success_text_class: value }))
+              const trimmedClass = value.trim()
+              const trimmedExpected = (current.expected_success_text ?? '').trim()
+              setErrors((prev) => ({
+                ...prev,
+                success_text_class: trimmedExpected && !trimmedClass
+                  ? t('site_configs_error_success_text_class_required')
+                  : '',
+                expected_success_text: trimmedClass && !trimmedExpected
+                  ? t('site_configs_error_expected_success_text_required')
+                  : '',
+              }))
+            }}
+          />
+          {errors.success_text_class && (
+            <div id={`${successClassId}-error`} className="text-sm text-red-600">{errors.success_text_class}</div>
+          )}
+        </div>
+        <div>
+          <input
+            id={expectedTextId}
+            className="input"
+            placeholder={t('site_configs_field_expected_success_text_placeholder')}
+            aria-label={t('site_configs_field_expected_success_text_placeholder')}
+            aria-invalid={Boolean(errors.expected_success_text)}
+            aria-describedby={errors.expected_success_text ? `${expectedTextId}-error` : undefined}
+            value={current.expected_success_text ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, expected_success_text: value }))
+              const trimmedExpected = value.trim()
+              const trimmedClass = (current.success_text_class ?? '').trim()
+              setErrors((prev) => ({
+                ...prev,
+                expected_success_text: trimmedClass && !trimmedExpected
+                  ? t('site_configs_error_expected_success_text_required')
+                  : '',
+                success_text_class: trimmedExpected && !trimmedClass
+                  ? t('site_configs_error_success_text_class_required')
+                  : '',
+              }))
+            }}
+          />
+          {errors.expected_success_text && (
+            <div id={`${expectedTextId}-error`} className="text-sm text-red-600">{errors.expected_success_text}</div>
+          )}
+        </div>
+        <div className="md:col-span-2">
+          <input
+            id={requiredCookiesId}
+            className="input"
+            placeholder={t('site_configs_field_required_cookies_placeholder')}
+            aria-label={t('site_configs_field_required_cookies_placeholder')}
+            aria-invalid={Boolean(errors.required_cookies)}
+            aria-describedby={errors.required_cookies ? `${requiredCookiesId}-error` : undefined}
+            value={current.required_cookies ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              onChange((prev) => ({ ...prev, required_cookies: value }))
+              setErrors((prev) => ({
+                ...prev,
+                required_cookies: hasAnyCookies(current, { required: value })
+                  ? ''
+                  : t('site_configs_error_required_cookies'),
+              }))
+            }}
+          />
+          {errors.required_cookies && (
+            <div id={`${requiredCookiesId}-error`} className="text-sm text-red-600">{errors.required_cookies}</div>
           )}
         </div>
       </>
@@ -703,6 +862,7 @@ export default function SiteConfigs() {
           {form.login_type === 'selenium'
             ? renderSeleniumFields(form, createErrors, setForm, setCreateErrors, 'create')
             : renderApiFields(form, createErrors, setForm, setCreateErrors, 'create')}
+          {renderSharedFields(form, createErrors, setForm, setCreateErrors, 'create')}
           <label className="inline-flex items-center gap-2 md:col-span-2">
             <input type="checkbox" checked={scopeGlobal} onChange={(e) => setScopeGlobal(e.target.checked)} />
             {t('site_configs_scope_global_label')}
@@ -867,6 +1027,7 @@ export default function SiteConfigs() {
             {editing.login_type === 'selenium'
               ? renderSeleniumFields(editing, editErrors, (updater) => setEditing((prev) => prev ? updater(prev) : prev), setEditErrors, 'edit')
               : renderApiFields(editing, editErrors, (updater) => setEditing((prev) => prev ? updater(prev) : prev), setEditErrors, 'edit')}
+            {renderSharedFields(editing, editErrors, (updater) => setEditing((prev) => prev ? updater(prev) : prev), setEditErrors, 'edit')}
             <div className="md:col-span-2 flex gap-2">
               <button
                 type="button"
