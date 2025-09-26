@@ -46,14 +46,15 @@ export function buildSiteLoginOptions(
     const siteConfigId = resolveCredentialSiteConfigId(credential)
     if (!siteConfigId) continue
     const siteConfig = siteConfigMap.get(siteConfigId)
-    const credentialLabel = credential.description || String(credential.id)
+    const credentialId = String(credential.id)
+    const credentialLabel = credential.description || credentialId
     const configLabel = siteConfig?.name || siteConfigId
-    const value = `pair:${credential.id}::${siteConfigId}`
+    const value = `${credentialId}::${siteConfigId}`
     options.push({
       value,
       label: `${credentialLabel} • ${configLabel}`,
       siteConfigId,
-      credentialId: String(credential.id),
+      credentialId,
       type: 'pair',
     })
     pairedConfigs.add(siteConfigId)

@@ -83,9 +83,50 @@ function parseSiteLoginKey(
   value: string | null | undefined,
 ): SiteLoginSelection | null {
   if (!value) return null;
-  const [credentialId, siteConfigId] = value.split("::");
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const withoutPrefix = trimmed.startsWith("pair:")
+    ? trimmed.slice("pair:".length)
+    : trimmed;
+  const [credentialIdRaw, siteConfigIdRaw] = withoutPrefix.split("::");
+  const credentialId = credentialIdRaw?.trim();
+  const siteConfigId = siteConfigIdRaw?.trim();
   if (!credentialId || !siteConfigId) return null;
   return { credentialId, siteConfigId };
+}
+
+function extractSiteLoginPair(
+  payload?: Record<string, any> | null,
+): string {
+  if (!payload) return "";
+  const credentialCandidate =
+    payload?.credential_id ??
+    payload?.credentialId ??
+    payload?.credential;
+  const siteConfigCandidate =
+    payload?.site_config_id ??
+    payload?.siteConfigId ??
+    payload?.site_config;
+  const credentialId =
+    credentialCandidate != null ? String(credentialCandidate).trim() : "";
+  const siteConfigId =
+    siteConfigCandidate != null ? String(siteConfigCandidate).trim() : "";
+  if (credentialId && siteConfigId) {
+    return toSiteLoginKey({ credentialId, siteConfigId });
+  }
+  const rawPair =
+    payload?.site_login_pair ??
+    payload?.siteLoginPair ??
+    null;
+  if (typeof rawPair === "string") {
+    const parsed = parseSiteLoginKey(rawPair);
+    if (parsed) {
+      return toSiteLoginKey(parsed);
+    }
+    const trimmedPair = rawPair.trim();
+    return trimmedPair;
+  }
+  return "";
 }
 
 function toDateTimeLocalValue(value?: Date | null): string {
@@ -112,16 +153,11 @@ function initPayloadState(
   jobType: JobType,
   payload?: Record<string, any> | null,
 ): Record<string, any> {
+  const initialSiteLoginPair = extractSiteLoginPair(payload);
   switch (jobType) {
     case "login":
       return {
-        site_login_pair:
-          payload?.credential_id && payload?.site_config_id
-            ? toSiteLoginKey({
-                credentialId: String(payload.credential_id),
-                siteConfigId: String(payload.site_config_id),
-              })
-            : payload?.site_login_pair ?? "",
+        site_login_pair: initialSiteLoginPair,
       };
     case "miniflux_refresh":
       return {
@@ -129,13 +165,7 @@ function initPayloadState(
         feed_ids: Array.isArray(payload?.feed_ids)
           ? payload.feed_ids.map((value: any) => String(value))
           : [],
-        site_login_pair:
-          payload?.credential_id && payload?.site_config_id
-            ? toSiteLoginKey({
-                credentialId: String(payload.credential_id),
-                siteConfigId: String(payload.site_config_id),
-              })
-            : payload?.site_login_pair ?? "",
+        site_login_pair: initialSiteLoginPair,
       };
     case "rss_poll":
       return {
@@ -143,13 +173,7 @@ function initPayloadState(
         lookback: payload?.lookback ?? "",
         is_paywalled: Boolean(payload?.is_paywalled ?? false),
         rss_requires_auth: Boolean(payload?.rss_requires_auth ?? false),
-        site_login_pair:
-          payload?.credential_id && payload?.site_config_id
-            ? toSiteLoginKey({
-                credentialId: String(payload.credential_id),
-                siteConfigId: String(payload.site_config_id),
-              })
-            : payload?.site_login_pair ?? "",
+        site_login_pair: initialSiteLoginPair,
       };
     case "publish":
       return {
@@ -306,7 +330,7 @@ function ScheduleForm({
           "job_schedules_error_site_login_pair",
         );
       } else {
-        payload.site_login_pair = siteLoginValue;
+        payload.site_login_pair = toSiteLoginKey(siteLogin);
       }
     } else if (jobType === "miniflux_refresh") {
       const minifluxId = (payloadState.miniflux_id || "").toString().trim();
@@ -335,7 +359,7 @@ function ScheduleForm({
         });
       }
       if (siteLogin) {
-        payload.site_login_pair = siteLoginValue;
+        payload.site_login_pair = toSiteLoginKey(siteLogin);
       }
     } else if (jobType === "rss_poll") {
       const feedId = (payloadState.feed_id || "").toString().trim();
@@ -353,7 +377,7 @@ function ScheduleForm({
       payload.is_paywalled = isPaywalled;
       payload.rss_requires_auth = rssRequiresAuth;
       if (siteLogin) {
-        payload.site_login_pair = siteLoginValue;
+        payload.site_login_pair = toSiteLoginKey(siteLogin);
       }
 
     } else if (jobType === "publish") {
