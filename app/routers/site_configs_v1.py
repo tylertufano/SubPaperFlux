@@ -17,7 +17,12 @@ from ..auth import (
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig, SiteLoginType
-from ..schemas import SiteConfigOut, SiteConfigsPage
+from ..schemas import (
+    SiteConfigApiOut,
+    SiteConfigOut,
+    SiteConfigSeleniumOut,
+    SiteConfigsPage,
+)
 from ..util.quotas import enforce_user_quota
 
 
@@ -31,6 +36,24 @@ def _ensure_permission(
     if is_user_mgmt_enforce_enabled() and not allowed:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return allowed
+
+
+def _site_config_to_schema(model: SiteConfig) -> SiteConfigOut:
+    if model.login_type == SiteLoginType.SELENIUM:
+        return SiteConfigSeleniumOut(
+            id=model.id,
+            name=model.name,
+            site_url=model.site_url,
+            owner_user_id=model.owner_user_id,
+            selenium_config=model.selenium_config,
+        )
+    return SiteConfigApiOut(
+        id=model.id,
+        name=model.name,
+        site_url=model.site_url,
+        owner_user_id=model.owner_user_id,
+        api_config=model.api_config,
+    )
 
 
 @router.get("/", response_model=SiteConfigsPage, summary="List site configs")
@@ -68,18 +91,7 @@ def list_site_configs_v1(
     start = (page - 1) * size
     end = start + size
     page_rows = rows[start:end]
-    items = [
-        SiteConfigOut(
-            id=r.id,
-            name=r.name,
-            site_url=r.site_url,
-            login_type=r.login_type,
-            selenium_config=r.selenium_config,
-            api_config=r.api_config,
-            owner_user_id=r.owner_user_id,
-        )
-        for r in page_rows
-    ]
+    items = [_site_config_to_schema(r) for r in page_rows]
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return SiteConfigsPage(
@@ -218,12 +230,4 @@ def copy_site_config_v1(
     session.commit()
     session.refresh(clone)
 
-    return SiteConfigOut(
-        id=clone.id,
-        name=clone.name,
-        site_url=clone.site_url,
-        login_type=clone.login_type,
-        selenium_config=clone.selenium_config,
-        api_config=clone.api_config,
-        owner_user_id=clone.owner_user_id,
-    )
+    return _site_config_to_schema(clone)
