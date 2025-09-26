@@ -8,7 +8,9 @@ from sqlmodel import select
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite://")
-    monkeypatch.setenv("CREDENTIALS_ENC_KEY", base64.urlsafe_b64encode(os.urandom(32)).decode())
+    monkeypatch.setenv(
+        "CREDENTIALS_ENC_KEY", base64.urlsafe_b64encode(os.urandom(32)).decode()
+    )
     monkeypatch.setenv("USER_MGMT_CORE", "1")
     from app.config import is_user_mgmt_core_enabled
 
@@ -55,25 +57,31 @@ def client():
 
 def test_credentials_and_siteconfigs(client):
     from app.db import get_session
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         user_site = SiteConfig(
             name="User Site",
             site_url="https://user.example.com/login",
-            username_selector="#username",
-            password_selector="#password",
-            login_button_selector="#submit",
-            cookies_to_store=["sid"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#username",
+                "password_selector": "#password",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["sid"],
+            },
             owner_user_id="u1",
         )
         global_site = SiteConfig(
             name="Global Site",
             site_url="https://global.example.com/login",
-            username_selector="#u",
-            password_selector="#p",
-            login_button_selector="button[type='submit']",
-            cookies_to_store=["sid"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#u",
+                "password_selector": "#p",
+                "login_button_selector": "button[type='submit']",
+                "cookies_to_store": ["sid"],
+            },
             owner_user_id=None,
         )
         session.add(user_site)
@@ -164,7 +172,10 @@ def test_credentials_and_siteconfigs(client):
 
     original_override = client.app.dependency_overrides[get_current_user]
     try:
-        client.app.dependency_overrides[get_current_user] = lambda: {"sub": "u2", "groups": []}
+        client.app.dependency_overrides[get_current_user] = lambda: {
+            "sub": "u2",
+            "groups": [],
+        }
         r_forbidden_delete = client.delete(f"/credentials/{global_cred['id']}")
         assert r_forbidden_delete.status_code == 403
     finally:
@@ -185,10 +196,13 @@ def test_credentials_and_siteconfigs(client):
     payload = {
         "name": "Demo",
         "site_url": "https://example.com/login",
-        "username_selector": "#u",
-        "password_selector": "#p",
-        "login_button_selector": "button[type='submit']",
-        "cookies_to_store": ["sid"],
+        "login_type": "selenium",
+        "selenium_config": {
+            "username_selector": "#u",
+            "password_selector": "#p",
+            "login_button_selector": "button[type='submit']",
+            "cookies_to_store": ["sid"],
+        },
     }
     r3 = client.post("/site-configs", json=payload)
     assert r3.status_code == 201
@@ -221,12 +235,16 @@ def test_credentials_and_siteconfigs(client):
 
     with next(get_session()) as session:
         cred_logs = session.exec(
-            select(AuditLog).where(AuditLog.entity_type == "credential").order_by(AuditLog.created_at)
+            select(AuditLog)
+            .where(AuditLog.entity_type == "credential")
+            .order_by(AuditLog.created_at)
         ).all()
         actions = [log.action for log in cred_logs]
         assert actions == ["create", "update", "delete", "create", "delete"]
         setting_logs = session.exec(
-            select(AuditLog).where(AuditLog.entity_type == "setting").order_by(AuditLog.created_at)
+            select(AuditLog)
+            .where(AuditLog.entity_type == "setting")
+            .order_by(AuditLog.created_at)
         ).all()
         assert [log.action for log in setting_logs] == ["create", "update", "delete"]
 
@@ -276,7 +294,10 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
 
         original_override = client.app.dependency_overrides[get_current_user]
         try:
-            client.app.dependency_overrides[get_current_user] = lambda: {"sub": "tenant", "groups": []}
+            client.app.dependency_overrides[get_current_user] = lambda: {
+                "sub": "tenant",
+                "groups": [],
+            }
             r_creds = client.get("/v1/credentials")
             assert r_creds.status_code == 403
 
@@ -333,7 +354,10 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
 
         original_override = client.app.dependency_overrides[get_current_user]
         try:
-            client.app.dependency_overrides[get_current_user] = lambda: {"sub": "tenant", "groups": []}
+            client.app.dependency_overrides[get_current_user] = lambda: {
+                "sub": "tenant",
+                "groups": [],
+            }
             cred_update_payload = {
                 "id": owned_cred["id"],
                 "kind": owned_cred["kind"],
@@ -341,12 +365,16 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
                 "data": {"note": "denied"},
                 "site_config_id": owned_sc["id"],
             }
-            r_cred_update = client.put(f"/credentials/{owned_cred['id']}", json=cred_update_payload)
+            r_cred_update = client.put(
+                f"/credentials/{owned_cred['id']}", json=cred_update_payload
+            )
             assert r_cred_update.status_code == 404
 
             sc_update_payload = dict(owned_sc)
             sc_update_payload["name"] = "Unauthorized"
-            r_sc_update = client.put(f"/site-configs/{owned_sc['id']}", json=sc_update_payload)
+            r_sc_update = client.put(
+                f"/site-configs/{owned_sc['id']}", json=sc_update_payload
+            )
             assert r_sc_update.status_code == 403
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
@@ -384,11 +412,15 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
             "data": {"note": "admin"},
             "site_config_id": tenant_sc["id"],
         }
-        r_admin_cred_update = client.put(f"/credentials/{tenant_cred['id']}", json=cred_update_payload)
+        r_admin_cred_update = client.put(
+            f"/credentials/{tenant_cred['id']}", json=cred_update_payload
+        )
         assert r_admin_cred_update.status_code == 200
         sc_update_payload = dict(tenant_sc)
         sc_update_payload["name"] = "Admin updated"
-        r_admin_sc_update = client.put(f"/site-configs/{tenant_sc['id']}", json=sc_update_payload)
+        r_admin_sc_update = client.put(
+            f"/site-configs/{tenant_sc['id']}", json=sc_update_payload
+        )
         assert r_admin_sc_update.status_code == 200
     finally:
         is_user_mgmt_enforce_enabled.cache_clear()
@@ -427,7 +459,9 @@ def _create_site_config(client, *, owner: str = "u1") -> dict:
     return resp.json()
 
 
-def _create_site_login_credential(client, *, site_config_id: str, owner: str = "u1") -> dict:
+def _create_site_login_credential(
+    client, *, site_config_id: str, owner: str = "u1"
+) -> dict:
     payload = {
         "kind": "site_login",
         "description": f"Login for {owner}",
@@ -469,7 +503,9 @@ def test_feed_creation_with_site_login_credential(client):
 def test_feed_update_allows_switching_site_login_credential(client):
     site_config = _create_site_config(client)
     first_cred = _create_site_login_credential(client, site_config_id=site_config["id"])
-    second_cred = _create_site_login_credential(client, site_config_id=site_config["id"])
+    second_cred = _create_site_login_credential(
+        client, site_config_id=site_config["id"]
+    )
 
     create_resp = client.post(
         "/feeds/",
@@ -574,13 +610,17 @@ def test_instapaper_login_success(monkeypatch, client):
     assert body["data"]["oauth_token_secret"] != "sec987654321"
 
     with next(get_session()) as session:
-        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).first()
+        stored = session.exec(
+            select(Credential).where(Credential.kind == "instapaper")
+        ).first()
         assert stored is not None
         plain = decrypt_dict(stored.data)
         assert plain["oauth_token"] == "tok123456789"
         assert plain["oauth_token_secret"] == "sec987654321"
         assert plain["username"] == "reader@example.com"
-        logs = session.exec(select(AuditLog).where(AuditLog.entity_id == stored.id)).all()
+        logs = session.exec(
+            select(AuditLog).where(AuditLog.entity_id == stored.id)
+        ).all()
         assert any(log.action == "create" for log in logs)
 
 
@@ -596,7 +636,9 @@ def test_instapaper_login_cannot_be_global(monkeypatch, client):
             Credential(
                 kind="instapaper_app",
                 description="Instapaper app",
-                data=encrypt_dict({"consumer_key": "ckey", "consumer_secret": "csecret"}),
+                data=encrypt_dict(
+                    {"consumer_key": "ckey", "consumer_secret": "csecret"}
+                ),
                 owner_user_id=None,
             )
         )
@@ -632,7 +674,9 @@ def test_instapaper_login_cannot_be_global(monkeypatch, client):
     assert called is False
 
     with next(get_session()) as session:
-        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).all()
+        stored = session.exec(
+            select(Credential).where(Credential.kind == "instapaper")
+        ).all()
         assert stored == []
 
 
@@ -641,7 +685,9 @@ def test_instapaper_login_missing_app_creds(monkeypatch, client):
     import app.routers.credentials as credentials_router
 
     def fail(*args, **kwargs):  # pragma: no cover - should not be called
-        raise AssertionError("get_instapaper_tokens should not be invoked without app creds")
+        raise AssertionError(
+            "get_instapaper_tokens should not be invoked without app creds"
+        )
 
     monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fail)
 
@@ -671,7 +717,9 @@ def test_instapaper_login_bad_password(monkeypatch, client):
             Credential(
                 kind="instapaper_app",
                 description="app",
-                data=encrypt_dict({"consumer_key": "ckey", "consumer_secret": "csecret"}),
+                data=encrypt_dict(
+                    {"consumer_key": "ckey", "consumer_secret": "csecret"}
+                ),
                 owner_user_id=None,
             )
         )
@@ -701,7 +749,9 @@ def test_instapaper_login_bad_password(monkeypatch, client):
     assert error_body["message"] == "Invalid Instapaper username or password"
 
     with next(get_session()) as session:
-        stored = session.exec(select(Credential).where(Credential.kind == "instapaper")).first()
+        stored = session.exec(
+            select(Credential).where(Credential.kind == "instapaper")
+        ).first()
         assert stored is None
 
 
@@ -734,4 +784,3 @@ def test_admin_audit_requires_admin():
 
     resp = client.get("/v1/admin/audit")
     assert resp.status_code == 403
-

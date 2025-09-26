@@ -48,7 +48,13 @@ def quota_client():
         app.dependency_overrides.clear()
 
 
-def _seed_user(*, quota_credentials=None, quota_site_configs=None, quota_feeds=None, quota_api_tokens=None):
+def _seed_user(
+    *,
+    quota_credentials=None,
+    quota_site_configs=None,
+    quota_feeds=None,
+    quota_api_tokens=None,
+):
     from app.db import get_session
     from app.models import User
 
@@ -96,11 +102,14 @@ def test_site_config_quota_enforced(quota_client):
     payload = {
         "name": "Example",
         "site_url": "https://example.com",
-        "username_selector": "#user",
-        "password_selector": "#pass",
-        "login_button_selector": "#submit",
-        "post_login_selector": None,
-        "cookies_to_store": [],
+        "login_type": "selenium",
+        "selenium_config": {
+            "username_selector": "#user",
+            "password_selector": "#pass",
+            "login_button_selector": "#submit",
+            "post_login_selector": None,
+            "cookies_to_store": [],
+        },
         "owner_user_id": "quota-user",
     }
 
@@ -141,4 +150,3 @@ def test_api_token_quota_enforced(quota_client):
         json={"name": "secondary"},
     )
     assert resp_blocked.status_code == 403
-

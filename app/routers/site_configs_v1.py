@@ -1,3 +1,4 @@
+import copy
 from typing import Optional
 
 import httpx
@@ -15,7 +16,7 @@ from ..auth import (
 )
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
-from ..models import SiteConfig
+from ..models import SiteConfig, SiteLoginType
 from ..schemas import SiteConfigOut, SiteConfigsPage
 from ..util.quotas import enforce_user_quota
 
@@ -23,7 +24,9 @@ from ..util.quotas import enforce_user_quota
 router = APIRouter(prefix="/v1/site-configs", tags=["v1"])
 
 
-def _ensure_permission(session, current_user, permission: str, *, owner_id: Optional[str] = None) -> bool:
+def _ensure_permission(
+    session, current_user, permission: str, *, owner_id: Optional[str] = None
+) -> bool:
     allowed = has_permission(session, current_user, permission, owner_id=owner_id)
     if is_user_mgmt_enforce_enabled() and not allowed:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
@@ -56,7 +59,11 @@ def list_site_configs_v1(
         rows = session.exec(stmt).all()
     if search:
         q = search.lower()
-        rows = [r for r in rows if q in (r.name or "").lower() or q in (r.site_url or "").lower()]
+        rows = [
+            r
+            for r in rows
+            if q in (r.name or "").lower() or q in (r.site_url or "").lower()
+        ]
     total = len(rows)
     start = (page - 1) * size
     end = start + size
@@ -66,22 +73,33 @@ def list_site_configs_v1(
             id=r.id,
             name=r.name,
             site_url=r.site_url,
-            username_selector=r.username_selector,
-            password_selector=r.password_selector,
-            login_button_selector=r.login_button_selector,
-            post_login_selector=r.post_login_selector,
-            cookies_to_store=r.cookies_to_store or [],
+            login_type=r.login_type,
+            selenium_config=r.selenium_config,
+            api_config=r.api_config,
             owner_user_id=r.owner_user_id,
         )
         for r in page_rows
     ]
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
-    return SiteConfigsPage(items=items, total=total, page=page, size=size, has_next=has_next, total_pages=total_pages)
+    return SiteConfigsPage(
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        has_next=has_next,
+        total_pages=total_pages,
+    )
 
 
-@router.post("/{config_id}/test", response_model=dict, summary="Test site config selectors against the login page")
-def test_site_config(config_id: str, current_user=Depends(get_current_user), session=Depends(get_session)):
+@router.post(
+    "/{config_id}/test",
+    response_model=dict,
+    summary="Test site config selectors against the login page",
+)
+def test_site_config(
+    config_id: str, current_user=Depends(get_current_user), session=Depends(get_session)
+):
     sc = session.get(SiteConfig, config_id)
     if not sc or sc.owner_user_id not in (current_user["sub"], None):
         return {"ok": False, "error": "not_found"}
@@ -91,15 +109,31 @@ def test_site_config(config_id: str, current_user=Depends(get_current_user), ses
             current_user,
             PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
         )
+    if sc.login_type != SiteLoginType.SELENIUM:
+        return {"ok": False, "error": "unsupported_login_type"}
+    selectors = sc.selenium_config or {}
     url = sc.site_url
     try:
-        with httpx.Client(timeout=10.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:
+        with httpx.Client(
+            timeout=10.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}
+        ) as client:
             r = client.get(url)
             r.raise_for_status()
-            soup = BeautifulSoup(r.text, 'html.parser')
-            found_user = bool(soup.select(sc.username_selector)) if sc.username_selector else False
-            found_pass = bool(soup.select(sc.password_selector)) if sc.password_selector else False
-            found_btn = bool(soup.select(sc.login_button_selector)) if sc.login_button_selector else False
+            soup = BeautifulSoup(r.text, "html.parser")
+            username_selector = selectors.get("username_selector")
+            password_selector = selectors.get("password_selector")
+            login_button_selector = selectors.get("login_button_selector")
+            found_user = (
+                bool(soup.select(username_selector)) if username_selector else False
+            )
+            found_pass = (
+                bool(soup.select(password_selector)) if password_selector else False
+            )
+            found_btn = (
+                bool(soup.select(login_button_selector))
+                if login_button_selector
+                else False
+            )
             ok = found_user and found_pass and found_btn
             return {
                 "ok": ok,
@@ -108,13 +142,17 @@ def test_site_config(config_id: str, current_user=Depends(get_current_user), ses
                     "username_selector": found_user,
                     "password_selector": found_pass,
                     "login_button_selector": found_btn,
-                }
+                },
             }
     except httpx.RequestError as e:
         return {"ok": False, "error": str(e)}
 
 
-@router.post("/{config_id}/copy", response_model=SiteConfigOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{config_id}/copy",
+    response_model=SiteConfigOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def copy_site_config_v1(
     config_id: str,
     current_user=Depends(get_current_user),
@@ -132,7 +170,9 @@ def copy_site_config_v1(
         )
     except HTTPException as exc:  # pragma: no cover - defensive branch
         if exc.status_code == status.HTTP_403_FORBIDDEN:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found") from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Not found"
+            ) from exc
         raise
 
     if not allowed:
@@ -153,11 +193,9 @@ def copy_site_config_v1(
     clone = SiteConfig(
         name=source.name,
         site_url=source.site_url,
-        username_selector=source.username_selector,
-        password_selector=source.password_selector,
-        login_button_selector=source.login_button_selector,
-        post_login_selector=source.post_login_selector,
-        cookies_to_store=list(source.cookies_to_store or []),
+        login_type=source.login_type,
+        selenium_config=copy.deepcopy(source.selenium_config),
+        api_config=copy.deepcopy(source.api_config),
         owner_user_id=user_id,
     )
 
@@ -184,10 +222,8 @@ def copy_site_config_v1(
         id=clone.id,
         name=clone.name,
         site_url=clone.site_url,
-        username_selector=clone.username_selector,
-        password_selector=clone.password_selector,
-        login_button_selector=clone.login_button_selector,
-        post_login_selector=clone.post_login_selector,
-        cookies_to_store=list(clone.cookies_to_store or []),
+        login_type=clone.login_type,
+        selenium_config=clone.selenium_config,
+        api_config=clone.api_config,
         owner_user_id=clone.owner_user_id,
     )

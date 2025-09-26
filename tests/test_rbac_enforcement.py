@@ -27,7 +27,9 @@ def _env(monkeypatch):
         is_user_mgmt_enforce_enabled.cache_clear()
 
 
-@pytest.fixture(params=[False, True], ids=["enforcement_disabled", "enforcement_enabled"])
+@pytest.fixture(
+    params=[False, True], ids=["enforcement_disabled", "enforcement_enabled"]
+)
 def api_context(request, monkeypatch):
     enforce_enabled: bool = request.param
     if enforce_enabled:
@@ -43,16 +45,31 @@ def api_context(request, monkeypatch):
     from app.auth.oidc import get_current_user
     from app.db import get_session, init_db
     from app.main import create_app
-    from app.models import Credential, Feed, SiteConfig, Tag, User
+    from app.models import Credential, Feed, SiteConfig, SiteLoginType, Tag, User
 
     init_db()
     app = create_app()
     client = TestClient(app)
     client.app.state.cache_user_mgmt_flags()
 
-    owner_identity = {"sub": "owner-1", "email": "owner@example.com", "name": "Owner One", "groups": []}
-    admin_identity = {"sub": "admin-1", "email": "admin@example.com", "name": "Admin User", "groups": ["admin"]}
-    guest_identity = {"sub": "guest-1", "email": "guest@example.com", "name": "Guest User", "groups": []}
+    owner_identity = {
+        "sub": "owner-1",
+        "email": "owner@example.com",
+        "name": "Owner One",
+        "groups": [],
+    }
+    admin_identity = {
+        "sub": "admin-1",
+        "email": "admin@example.com",
+        "name": "Admin User",
+        "groups": ["admin"],
+    }
+    guest_identity = {
+        "sub": "guest-1",
+        "email": "guest@example.com",
+        "name": "Guest User",
+        "groups": [],
+    }
 
     with next(get_session()) as session:
         ensure_admin_role(session)
@@ -86,17 +103,23 @@ def api_context(request, monkeypatch):
         global_config = SiteConfig(
             name="Global Config",
             site_url="https://global.example.com/login",
-            username_selector="#username",
-            password_selector="#password",
-            login_button_selector="#login",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#username",
+                "password_selector": "#password",
+                "login_button_selector": "#login",
+            },
             owner_user_id=None,
         )
         owner_config = SiteConfig(
             name="Owner Config",
             site_url="https://owner.example.com/login",
-            username_selector="#username",
-            password_selector="#password",
-            login_button_selector="#login",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#username",
+                "password_selector": "#password",
+                "login_button_selector": "#login",
+            },
             owner_user_id=owner_identity["sub"],
         )
         session.add(global_config)
@@ -234,7 +257,9 @@ def test_feed_creation_enforcement(api_context):
         "poll_frequency": "1h",
         "owner_user_id": context.owner["sub"],
     }
-    owner_resp = context.request_as(context.owner, "POST", "/feeds/", json=owner_payload)
+    owner_resp = context.request_as(
+        context.owner, "POST", "/feeds/", json=owner_payload
+    )
     assert owner_resp.status_code == 201
     assert owner_resp.json()["owner_user_id"] == context.owner["sub"]
 
@@ -243,7 +268,9 @@ def test_feed_creation_enforcement(api_context):
         "poll_frequency": "1h",
         "owner_user_id": context.owner["sub"],
     }
-    admin_resp = context.request_as(context.admin, "POST", "/feeds/", json=admin_payload)
+    admin_resp = context.request_as(
+        context.admin, "POST", "/feeds/", json=admin_payload
+    )
     assert admin_resp.status_code == 201
     assert admin_resp.json()["owner_user_id"] == context.owner["sub"]
 
@@ -252,7 +279,9 @@ def test_feed_creation_enforcement(api_context):
         "poll_frequency": "1h",
         "owner_user_id": context.owner["sub"],
     }
-    guest_resp = context.request_as(context.guest, "POST", "/feeds/", json=guest_payload)
+    guest_resp = context.request_as(
+        context.guest, "POST", "/feeds/", json=guest_payload
+    )
     if context.enforce:
         assert guest_resp.status_code == 403
     else:
@@ -298,15 +327,18 @@ def test_bookmark_tag_update_enforcement(api_context):
 
 def _create_site_config_for_user(user_id: str) -> str:
     from app.db import get_session
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         config = SiteConfig(
             name=f"{user_id}-config",
             site_url=f"https://{user_id}.example.com/login",
-            username_selector="#username",
-            password_selector="#password",
-            login_button_selector="#login",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#username",
+                "password_selector": "#password",
+                "login_button_selector": "#login",
+            },
             owner_user_id=user_id,
         )
         session.add(config)

@@ -67,16 +67,19 @@ def fetch_audit(client: TestClient, **params):
 
 def test_audit_log_tracks_credential_crud(admin_client: TestClient):
     from app.db import get_session
-    from app.models import SiteConfig
+    from app.models import SiteConfig, SiteLoginType
 
     with next(get_session()) as session:
         site_config = SiteConfig(
             name="Audit Site",
             site_url="https://audit.example.com/login",
-            username_selector="#username",
-            password_selector="#password",
-            login_button_selector="#submit",
-            cookies_to_store=["session"],
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#username",
+                "password_selector": "#password",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["session"],
+            },
             owner_user_id="admin",
         )
         session.add(site_config)

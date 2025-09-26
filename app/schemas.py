@@ -1,8 +1,16 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, constr, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    constr,
+    field_validator,
+    model_validator,
+)
 from pydantic_core import PydanticCustomError
 
 from .jobs.scheduler import parse_frequency
@@ -40,16 +48,43 @@ class MeUpdate(BaseModel):
     notification_preferences: Optional[MeNotificationPreferencesUpdate] = None
 
 
-class SiteConfig(BaseModel):
-    id: Optional[str] = None
-    name: str
-    site_url: AnyHttpUrl
+class SeleniumConfig(BaseModel):
     username_selector: str
     password_selector: str
     login_button_selector: str
     post_login_selector: Optional[str] = None
     cookies_to_store: List[str] = Field(default_factory=list)
+
+
+class SiteConfig(BaseModel):
+    id: Optional[str] = None
+    name: str
+    site_url: AnyHttpUrl
+    login_type: Literal["selenium", "api"] = "selenium"
+    selenium_config: Optional[SeleniumConfig] = None
+    api_config: Optional[Dict[str, Any]] = None
     owner_user_id: Optional[str] = None  # None means global
+
+    @model_validator(mode="after")
+    def _validate_login_type(self) -> "SiteConfig":  # type: ignore[override]
+        if self.login_type == "selenium":
+            if self.selenium_config is None:
+                raise PydanticCustomError(
+                    "selenium_config_required",
+                    "selenium_config is required when login_type is 'selenium'",
+                )
+        elif self.login_type == "api":
+            if self.api_config is None:
+                raise PydanticCustomError(
+                    "api_config_required",
+                    "api_config is required when login_type is 'api'",
+                )
+        else:  # pragma: no cover - defensive branch
+            raise PydanticCustomError(
+                "invalid_login_type",
+                "login_type must be one of 'selenium' or 'api'",
+            )
+        return self
 
 
 class Feed(BaseModel):
@@ -255,11 +290,9 @@ class SiteConfigOut(BaseModel):
     id: str
     name: str
     site_url: str
-    username_selector: str
-    password_selector: str
-    login_button_selector: str
-    post_login_selector: Optional[str] = None
-    cookies_to_store: List[str] = Field(default_factory=list)
+    login_type: Literal["selenium", "api"]
+    selenium_config: Optional[SeleniumConfig] = None
+    api_config: Optional[Dict[str, Any]] = None
     owner_user_id: Optional[str] = None
 
 
@@ -394,7 +427,9 @@ class RoleGrantRequest(BaseModel):
 class AdminRoleListItem(BaseModel):
     id: str
     name: constr(strip_whitespace=True, min_length=2, max_length=64)
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=512)
+    ] = None
     is_system: bool = False
     created_at: datetime
     updated_at: datetime
@@ -416,20 +451,26 @@ class AdminRolesPage(BaseModel):
 
 class AdminRoleCreate(BaseModel):
     name: constr(strip_whitespace=True, min_length=2, max_length=64)
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=512)
+    ] = None
     is_system: Optional[bool] = Field(default=None)
 
 
 class AdminRoleUpdate(BaseModel):
     name: Optional[constr(strip_whitespace=True, min_length=2, max_length=64)] = None
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=512)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=512)
+    ] = None
 
 
 class AdminOrganization(BaseModel):
     id: str
     slug: constr(strip_whitespace=True, min_length=2, max_length=255)
     name: constr(strip_whitespace=True, min_length=2, max_length=255)
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=4096)
+    ] = None
     is_default: bool = False
     created_at: datetime
     updated_at: datetime
@@ -465,7 +506,9 @@ class AdminOrganizationCreate(BaseModel):
         pattern=r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$",
     )
     name: constr(strip_whitespace=True, min_length=2, max_length=255)
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=4096)
+    ] = None
     is_default: Optional[bool] = None
 
 
@@ -479,7 +522,9 @@ class AdminOrganizationUpdate(BaseModel):
         )
     ] = None
     name: Optional[constr(strip_whitespace=True, min_length=2, max_length=255)] = None
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=4096)
+    ] = None
     is_default: Optional[bool] = None
 
 
@@ -491,7 +536,9 @@ class AdminUserOrganization(BaseModel):
     id: str
     slug: constr(strip_whitespace=True, min_length=2, max_length=255)
     name: constr(strip_whitespace=True, min_length=2, max_length=255)
-    description: Optional[constr(strip_whitespace=True, min_length=1, max_length=4096)] = None
+    description: Optional[
+        constr(strip_whitespace=True, min_length=1, max_length=4096)
+    ] = None
     is_default: bool = False
     joined_at: datetime
 
@@ -529,7 +576,9 @@ class AdminUserOut(BaseModel):
     quota_site_configs: Optional[int] = Field(default=None, ge=0)
     quota_feeds: Optional[int] = Field(default=None, ge=0)
     quota_api_tokens: Optional[int] = Field(default=None, ge=0)
-    role_overrides: AdminUserRoleOverrides = Field(default_factory=AdminUserRoleOverrides)
+    role_overrides: AdminUserRoleOverrides = Field(
+        default_factory=AdminUserRoleOverrides
+    )
     organization_ids: List[str] = Field(default_factory=list)
     organization_memberships: List[AdminUserOrganizationMembership] = Field(
         default_factory=list
