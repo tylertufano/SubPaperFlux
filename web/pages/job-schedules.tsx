@@ -641,11 +641,19 @@ function ScheduleForm({
                     return Boolean(candidateId && candidateId === value);
                   });
                   if (selected) {
+                    const selectedWithLegacyFields = selected as FeedOut & {
+                      siteConfigId?: string | null;
+                      siteLoginCredentialId?: string | null;
+                      site_config_id?: string | null;
+                      site_login_credential_id?: string | null;
+                    };
                     const selectedConfigId =
-                      selected.site_config_id ?? selected.siteConfigId ?? null;
+                      selectedWithLegacyFields.site_config_id ??
+                      selectedWithLegacyFields.siteConfigId ??
+                      null;
                     const selectedCredentialId =
-                      selected.site_login_credential_id ??
-                      selected.siteLoginCredentialId ??
+                      selectedWithLegacyFields.site_login_credential_id ??
+                      selectedWithLegacyFields.siteLoginCredentialId ??
                       null;
                     if (selectedConfigId) {
                       const normalizedConfig = String(selectedConfigId);
