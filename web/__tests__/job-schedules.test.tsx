@@ -273,6 +273,26 @@ describe("JobSchedulesPage", () => {
     expect(within(table).queryByText("job_type_undefined")).not.toBeInTheDocument();
   });
 
+  it("renders a job type label when the API returns snake_case fields", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [
+          {
+            ...defaultSchedule,
+            jobType: undefined,
+            job_type: "rss_poll",
+          } as any,
+        ],
+      },
+    });
+
+    const table = await screen.findByRole("table", { name: "Scheduled jobs" });
+
+    expect(within(table).getByText("RSS poll")).toBeInTheDocument();
+    expect(within(table).queryByText("Unknown")).not.toBeInTheDocument();
+  });
+
   it("submits create schedule form with rss poll payload", async () => {
     const mutate = vi.fn().mockResolvedValue(undefined);
     renderPage({ mutate });

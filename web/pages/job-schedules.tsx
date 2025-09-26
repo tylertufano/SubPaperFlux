@@ -163,9 +163,15 @@ function parseDateValue(value: unknown): Date | null {
   return null;
 }
 
-function normalizeJobSchedule(schedule: JobScheduleOut): ExtendedJobSchedule {
+type RawJobSchedule = JobScheduleOut & {
+  job_type?: string;
+};
+
+function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
+  const jobType = schedule.jobType ?? schedule.job_type;
   return {
     ...schedule,
+    jobType: jobType as JobType | undefined,
     nextRunAt: parseDateValue(schedule.nextRunAt),
     lastRunAt: parseDateValue(schedule.lastRunAt),
     lastErrorAt: parseDateValue(schedule.lastErrorAt),
