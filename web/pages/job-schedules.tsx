@@ -149,6 +149,29 @@ function fromDateTimeLocalValue(value: string): Date | null {
   return parsed;
 }
 
+function parseDateValue(value: unknown): Date | null {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function normalizeJobSchedule(schedule: JobScheduleOut): ExtendedJobSchedule {
+  return {
+    ...schedule,
+    nextRunAt: parseDateValue(schedule.nextRunAt),
+    lastRunAt: parseDateValue(schedule.lastRunAt),
+    lastErrorAt: parseDateValue(schedule.lastErrorAt),
+  };
+}
+
 function initPayloadState(
   jobType: JobType,
   payload?: Record<string, any> | null,
@@ -1246,7 +1269,10 @@ export default function JobSchedulesPage() {
     );
   }
 
-  const schedules: JobScheduleOut[] = data?.items ?? [];
+  const schedules: ExtendedJobSchedule[] = useMemo(
+    () => (data?.items ?? []).map((schedule) => normalizeJobSchedule(schedule)),
+    [data],
+  );
   const credentials = credentialsData?.items ?? [];
   const siteConfigs = siteConfigsData?.items ?? [];
   const feeds = feedsData?.items ?? [];
@@ -1258,7 +1284,7 @@ export default function JobSchedulesPage() {
   const formatDateValue = (value?: Date | null) =>
     value ? dateFormatter.format(value) : "—";
 
-  const scopeLabel = (schedule: JobScheduleOut) => {
+  const scopeLabel = (schedule: ExtendedJobSchedule) => {
     if (!schedule.ownerUserId) {
       return t("scope_global");
     }
@@ -1268,7 +1294,7 @@ export default function JobSchedulesPage() {
     return schedule.ownerUserId;
   };
 
-  const statusLabel = (schedule: JobScheduleOut) =>
+  const statusLabel = (schedule: ExtendedJobSchedule) =>
     schedule.isActive
       ? t("job_schedules_status_active")
       : t("job_schedules_status_paused");
@@ -1326,22 +1352,22 @@ export default function JobSchedulesPage() {
     }
   }
 
-  async function handleStartEdit(schedule: JobScheduleOut) {
+  async function handleStartEdit(schedule: ExtendedJobSchedule) {
     setLoadingEditId(schedule.id);
     try {
       const full = await v1.getJobScheduleV1JobSchedulesScheduleIdGet({
         scheduleId: schedule.id,
       });
-      setEditingSchedule(full as ExtendedJobSchedule);
+      setEditingSchedule(normalizeJobSchedule(full));
     } catch (error: any) {
-      setEditingSchedule(schedule as ExtendedJobSchedule);
+      setEditingSchedule(normalizeJobSchedule(schedule));
       setBanner({ kind: "error", message: error?.message ?? String(error) });
     } finally {
       setLoadingEditId(null);
     }
   }
 
-  async function handleToggle(schedule: JobScheduleOut) {
+  async function handleToggle(schedule: ExtendedJobSchedule) {
     setPendingAction({ id: schedule.id, kind: "toggle" });
     try {
       const updated =
@@ -1362,7 +1388,7 @@ export default function JobSchedulesPage() {
     }
   }
 
-  async function handleRunNow(schedule: JobScheduleOut) {
+  async function handleRunNow(schedule: ExtendedJobSchedule) {
     setPendingAction({ id: schedule.id, kind: "run" });
     try {
       const job = await v1.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost({
@@ -1380,7 +1406,7 @@ export default function JobSchedulesPage() {
     }
   }
 
-  async function handleDelete(schedule: JobScheduleOut) {
+  async function handleDelete(schedule: ExtendedJobSchedule) {
     const label = jobTypeLabel(schedule.jobType, t);
     if (
       !window.confirm(t("job_schedules_confirm_delete", { jobType: label }))
