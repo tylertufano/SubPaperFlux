@@ -70,11 +70,11 @@ const defaultSchedule = {
   id: "schedule-1",
   jobType: "rss_poll",
   payload: {
-    instapaper_id: "cred-1",
     feed_id: "feed-1",
-    lookback: "1d",
-    is_paywalled: false,
-    rss_requires_auth: false,
+    lookback: "12h",
+    is_paywalled: true,
+    rss_requires_auth: true,
+    site_login_pair: "cred-login::site-1",
   },
   frequency: "1h",
   nextRunAt: new Date("2024-02-01T10:00:00Z"),
@@ -96,17 +96,17 @@ const defaultSchedulesPage = {
 const defaultCredentials = {
   items: [
     {
-      id: "cred-1",
-      kind: "instapaper",
-      description: "Instapaper Account",
-      data: {},
-    },
-    {
       id: "cred-login",
       kind: "site_login",
       description: "Site Login",
       data: {},
       siteConfigId: "site-1",
+    },
+    {
+      id: "cred-publish",
+      kind: "instapaper",
+      description: "Instapaper Account",
+      data: {},
     },
   ],
 };
@@ -132,9 +132,9 @@ const defaultFeeds = {
       url: "https://example.com/feed.xml",
       pollFrequency: "1h",
       initialLookbackPeriod: "1d",
-      isPaywalled: false,
-      rssRequiresAuth: false,
-      siteConfigId: null,
+      isPaywalled: true,
+      rssRequiresAuth: true,
+      siteConfigId: "site-1",
     },
     {
       id: "feed-2",
@@ -193,6 +193,19 @@ function renderPage({
   return { mutate };
 }
 
+function getSiteLoginSelect(form?: HTMLFormElement): HTMLSelectElement | null {
+  const elements = Array.from(
+    document.querySelectorAll<HTMLSelectElement>("#schedule-rss-site-login"),
+  );
+  if (form) {
+    const match = elements.find(
+      (element) => element.closest("form") === form,
+    );
+    return match ?? null;
+  }
+  return elements[0] ?? null;
+}
+
 describe("JobSchedulesPage", () => {
   beforeEach(() => {
     cleanup();
@@ -235,7 +248,7 @@ describe("JobSchedulesPage", () => {
     expect(await screen.findByText("Metadata")).toBeInTheDocument();
     expect(screen.getByText("Payload")).toBeInTheDocument();
     expect(
-      screen.getByText(/"instapaper_id": "cred-1"/),
+      screen.getByText(/"site_login_pair": "cred-login::site-1"/),
     ).toBeInTheDocument();
   });
 
@@ -253,6 +266,28 @@ describe("JobSchedulesPage", () => {
     )) as HTMLSelectElement;
     fireEvent.change(feedSelect, { target: { value: "feed-1" } });
 
+    const lookbackInput = screen.getByLabelText(
+      "Lookback window",
+    ) as HTMLInputElement;
+    fireEvent.change(lookbackInput, { target: { value: "6h" } });
+
+    const paywalledCheckbox = screen.getByLabelText(
+      "Feed is paywalled",
+    ) as HTMLInputElement;
+    fireEvent.click(paywalledCheckbox);
+
+    const requiresAuthCheckbox = screen.getByLabelText(
+      "Feed requires authentication",
+    ) as HTMLInputElement;
+    fireEvent.click(requiresAuthCheckbox);
+
+    const siteLoginSelect = getSiteLoginSelect();
+    expect(siteLoginSelect).not.toBeNull();
+
+    await waitFor(() =>
+      expect(siteLoginSelect!.value).toBe("cred-login::site-1"),
+    );
+
     fireEvent.click(screen.getByRole("button", { name: "Create schedule" }));
 
     await waitFor(() =>
@@ -265,13 +300,16 @@ describe("JobSchedulesPage", () => {
         isActive: true,
         payload: expect.objectContaining({
           feed_id: "feed-1",
+          lookback: "6h",
+          is_paywalled: true,
+          rss_requires_auth: true,
+          site_login_pair: "cred-login::site-1",
         }),
       }),
     });
     const createdPayload =
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
     expect(createdPayload.instapaper_id).toBeUndefined();
-    expect(createdPayload.site_login_pair).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -335,8 +373,17 @@ describe("JobSchedulesPage", () => {
     const feedSelect = within(editForm).getByLabelText(
       "Saved feed",
     ) as HTMLSelectElement;
+    const siteLoginSelect = getSiteLoginSelect(editForm);
+    expect(siteLoginSelect).not.toBeNull();
+
+    await waitFor(() =>
+      expect(siteLoginSelect!.value).toBe("cred-login::site-1"),
+    );
+
     fireEvent.change(frequencyInput, { target: { value: "30m" } });
     fireEvent.change(feedSelect, { target: { value: "feed-2" } });
+
+    await waitFor(() => expect(siteLoginSelect!.value).toBe(""));
 
     const activeCheckbox = within(editForm).getByRole("checkbox", {
       name: "Schedule is active",
@@ -357,12 +404,18 @@ describe("JobSchedulesPage", () => {
         isActive: false,
         payload: expect.objectContaining({
           feed_id: "feed-2",
+          lookback: "12h",
+          is_paywalled: true,
+          rss_requires_auth: true,
         }),
       }),
     });
     const updatedPayload =
       openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
     expect(updatedPayload.site_login_pair).toBeUndefined();
+    expect(updatedPayload.lookback).toBe("12h");
+    expect(updatedPayload.is_paywalled).toBe(true);
+    expect(updatedPayload.rss_requires_auth).toBe(true);
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
