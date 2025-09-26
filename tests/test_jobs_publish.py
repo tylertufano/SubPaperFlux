@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from datetime import datetime, timezone
 
@@ -121,7 +122,7 @@ def test_handle_publish_publishes_pending_bookmarks(monkeypatch):
     assert len(result["published"]) == 2
     assert result["failed"] == []
     assert result["remaining"] == 0
-    assert published_calls == [
+    assert sorted(published_calls, key=lambda item: item[1]) == [
         ("insta-1", "https://example.com/one"),
         ("insta-1", "https://example.com/two"),
     ]
@@ -189,4 +190,92 @@ def test_handle_publish_handles_failures(monkeypatch):
         flags = bookmark.publication_flags["instapaper"]
         assert flags.get("last_error_message")
 
+
+def test_handle_publish_after_rss_poll_without_credentials(monkeypatch, tmp_path):
+    from app.db import get_session, init_db
+    from app.jobs import publish as publish_module
+    from app.jobs.util_subpaperflux import poll_rss_and_publish
+
+    init_db()
+
+    config_dir = tmp_path
+    (config_dir / "instapaper_app_creds.json").write_text(json.dumps({}))
+    (config_dir / "credentials.json").write_text(json.dumps({}))
+    monkeypatch.setenv("SPF_CONFIG_DIR", str(config_dir))
+
+    published_dt = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    class FakeSpf:
+        @staticmethod
+        def get_new_rss_entries(**kwargs):  # type: ignore[override]
+            return [
+                {
+                    "url": "https://example.com/four",
+                    "title": "Four",
+                    "raw_html_content": "<html><body>Four</body></html>",
+                    "published_dt": published_dt,
+                    "instapaper_config": {},
+                    "app_creds": {},
+                    "rss_entry_metadata": {
+                        "id": "entry-4",
+                        "feed": {"title": "Example Feed"},
+                    },
+                }
+            ]
+
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    res = poll_rss_and_publish(
+        feed_id=feed_id,
+        owner_user_id="user-1",
+    )
+
+    assert res == {"stored": 1, "duplicates": 0, "total": 1}
+
+    with next(get_session()) as session:
+        bookmark = session.exec(select(Bookmark)).one()
+        flags = (bookmark.publication_flags or {}).get("instapaper") or {}
+        assert flags.get("should_publish") is True
+        assert "credential_id" not in flags or not flags.get("credential_id")
+
+    published_calls: list[tuple[str, str]] = []
+
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        published_calls.append((instapaper_id, url))
+        return {
+            "bookmark_id": f"ip-{url.rsplit('/', 1)[-1]}",
+            "content_location": f"https://instapaper.example/{url.rsplit('/', 1)[-1]}",
+        }
+
+    monkeypatch.setattr(publish_module, "publish_url", fake_publish)
+
+    result = publish_module.handle_publish(
+        job_id="job-credless",
+        owner_user_id="user-1",
+        payload={"instapaper_id": "insta-1", "feed_id": feed_id},
+    )
+
+    assert result["attempted"] == 1
+    assert len(result["published"]) == 1
+    assert result["failed"] == []
+    assert result["remaining"] == 0
+    assert published_calls == [("insta-1", "https://example.com/four")]
+
+    with next(get_session()) as session:
+        bookmark = session.exec(select(Bookmark)).one()
+        status = bookmark.publication_statuses.get("instapaper") or {}
+        assert status.get("status") == "published"
+        flags = bookmark.publication_flags.get("instapaper") or {}
+        assert flags.get("credential_id") == "insta-1"
 
