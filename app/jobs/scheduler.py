@@ -101,6 +101,19 @@ def enqueue_due_schedules(
     enqueued: List[Job] = []
 
     for schedule in schedules:
+        session.refresh(schedule)
+
+        if not schedule.is_active:
+            continue
+
+        next_run_at = schedule.next_run_at
+
+        if not next_run_at:
+            continue
+
+        if _ensure_utc(next_run_at) > effective_now:
+            continue
+
         try:
             interval = parse_frequency(schedule.frequency or "")
         except ValueError as exc:  # pragma: no cover - schema validation prevents this
