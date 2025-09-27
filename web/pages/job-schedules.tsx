@@ -1270,6 +1270,13 @@ export default function JobSchedulesPage() {
     dateStyle: "medium",
     timeStyle: "short",
   });
+  const schedules: ExtendedJobSchedule[] = useMemo(
+    () =>
+      (data?.items ?? []).map((schedule: RawJobSchedule) =>
+        normalizeJobSchedule(schedule),
+      ),
+    [data],
+  );
 
   if (sessionStatus === "loading") {
     return (
@@ -1308,13 +1315,6 @@ export default function JobSchedulesPage() {
     );
   }
 
-  const schedules: ExtendedJobSchedule[] = useMemo(
-    () =>
-      (data?.items ?? []).map((schedule: RawJobSchedule) =>
-        normalizeJobSchedule(schedule),
-      ),
-    [data],
-  );
   const credentials = credentialsData?.items ?? [];
   const siteConfigs = siteConfigsData?.items ?? [];
   const feeds = feedsData?.items ?? [];
