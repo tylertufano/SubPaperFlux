@@ -168,11 +168,44 @@ type RawJobSchedule = JobScheduleOut & {
   job_type?: string;
 };
 
+function normalizeIsActive(
+  value: unknown,
+  fallback: boolean = true,
+): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return fallback;
+    }
+    if (["false", "0", "off", "no"].includes(normalized)) {
+      return false;
+    }
+    if (["true", "1", "on", "yes"].includes(normalized)) {
+      return true;
+    }
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  if (value == null) {
+    return fallback;
+  }
+  return Boolean(value);
+}
+
 function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   const jobType = schedule.jobType ?? schedule.job_type;
+  const rawIsActive =
+    schedule.isActive ??
+    // @ts-expect-error legacy snake_case responses
+    (schedule as { is_active?: unknown }).is_active;
   return {
     ...schedule,
     jobType: (jobType ?? schedule.jobType) as JobType,
+    isActive: normalizeIsActive(rawIsActive),
     nextRunAt: parseDateValue(schedule.nextRunAt),
     lastRunAt: parseDateValue(schedule.lastRunAt),
     lastErrorAt: parseDateValue(schedule.lastErrorAt),
