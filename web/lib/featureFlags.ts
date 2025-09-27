@@ -3,6 +3,10 @@ import { getUiConfig, readUiConfigFromEnv, type UiConfig } from './openapi'
 
 export type FeatureFlags = Pick<UiConfig, 'userMgmtCore' | 'userMgmtUi'>
 
+type FeatureFlagsWindow = Window & {
+  __SPF_FEATURE_FLAGS?: FeatureFlags | null
+}
+
 function pickFlags(config: UiConfig): FeatureFlags {
   return {
     userMgmtCore: Boolean(config.userMgmtCore),
@@ -21,6 +25,13 @@ let flagsPromise: Promise<FeatureFlags> | null = null
 export function getCachedFeatureFlags(): FeatureFlags | null {
   if (cachedFlags) {
     return cachedFlags
+  }
+  if (typeof window !== 'undefined') {
+    const w = window as FeatureFlagsWindow
+    if (w.__SPF_FEATURE_FLAGS) {
+      cachedFlags = { ...w.__SPF_FEATURE_FLAGS }
+      return cachedFlags
+    }
   }
   if (typeof window === 'undefined') {
     const flags = pickFlags(readUiConfigFromEnv())
@@ -51,9 +62,10 @@ export async function loadFeatureFlags(): Promise<FeatureFlags> {
 export type FeatureFlagsState = FeatureFlags & { isLoaded: boolean }
 
 export function useFeatureFlags(): FeatureFlagsState {
+  const preloadedFlags = getCachedFeatureFlags()
   const [state, setState] = useState<FeatureFlagsState>(() => {
-    if (cachedFlags) {
-      return { ...cachedFlags, isLoaded: true }
+    if (preloadedFlags) {
+      return { ...preloadedFlags, isLoaded: true }
     }
     if (typeof window === 'undefined') {
       const flags = pickFlags(readUiConfigFromEnv())
