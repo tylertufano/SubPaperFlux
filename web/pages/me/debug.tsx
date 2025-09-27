@@ -159,10 +159,10 @@ export default function Debug() {
     .filter((permission): permission is string => Boolean(permission))
     .sort()
 
-  const idTokenClaims = useMemo(() => decodeJwtClaims(session?.idToken), [session?.idToken])
+  const idTokenClaims = decodeJwtClaims(session?.idToken)
   const subjectClaim = typeof idTokenClaims?.sub === 'string' ? idTokenClaims.sub : null
   const issuerClaim = typeof idTokenClaims?.iss === 'string' ? idTokenClaims.iss : null
-  const audienceClaim = useMemo(() => normalizeStringList(idTokenClaims?.aud), [idTokenClaims])
+  const audienceClaim = normalizeStringList(idTokenClaims?.aud)
   const iatSeconds = parseEpochSeconds(idTokenClaims?.iat)
   const expSeconds = parseEpochSeconds(idTokenClaims?.exp)
   const authTimeSeconds = parseEpochSeconds(idTokenClaims?.auth_time)
