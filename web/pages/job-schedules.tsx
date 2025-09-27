@@ -166,6 +166,8 @@ function parseDateValue(value: unknown): Date | null {
 
 type RawJobSchedule = JobScheduleOut & {
   job_type?: string;
+  // Support legacy snake_case field names from older API responses.
+  is_active?: unknown;
 };
 
 function normalizeIsActive(
@@ -198,10 +200,7 @@ function normalizeIsActive(
 
 function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   const jobType = schedule.jobType ?? schedule.job_type;
-  const rawIsActive =
-    schedule.isActive ??
-    // @ts-expect-error legacy snake_case responses
-    (schedule as { is_active?: unknown }).is_active;
+  const rawIsActive = schedule.isActive ?? schedule.is_active;
   return {
     ...schedule,
     jobType: (jobType ?? schedule.jobType) as JobType,
