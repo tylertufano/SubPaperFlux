@@ -158,6 +158,68 @@ def test_schedule_error_tracking(monkeypatch):
         assert schedule.last_error_at is None
 
 
+def test_enqueue_due_schedules_skips_if_paused_after_select(monkeypatch):
+    from sqlmodel import select
+
+    from app.db import get_session, init_db
+    from app.jobs import scheduler
+    from app.models import Job, JobSchedule
+
+    init_db()
+
+    now = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+
+    with next(get_session()) as session:
+        schedule = JobSchedule(
+            job_type="login",
+            payload=_sample_payload(),
+            frequency="1h",
+            next_run_at=now - timedelta(minutes=5),
+            owner_user_id="owner",
+        )
+        session.add(schedule)
+        session.commit()
+        schedule_id = schedule.id
+
+    original_refresh = scheduler.Session.refresh
+
+    def patched_refresh(self, instance, attribute_names=None, with_for_update=None):
+        if isinstance(instance, JobSchedule) and getattr(instance, "id", None) == schedule_id:
+            with next(get_session()) as other_session:
+                with other_session.begin():
+                    paused = other_session.get(JobSchedule, schedule_id)
+                    assert paused is not None
+                    paused.is_active = False
+                    other_session.add(paused)
+            return original_refresh(
+                self,
+                instance,
+                attribute_names=attribute_names,
+                with_for_update=with_for_update,
+            )
+        return original_refresh(
+            self,
+            instance,
+            attribute_names=attribute_names,
+            with_for_update=with_for_update,
+        )
+
+    monkeypatch.setattr(scheduler.Session, "refresh", patched_refresh, raising=False)
+
+    with next(get_session()) as session:
+        with session.begin():
+            jobs = scheduler.enqueue_due_schedules(session, now=now)
+            assert jobs == []
+
+    with next(get_session()) as session:
+        jobs = session.exec(select(Job)).all()
+        assert jobs == []
+        schedule = session.get(JobSchedule, schedule_id)
+        assert schedule is not None
+        assert schedule.is_active is False
+        assert schedule.last_job_id is None
+
+
 @pytest.mark.parametrize(
     "raw, expected",
     [
