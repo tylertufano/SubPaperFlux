@@ -33,15 +33,20 @@ export function parseEnvBoolean(value?: string | null): boolean {
 const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
 const BUILD_USER_MGMT_CORE = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_CORE)
 const BUILD_USER_MGMT_UI = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_UI)
+const BUILD_OIDC_AUTO_LOGIN = parseEnvBoolean(
+  process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN ?? process.env.OIDC_AUTO_LOGIN ?? 'false',
+)
 const CSRF = process.env.NEXT_PUBLIC_CSRF_TOKEN || '1'
 export const OIDC_ACCESS_TOKEN_HEADER = 'X-OIDC-Access-Token'
 
 type UiConfigWindow = Window & {
   __SPF_UI_CONFIG?: UiConfig
   __SPF_API_BASE?: string
+  __SPF_OIDC_AUTO_LOGIN?: boolean
 }
 
 let uiConfigPromise: Promise<UiConfig> | null = null
+let cachedOidcAutoLogin: boolean | null = null
 
 // Warn at runtime if we are on HTTPS but API base is insecure HTTP
 if (typeof window !== 'undefined') {
@@ -228,6 +233,30 @@ function applyAccessTokenHeader(
   return headers
 }
 
+function readOidcAutoLoginFromEnv(): boolean {
+  const raw = process.env.OIDC_AUTO_LOGIN ?? process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN
+  if (typeof raw === 'string') {
+    return parseEnvBoolean(raw)
+  }
+  return BUILD_OIDC_AUTO_LOGIN
+}
+
+function isOidcAutoLoginEnabled(): boolean {
+  if (typeof window !== 'undefined') {
+    const w = window as UiConfigWindow
+    if (typeof w.__SPF_OIDC_AUTO_LOGIN === 'boolean') {
+      return w.__SPF_OIDC_AUTO_LOGIN
+    }
+    const value = readOidcAutoLoginFromEnv()
+    w.__SPF_OIDC_AUTO_LOGIN = value
+    return value
+  }
+  if (cachedOidcAutoLogin === null) {
+    cachedOidcAutoLogin = readOidcAutoLoginFromEnv()
+  }
+  return cachedOidcAutoLogin
+}
+
 async function getClients() {
   if (!clientsPromise) {
     clientsPromise = (async () => {
@@ -333,7 +362,7 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
     credentials: 'include',
   })
 
-  if (response.status === 401) {
+  if (response.status === 401 && isOidcAutoLoginEnabled()) {
     return triggerOidcRedirect()
   }
 
