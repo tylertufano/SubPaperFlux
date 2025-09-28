@@ -829,7 +829,7 @@
   "me_debug_identity_display_name": "Display name",
   "me_debug_identity_name": "Name",
   "me_debug_identity_email": "Email",
-  "me_debug_identity_user_id": "User ID",
+  "me_debug_identity_user_id": "Session user ID",
   "me_debug_oidc_heading": "OIDC claims",
   "me_debug_oidc_sub_label": "Subject (sub)",
   "me_debug_oidc_iss_label": "Issuer (iss)",
