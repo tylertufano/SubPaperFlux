@@ -24,6 +24,8 @@ __all__ = [
     "is_user_mgmt_enforce_enabled",
     "is_user_mgmt_oidc_only",
     "is_rls_enforced",
+    "is_scim_enabled",
+    "is_scim_write_enabled",
 ]
 
 
@@ -69,3 +71,23 @@ def is_rls_enforced() -> bool:
     if flag is not None:
         return flag
     return is_user_mgmt_enforce_enabled()
+
+
+@lru_cache(maxsize=1)
+def is_scim_enabled() -> bool:
+    """Return ``True`` when the SCIM provisioning API should be exposed."""
+
+    flag = _read_flag("SCIM_ENABLED")
+    if flag is None:
+        return False
+    return flag
+
+
+@lru_cache(maxsize=1)
+def is_scim_write_enabled() -> bool:
+    """Return ``True`` when SCIM write operations are allowed."""
+
+    flag = _read_flag("SCIM_WRITE_ENABLED")
+    if flag is None:
+        return True
+    return flag

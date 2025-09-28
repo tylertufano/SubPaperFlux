@@ -10,7 +10,12 @@ from .auth.oidc import (
     summarize_identity,
 )
 from .auth.provisioning import maybe_provision_user
-from .config import is_rls_enforced, is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
+from .config import (
+    is_rls_enforced,
+    is_scim_enabled,
+    is_user_mgmt_core_enabled,
+    is_user_mgmt_enforce_enabled,
+)
 from .db import (
     get_session_ctx,
     init_db,
@@ -65,6 +70,7 @@ def create_app() -> FastAPI:
         app.state.user_mgmt_core_enabled = is_user_mgmt_core_enabled()
         app.state.user_mgmt_enforce_enabled = is_user_mgmt_enforce_enabled()
         app.state.rls_enforced = is_rls_enforced()
+        app.state.scim_enabled = is_scim_enabled()
 
     cache_user_mgmt_flags()
     app.state.cache_user_mgmt_flags = cache_user_mgmt_flags
@@ -303,6 +309,11 @@ def create_app() -> FastAPI:
     app.include_router(me_tokens_v1_router)
     app.include_router(integrations_router)
     app.include_router(site_settings_v1_router)
+
+    if getattr(app.state, "scim_enabled", False):
+        from .routers.scim_v1 import router as scim_v1_router
+
+        app.include_router(scim_v1_router)
 
     return app
 
