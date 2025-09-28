@@ -257,6 +257,7 @@ PY
 - `NEXTAUTH_SECRET`: Secret used by NextAuth for signing/encryption. Generate a strong random string for production.
 - `OIDC_ISSUER`: Must match the backend issuer and the IdP registration.
 - `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET`: The client credentials issued by your IdP. They must match the API's expectations so that the resulting tokens pass the `aud` check.
+- `OIDC_AUTO_LOGIN` / `NEXT_PUBLIC_OIDC_AUTO_LOGIN`: Optional flag (`1`/`true`/`yes`) that enables automatic redirects back through the IdP when the browser encounters a 401 from the API. Leave unset (default) to surface the error instead of forcing an immediate sign-in.
 - `OIDC_DISPLAY_NAME_CLAIM`: Optional override that selects which claim supplies the signed-in user's display name. Provide the claim key (for example, `name` or `custom:display_name`). When unset, the UI searches for `display_name` variants (case/namespace insensitive) and falls back to the base profile name.
 - Callback URL: NextAuth handles the OIDC response at `/api/auth/callback/oidc` (see `web/pages/api/auth/[...nextauth].ts`). Ensure this path is included in your IdP client's redirect URIs.
 - Scope and checks: The default provider configuration requests `openid profile email groups` and enforces PKCE + state. Make sure the IdP client allows those scopes and the authorization code flow.
