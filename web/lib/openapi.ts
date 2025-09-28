@@ -11,7 +11,7 @@ import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../s
 import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
-import { auth } from '../auth'
+import { auth, signIn } from '../auth'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
 
@@ -135,6 +135,39 @@ type AuthorizedRequestOptions = Omit<RequestInit, 'headers'> & {
 async function resolveApiBase(): Promise<string> {
   const config = await getUiConfig()
   return config.apiBase
+}
+
+export class AuthorizationRedirectError extends Error {
+  constructor(message = 'Authentication required. Redirecting to sign-in.') {
+    super(message)
+    this.name = 'AuthorizationRedirectError'
+  }
+}
+
+function resolveCallbackUrl(): string {
+  if (typeof window !== 'undefined' && window?.location?.href) {
+    return window.location.href
+  }
+  if (typeof process !== 'undefined') {
+    const fromEnv = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL
+    if (fromEnv && fromEnv.length > 0) {
+      return fromEnv
+    }
+  }
+  return '/'
+}
+
+async function triggerOidcRedirect(): Promise<never> {
+  const callbackUrl = resolveCallbackUrl()
+  try {
+    await signIn('oidc', { callbackUrl, redirect: true })
+  } catch (error) {
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error('Failed to initiate OIDC sign-in after 401 response.', error)
+    }
+    throw new AuthorizationRedirectError('Authentication failed and redirect could not be initiated.')
+  }
+  throw new AuthorizationRedirectError('Authentication required. Redirecting to sign-in.')
 }
 
 async function loadSession(): Promise<Session | null> {
@@ -299,6 +332,10 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
     headers,
     credentials: 'include',
   })
+
+  if (response.status === 401) {
+    return triggerOidcRedirect()
+  }
 
   if (!response.ok) {
     const message = (await response.text())?.trim()
