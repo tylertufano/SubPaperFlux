@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, InlineTip, Nav, PreviewPane } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -1009,7 +1009,7 @@ export default function Bookmarks() {
                     <span>{t('bookmarks_regex_case_insensitive')}</span>
                   </label>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-300">{t('bookmarks_regex_help')}</p>
+                <InlineTip className="mt-1" message={t('bookmarks_regex_tip')} />
               </div>
             </div>
           </details>
