@@ -15,20 +15,28 @@ def _env(monkeypatch):
     monkeypatch.delenv("USER_MGMT_CORE", raising=False)
     monkeypatch.delenv("USER_MGMT_ENFORCE", raising=False)
     monkeypatch.delenv("USER_MGMT_RLS_ENFORCE", raising=False)
+    monkeypatch.delenv("SCIM_ENABLED", raising=False)
+    monkeypatch.delenv("SCIM_WRITE_ENABLED", raising=False)
 
     from app.config import (
         is_rls_enforced,
+        is_scim_enabled,
+        is_scim_write_enabled,
         is_user_mgmt_core_enabled,
         is_user_mgmt_enforce_enabled,
     )
 
     is_rls_enforced.cache_clear()
+    is_scim_enabled.cache_clear()
+    is_scim_write_enabled.cache_clear()
     is_user_mgmt_core_enabled.cache_clear()
     is_user_mgmt_enforce_enabled.cache_clear()
     try:
         yield
     finally:
         is_rls_enforced.cache_clear()
+        is_scim_enabled.cache_clear()
+        is_scim_write_enabled.cache_clear()
         is_user_mgmt_core_enabled.cache_clear()
         is_user_mgmt_enforce_enabled.cache_clear()
 
@@ -116,3 +124,65 @@ def test_is_rls_enforced_defaults_to_enforcement(monkeypatch):
     monkeypatch.setenv("USER_MGMT_RLS_ENFORCE", "0")
     is_rls_enforced.cache_clear()
     assert is_rls_enforced() is False
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, False),
+        ("", False),
+        ("0", False),
+        ("off", False),
+        ("1", True),
+        ("true", True),
+        ("yes", True),
+        ("On", True),
+    ],
+)
+def test_is_scim_enabled(value, expected, monkeypatch):
+    """``is_scim_enabled`` honours the environment configuration."""
+
+    from app.config import is_scim_enabled
+
+    if value is None:
+        monkeypatch.delenv("SCIM_ENABLED", raising=False)
+    else:
+        monkeypatch.setenv("SCIM_ENABLED", value)
+
+    is_scim_enabled.cache_clear()
+    try:
+        assert is_scim_enabled() is expected
+    finally:
+        is_scim_enabled.cache_clear()
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, True),
+        ("", True),
+        ("0", False),
+        ("off", False),
+        ("false", False),
+        ("no", False),
+        ("1", True),
+        ("true", True),
+        ("yes", True),
+        ("On", True),
+    ],
+)
+def test_is_scim_write_enabled(value, expected, monkeypatch):
+    """``is_scim_write_enabled`` honours the environment configuration."""
+
+    from app.config import is_scim_write_enabled
+
+    if value is None:
+        monkeypatch.delenv("SCIM_WRITE_ENABLED", raising=False)
+    else:
+        monkeypatch.setenv("SCIM_WRITE_ENABLED", value)
+
+    is_scim_write_enabled.cache_clear()
+    try:
+        assert is_scim_write_enabled() is expected
+    finally:
+        is_scim_write_enabled.cache_clear()
