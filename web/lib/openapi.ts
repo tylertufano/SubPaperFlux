@@ -21,6 +21,28 @@ export type UiConfig = {
   userMgmtUi: boolean
 }
 
+export type SetupStepId = 'welcome' | 'credentials' | 'feeds' | 'complete'
+
+export type SiteSetupStatus = {
+  completed: boolean
+  current_step?: SetupStepId | null
+  last_completed_step?: SetupStepId | null
+  welcome_configured?: boolean | null
+  credentials_created?: boolean | null
+  feeds_imported?: boolean | null
+  [key: string]: unknown
+}
+
+export type SiteSetupStatusOut = {
+  key: string
+  value: SiteSetupStatus
+  created_at?: string | null
+  updated_at?: string | null
+  updated_by_user_id?: string | null
+}
+
+export type SiteSetupStatusUpdatePayload = SiteSetupStatus
+
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
 
 export function parseEnvBoolean(value?: string | null): boolean {
@@ -912,6 +934,23 @@ async function updateSiteWelcomeSettingRequest(
   })
 }
 
+async function fetchSiteSetupStatus(): Promise<SiteSetupStatusOut> {
+  return authorizedRequest<SiteSetupStatusOut>('/v1/site-settings/setup-status', {
+    errorMessage: 'Failed to load setup status',
+  })
+}
+
+async function updateSiteSetupStatusRequest(
+  payload: SiteSetupStatusUpdatePayload,
+): Promise<SiteSetupStatusOut> {
+  return authorizedRequest<SiteSetupStatusOut>('/v1/site-settings/setup-status', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+    errorMessage: 'Failed to save setup status',
+  })
+}
+
 async function fetchAdminRoles(params: AdminRolesQuery = {}): Promise<AdminRolesPage> {
   const query = new URLSearchParams()
   if (params.page !== undefined) query.set('page', String(params.page))
@@ -1100,7 +1139,11 @@ export const v1 = {
   },
 
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
+  createFeedFeedsPost: async ({ feed }: { feed: any }) =>
+    (await getClients()).feeds.createFeedFeedsPost({ feed }),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
+  createCredentialCredentialsPost: async ({ credential }: { credential: any }) =>
+    (await getClients()).creds.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
   listJobSchedulesV1JobSchedulesGet: async (p: any = {}) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(p),
   createJobScheduleV1JobSchedulesPost: async ({
@@ -1161,6 +1204,12 @@ export const v1 = {
   }: {
     siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate
   }) => updateSiteWelcomeSettingRequest(siteWelcomeSettingUpdate),
+  getSiteSetupStatus: async () => fetchSiteSetupStatus(),
+  updateSiteSetupStatus: async ({
+    siteSetupStatusUpdate,
+  }: {
+    siteSetupStatusUpdate: SiteSetupStatusUpdatePayload
+  }) => updateSiteSetupStatusRequest(siteSetupStatusUpdate),
 
   listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
   listAdminUsersV1AdminUsersGet: async (p: AdminUsersQuery = {}) => listAdminUsers(p),
