@@ -68,6 +68,31 @@ place before moving on to the UI and enforcement milestones:
   the admin tooling (`app/db_admin.py`) and execute without errors in the target
   environment.
 
+## Management UI validation
+
+Run this validation pass whenever Phase B user-management UI work lands. The
+goal is to ensure the admin surfaces behave as expected against a freshly
+deployed backend and that regression coverage remains intact.
+
+- `web/pages/admin/users.tsx`
+  - Lists all users with accurate pagination, search, and role indicators.
+  - Supports creating, editing, and disabling users with optimistic UI updates
+    and error reporting through the shared alert system.
+  - Enforces role assignment constraints and hides RBAC-only roles when
+    enforcement is disabled.
+- `web/pages/admin/orgs.tsx`
+  - Renders organization tables with membership counts and detail drawers.
+  - Allows creating and updating organization metadata, including slug
+    validation and duplicate checks.
+  - Handles membership invites/removals and reflects backend errors with inline
+    field validation states.
+- `web/pages/me/tokens.tsx`
+  - Lists personal access tokens, including last-used timestamps and scopes.
+  - Allows generating and revoking tokens with confirmation modals and success
+    toasts.
+  - Prevents re-displaying token secrets after creation and ensures revoked
+    tokens disappear from the list on the next refresh.
+
 ## RBAC enforcement
 
 RBAC is now enforced everywhere by default. `is_user_mgmt_enforce_enabled()`
