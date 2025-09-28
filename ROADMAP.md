@@ -231,7 +231,7 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 ### Integrations
 
 - [x] OIDC-only mode auto-provision (UI-066)
-- [ ] SCIM/Sync (optional) (UI-067)
+- [x] SCIM/Sync (optional) (UI-067)
 
 ## Phase 4 — Onboarding & Guidance
 
