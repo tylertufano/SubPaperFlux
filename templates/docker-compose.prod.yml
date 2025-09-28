@@ -41,6 +41,7 @@ services:
       OIDC_ISSUER: ${OIDC_ISSUER:-https://your-issuer/.well-known/openid-configuration}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux}
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-subpaperflux}
+      USER_MGMT_OIDC_ONLY: ${USER_MGMT_OIDC_ONLY:-false}
       # Rate limits for test endpoints
       TEST_RATE_LIMIT_COUNT: ${TEST_RATE_LIMIT_COUNT:-5}
       TEST_RATE_LIMIT_WINDOW_SEC: ${TEST_RATE_LIMIT_WINDOW_SEC:-10}

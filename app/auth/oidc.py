@@ -12,6 +12,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from jose.utils import base64url_decode
 
+from ..config import is_user_mgmt_oidc_only
+
 
 security = HTTPBearer(auto_error=False)
 
@@ -76,6 +78,21 @@ def summarize_identity(identity: Optional[Mapping[str, Any]]) -> str:
                 parts.append(f"claims.sub={claim_sub}")
 
     return ", ".join(parts) if parts else "anonymous"
+
+
+def is_oidc_identity(identity: Any) -> bool:
+    """Return ``True`` when ``identity`` appears to originate from OIDC."""
+
+    if not isinstance(identity, Mapping):
+        return False
+    if not identity.get("sub"):
+        return False
+    claims = identity.get("claims")
+    if not isinstance(claims, Mapping):
+        return False
+    if claims.get("dev_no_auth"):
+        return False
+    return True
 
 
 def _payload_keys_snapshot(payload: Mapping[str, Any]) -> List[str]:
@@ -520,8 +537,13 @@ def resolve_user_from_token(
     """
 
     if os.getenv("DEV_NO_AUTH", "0") in ("1", "true", "TRUE"):
-        logger.debug("DEV_NO_AUTH enabled; returning synthetic developer identity")
-        return _dev_user()
+        if is_user_mgmt_oidc_only():
+            logger.debug(
+                "USER_MGMT_OIDC_ONLY enabled; ignoring DEV_NO_AUTH synthetic identity",
+            )
+        else:
+            logger.debug("DEV_NO_AUTH enabled; returning synthetic developer identity")
+            return _dev_user()
 
     if not token:
         logger.debug("No bearer token supplied for OIDC identity resolution")
@@ -637,6 +659,13 @@ def resolve_user_from_token(
         len(groups),
         len(roles),
     )
+    if is_user_mgmt_oidc_only() and not is_oidc_identity(identity):
+        logger.debug(
+            "Rejecting non-OIDC identity while USER_MGMT_OIDC_ONLY is enabled (%s)",
+            summarize_identity(identity),
+        )
+        return None
+
     return identity
 
 
