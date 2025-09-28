@@ -12,6 +12,7 @@ const breadcrumbKeyMap: Record<string, string> = {
   '/job-schedules': 'job_schedules_title',
   '/jobs-dead': 'nav_jobs_dead',
   '/site-configs': 'site_configs_title',
+  '/setup': 'nav_setup',
 
   // Admin navigation
   '/admin': 'nav_admin',

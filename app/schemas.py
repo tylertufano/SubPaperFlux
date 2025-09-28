@@ -160,6 +160,36 @@ class SiteWelcomeSettingUpdate(BaseModel):
     cta_url: Optional[str] = None
 
 
+class SiteSetupStatus(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    completed: bool = False
+    current_step: Optional[str] = None
+    last_completed_step: Optional[str] = None
+    welcome_configured: Optional[bool] = None
+    credentials_created: Optional[bool] = None
+    feeds_imported: Optional[bool] = None
+
+
+class SiteSetupStatusOut(BaseModel):
+    key: str
+    value: SiteSetupStatus
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    updated_by_user_id: Optional[str] = None
+
+
+class SiteSetupStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    completed: bool
+    current_step: Optional[str] = None
+    last_completed_step: Optional[str] = None
+    welcome_configured: Optional[bool] = None
+    credentials_created: Optional[bool] = None
+    feeds_imported: Optional[bool] = None
+
+
 class BookmarkOut(BaseModel):
     id: str
     instapaper_bookmark_id: Optional[str] = None

@@ -1,8 +1,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import useSWR from 'swr'
 import { useI18n } from '../lib/i18n'
 import { useFeatureFlags } from '../lib/featureFlags'
+import { v1 } from '../lib/openapi'
+import { userHasAdminAccess } from '../lib/adminAccess'
 import DropdownMenu from './DropdownMenu'
 import {
   PERMISSION_MANAGE_BOOKMARKS,
@@ -13,8 +16,6 @@ import {
   extractPermissionList,
   hasPermission,
 } from '../lib/rbac'
-
-type AdminCandidate = Record<string, unknown>
 
 type SessionUser = {
   displayName?: string | null
@@ -56,31 +57,6 @@ function accountLabelFromUser(user: SessionUser | null | undefined): string | nu
     return fromDisplayName
   }
   return extractFirstName(user.name)
-}
-
-function includesAdminRole(value: unknown): boolean {
-  if (Array.isArray(value)) {
-    return value.some((entry) => typeof entry === 'string' && entry.toLowerCase() === 'admin')
-  }
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'admin'
-  }
-  return false
-}
-
-function userHasAdminAccess(user: unknown): boolean {
-  if (!user || typeof user !== 'object') {
-    return false
-  }
-  const candidate = user as AdminCandidate
-  if (typeof candidate.isAdmin === 'boolean') {
-    return candidate.isAdmin
-  }
-  if (typeof candidate.is_admin === 'boolean') {
-    return candidate.is_admin
-  }
-  const roleSources = [candidate.roles, candidate.groups, candidate.permissions, candidate.role, candidate.group]
-  return roleSources.some((source) => includesAdminRole(source))
 }
 
 export default function Nav() {
@@ -125,6 +101,11 @@ export default function Nav() {
   const shouldShowJobSchedulesLink = Boolean(
     isAuthenticated && (isAdminUser || canManageBookmarksPermission),
   )
+  const { data: setupStatus } = useSWR(
+    hasAdminAccess ? ['/v1/site-settings/setup-status', 'nav'] : null,
+    () => v1.getSiteSetupStatus(),
+  )
+  const shouldShowSetupLink = Boolean(hasAdminAccess && setupStatus?.value?.completed !== true)
 
   const defaultFeedsLabel = t('nav_feeds_all')
   const feedsMenuItems = [{ href: '/feeds', label: defaultFeedsLabel }]
@@ -159,6 +140,15 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
+        {shouldShowSetupLink ? (
+          <Link
+            href="/setup"
+            className={linkClass('/setup')}
+            aria-current={pathname === '/setup' ? 'page' : undefined}
+          >
+            {t('nav_setup')}
+          </Link>
+        ) : null}
         {canManageSiteConfigs ? (
           <Link
             href="/site-configs"
