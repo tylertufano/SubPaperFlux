@@ -117,6 +117,39 @@ even without explicit roles. To introduce a new role, add an entry to
 `ROLE_PERMISSIONS` that maps the role name to the set of permission constants to
 keep enforcement logic centralized.
 
+### Enforcement validation guide
+
+Run this checklist whenever RBAC enforcement changes are staged for release or
+when investigating production incidents. It confirms the three pillars that
+guard access—permission mappings, middleware defaults, and the automated RLS
+coverage—remain intact.
+
+1. **Permission checks** (`app/auth/permissions.py`)
+   - Confirm new permissions are added to `ALL_PERMISSIONS` and grouped under
+     the appropriate role in `ROLE_PERMISSIONS`.
+   - Verify helper behavior by exercising `has_permission` /
+     `require_permission` in unit tests or an interactive shell, ensuring that
+     owners retain manage access to their own resources while unaffiliated roles
+     are blocked.
+   - If you introduce new resources, update the docstring examples so future
+     readers understand how composite permissions are expected to behave.
+2. **Middleware defaults** (`app/main.py`, `app/db.py`)
+   - Ensure `is_user_mgmt_enforce_enabled()` and
+     `is_user_mgmt_rls_enforce_enabled()` both default to `True` when the
+     environment variables are unset, preserving the secure-by-default stance.
+   - Confirm the request middleware still injects `current_user_id` and
+     `current_role` into `request.state` **before** database sessions are
+     created so RLS policies receive the right context.
+   - Validate the database session hooks continue to copy the request context
+     into `app.user_id` and related settings before issuing queries.
+3. **Row-level security tests** (`tests/test_rls_policies.py`)
+   - Run `pytest tests/test_rls_policies.py` to confirm the enforcement suite
+     passes and that new policies include coverage for both allow and deny
+     cases.
+   - When tests fail due to missing policies, update the bootstrap helpers in
+     `app/db.py` and extend the fixtures in the test module until they reflect
+     the intended behavior.
+
 ## Postgres Row-Level Security
 
 Row-level security (RLS) lets Postgres enforce ownership checks directly in the
