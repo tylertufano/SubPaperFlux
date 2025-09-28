@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, InlineTip, Nav } from '../components'
 import { v1, creds, createInstapaperCredentialFromLogin } from '../lib/openapi'
 import { useEffect, useMemo, useState } from 'react'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
@@ -376,7 +376,10 @@ export default function Credentials() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <label htmlFor="credential-kind-select">{t('credentials_kind_label')} <span className="ml-1 text-gray-500 cursor-help" title={t('credentials_kind_help')}>?</span>:</label>
+              <div className="flex items-center gap-2">
+                <label htmlFor="credential-kind-select">{t('credentials_kind_label')}:</label>
+                <InlineTip className="ml-1" message={t('credentials_kind_tip')} />
+              </div>
               <select
                 id="credential-kind-select"
                 className="input"

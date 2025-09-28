@@ -23,3 +23,31 @@ summary:focus-visible,
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+
+.inline-tip {
+  @apply inline-flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800;
+}
+
+.inline-tip__icon {
+  @apply mt-0.5 text-blue-500;
+}
+
+.inline-tip__text {
+  @apply flex-1;
+}
+
+.inline-tip__dismiss {
+  @apply text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900;
+}
+
+.dark .inline-tip {
+  @apply border-blue-800 bg-blue-900/40 text-blue-100;
+}
+
+.dark .inline-tip__icon {
+  @apply text-blue-300;
+}
+
+.dark .inline-tip__dismiss {
+  @apply text-blue-200 hover:text-blue-100;
+}

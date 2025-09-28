@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
+import { Alert, Breadcrumbs, EmptyState, InlineTip, Nav } from '../components'
 import { v1, siteConfigs as site } from '../lib/openapi'
 import { useMemo, useState } from 'react'
 import {
@@ -813,7 +813,7 @@ export default function SiteConfigs() {
         >
           <h3 id="create-site-config-heading" className="font-semibold md:col-span-2">
             {t('site_configs_create_heading')}
-            <span className="ml-2 text-gray-500 cursor-help" title={t('site_configs_create_help')}>?</span>
+            <InlineTip className="ml-2" message={t('site_configs_create_tip')} />
           </h3>
           <div className="md:col-span-2">
             <fieldset>
