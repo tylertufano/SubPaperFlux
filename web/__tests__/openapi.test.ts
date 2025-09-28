@@ -50,6 +50,7 @@ describe('authorizedRequest', () => {
   })
 
   it('triggers an OIDC sign-in redirect in the browser on 401 responses', async () => {
+    process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN = 'true'
     const windowMock: any = {
       location: {
         href: 'https://app.example.com/library',
@@ -91,6 +92,7 @@ describe('authorizedRequest', () => {
   })
 
   it('uses a server-side fallback callback URL when window is unavailable', async () => {
+    process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN = 'true'
     process.env.API_BASE = 'https://api.example.com'
     process.env.NEXTAUTH_URL = 'https://app.example.com/after-login'
 
@@ -112,5 +114,23 @@ describe('authorizedRequest', () => {
       callbackUrl: 'https://app.example.com/after-login',
       redirect: true,
     })
+  })
+
+  it('does not trigger automatic sign-in when auto-login is disabled', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: vi.fn(async () => 'Unauthorized'),
+    }))
+    global.fetch = fetchMock as unknown as typeof fetch
+
+    const { createInstapaperCredentialFromLogin } = await import('../lib/openapi')
+
+    await expect(
+      createInstapaperCredentialFromLogin({ description: 'd', username: 'u', password: 'p' }),
+    ).rejects.toThrowError('Unauthorized')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(signInMock).not.toHaveBeenCalled()
   })
 })
