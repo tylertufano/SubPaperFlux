@@ -54,6 +54,20 @@ state on the next request (or process restart for cached helpers).
    layers (`USER_MGMT_UI=0`, `USER_MGMT_CORE=0`, etc.) while triaging, then
    remove the override once resolved.
 
+## Phase 3A completion checklist
+
+Use this checklist to verify the backend prerequisites for Phase 3A are in
+place before moving on to the UI and enforcement milestones:
+
+- [x] Database migrations for the core user and role models are applied and in
+  sync with the application ORM (`app/models.py`) and the initial Alembic
+  revision (`alembic/versions/0001_initial.py`).
+- [x] Quota enforcement is wired through the shared helpers and validated by
+  automated coverage (`app/util/quotas.py`, `tests/test_user_quotas.py`).
+- [x] Postgres row-level security bootstrap tasks are available to operators via
+  the admin tooling (`app/db_admin.py`) and execute without errors in the target
+  environment.
+
 ## RBAC enforcement
 
 RBAC is now enforced everywhere by default. `is_user_mgmt_enforce_enabled()`
