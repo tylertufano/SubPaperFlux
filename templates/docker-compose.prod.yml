@@ -98,6 +98,9 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-replace_me}
       # Optional: choose which claim provides the UI display name
       OIDC_DISPLAY_NAME_CLAIM: ${OIDC_DISPLAY_NAME_CLAIM:-}
+      # Optional: automatically redirect back to the IdP when sessions expire
+      OIDC_AUTO_LOGIN: ${OIDC_AUTO_LOGIN:-false}
+      NEXT_PUBLIC_OIDC_AUTO_LOGIN: ${NEXT_PUBLIC_OIDC_AUTO_LOGIN:-false}
     ports:
       - "3000:3000"
     depends_on:
