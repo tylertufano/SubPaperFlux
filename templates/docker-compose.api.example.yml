@@ -22,6 +22,8 @@ services:
       OIDC_ISSUER: http://localhost/oidc
       OIDC_CLIENT_ID: subpaperflux
       USER_MGMT_OIDC_ONLY: "0"
+      SCIM_ENABLED: "0"
+      SCIM_WRITE_ENABLED: "1"
       CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
       LOG_LEVEL: INFO
       RL_INSTAPAPER_INTERVAL: "0.2"
