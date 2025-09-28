@@ -191,7 +191,7 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 ### Rollout Milestones
 
-- [ ] Phase A — Backend & Data Readiness
+- [x] Phase A — Backend & Data Readiness ([checklist](docs/user-management-rollout.md#phase-3a-completion-checklist))
 - [ ] Phase B — Management UI
 - [ ] Phase C — RBAC Enforcement
 
