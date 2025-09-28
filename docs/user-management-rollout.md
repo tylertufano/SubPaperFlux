@@ -36,6 +36,7 @@ below when a variable is unset or empty:
 | `user_mgmt_ui` (`USER_MGMT_UI` / `NEXT_PUBLIC_USER_MGMT_UI`) | `on` | Surfaces the management UI (navigation, list/detail screens, role assignment flows) in the admin area. Set to `0`/`false` to hide the pages while leaving the backend reachable. |
 | `user_mgmt_enforce` (`USER_MGMT_ENFORCE`) | `on` | Enforces role-based access control (RBAC) checks on protected endpoints. Disable to temporarily fall back to permissive behavior while leaving the UI/API available. |
 | `user_mgmt_rls_enforce` (`USER_MGMT_RLS_ENFORCE`) | inherits from enforcement | Controls the automatic Postgres row-level security (RLS) bootstrap. When unset it mirrors `USER_MGMT_ENFORCE`; set explicitly to manage the startup hook independently. |
+| `user_mgmt_oidc_only` (`USER_MGMT_OIDC_ONLY`) | `off` | Rejects synthetic identities (including `DEV_NO_AUTH`) and skips auto-provisioning for requests that do not originate from the configured OIDC provider. Enable once API token authentication and other fallbacks should be disabled. |
 
 When an environment variable is set to `0`, `false`, `no`, or left as an empty
 string, the system interprets it as disabled and immediately reflects the new

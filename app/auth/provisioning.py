@@ -9,12 +9,12 @@ from typing import Any
 
 from sqlmodel import Session
 
-from ..config import is_user_mgmt_core_enabled
+from ..config import is_user_mgmt_core_enabled, is_user_mgmt_oidc_only
 from ..db import get_session_ctx
 from ..models import User
 from . import get_user_roles, grant_role, revoke_role
 from .mapping import resolve_roles_for_groups
-from .oidc import summarize_identity
+from .oidc import is_oidc_identity, summarize_identity
 from .role_overrides import get_user_role_overrides
 from .users import ensure_user_from_identity
 
@@ -147,6 +147,12 @@ def maybe_provision_user(identity: Any, *, user_mgmt_enabled: bool | None = None
     if not _is_enabled():
         return
     if not isinstance(identity, Mapping):
+        return
+    if is_user_mgmt_oidc_only() and not is_oidc_identity(identity):
+        logger.debug(
+            "Skipping auto-provisioning for non-OIDC identity while USER_MGMT_OIDC_ONLY is enabled (%s)",
+            summarize_identity(identity),
+        )
         return
     user_id = identity.get("sub")
     if not user_id:
