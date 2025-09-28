@@ -15,9 +15,13 @@ def _env(monkeypatch):
     monkeypatch.setenv("USER_MGMT_CORE", "1")
     monkeypatch.delenv("OIDC_GROUP_ROLE_MAP", raising=False)
     monkeypatch.delenv("OIDC_GROUP_ROLE_DEFAULTS", raising=False)
-    from app.config import is_user_mgmt_core_enabled
+    from app.config import is_user_mgmt_core_enabled, is_user_mgmt_oidc_only
 
     is_user_mgmt_core_enabled.cache_clear()
+    is_user_mgmt_oidc_only.cache_clear()
+    yield
+    is_user_mgmt_core_enabled.cache_clear()
+    is_user_mgmt_oidc_only.cache_clear()
 
 
 def _make_identity() -> Dict[str, object]:
@@ -199,3 +203,55 @@ def test_auto_provision_respects_role_overrides(monkeypatch):
             "manual-role",
             "member",
         }
+
+
+def test_oidc_only_mode_skips_non_oidc_identity(monkeypatch):
+    from app.config import is_user_mgmt_oidc_only
+    from app.db import get_session
+    from app.models import User
+
+    identity = _make_identity()
+    identity.pop("claims", None)
+    monkeypatch.setenv("OIDC_AUTO_PROVISION_USERS", "1")
+    monkeypatch.setenv("USER_MGMT_OIDC_ONLY", "1")
+    is_user_mgmt_oidc_only.cache_clear()
+
+    client = _setup_app(monkeypatch, identity)
+    headers = {"Authorization": "Bearer test"}
+
+    with client:
+        resp = client.get("/v1/feeds", headers=headers)
+        assert resp.status_code == 200
+
+    with next(get_session()) as session:
+        assert session.get(User, identity["sub"]) is None
+
+    is_user_mgmt_oidc_only.cache_clear()
+
+
+def test_oidc_only_mode_provisions_oidc_identity(monkeypatch):
+    from app.auth import get_user_roles
+    from app.config import is_user_mgmt_oidc_only
+    from app.db import get_session
+    from app.models import User
+
+    identity = _make_identity()
+    monkeypatch.setenv("OIDC_AUTO_PROVISION_USERS", "1")
+    monkeypatch.setenv("USER_MGMT_OIDC_ONLY", "1")
+    monkeypatch.setenv("OIDC_AUTO_PROVISION_DEFAULT_ROLE", "member")
+    is_user_mgmt_oidc_only.cache_clear()
+
+    client = _setup_app(monkeypatch, identity)
+    headers = {"Authorization": "Bearer test"}
+
+    with client:
+        resp = client.get("/v1/feeds", headers=headers)
+        assert resp.status_code == 200
+
+    with next(get_session()) as session:
+        user = session.get(User, identity["sub"])
+        assert user is not None
+        assert user.claims == identity["claims"]
+        assert "member" in get_user_roles(session, user.id)
+
+    is_user_mgmt_oidc_only.cache_clear()

@@ -22,6 +22,7 @@ def _read_flag(name: str) -> bool | None:
 __all__ = [
     "is_user_mgmt_core_enabled",
     "is_user_mgmt_enforce_enabled",
+    "is_user_mgmt_oidc_only",
     "is_rls_enforced",
 ]
 
@@ -43,6 +44,16 @@ def is_user_mgmt_enforce_enabled() -> bool:
     flag = _read_flag("USER_MGMT_ENFORCE")
     if flag is None:
         return True
+    return flag
+
+
+@lru_cache(maxsize=1)
+def is_user_mgmt_oidc_only() -> bool:
+    """Return ``True`` when only OIDC-backed identities are allowed."""
+
+    flag = _read_flag("USER_MGMT_OIDC_ONLY")
+    if flag is None:
+        return False
     return flag
 
 
