@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer'
-
 import NextAuth from 'next-auth'
 import type { Account, NextAuthConfig, Session, User } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
@@ -25,6 +23,8 @@ const trimmedUserInfoBase = rawUserInfoBase.replace(/\/+$/, '')
 const userInfoEndpoint = trimmedUserInfoBase.toLowerCase().endsWith('/userinfo')
   ? trimmedUserInfoBase
   : `${trimmedUserInfoBase}/userinfo`
+
+const ACCESS_TOKEN_REFRESH_THRESHOLD_MS = 60 * 1000
 
 const NAME_CLAIM_CANDIDATES = ['name', 'display_name', 'displayName', 'cn', 'common_name', 'commonName'] as const
 const GIVEN_NAME_CLAIM_CANDIDATES = ['given_name', 'givenName', 'first_name', 'firstName'] as const
@@ -55,12 +55,15 @@ function combineNameParts(...parts: (string | undefined)[]): string | undefined 
 
 type MutableToken = JWT & {
   accessToken?: string
+  accessTokenExpires?: number
   displayName?: string
   email?: string
   groups?: string[]
   idToken?: string
   name?: string
   permissions?: string[]
+  refreshError?: boolean
+  refreshToken?: string
   roles?: string[]
   sub?: string
   userId?: string
@@ -184,7 +187,10 @@ function decodeJwtClaims(token: unknown): ClaimContainer | null {
   }
 
   try {
-    const payload = Buffer.from(segments[1]!, 'base64url').toString('utf8')
+    const payload = decodeBase64UrlSegment(segments[1]!)
+    if (!payload) {
+      return null
+    }
     const parsed = JSON.parse(payload)
     if (parsed && typeof parsed === 'object') {
       return parsed as ClaimContainer
@@ -474,6 +480,136 @@ async function fetchUserInfoClaims(accessToken: unknown): Promise<ClaimContainer
   return null
 }
 
+let cachedTokenEndpoint: string | null | undefined
+
+async function resolveTokenEndpointUrl(): Promise<string | null> {
+  if (cachedTokenEndpoint !== undefined) {
+    return cachedTokenEndpoint
+  }
+
+  const override = process.env.OIDC_TOKEN_ENDPOINT
+  if (override && override.trim().length > 0) {
+    cachedTokenEndpoint = override.trim()
+    return cachedTokenEndpoint
+  }
+
+  if (typeof fetch !== 'function') {
+    cachedTokenEndpoint = null
+    return cachedTokenEndpoint
+  }
+
+  const normalizedIssuer = issuer.replace(/\/+$/, '')
+  const wellKnownUrl = `${normalizedIssuer}${WELL_KNOWN_SUFFIX}`
+
+  try {
+    const response = await fetch(wellKnownUrl, { cache: 'no-store' })
+    if (!response.ok) {
+      cachedTokenEndpoint = null
+      return cachedTokenEndpoint
+    }
+    const payload = await response.json()
+    if (payload && typeof payload === 'object') {
+      const endpointCandidate = (payload as Record<string, unknown>).token_endpoint
+      if (typeof endpointCandidate === 'string' && endpointCandidate.trim().length > 0) {
+        cachedTokenEndpoint = endpointCandidate.trim()
+        return cachedTokenEndpoint
+      }
+    }
+  } catch {
+    cachedTokenEndpoint = null
+    return cachedTokenEndpoint
+  }
+
+  cachedTokenEndpoint = null
+  return cachedTokenEndpoint
+}
+
+async function refreshAccessToken(token: MutableToken): Promise<boolean> {
+  if (typeof token.refreshToken !== 'string' || token.refreshToken.trim().length === 0) {
+    return false
+  }
+  if (typeof fetch !== 'function') {
+    return false
+  }
+
+  const tokenEndpoint = await resolveTokenEndpointUrl()
+  if (!tokenEndpoint) {
+    return false
+  }
+
+  const params = new URLSearchParams()
+  params.set('grant_type', 'refresh_token')
+  params.set('refresh_token', token.refreshToken)
+
+  const clientId = process.env.OIDC_CLIENT_ID
+  if (clientId && clientId.trim().length > 0) {
+    params.set('client_id', clientId.trim())
+  }
+
+  const clientSecret = process.env.OIDC_CLIENT_SECRET
+  if (clientSecret && clientSecret.trim().length > 0) {
+    params.set('client_secret', clientSecret.trim())
+  }
+
+  try {
+    const response = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      return false
+    }
+    const payload = await response.json()
+    if (!payload || typeof payload !== 'object') {
+      return false
+    }
+    const record = payload as Record<string, unknown>
+
+    const accessToken = record.access_token
+    if (typeof accessToken === 'string' && accessToken.trim().length > 0) {
+      token.accessToken = accessToken.trim()
+    }
+
+    const refreshToken = record.refresh_token
+    if (typeof refreshToken === 'string' && refreshToken.trim().length > 0) {
+      token.refreshToken = refreshToken.trim()
+    }
+
+    const idToken = record.id_token
+    if (typeof idToken === 'string' && idToken.trim().length > 0) {
+      token.idToken = idToken.trim()
+    }
+
+    const now = Date.now()
+    const expiresIn = record.expires_in
+    if (typeof expiresIn === 'number' && Number.isFinite(expiresIn)) {
+      token.accessTokenExpires = now + expiresIn * 1000
+    } else if (typeof expiresIn === 'string' && expiresIn.trim().length > 0) {
+      const parsed = Number.parseFloat(expiresIn)
+      if (Number.isFinite(parsed)) {
+        token.accessTokenExpires = now + parsed * 1000
+      }
+    } else {
+      const expiresAt = record.expires_at
+      if (typeof expiresAt === 'number' && Number.isFinite(expiresAt)) {
+        token.accessTokenExpires = expiresAt * 1000
+      } else if (typeof expiresAt === 'string' && expiresAt.trim().length > 0) {
+        const parsedExpiresAt = Number.parseFloat(expiresAt)
+        if (Number.isFinite(parsedExpiresAt)) {
+          token.accessTokenExpires = parsedExpiresAt * 1000
+        }
+      }
+    }
+
+    token.refreshError = undefined
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const authOptions: NextAuthConfig = {
   providers: [
     {
@@ -534,6 +670,27 @@ export const authOptions: NextAuthConfig = {
         if (typeof account.id_token === 'string' && account.id_token.trim().length > 0) {
           mutableToken.idToken = account.id_token
         }
+        if (typeof account.refresh_token === 'string' && account.refresh_token.trim().length > 0) {
+          mutableToken.refreshToken = account.refresh_token.trim()
+        }
+        if (typeof account.expires_at === 'number' && Number.isFinite(account.expires_at)) {
+          mutableToken.accessTokenExpires = account.expires_at * 1000
+        }
+        mutableToken.refreshError = undefined
+      } else {
+        const expiresAt = typeof mutableToken.accessTokenExpires === 'number' ? mutableToken.accessTokenExpires : undefined
+        const shouldAttemptRefresh =
+          typeof expiresAt === 'number' && expiresAt - Date.now() <= ACCESS_TOKEN_REFRESH_THRESHOLD_MS
+        if (shouldAttemptRefresh) {
+          const refreshed = await refreshAccessToken(mutableToken)
+          if (!refreshed) {
+            delete mutableToken.accessToken
+            delete mutableToken.idToken
+            delete mutableToken.refreshToken
+            delete mutableToken.accessTokenExpires
+            mutableToken.refreshError = true
+          }
+        }
       }
       const idTokenValue =
         typeof account?.id_token === 'string'
@@ -578,7 +735,7 @@ export const authOptions: NextAuthConfig = {
           : typeof mutableToken.accessToken === 'string'
             ? mutableToken.accessToken
             : undefined
-      if (shouldSyncFromUserInfo(mutableToken) && accessTokenValue) {
+      if (!mutableToken.refreshError && shouldSyncFromUserInfo(mutableToken) && accessTokenValue) {
         const userInfoClaims = await fetchUserInfoClaims(accessTokenValue)
         if (userInfoClaims) {
           applyClaimsToToken(mutableToken, userInfoClaims)
@@ -591,10 +748,27 @@ export const authOptions: NextAuthConfig = {
       return mutableToken
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      session.accessToken = token.accessToken
-      session.idToken = token.idToken
+      const mutableToken = token as MutableToken
+      if (mutableToken.refreshError) {
+        session.accessToken = undefined
+        session.idToken = undefined
+        if (session.user) {
+          ;(session as any).user = undefined
+        }
+        ;(session as any).error = 'RefreshAccessTokenError'
+        ;(session as any).accessTokenExpires = undefined
+        return session
+      }
+
+      session.accessToken = mutableToken.accessToken
+      session.idToken = mutableToken.idToken
+      if (typeof mutableToken.accessTokenExpires === 'number' && Number.isFinite(mutableToken.accessTokenExpires)) {
+        ;(session as any).accessTokenExpires = mutableToken.accessTokenExpires
+      } else {
+        ;(session as any).accessTokenExpires = undefined
+      }
+      ;(session as any).error = undefined
       if (session.user) {
-        const mutableToken = token as MutableToken
         const explicitUserId =
           typeof mutableToken.userId === 'string' && mutableToken.userId.trim().length > 0
             ? mutableToken.userId.trim()

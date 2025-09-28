@@ -14,6 +14,7 @@ type OidcProvider = {
 const originalFetch = globalThis.fetch
 const originalGroupRoleMap = process.env.OIDC_GROUP_ROLE_MAP
 const originalGroupRoleDefaults = process.env.OIDC_GROUP_ROLE_DEFAULTS
+const originalTokenEndpoint = process.env.OIDC_TOKEN_ENDPOINT
 
 afterEach(() => {
   if (originalFetch) {
@@ -33,11 +34,24 @@ afterEach(() => {
   } else {
     process.env.OIDC_GROUP_ROLE_DEFAULTS = originalGroupRoleDefaults
   }
+  if (originalTokenEndpoint === undefined) {
+    delete process.env.OIDC_TOKEN_ENDPOINT
+  } else {
+    process.env.OIDC_TOKEN_ENDPOINT = originalTokenEndpoint
+  }
 })
 
+function base64UrlEncode(value: string): string {
+  return Buffer.from(value, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
 function buildIdToken(payload: Record<string, unknown>): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url')
-  const body = Buffer.from(JSON.stringify(payload)).toString('base64url')
+  const header = base64UrlEncode(JSON.stringify({ alg: 'none', typ: 'JWT' }))
+  const body = base64UrlEncode(JSON.stringify(payload))
   return `${header}.${body}.signature`
 }
 
@@ -184,6 +198,36 @@ describe('authOptions callbacks', () => {
     expect(session?.user?.roles).toEqual(['admin'])
     expect(session?.user?.groups).toEqual(['staff'])
     expect(session?.user?.permissions).toEqual([...ALL_PERMISSIONS])
+  })
+
+  it('stores refresh token metadata when provided during sign-in', async () => {
+    const user = buildUser()
+    const expiresAt = Math.floor(Date.now() / 1000) + 60
+
+    const token = await authOptions.callbacks?.jwt?.({
+      token: {},
+      user,
+      account: {
+        access_token: 'access-token',
+        id_token: 'id-token',
+        refresh_token: 'refresh-token',
+        expires_at: expiresAt,
+      } as any,
+    } as any)
+
+    expect(token?.refreshToken).toBe('refresh-token')
+    expect(typeof token?.accessTokenExpires).toBe('number')
+    expect((token as any)?.accessTokenExpires).toBeGreaterThan(Date.now())
+    expect((token as any)?.accessTokenExpires).toBeLessThan(Date.now() + 5 * 60 * 1000)
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: token!,
+    } as any)
+
+    expect(session?.accessToken).toBe('access-token')
+    expect((session as any)?.accessTokenExpires).toBe((token as any)?.accessTokenExpires)
+    expect((session as any)?.error).toBeUndefined()
   })
 
   it('retains derived permissions when the JWT callback runs without a user payload', async () => {
@@ -355,5 +399,124 @@ describe('authOptions callbacks', () => {
     expect(session?.user?.email).toBe('jordan@example.com')
     expect(session?.user?.displayName).toBe('Jordan Fischer')
     expect(session?.user?.groups).toEqual(['engineering', 'qa'])
+  })
+
+  it('refreshes access tokens when nearing expiration', async () => {
+    const refreshTokenEndpoint = 'https://issuer.example.com/token'
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ token_endpoint: refreshTokenEndpoint }),
+      })
+      .mockImplementationOnce(async (url, init) => {
+        expect(url).toBe(refreshTokenEndpoint)
+        expect(init?.method).toBe('POST')
+        expect(init?.body).toContain('grant_type=refresh_token')
+        expect(init?.body).toContain('refresh_token=initial-refresh')
+        return {
+          ok: true,
+          json: async () => ({
+            access_token: 'refreshed-access',
+            refresh_token: 'refreshed-refresh',
+            id_token: buildIdToken({
+              sub: 'user-789',
+              email: 'refreshed@example.com',
+              display_name: 'Refreshed Display',
+            }),
+            expires_in: 3600,
+          }),
+        }
+      })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const refreshedToken = await authOptions.callbacks?.jwt?.({
+      token: {
+        accessToken: 'initial-access',
+        idToken: buildIdToken({ sub: 'user-789' }),
+        refreshToken: 'initial-refresh',
+        accessTokenExpires: Date.now() - 1000,
+        roles: ['admin'],
+        groups: ['staff'],
+        permissions: derivePermissionsFromRoles(['admin']),
+        sub: 'user-789',
+        userInfoSynced: true,
+      },
+      user: null,
+      account: null,
+    } as any)
+
+    const tokenRequest = fetchMock.mock.calls.find(([url]) => url === refreshTokenEndpoint)
+    expect(tokenRequest).toBeDefined()
+    expect(refreshedToken?.accessToken).toBe('refreshed-access')
+    expect((refreshedToken as any)?.refreshToken).toBe('refreshed-refresh')
+    expect((refreshedToken as any)?.accessTokenExpires).toBeGreaterThan(Date.now())
+    expect((refreshedToken as any)?.refreshError).toBeUndefined()
+    expect((refreshedToken as any)?.email).toBe('refreshed@example.com')
+    expect((refreshedToken as any)?.displayName).toBe('Refreshed Display')
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: refreshedToken!,
+    } as any)
+
+    expect(session?.accessToken).toBe('refreshed-access')
+    expect((session as any)?.accessTokenExpires).toBe((refreshedToken as any)?.accessTokenExpires)
+    expect((session as any)?.error).toBeUndefined()
+    expect(session?.user?.email).toBe('refreshed@example.com')
+    expect(session?.user?.displayName).toBe('Refreshed Display')
+  })
+
+  it('surfaces refresh failures so the UI can prompt for reauthentication', async () => {
+    const refreshTokenEndpoint = 'https://issuer.example.com/token'
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.endsWith('/.well-known/openid-configuration')) {
+          return {
+            ok: true,
+            json: async () => ({ token_endpoint: refreshTokenEndpoint }),
+          }
+        }
+        if (url === refreshTokenEndpoint) {
+          return { ok: false }
+        }
+        throw new Error(`Unexpected fetch call to ${String(url)}`)
+      })
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    const refreshedToken = await authOptions.callbacks?.jwt?.({
+      token: {
+        accessToken: 'initial-access',
+        idToken: buildIdToken({ sub: 'user-789' }),
+        refreshToken: 'initial-refresh',
+        accessTokenExpires: Date.now() - 1000,
+        roles: ['admin'],
+        groups: ['staff'],
+        permissions: derivePermissionsFromRoles(['admin']),
+        sub: 'user-789',
+        userInfoSynced: true,
+      },
+      user: null,
+      account: null,
+    } as any)
+
+    const tokenRequest = fetchMock.mock.calls.find(([url]) => url === refreshTokenEndpoint)
+    expect(tokenRequest).toBeDefined()
+    expect((refreshedToken as any)?.accessToken).toBeUndefined()
+    expect((refreshedToken as any)?.idToken).toBeUndefined()
+    expect((refreshedToken as any)?.refreshToken).toBeUndefined()
+    expect((refreshedToken as any)?.refreshError).toBe(true)
+
+    const session = await authOptions.callbacks?.session?.({
+      session: { user: {} },
+      token: refreshedToken!,
+    } as any)
+
+    expect(session?.accessToken).toBeUndefined()
+    expect((session as any)?.error).toBe('RefreshAccessTokenError')
+    expect((session as any)?.user).toBeUndefined()
   })
 })
