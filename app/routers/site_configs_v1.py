@@ -211,6 +211,9 @@ def copy_site_config_v1(
         login_type=source_login_type,
         selenium_config=selenium_payload,
         api_config=api_payload,
+        success_text_class=source.success_text_class or "",
+        expected_success_text=source.expected_success_text or "",
+        required_cookies=list(source.required_cookies or []),
         owner_user_id=user_id,
     )
 
