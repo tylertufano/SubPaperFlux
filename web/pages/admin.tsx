@@ -45,7 +45,12 @@ export default function Admin() {
                 <li>{t('admin_system_version_label')}: {status?.version || '—'}</li>
                 <li>{t('admin_system_openapi_label')}: <a className="text-blue-600 hover:underline" href="/openapi.json" target="_blank" rel="noreferrer">/openapi.json</a></li>
                 <li>{t('admin_system_docs_label')}: <a className="text-blue-600 hover:underline" href="/docs" target="_blank" rel="noreferrer">/docs</a></li>
-                <li>{t('admin_system_metrics_label')}: <a className="text-blue-600 hover:underline" href="/metrics" target="_blank" rel="noreferrer">/metrics</a></li>
+                <li>
+                  {t('admin_system_metrics_label')}: <a className="text-blue-600 hover:underline" href="/metrics" target="_blank" rel="noreferrer">/metrics</a>{' · '}
+                  <Link href="/admin/metrics" className="text-blue-600 hover:underline">
+                    {t('admin_metrics_ui_link_label')}
+                  </Link>
+                </li>
               </ul>
             </div>
             <div className="card p-4">
