@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { SiteConfigOut } from './SiteConfigOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { SiteConfigOut } from './SiteConfigOut';
 export interface SiteConfigsPage {
     /**
      *
-     * @type {Array<SiteConfigOut>}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    items: Array<SiteConfigOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the SiteConfigsPage interface.
  */
-export declare function instanceOfSiteConfigsPage(value: object): value is SiteConfigsPage;
+export declare function instanceOfSiteConfigsPage(value: object): boolean;
 export declare function SiteConfigsPageFromJSON(json: any): SiteConfigsPage;
 export declare function SiteConfigsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigsPage;
-export declare function SiteConfigsPageToJSON(json: any): SiteConfigsPage;
-export declare function SiteConfigsPageToJSONTyped(value?: SiteConfigsPage | null, ignoreDiscriminator?: boolean): any;
+export declare function SiteConfigsPageToJSON(value?: SiteConfigsPage | null): any;

@@ -13,14 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BulkBookmarkTagUpdateToJSONTyped = exports.BulkBookmarkTagUpdateToJSON = exports.BulkBookmarkTagUpdateFromJSONTyped = exports.BulkBookmarkTagUpdateFromJSON = exports.instanceOfBulkBookmarkTagUpdate = void 0;
+exports.BulkBookmarkTagUpdateToJSON = exports.BulkBookmarkTagUpdateFromJSONTyped = exports.BulkBookmarkTagUpdateFromJSON = exports.instanceOfBulkBookmarkTagUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the BulkBookmarkTagUpdate interface.
  */
 function instanceOfBulkBookmarkTagUpdate(value) {
-    if (!('bookmarkIds' in value) || value['bookmarkIds'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkIds" in value;
+    return isInstance;
 }
 exports.instanceOfBulkBookmarkTagUpdate = instanceOfBulkBookmarkTagUpdate;
 function BulkBookmarkTagUpdateFromJSON(json) {
@@ -28,28 +29,27 @@ function BulkBookmarkTagUpdateFromJSON(json) {
 }
 exports.BulkBookmarkTagUpdateFromJSON = BulkBookmarkTagUpdateFromJSON;
 function BulkBookmarkTagUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkIds': json['bookmark_ids'],
-        'tags': json['tags'] == null ? undefined : json['tags'],
-        'clear': json['clear'] == null ? undefined : json['clear'],
+        'tags': !(0, runtime_1.exists)(json, 'tags') ? undefined : json['tags'],
+        'clear': !(0, runtime_1.exists)(json, 'clear') ? undefined : json['clear'],
     };
 }
 exports.BulkBookmarkTagUpdateFromJSONTyped = BulkBookmarkTagUpdateFromJSONTyped;
-function BulkBookmarkTagUpdateToJSON(json) {
-    return BulkBookmarkTagUpdateToJSONTyped(json, false);
-}
-exports.BulkBookmarkTagUpdateToJSON = BulkBookmarkTagUpdateToJSON;
-function BulkBookmarkTagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function BulkBookmarkTagUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_ids': value['bookmarkIds'],
-        'tags': value['tags'],
-        'clear': value['clear'],
+        'bookmark_ids': value.bookmarkIds,
+        'tags': value.tags,
+        'clear': value.clear,
     };
 }
-exports.BulkBookmarkTagUpdateToJSONTyped = BulkBookmarkTagUpdateToJSONTyped;
+exports.BulkBookmarkTagUpdateToJSON = BulkBookmarkTagUpdateToJSON;

@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookmarkTagsUpdateToJSONTyped = exports.BookmarkTagsUpdateToJSON = exports.BookmarkTagsUpdateFromJSONTyped = exports.BookmarkTagsUpdateFromJSON = exports.instanceOfBookmarkTagsUpdate = void 0;
+exports.BookmarkTagsUpdateToJSON = exports.BookmarkTagsUpdateFromJSONTyped = exports.BookmarkTagsUpdateFromJSON = exports.instanceOfBookmarkTagsUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the BookmarkTagsUpdate interface.
  */
 function instanceOfBookmarkTagsUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfBookmarkTagsUpdate = instanceOfBookmarkTagsUpdate;
 function BookmarkTagsUpdateFromJSON(json) {
@@ -26,24 +28,23 @@ function BookmarkTagsUpdateFromJSON(json) {
 }
 exports.BookmarkTagsUpdateFromJSON = BookmarkTagsUpdateFromJSON;
 function BookmarkTagsUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'tags': json['tags'] == null ? undefined : json['tags'],
+        'tags': !(0, runtime_1.exists)(json, 'tags') ? undefined : json['tags'],
     };
 }
 exports.BookmarkTagsUpdateFromJSONTyped = BookmarkTagsUpdateFromJSONTyped;
-function BookmarkTagsUpdateToJSON(json) {
-    return BookmarkTagsUpdateToJSONTyped(json, false);
-}
-exports.BookmarkTagsUpdateToJSON = BookmarkTagsUpdateToJSON;
-function BookmarkTagsUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function BookmarkTagsUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'tags': value['tags'],
+        'tags': value.tags,
     };
 }
-exports.BookmarkTagsUpdateToJSONTyped = BookmarkTagsUpdateToJSONTyped;
+exports.BookmarkTagsUpdateToJSON = BookmarkTagsUpdateToJSON;

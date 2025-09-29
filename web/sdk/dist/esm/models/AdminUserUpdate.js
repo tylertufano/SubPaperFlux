@@ -11,41 +11,43 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AdminUserUpdate interface.
  */
 export function instanceOfAdminUserUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function AdminUserUpdateFromJSON(json) {
     return AdminUserUpdateFromJSONTyped(json, false);
 }
 export function AdminUserUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
-        'confirm': json['confirm'] == null ? undefined : json['confirm'],
-        'quotaCredentials': json['quota_credentials'] == null ? undefined : json['quota_credentials'],
-        'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
-        'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
-        'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
+        'confirm': !exists(json, 'confirm') ? undefined : json['confirm'],
+        'quotaCredentials': !exists(json, 'quota_credentials') ? undefined : json['quota_credentials'],
+        'quotaSiteConfigs': !exists(json, 'quota_site_configs') ? undefined : json['quota_site_configs'],
+        'quotaFeeds': !exists(json, 'quota_feeds') ? undefined : json['quota_feeds'],
+        'quotaApiTokens': !exists(json, 'quota_api_tokens') ? undefined : json['quota_api_tokens'],
     };
 }
-export function AdminUserUpdateToJSON(json) {
-    return AdminUserUpdateToJSONTyped(json, false);
-}
-export function AdminUserUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AdminUserUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'is_active': value['isActive'],
-        'confirm': value['confirm'],
-        'quota_credentials': value['quotaCredentials'],
-        'quota_site_configs': value['quotaSiteConfigs'],
-        'quota_feeds': value['quotaFeeds'],
-        'quota_api_tokens': value['quotaApiTokens'],
+        'is_active': value.isActive,
+        'confirm': value.confirm,
+        'quota_credentials': value.quotaCredentials,
+        'quota_site_configs': value.quotaSiteConfigs,
+        'quota_feeds': value.quotaFeeds,
+        'quota_api_tokens': value.quotaApiTokens,
     };
 }

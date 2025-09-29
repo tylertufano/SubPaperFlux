@@ -11,33 +11,35 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the StatusResponse interface.
  */
 export function instanceOfStatusResponse(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function StatusResponseFromJSON(json) {
     return StatusResponseFromJSONTyped(json, false);
 }
 export function StatusResponseFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'status': json['status'] == null ? undefined : json['status'],
-        'version': json['version'] == null ? undefined : json['version'],
+        'status': !exists(json, 'status') ? undefined : json['status'],
+        'version': !exists(json, 'version') ? undefined : json['version'],
     };
 }
-export function StatusResponseToJSON(json) {
-    return StatusResponseToJSONTyped(json, false);
-}
-export function StatusResponseToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function StatusResponseToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'status': value['status'],
-        'version': value['version'],
+        'status': value.status,
+        'version': value.version,
     };
 }

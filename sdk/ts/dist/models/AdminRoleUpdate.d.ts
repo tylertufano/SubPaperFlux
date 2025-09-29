@@ -17,22 +17,21 @@
 export interface AdminRoleUpdate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleUpdate
      */
-    name?: string | null;
+    name?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleUpdate
      */
-    description?: string | null;
+    description?: any | null;
 }
 /**
  * Check if a given object implements the AdminRoleUpdate interface.
  */
-export declare function instanceOfAdminRoleUpdate(value: object): value is AdminRoleUpdate;
+export declare function instanceOfAdminRoleUpdate(value: object): boolean;
 export declare function AdminRoleUpdateFromJSON(json: any): AdminRoleUpdate;
 export declare function AdminRoleUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleUpdate;
-export declare function AdminRoleUpdateToJSON(json: any): AdminRoleUpdate;
-export declare function AdminRoleUpdateToJSONTyped(value?: AdminRoleUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminRoleUpdateToJSON(value?: AdminRoleUpdate | null): any;

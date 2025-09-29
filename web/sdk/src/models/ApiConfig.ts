@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,34 +21,34 @@ import { mapValues } from '../runtime';
 export interface ApiConfig {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiConfig
      */
-    endpoint: string;
+    endpoint: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof ApiConfig
      */
     method: ApiConfigMethodEnum;
     /**
      * 
-     * @type {{ [key: string]: string; }}
+     * @type {{ [key: string]: any; }}
      * @memberof ApiConfig
      */
-    headers?: { [key: string]: string; };
+    headers?: { [key: string]: any; } | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof ApiConfig
+     */
+    body?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof ApiConfig
      */
-    body?: { [key: string]: any; } | null;
-    /**
-     * 
-     * @type {{ [key: string]: string; }}
-     * @memberof ApiConfig
-     */
-    cookies?: { [key: string]: string; };
+    cookies?: { [key: string]: any; } | null;
 }
 
 
@@ -68,10 +68,12 @@ export type ApiConfigMethodEnum = typeof ApiConfigMethodEnum[keyof typeof ApiCon
 /**
  * Check if a given object implements the ApiConfig interface.
  */
-export function instanceOfApiConfig(value: object): value is ApiConfig {
-    if (!('endpoint' in value) || value['endpoint'] === undefined) return false;
-    if (!('method' in value) || value['method'] === undefined) return false;
-    return true;
+export function instanceOfApiConfig(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "endpoint" in value;
+    isInstance = isInstance && "method" in value;
+
+    return isInstance;
 }
 
 export function ApiConfigFromJSON(json: any): ApiConfig {
@@ -79,35 +81,33 @@ export function ApiConfigFromJSON(json: any): ApiConfig {
 }
 
 export function ApiConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiConfig {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'endpoint': json['endpoint'],
         'method': json['method'],
-        'headers': json['headers'] == null ? undefined : json['headers'],
-        'body': json['body'] == null ? undefined : json['body'],
-        'cookies': json['cookies'] == null ? undefined : json['cookies'],
+        'headers': !exists(json, 'headers') ? undefined : json['headers'],
+        'body': !exists(json, 'body') ? undefined : json['body'],
+        'cookies': !exists(json, 'cookies') ? undefined : json['cookies'],
     };
 }
 
-export function ApiConfigToJSON(json: any): ApiConfig {
-    return ApiConfigToJSONTyped(json, false);
-}
-
-export function ApiConfigToJSONTyped(value?: ApiConfig | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function ApiConfigToJSON(value?: ApiConfig | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'endpoint': value['endpoint'],
-        'method': value['method'],
-        'headers': value['headers'],
-        'body': value['body'],
-        'cookies': value['cookies'],
+        'endpoint': value.endpoint,
+        'method': value.method,
+        'headers': value.headers,
+        'body': value.body,
+        'cookies': value.cookies,
     };
 }
 

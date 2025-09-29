@@ -11,36 +11,36 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { FolderOutFromJSON, FolderOutToJSON, } from './FolderOut';
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BookmarkFolderSummary interface.
  */
 export function instanceOfBookmarkFolderSummary(value) {
-    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkId" in value;
+    return isInstance;
 }
 export function BookmarkFolderSummaryFromJSON(json) {
     return BookmarkFolderSummaryFromJSONTyped(json, false);
 }
 export function BookmarkFolderSummaryFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkId': json['bookmark_id'],
-        'folder': json['folder'] == null ? undefined : FolderOutFromJSON(json['folder']),
+        'folder': !exists(json, 'folder') ? undefined : json['folder'],
     };
 }
-export function BookmarkFolderSummaryToJSON(json) {
-    return BookmarkFolderSummaryToJSONTyped(json, false);
-}
-export function BookmarkFolderSummaryToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BookmarkFolderSummaryToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_id': value['bookmarkId'],
-        'folder': FolderOutToJSON(value['folder']),
+        'bookmark_id': value.bookmarkId,
+        'folder': value.folder,
     };
 }

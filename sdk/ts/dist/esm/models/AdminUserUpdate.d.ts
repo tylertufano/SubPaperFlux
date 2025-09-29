@@ -17,46 +17,45 @@
 export interface AdminUserUpdate {
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    isActive?: boolean | null;
+    isActive?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    confirm?: boolean | null;
+    confirm?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaCredentials?: number | null;
+    quotaCredentials?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaSiteConfigs?: number | null;
+    quotaSiteConfigs?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaFeeds?: number | null;
+    quotaFeeds?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaApiTokens?: number | null;
+    quotaApiTokens?: any | null;
 }
 /**
  * Check if a given object implements the AdminUserUpdate interface.
  */
-export declare function instanceOfAdminUserUpdate(value: object): value is AdminUserUpdate;
+export declare function instanceOfAdminUserUpdate(value: object): boolean;
 export declare function AdminUserUpdateFromJSON(json: any): AdminUserUpdate;
 export declare function AdminUserUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserUpdate;
-export declare function AdminUserUpdateToJSON(json: any): AdminUserUpdate;
-export declare function AdminUserUpdateToJSONTyped(value?: AdminUserUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminUserUpdateToJSON(value?: AdminUserUpdate | null): any;

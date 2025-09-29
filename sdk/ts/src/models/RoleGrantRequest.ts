@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,29 +21,31 @@ import { mapValues } from '../runtime';
 export interface RoleGrantRequest {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    createMissing?: boolean;
+    createMissing?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    isSystem?: boolean | null;
+    isSystem?: any | null;
 }
 
 /**
  * Check if a given object implements the RoleGrantRequest interface.
  */
-export function instanceOfRoleGrantRequest(value: object): value is RoleGrantRequest {
-    return true;
+export function instanceOfRoleGrantRequest(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function RoleGrantRequestFromJSON(json: any): RoleGrantRequest {
@@ -51,31 +53,29 @@ export function RoleGrantRequestFromJSON(json: any): RoleGrantRequest {
 }
 
 export function RoleGrantRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RoleGrantRequest {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'description': json['description'] == null ? undefined : json['description'],
-        'createMissing': json['create_missing'] == null ? undefined : json['create_missing'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'createMissing': !exists(json, 'create_missing') ? undefined : json['create_missing'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
     };
 }
 
-export function RoleGrantRequestToJSON(json: any): RoleGrantRequest {
-    return RoleGrantRequestToJSONTyped(json, false);
-}
-
-export function RoleGrantRequestToJSONTyped(value?: RoleGrantRequest | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function RoleGrantRequestToJSON(value?: RoleGrantRequest | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'description': value['description'],
-        'create_missing': value['createMissing'],
-        'is_system': value['isSystem'],
+        'description': value.description,
+        'create_missing': value.createMissing,
+        'is_system': value.isSystem,
     };
 }
 

@@ -13,14 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TagUpdateToJSONTyped = exports.TagUpdateToJSON = exports.TagUpdateFromJSONTyped = exports.TagUpdateFromJSON = exports.instanceOfTagUpdate = void 0;
+exports.TagUpdateToJSON = exports.TagUpdateFromJSONTyped = exports.TagUpdateFromJSON = exports.instanceOfTagUpdate = void 0;
 /**
  * Check if a given object implements the TagUpdate interface.
  */
 function instanceOfTagUpdate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 exports.instanceOfTagUpdate = instanceOfTagUpdate;
 function TagUpdateFromJSON(json) {
@@ -28,7 +28,7 @@ function TagUpdateFromJSON(json) {
 }
 exports.TagUpdateFromJSON = TagUpdateFromJSON;
 function TagUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -36,16 +36,15 @@ function TagUpdateFromJSONTyped(json, ignoreDiscriminator) {
     };
 }
 exports.TagUpdateFromJSONTyped = TagUpdateFromJSONTyped;
-function TagUpdateToJSON(json) {
-    return TagUpdateToJSONTyped(json, false);
-}
-exports.TagUpdateToJSON = TagUpdateToJSON;
-function TagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function TagUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
+        'name': value.name,
     };
 }
-exports.TagUpdateToJSONTyped = TagUpdateToJSONTyped;
+exports.TagUpdateToJSON = TagUpdateToJSON;

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,37 +21,39 @@ import { mapValues } from '../runtime';
 export interface AdminOrganizationCreate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationCreate
      */
-    slug: string;
+    slug: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationCreate
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationCreate
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminOrganizationCreate
      */
-    isDefault?: boolean | null;
+    isDefault?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminOrganizationCreate interface.
  */
-export function instanceOfAdminOrganizationCreate(value: object): value is AdminOrganizationCreate {
-    if (!('slug' in value) || value['slug'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    return true;
+export function instanceOfAdminOrganizationCreate(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "slug" in value;
+    isInstance = isInstance && "name" in value;
+
+    return isInstance;
 }
 
 export function AdminOrganizationCreateFromJSON(json: any): AdminOrganizationCreate {
@@ -59,33 +61,31 @@ export function AdminOrganizationCreateFromJSON(json: any): AdminOrganizationCre
 }
 
 export function AdminOrganizationCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationCreate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'slug': json['slug'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isDefault': json['is_default'] == null ? undefined : json['is_default'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isDefault': !exists(json, 'is_default') ? undefined : json['is_default'],
     };
 }
 
-export function AdminOrganizationCreateToJSON(json: any): AdminOrganizationCreate {
-    return AdminOrganizationCreateToJSONTyped(json, false);
-}
-
-export function AdminOrganizationCreateToJSONTyped(value?: AdminOrganizationCreate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminOrganizationCreateToJSON(value?: AdminOrganizationCreate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'slug': value['slug'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_default': value['isDefault'],
+        'slug': value.slug,
+        'name': value.name,
+        'description': value.description,
+        'is_default': value.isDefault,
     };
 }
 

@@ -17,22 +17,21 @@
 export interface FolderCreate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderCreate
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderCreate
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
 }
 /**
  * Check if a given object implements the FolderCreate interface.
  */
-export declare function instanceOfFolderCreate(value: object): value is FolderCreate;
+export declare function instanceOfFolderCreate(value: object): boolean;
 export declare function FolderCreateFromJSON(json: any): FolderCreate;
 export declare function FolderCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): FolderCreate;
-export declare function FolderCreateToJSON(json: any): FolderCreate;
-export declare function FolderCreateToJSONTyped(value?: FolderCreate | null, ignoreDiscriminator?: boolean): any;
+export declare function FolderCreateToJSON(value?: FolderCreate | null): any;

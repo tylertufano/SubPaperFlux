@@ -17,64 +17,63 @@
 export interface ApiTokenOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    scopes?: Array<string>;
+    scopes?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    lastUsedAt?: Date | null;
+    lastUsedAt?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    expiresAt?: Date | null;
+    expiresAt?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenOut
      */
-    revokedAt?: Date | null;
+    revokedAt?: any | null;
 }
 /**
  * Check if a given object implements the ApiTokenOut interface.
  */
-export declare function instanceOfApiTokenOut(value: object): value is ApiTokenOut;
+export declare function instanceOfApiTokenOut(value: object): boolean;
 export declare function ApiTokenOutFromJSON(json: any): ApiTokenOut;
 export declare function ApiTokenOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenOut;
-export declare function ApiTokenOutToJSON(json: any): ApiTokenOut;
-export declare function ApiTokenOutToJSONTyped(value?: ApiTokenOut | null, ignoreDiscriminator?: boolean): any;
+export declare function ApiTokenOutToJSON(value?: ApiTokenOut | null): any;

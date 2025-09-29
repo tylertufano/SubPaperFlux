@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StatusResponseToJSONTyped = exports.StatusResponseToJSON = exports.StatusResponseFromJSONTyped = exports.StatusResponseFromJSON = exports.instanceOfStatusResponse = void 0;
+exports.StatusResponseToJSON = exports.StatusResponseFromJSONTyped = exports.StatusResponseFromJSON = exports.instanceOfStatusResponse = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the StatusResponse interface.
  */
 function instanceOfStatusResponse(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfStatusResponse = instanceOfStatusResponse;
 function StatusResponseFromJSON(json) {
@@ -26,26 +28,25 @@ function StatusResponseFromJSON(json) {
 }
 exports.StatusResponseFromJSON = StatusResponseFromJSON;
 function StatusResponseFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'status': json['status'] == null ? undefined : json['status'],
-        'version': json['version'] == null ? undefined : json['version'],
+        'status': !(0, runtime_1.exists)(json, 'status') ? undefined : json['status'],
+        'version': !(0, runtime_1.exists)(json, 'version') ? undefined : json['version'],
     };
 }
 exports.StatusResponseFromJSONTyped = StatusResponseFromJSONTyped;
-function StatusResponseToJSON(json) {
-    return StatusResponseToJSONTyped(json, false);
-}
-exports.StatusResponseToJSON = StatusResponseToJSON;
-function StatusResponseToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function StatusResponseToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'status': value['status'],
-        'version': value['version'],
+        'status': value.status,
+        'version': value.version,
     };
 }
-exports.StatusResponseToJSONTyped = StatusResponseToJSONTyped;
+exports.StatusResponseToJSON = StatusResponseToJSON;

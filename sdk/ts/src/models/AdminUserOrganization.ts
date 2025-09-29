@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,51 +21,53 @@ import { mapValues } from '../runtime';
 export interface AdminUserOrganization {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    slug: string;
+    slug: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    isDefault?: boolean;
+    isDefault?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminUserOrganization
      */
-    joinedAt: Date;
+    joinedAt: any | null;
 }
 
 /**
  * Check if a given object implements the AdminUserOrganization interface.
  */
-export function instanceOfAdminUserOrganization(value: object): value is AdminUserOrganization {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('slug' in value) || value['slug'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('joinedAt' in value) || value['joinedAt'] === undefined) return false;
-    return true;
+export function instanceOfAdminUserOrganization(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "slug" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "joinedAt" in value;
+
+    return isInstance;
 }
 
 export function AdminUserOrganizationFromJSON(json: any): AdminUserOrganization {
@@ -73,7 +75,7 @@ export function AdminUserOrganizationFromJSON(json: any): AdminUserOrganization 
 }
 
 export function AdminUserOrganizationFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserOrganization {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -81,29 +83,27 @@ export function AdminUserOrganizationFromJSONTyped(json: any, ignoreDiscriminato
         'id': json['id'],
         'slug': json['slug'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isDefault': json['is_default'] == null ? undefined : json['is_default'],
-        'joinedAt': (new Date(json['joined_at'])),
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isDefault': !exists(json, 'is_default') ? undefined : json['is_default'],
+        'joinedAt': json['joined_at'],
     };
 }
 
-export function AdminUserOrganizationToJSON(json: any): AdminUserOrganization {
-    return AdminUserOrganizationToJSONTyped(json, false);
-}
-
-export function AdminUserOrganizationToJSONTyped(value?: AdminUserOrganization | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminUserOrganizationToJSON(value?: AdminUserOrganization | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'slug': value['slug'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_default': value['isDefault'],
-        'joined_at': ((value['joinedAt']).toISOString()),
+        'id': value.id,
+        'slug': value.slug,
+        'name': value.name,
+        'description': value.description,
+        'is_default': value.isDefault,
+        'joined_at': value.joinedAt,
     };
 }
 

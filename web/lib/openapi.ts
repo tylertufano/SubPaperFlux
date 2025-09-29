@@ -6,8 +6,10 @@ import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
 import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
 import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
-import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../sdk/src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost'
-import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
+import type { SiteConfigApi } from '../sdk/src/models/SiteConfigApi'
+import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
+import type { SiteConfigSelenium } from '../sdk/src/models/SiteConfigSelenium'
+import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
 import type { TemplateCategory } from '../sdk/src/models/TemplateCategory'
@@ -45,6 +47,16 @@ export type SiteSetupStatusOut = {
 }
 
 export type SiteSetupStatusUpdatePayload = SiteSetupStatus
+
+export type SiteConfigRecord =
+  | ({ loginType: 'api' } & SiteConfigApiOut)
+  | ({ loginType: 'selenium' } & SiteConfigSeleniumOut)
+
+export type SiteConfigRequest =
+  | ({ loginType: 'api' } & SiteConfigApi)
+  | ({ loginType: 'selenium' } & SiteConfigSelenium)
+
+export type SiteConfigCopyResponse = SiteConfigRecord
 
 export type PrometheusHistogramBucket = {
   upperBound: number | null
@@ -1498,7 +1510,7 @@ export const v1 = {
     configId,
   }: {
     configId: string
-  }): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost> =>
+  }): Promise<SiteConfigCopyResponse> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
   getSiteWelcomeSetting: async () => fetchSiteWelcomeSetting(),
   updateSiteWelcomeSetting: async ({
@@ -1691,7 +1703,7 @@ export const siteConfigs = {
     configId,
   }: {
     configId: string
-  }): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost> =>
+  }): Promise<SiteConfigCopyResponse> =>
     (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 }
 

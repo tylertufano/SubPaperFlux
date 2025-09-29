@@ -17,16 +17,16 @@ import * as runtime from '../runtime';
 import type {
   HTTPValidationError,
   TemplateListResponse,
-} from '../models/index';
+} from '../models';
 import {
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
     TemplateListResponseFromJSON,
     TemplateListResponseToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest {
-    templateId: string;
+    templateId: any;
 }
 
 /**
@@ -38,23 +38,16 @@ export class TemplatesApi extends runtime.BaseAPI {
      * Download template asset
      */
     async downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters: DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['templateId'] == null) {
-            throw new runtime.RequiredError(
-                'templateId',
-                'Required parameter "templateId" was null or undefined when calling downloadTemplateV1TemplatesTemplateIdDownloadGet().'
-            );
+        if (requestParameters.templateId === null || requestParameters.templateId === undefined) {
+            throw new runtime.RequiredError('templateId','Required parameter requestParameters.templateId was null or undefined when calling downloadTemplateV1TemplatesTemplateIdDownloadGet.');
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/v1/templates/{template_id}/download`;
-        urlPath = urlPath.replace(`{${"template_id"}}`, encodeURIComponent(String(requestParameters['templateId'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/templates/{template_id}/download`.replace(`{${"template_id"}}`, encodeURIComponent(String(requestParameters.templateId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -78,11 +71,8 @@ export class TemplatesApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/v1/templates`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/templates`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

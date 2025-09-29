@@ -11,79 +11,74 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 import { AdminUserRoleOverridesFromJSON, AdminUserRoleOverridesToJSON, } from './AdminUserRoleOverrides';
-import { AdminUserOrganizationFromJSON, AdminUserOrganizationToJSON, } from './AdminUserOrganization';
-import { AdminUserOrganizationMembershipFromJSON, AdminUserOrganizationMembershipToJSON, } from './AdminUserOrganizationMembership';
 /**
  * Check if a given object implements the AdminUserOut interface.
  */
 export function instanceOfAdminUserOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('isActive' in value) || value['isActive'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "isActive" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+    return isInstance;
 }
 export function AdminUserOutFromJSON(json) {
     return AdminUserOutFromJSONTyped(json, false);
 }
 export function AdminUserOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
-        'email': json['email'] == null ? undefined : json['email'],
-        'fullName': json['full_name'] == null ? undefined : json['full_name'],
-        'pictureUrl': json['picture_url'] == null ? undefined : json['picture_url'],
+        'email': !exists(json, 'email') ? undefined : json['email'],
+        'fullName': !exists(json, 'full_name') ? undefined : json['full_name'],
+        'pictureUrl': !exists(json, 'picture_url') ? undefined : json['picture_url'],
         'isActive': json['is_active'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'lastLoginAt': json['last_login_at'] == null ? undefined : (new Date(json['last_login_at'])),
-        'groups': json['groups'] == null ? undefined : json['groups'],
-        'roles': json['roles'] == null ? undefined : json['roles'],
-        'isAdmin': json['is_admin'] == null ? undefined : json['is_admin'],
-        'quotaCredentials': json['quota_credentials'] == null ? undefined : json['quota_credentials'],
-        'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
-        'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
-        'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
-        'roleOverrides': json['role_overrides'] == null ? undefined : AdminUserRoleOverridesFromJSON(json['role_overrides']),
-        'organizationIds': json['organization_ids'] == null ? undefined : json['organization_ids'],
-        'organizationMemberships': json['organization_memberships'] == null ? undefined : (json['organization_memberships'].map(AdminUserOrganizationMembershipFromJSON)),
-        'organizations': json['organizations'] == null ? undefined : (json['organizations'].map(AdminUserOrganizationFromJSON)),
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'lastLoginAt': !exists(json, 'last_login_at') ? undefined : json['last_login_at'],
+        'groups': !exists(json, 'groups') ? undefined : json['groups'],
+        'roles': !exists(json, 'roles') ? undefined : json['roles'],
+        'isAdmin': !exists(json, 'is_admin') ? undefined : json['is_admin'],
+        'quotaCredentials': !exists(json, 'quota_credentials') ? undefined : json['quota_credentials'],
+        'quotaSiteConfigs': !exists(json, 'quota_site_configs') ? undefined : json['quota_site_configs'],
+        'quotaFeeds': !exists(json, 'quota_feeds') ? undefined : json['quota_feeds'],
+        'quotaApiTokens': !exists(json, 'quota_api_tokens') ? undefined : json['quota_api_tokens'],
+        'roleOverrides': !exists(json, 'role_overrides') ? undefined : AdminUserRoleOverridesFromJSON(json['role_overrides']),
+        'organizationIds': !exists(json, 'organization_ids') ? undefined : json['organization_ids'],
+        'organizationMemberships': !exists(json, 'organization_memberships') ? undefined : json['organization_memberships'],
+        'organizations': !exists(json, 'organizations') ? undefined : json['organizations'],
     };
 }
-export function AdminUserOutToJSON(json) {
-    return AdminUserOutToJSONTyped(json, false);
-}
-export function AdminUserOutToJSONTyped(value, ignoreDiscriminator = false) {
-    var _a;
-    if (value == null) {
-        return value;
+export function AdminUserOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'email': value['email'],
-        'full_name': value['fullName'],
-        'picture_url': value['pictureUrl'],
-        'is_active': value['isActive'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'last_login_at': value['lastLoginAt'] === null ? null : ((_a = value['lastLoginAt']) === null || _a === void 0 ? void 0 : _a.toISOString()),
-        'groups': value['groups'],
-        'roles': value['roles'],
-        'is_admin': value['isAdmin'],
-        'quota_credentials': value['quotaCredentials'],
-        'quota_site_configs': value['quotaSiteConfigs'],
-        'quota_feeds': value['quotaFeeds'],
-        'quota_api_tokens': value['quotaApiTokens'],
-        'role_overrides': AdminUserRoleOverridesToJSON(value['roleOverrides']),
-        'organization_ids': value['organizationIds'],
-        'organization_memberships': value['organizationMemberships'] == null ? undefined : (value['organizationMemberships'].map(AdminUserOrganizationMembershipToJSON)),
-        'organizations': value['organizations'] == null ? undefined : (value['organizations'].map(AdminUserOrganizationToJSON)),
+        'id': value.id,
+        'email': value.email,
+        'full_name': value.fullName,
+        'picture_url': value.pictureUrl,
+        'is_active': value.isActive,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'last_login_at': value.lastLoginAt,
+        'groups': value.groups,
+        'roles': value.roles,
+        'is_admin': value.isAdmin,
+        'quota_credentials': value.quotaCredentials,
+        'quota_site_configs': value.quotaSiteConfigs,
+        'quota_feeds': value.quotaFeeds,
+        'quota_api_tokens': value.quotaApiTokens,
+        'role_overrides': AdminUserRoleOverridesToJSON(value.roleOverrides),
+        'organization_ids': value.organizationIds,
+        'organization_memberships': value.organizationMemberships,
+        'organizations': value.organizations,
     };
 }

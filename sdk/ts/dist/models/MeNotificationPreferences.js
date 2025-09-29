@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MeNotificationPreferencesToJSONTyped = exports.MeNotificationPreferencesToJSON = exports.MeNotificationPreferencesFromJSONTyped = exports.MeNotificationPreferencesFromJSON = exports.instanceOfMeNotificationPreferences = void 0;
+exports.MeNotificationPreferencesToJSON = exports.MeNotificationPreferencesFromJSONTyped = exports.MeNotificationPreferencesFromJSON = exports.instanceOfMeNotificationPreferences = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the MeNotificationPreferences interface.
  */
 function instanceOfMeNotificationPreferences(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfMeNotificationPreferences = instanceOfMeNotificationPreferences;
 function MeNotificationPreferencesFromJSON(json) {
@@ -26,26 +28,25 @@ function MeNotificationPreferencesFromJSON(json) {
 }
 exports.MeNotificationPreferencesFromJSON = MeNotificationPreferencesFromJSON;
 function MeNotificationPreferencesFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'emailJobUpdates': json['email_job_updates'] == null ? undefined : json['email_job_updates'],
-        'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
+        'emailJobUpdates': !(0, runtime_1.exists)(json, 'email_job_updates') ? undefined : json['email_job_updates'],
+        'emailDigest': !(0, runtime_1.exists)(json, 'email_digest') ? undefined : json['email_digest'],
     };
 }
 exports.MeNotificationPreferencesFromJSONTyped = MeNotificationPreferencesFromJSONTyped;
-function MeNotificationPreferencesToJSON(json) {
-    return MeNotificationPreferencesToJSONTyped(json, false);
-}
-exports.MeNotificationPreferencesToJSON = MeNotificationPreferencesToJSON;
-function MeNotificationPreferencesToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function MeNotificationPreferencesToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'email_job_updates': value['emailJobUpdates'],
-        'email_digest': value['emailDigest'],
+        'email_job_updates': value.emailJobUpdates,
+        'email_digest': value.emailDigest,
     };
 }
-exports.MeNotificationPreferencesToJSONTyped = MeNotificationPreferencesToJSONTyped;
+exports.MeNotificationPreferencesToJSON = MeNotificationPreferencesToJSON;

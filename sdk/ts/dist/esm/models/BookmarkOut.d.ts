@@ -17,52 +17,81 @@
 export interface BookmarkOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    instapaperBookmarkId: string;
+    instapaperBookmarkId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    title?: string | null;
+    title?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    url?: string | null;
+    url?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    contentLocation?: string | null;
+    contentLocation?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    feedId?: string | null;
+    feedId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    publishedAt?: string | null;
+    publishedAt?: any | null;
+    /**
+     *
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    rssEntry?: {
+        [key: string]: any;
+    } | null;
+    /**
+     *
+     * @type {any}
+     * @memberof BookmarkOut
+     */
+    rawHtmlContent?: any | null;
+    /**
+     *
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    publicationStatuses?: {
+        [key: string]: any;
+    } | null;
+    /**
+     *
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    publicationFlags?: {
+        [key: string]: any;
+    } | null;
 }
 /**
  * Check if a given object implements the BookmarkOut interface.
  */
-export declare function instanceOfBookmarkOut(value: object): value is BookmarkOut;
+export declare function instanceOfBookmarkOut(value: object): boolean;
 export declare function BookmarkOutFromJSON(json: any): BookmarkOut;
 export declare function BookmarkOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkOut;
-export declare function BookmarkOutToJSON(json: any): BookmarkOut;
-export declare function BookmarkOutToJSONTyped(value?: BookmarkOut | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarkOutToJSON(value?: BookmarkOut | null): any;

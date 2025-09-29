@@ -17,58 +17,63 @@
 export interface FeedOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    url: string;
+    url: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    pollFrequency: string;
+    pollFrequency: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    initialLookbackPeriod?: string | null;
+    initialLookbackPeriod?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof FeedOut
      */
-    isPaywalled?: boolean;
+    isPaywalled?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof FeedOut
      */
-    rssRequiresAuth?: boolean;
+    rssRequiresAuth?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    siteConfigId?: string | null;
+    siteConfigId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FeedOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof FeedOut
+     */
+    siteLoginCredentialId?: any | null;
 }
 /**
  * Check if a given object implements the FeedOut interface.
  */
-export declare function instanceOfFeedOut(value: object): value is FeedOut;
+export declare function instanceOfFeedOut(value: object): boolean;
 export declare function FeedOutFromJSON(json: any): FeedOut;
 export declare function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): FeedOut;
-export declare function FeedOutToJSON(json: any): FeedOut;
-export declare function FeedOutToJSONTyped(value?: FeedOut | null, ignoreDiscriminator?: boolean): any;
+export declare function FeedOutToJSON(value?: FeedOut | null): any;

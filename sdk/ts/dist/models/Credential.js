@@ -13,18 +13,17 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CredentialToJSONTyped = exports.CredentialToJSON = exports.CredentialFromJSONTyped = exports.CredentialFromJSON = exports.instanceOfCredential = void 0;
+exports.CredentialToJSON = exports.CredentialFromJSONTyped = exports.CredentialFromJSON = exports.instanceOfCredential = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the Credential interface.
  */
 function instanceOfCredential(value) {
-    if (!('kind' in value) || value['kind'] === undefined)
-        return false;
-    if (!('description' in value) || value['description'] === undefined)
-        return false;
-    if (!('data' in value) || value['data'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "kind" in value;
+    isInstance = isInstance && "description" in value;
+    isInstance = isInstance && "data" in value;
+    return isInstance;
 }
 exports.instanceOfCredential = instanceOfCredential;
 function CredentialFromJSON(json) {
@@ -32,34 +31,33 @@ function CredentialFromJSON(json) {
 }
 exports.CredentialFromJSON = CredentialFromJSON;
 function CredentialFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'id': json['id'] == null ? undefined : json['id'],
+        'id': !(0, runtime_1.exists)(json, 'id') ? undefined : json['id'],
         'kind': json['kind'],
         'description': json['description'],
         'data': json['data'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
+        'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'siteConfigId': !(0, runtime_1.exists)(json, 'site_config_id') ? undefined : json['site_config_id'],
     };
 }
 exports.CredentialFromJSONTyped = CredentialFromJSONTyped;
-function CredentialToJSON(json) {
-    return CredentialToJSONTyped(json, false);
-}
-exports.CredentialToJSON = CredentialToJSON;
-function CredentialToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function CredentialToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'kind': value['kind'],
-        'description': value['description'],
-        'data': value['data'],
-        'owner_user_id': value['ownerUserId'],
-        'site_config_id': value['siteConfigId'],
+        'id': value.id,
+        'kind': value.kind,
+        'description': value.description,
+        'data': value.data,
+        'owner_user_id': value.ownerUserId,
+        'site_config_id': value.siteConfigId,
     };
 }
-exports.CredentialToJSONTyped = CredentialToJSONTyped;
+exports.CredentialToJSON = CredentialToJSON;

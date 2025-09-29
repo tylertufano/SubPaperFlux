@@ -10,29 +10,29 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { Credential, InstapaperLoginRequest } from '../models/index';
+import type { Credential, InstapaperLoginRequest } from '../models';
 export interface CreateCredentialCredentialsPostRequest {
     credential: Credential;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface CreateInstapaperCredentialFromLoginCredentialsInstapaperLoginPostRequest {
     instapaperLoginRequest: InstapaperLoginRequest;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface DeleteCredentialCredentialsCredIdDeleteRequest {
-    credId: string;
-    xCsrfToken?: string | null;
+    credId: any;
+    xCsrfToken?: any;
 }
 export interface GetCredentialCredentialsCredIdGetRequest {
-    credId: string;
+    credId: any;
 }
 export interface ListCredentialsCredentialsGetRequest {
-    includeGlobal?: boolean;
+    includeGlobal?: any;
 }
 export interface UpdateCredentialCredentialsCredIdPutRequest {
-    credId: string;
+    credId: any;
     credential: Credential;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 /**
  *
@@ -73,11 +73,11 @@ export declare class CredentialsApi extends runtime.BaseAPI {
     /**
      * List Credentials
      */
-    listCredentialsCredentialsGetRaw(requestParameters: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Credential>>>;
+    listCredentialsCredentialsGetRaw(requestParameters: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * List Credentials
      */
-    listCredentialsCredentialsGet(requestParameters?: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Credential>>;
+    listCredentialsCredentialsGet(requestParameters?: ListCredentialsCredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Update Credential
      */

@@ -11,50 +11,47 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { AdminUserOutFromJSON, AdminUserOutToJSON, } from './AdminUserOut';
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AdminUsersPage interface.
  */
 export function instanceOfAdminUsersPage(value) {
-    if (!('items' in value) || value['items'] === undefined)
-        return false;
-    if (!('total' in value) || value['total'] === undefined)
-        return false;
-    if (!('page' in value) || value['page'] === undefined)
-        return false;
-    if (!('size' in value) || value['size'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+    return isInstance;
 }
 export function AdminUsersPageFromJSON(json) {
     return AdminUsersPageFromJSONTyped(json, false);
 }
 export function AdminUsersPageFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'items': (json['items'].map(AdminUserOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
-export function AdminUsersPageToJSON(json) {
-    return AdminUsersPageToJSONTyped(json, false);
-}
-export function AdminUsersPageToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AdminUsersPageToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'items': (value['items'].map(AdminUserOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }

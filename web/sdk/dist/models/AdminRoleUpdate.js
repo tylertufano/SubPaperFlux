@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminRoleUpdateToJSONTyped = exports.AdminRoleUpdateToJSON = exports.AdminRoleUpdateFromJSONTyped = exports.AdminRoleUpdateFromJSON = exports.instanceOfAdminRoleUpdate = void 0;
+exports.AdminRoleUpdateToJSON = exports.AdminRoleUpdateFromJSONTyped = exports.AdminRoleUpdateFromJSON = exports.instanceOfAdminRoleUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the AdminRoleUpdate interface.
  */
 function instanceOfAdminRoleUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfAdminRoleUpdate = instanceOfAdminRoleUpdate;
 function AdminRoleUpdateFromJSON(json) {
@@ -26,26 +28,25 @@ function AdminRoleUpdateFromJSON(json) {
 }
 exports.AdminRoleUpdateFromJSON = AdminRoleUpdateFromJSON;
 function AdminRoleUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'name': json['name'] == null ? undefined : json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
+        'name': !(0, runtime_1.exists)(json, 'name') ? undefined : json['name'],
+        'description': !(0, runtime_1.exists)(json, 'description') ? undefined : json['description'],
     };
 }
 exports.AdminRoleUpdateFromJSONTyped = AdminRoleUpdateFromJSONTyped;
-function AdminRoleUpdateToJSON(json) {
-    return AdminRoleUpdateToJSONTyped(json, false);
-}
-exports.AdminRoleUpdateToJSON = AdminRoleUpdateToJSON;
-function AdminRoleUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function AdminRoleUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
+        'name': value.name,
+        'description': value.description,
     };
 }
-exports.AdminRoleUpdateToJSONTyped = AdminRoleUpdateToJSONTyped;
+exports.AdminRoleUpdateToJSON = AdminRoleUpdateToJSON;

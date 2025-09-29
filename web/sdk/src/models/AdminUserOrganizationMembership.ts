@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,51 +21,53 @@ import { mapValues } from '../runtime';
 export interface AdminUserOrganizationMembership {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    organizationId: string;
+    organizationId: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    organizationSlug: string;
+    organizationSlug: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    organizationName: string;
+    organizationName: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    organizationDescription?: string | null;
+    organizationDescription?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    organizationIsDefault?: boolean;
+    organizationIsDefault?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminUserOrganizationMembership
      */
-    joinedAt: Date;
+    joinedAt: any | null;
 }
 
 /**
  * Check if a given object implements the AdminUserOrganizationMembership interface.
  */
-export function instanceOfAdminUserOrganizationMembership(value: object): value is AdminUserOrganizationMembership {
-    if (!('organizationId' in value) || value['organizationId'] === undefined) return false;
-    if (!('organizationSlug' in value) || value['organizationSlug'] === undefined) return false;
-    if (!('organizationName' in value) || value['organizationName'] === undefined) return false;
-    if (!('joinedAt' in value) || value['joinedAt'] === undefined) return false;
-    return true;
+export function instanceOfAdminUserOrganizationMembership(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "organizationId" in value;
+    isInstance = isInstance && "organizationSlug" in value;
+    isInstance = isInstance && "organizationName" in value;
+    isInstance = isInstance && "joinedAt" in value;
+
+    return isInstance;
 }
 
 export function AdminUserOrganizationMembershipFromJSON(json: any): AdminUserOrganizationMembership {
@@ -73,7 +75,7 @@ export function AdminUserOrganizationMembershipFromJSON(json: any): AdminUserOrg
 }
 
 export function AdminUserOrganizationMembershipFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserOrganizationMembership {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -81,29 +83,27 @@ export function AdminUserOrganizationMembershipFromJSONTyped(json: any, ignoreDi
         'organizationId': json['organization_id'],
         'organizationSlug': json['organization_slug'],
         'organizationName': json['organization_name'],
-        'organizationDescription': json['organization_description'] == null ? undefined : json['organization_description'],
-        'organizationIsDefault': json['organization_is_default'] == null ? undefined : json['organization_is_default'],
-        'joinedAt': (new Date(json['joined_at'])),
+        'organizationDescription': !exists(json, 'organization_description') ? undefined : json['organization_description'],
+        'organizationIsDefault': !exists(json, 'organization_is_default') ? undefined : json['organization_is_default'],
+        'joinedAt': json['joined_at'],
     };
 }
 
-export function AdminUserOrganizationMembershipToJSON(json: any): AdminUserOrganizationMembership {
-    return AdminUserOrganizationMembershipToJSONTyped(json, false);
-}
-
-export function AdminUserOrganizationMembershipToJSONTyped(value?: AdminUserOrganizationMembership | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminUserOrganizationMembershipToJSON(value?: AdminUserOrganizationMembership | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'organization_id': value['organizationId'],
-        'organization_slug': value['organizationSlug'],
-        'organization_name': value['organizationName'],
-        'organization_description': value['organizationDescription'],
-        'organization_is_default': value['organizationIsDefault'],
-        'joined_at': ((value['joinedAt']).toISOString()),
+        'organization_id': value.organizationId,
+        'organization_slug': value.organizationSlug,
+        'organization_name': value.organizationName,
+        'organization_description': value.organizationDescription,
+        'organization_is_default': value.organizationIsDefault,
+        'joined_at': value.joinedAt,
     };
 }
 

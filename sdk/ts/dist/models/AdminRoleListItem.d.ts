@@ -17,52 +17,51 @@
 export interface AdminRoleListItem {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    isSystem?: boolean;
+    isSystem?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRoleListItem
      */
-    assignedUserCount?: number;
+    assignedUserCount?: any | null;
 }
 /**
  * Check if a given object implements the AdminRoleListItem interface.
  */
-export declare function instanceOfAdminRoleListItem(value: object): value is AdminRoleListItem;
+export declare function instanceOfAdminRoleListItem(value: object): boolean;
 export declare function AdminRoleListItemFromJSON(json: any): AdminRoleListItem;
 export declare function AdminRoleListItemFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleListItem;
-export declare function AdminRoleListItemToJSON(json: any): AdminRoleListItem;
-export declare function AdminRoleListItemToJSONTyped(value?: AdminRoleListItem | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminRoleListItemToJSON(value?: AdminRoleListItem | null): any;

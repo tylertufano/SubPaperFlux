@@ -17,28 +17,27 @@
 export interface AdminRoleCreate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    isSystem?: boolean | null;
+    isSystem?: any | null;
 }
 /**
  * Check if a given object implements the AdminRoleCreate interface.
  */
-export declare function instanceOfAdminRoleCreate(value: object): value is AdminRoleCreate;
+export declare function instanceOfAdminRoleCreate(value: object): boolean;
 export declare function AdminRoleCreateFromJSON(json: any): AdminRoleCreate;
 export declare function AdminRoleCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleCreate;
-export declare function AdminRoleCreateToJSON(json: any): AdminRoleCreate;
-export declare function AdminRoleCreateToJSONTyped(value?: AdminRoleCreate | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminRoleCreateToJSON(value?: AdminRoleCreate | null): any;

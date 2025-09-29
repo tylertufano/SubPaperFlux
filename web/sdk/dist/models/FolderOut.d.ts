@@ -17,34 +17,33 @@
 export interface FolderOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderOut
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderOut
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof FolderOut
      */
-    bookmarkCount?: number;
+    bookmarkCount?: any | null;
 }
 /**
  * Check if a given object implements the FolderOut interface.
  */
-export declare function instanceOfFolderOut(value: object): value is FolderOut;
+export declare function instanceOfFolderOut(value: object): boolean;
 export declare function FolderOutFromJSON(json: any): FolderOut;
 export declare function FolderOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): FolderOut;
-export declare function FolderOutToJSON(json: any): FolderOut;
-export declare function FolderOutToJSONTyped(value?: FolderOut | null, ignoreDiscriminator?: boolean): any;
+export declare function FolderOutToJSON(value?: FolderOut | null): any;

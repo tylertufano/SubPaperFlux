@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,25 +21,27 @@ import { mapValues } from '../runtime';
 export interface TemplateCategory {
     /**
      * Stable identifier for the category
-     * @type {string}
+     * @type {any}
      * @memberof TemplateCategory
      */
-    id: string;
+    id: any | null;
     /**
      * Human-friendly label for the category
-     * @type {string}
+     * @type {any}
      * @memberof TemplateCategory
      */
-    label: string;
+    label: any | null;
 }
 
 /**
  * Check if a given object implements the TemplateCategory interface.
  */
-export function instanceOfTemplateCategory(value: object): value is TemplateCategory {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('label' in value) || value['label'] === undefined) return false;
-    return true;
+export function instanceOfTemplateCategory(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "label" in value;
+
+    return isInstance;
 }
 
 export function TemplateCategoryFromJSON(json: any): TemplateCategory {
@@ -47,7 +49,7 @@ export function TemplateCategoryFromJSON(json: any): TemplateCategory {
 }
 
 export function TemplateCategoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): TemplateCategory {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -57,19 +59,17 @@ export function TemplateCategoryFromJSONTyped(json: any, ignoreDiscriminator: bo
     };
 }
 
-export function TemplateCategoryToJSON(json: any): TemplateCategory {
-    return TemplateCategoryToJSONTyped(json, false);
-}
-
-export function TemplateCategoryToJSONTyped(value?: TemplateCategory | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function TemplateCategoryToJSON(value?: TemplateCategory | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'label': value['label'],
+        'id': value.id,
+        'label': value.label,
     };
 }
 

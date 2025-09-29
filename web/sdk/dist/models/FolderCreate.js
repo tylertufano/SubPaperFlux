@@ -13,14 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FolderCreateToJSONTyped = exports.FolderCreateToJSON = exports.FolderCreateFromJSONTyped = exports.FolderCreateFromJSON = exports.instanceOfFolderCreate = void 0;
+exports.FolderCreateToJSON = exports.FolderCreateFromJSONTyped = exports.FolderCreateFromJSON = exports.instanceOfFolderCreate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the FolderCreate interface.
  */
 function instanceOfFolderCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 exports.instanceOfFolderCreate = instanceOfFolderCreate;
 function FolderCreateFromJSON(json) {
@@ -28,26 +29,25 @@ function FolderCreateFromJSON(json) {
 }
 exports.FolderCreateFromJSON = FolderCreateFromJSON;
 function FolderCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'instapaperFolderId': !(0, runtime_1.exists)(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
 exports.FolderCreateFromJSONTyped = FolderCreateFromJSONTyped;
-function FolderCreateToJSON(json) {
-    return FolderCreateToJSONTyped(json, false);
-}
-exports.FolderCreateToJSON = FolderCreateToJSON;
-function FolderCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function FolderCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }
-exports.FolderCreateToJSONTyped = FolderCreateToJSONTyped;
+exports.FolderCreateToJSON = FolderCreateToJSON;

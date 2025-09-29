@@ -11,33 +11,35 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the FolderUpdate interface.
  */
 export function instanceOfFolderUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function FolderUpdateFromJSON(json) {
     return FolderUpdateFromJSONTyped(json, false);
 }
 export function FolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'name': json['name'] == null ? undefined : json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'name': !exists(json, 'name') ? undefined : json['name'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
-export function FolderUpdateToJSON(json) {
-    return FolderUpdateToJSONTyped(json, false);
-}
-export function FolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function FolderUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }

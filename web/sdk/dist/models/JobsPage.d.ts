@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { JobOut } from './JobOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { JobOut } from './JobOut';
 export interface JobsPage {
     /**
      *
-     * @type {Array<JobOut>}
+     * @type {any}
      * @memberof JobsPage
      */
-    items: Array<JobOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof JobsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the JobsPage interface.
  */
-export declare function instanceOfJobsPage(value: object): value is JobsPage;
+export declare function instanceOfJobsPage(value: object): boolean;
 export declare function JobsPageFromJSON(json: any): JobsPage;
 export declare function JobsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobsPage;
-export declare function JobsPageToJSON(json: any): JobsPage;
-export declare function JobsPageToJSONTyped(value?: JobsPage | null, ignoreDiscriminator?: boolean): any;
+export declare function JobsPageToJSON(value?: JobsPage | null): any;

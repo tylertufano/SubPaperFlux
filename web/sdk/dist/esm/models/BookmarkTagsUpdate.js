@@ -11,31 +11,33 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BookmarkTagsUpdate interface.
  */
 export function instanceOfBookmarkTagsUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function BookmarkTagsUpdateFromJSON(json) {
     return BookmarkTagsUpdateFromJSONTyped(json, false);
 }
 export function BookmarkTagsUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'tags': json['tags'] == null ? undefined : json['tags'],
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
     };
 }
-export function BookmarkTagsUpdateToJSON(json) {
-    return BookmarkTagsUpdateToJSONTyped(json, false);
-}
-export function BookmarkTagsUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BookmarkTagsUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'tags': value['tags'],
+        'tags': value.tags,
     };
 }

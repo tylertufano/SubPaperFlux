@@ -24,7 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CredentialsApi = void 0;
 const runtime = require("../runtime");
-const index_1 = require("../models/index");
+const models_1 = require("../models");
 /**
  *
  */
@@ -34,14 +34,14 @@ class CredentialsApi extends runtime.BaseAPI {
      */
     createCredentialCredentialsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['credential'] == null) {
-                throw new runtime.RequiredError('credential', 'Required parameter "credential" was null or undefined when calling createCredentialCredentialsPost().');
+            if (requestParameters.credential === null || requestParameters.credential === undefined) {
+                throw new runtime.RequiredError('credential', 'Required parameter requestParameters.credential was null or undefined when calling createCredentialCredentialsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -50,15 +50,14 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.CredentialToJSON)(requestParameters['credential']),
+                body: (0, models_1.CredentialToJSON)(requestParameters.credential),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.CredentialFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.CredentialFromJSON)(jsonValue));
         });
     }
     /**
@@ -75,14 +74,14 @@ class CredentialsApi extends runtime.BaseAPI {
      */
     createInstapaperCredentialFromLoginCredentialsInstapaperLoginPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['instapaperLoginRequest'] == null) {
-                throw new runtime.RequiredError('instapaperLoginRequest', 'Required parameter "instapaperLoginRequest" was null or undefined when calling createInstapaperCredentialFromLoginCredentialsInstapaperLoginPost().');
+            if (requestParameters.instapaperLoginRequest === null || requestParameters.instapaperLoginRequest === undefined) {
+                throw new runtime.RequiredError('instapaperLoginRequest', 'Required parameter requestParameters.instapaperLoginRequest was null or undefined when calling createInstapaperCredentialFromLoginCredentialsInstapaperLoginPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -91,15 +90,14 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/instapaper/login`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/instapaper/login`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.InstapaperLoginRequestToJSON)(requestParameters['instapaperLoginRequest']),
+                body: (0, models_1.InstapaperLoginRequestToJSON)(requestParameters.instapaperLoginRequest),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.CredentialFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.CredentialFromJSON)(jsonValue));
         });
     }
     /**
@@ -116,13 +114,13 @@ class CredentialsApi extends runtime.BaseAPI {
      */
     deleteCredentialCredentialsCredIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['credId'] == null) {
-                throw new runtime.RequiredError('credId', 'Required parameter "credId" was null or undefined when calling deleteCredentialCredentialsCredIdDelete().');
+            if (requestParameters.credId === null || requestParameters.credId === undefined) {
+                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling deleteCredentialCredentialsCredIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -131,10 +129,8 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/{cred_id}`;
-            urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -155,8 +151,8 @@ class CredentialsApi extends runtime.BaseAPI {
      */
     getCredentialCredentialsCredIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['credId'] == null) {
-                throw new runtime.RequiredError('credId', 'Required parameter "credId" was null or undefined when calling getCredentialCredentialsCredIdGet().');
+            if (requestParameters.credId === null || requestParameters.credId === undefined) {
+                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling getCredentialCredentialsCredIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -167,15 +163,13 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/{cred_id}`;
-            urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.CredentialFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.CredentialFromJSON)(jsonValue));
         });
     }
     /**
@@ -193,8 +187,8 @@ class CredentialsApi extends runtime.BaseAPI {
     listCredentialsCredentialsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['includeGlobal'] != null) {
-                queryParameters['include_global'] = requestParameters['includeGlobal'];
+            if (requestParameters.includeGlobal !== undefined) {
+                queryParameters['include_global'] = requestParameters.includeGlobal;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -204,14 +198,18 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(index_1.CredentialFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -228,17 +226,17 @@ class CredentialsApi extends runtime.BaseAPI {
      */
     updateCredentialCredentialsCredIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['credId'] == null) {
-                throw new runtime.RequiredError('credId', 'Required parameter "credId" was null or undefined when calling updateCredentialCredentialsCredIdPut().');
+            if (requestParameters.credId === null || requestParameters.credId === undefined) {
+                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling updateCredentialCredentialsCredIdPut.');
             }
-            if (requestParameters['credential'] == null) {
-                throw new runtime.RequiredError('credential', 'Required parameter "credential" was null or undefined when calling updateCredentialCredentialsCredIdPut().');
+            if (requestParameters.credential === null || requestParameters.credential === undefined) {
+                throw new runtime.RequiredError('credential', 'Required parameter requestParameters.credential was null or undefined when calling updateCredentialCredentialsCredIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -247,16 +245,14 @@ class CredentialsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/credentials/{cred_id}`;
-            urlPath = urlPath.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters['credId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.CredentialToJSON)(requestParameters['credential']),
+                body: (0, models_1.CredentialToJSON)(requestParameters.credential),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.CredentialFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.CredentialFromJSON)(jsonValue));
         });
     }
     /**

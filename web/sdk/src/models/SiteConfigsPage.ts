@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { SiteConfigsPageItemsInner } from './SiteConfigsPageItemsInner';
-import {
-    SiteConfigsPageItemsInnerFromJSON,
-    SiteConfigsPageItemsInnerFromJSONTyped,
-    SiteConfigsPageItemsInnerToJSON,
-    SiteConfigsPageItemsInnerToJSONTyped,
-} from './SiteConfigsPageItemsInner';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface SiteConfigsPage {
     /**
      * 
-     * @type {Array<SiteConfigsPageItemsInner>}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    items: Array<SiteConfigsPageItemsInner>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof SiteConfigsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteConfigsPage interface.
  */
-export function instanceOfSiteConfigsPage(value: object): value is SiteConfigsPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfSiteConfigsPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function SiteConfigsPageFromJSON(json: any): SiteConfigsPage {
@@ -81,37 +75,35 @@ export function SiteConfigsPageFromJSON(json: any): SiteConfigsPage {
 }
 
 export function SiteConfigsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigsPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(SiteConfigsPageItemsInnerFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function SiteConfigsPageToJSON(json: any): SiteConfigsPage {
-    return SiteConfigsPageToJSONTyped(json, false);
-}
-
-export function SiteConfigsPageToJSONTyped(value?: SiteConfigsPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteConfigsPageToJSON(value?: SiteConfigsPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(SiteConfigsPageItemsInnerToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 

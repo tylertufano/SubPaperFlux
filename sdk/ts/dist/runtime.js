@@ -22,7 +22,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TextApiResponse = exports.BlobApiResponse = exports.VoidApiResponse = exports.JSONApiResponse = exports.canConsumeForm = exports.mapValues = exports.exists = exports.querystring = exports.COLLECTION_FORMATS = exports.RequiredError = exports.FetchError = exports.ResponseError = exports.BaseAPI = exports.DefaultConfig = exports.Configuration = exports.BASE_PATH = void 0;
+exports.TextApiResponse = exports.BlobApiResponse = exports.VoidApiResponse = exports.JSONApiResponse = exports.canConsumeForm = exports.mapValues = exports.querystring = exports.exists = exports.COLLECTION_FORMATS = exports.RequiredError = exports.FetchError = exports.ResponseError = exports.BaseAPI = exports.DefaultConfig = exports.Configuration = exports.BASE_PATH = void 0;
 exports.BASE_PATH = "http://localhost".replace(/\/+$/, "");
 class Configuration {
     constructor(configuration = {}) {
@@ -187,19 +187,11 @@ class BaseAPI {
                 init: initParams,
                 context,
             })));
-            let body;
-            if (isFormData(overriddenInit.body)
-                || (overriddenInit.body instanceof URLSearchParams)
-                || isBlob(overriddenInit.body)) {
-                body = overriddenInit.body;
-            }
-            else if (this.isJsonMime(headers['Content-Type'])) {
-                body = JSON.stringify(overriddenInit.body);
-            }
-            else {
-                body = overriddenInit.body;
-            }
-            const init = Object.assign(Object.assign({}, overriddenInit), { body });
+            const init = Object.assign(Object.assign({}, overriddenInit), { body: isFormData(overriddenInit.body) ||
+                    overriddenInit.body instanceof URLSearchParams ||
+                    isBlob(overriddenInit.body)
+                    ? overriddenInit.body
+                    : JSON.stringify(overriddenInit.body) });
             return { url, init };
         });
     }
@@ -253,6 +245,11 @@ exports.COLLECTION_FORMATS = {
     tsv: "\t",
     pipes: "|",
 };
+function exists(json, key) {
+    const value = json[key];
+    return value !== null && value !== undefined;
+}
+exports.exists = exists;
 function querystring(params, prefix = '') {
     return Object.keys(params)
         .map(key => querystringSingleKey(key, params[key], prefix))
@@ -279,17 +276,8 @@ function querystringSingleKey(key, value, keyPrefix = '') {
     }
     return `${encodeURIComponent(fullKey)}=${encodeURIComponent(String(value))}`;
 }
-function exists(json, key) {
-    const value = json[key];
-    return value !== null && value !== undefined;
-}
-exports.exists = exists;
 function mapValues(data, fn) {
-    const result = {};
-    for (const key of Object.keys(data)) {
-        result[key] = fn(data[key]);
-    }
-    return result;
+    return Object.keys(data).reduce((acc, key) => (Object.assign(Object.assign({}, acc), { [key]: fn(data[key]) })), {});
 }
 exports.mapValues = mapValues;
 function canConsumeForm(consumes) {

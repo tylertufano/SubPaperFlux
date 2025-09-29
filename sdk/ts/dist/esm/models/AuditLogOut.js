@@ -11,27 +11,24 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AuditLogOut interface.
  */
 export function instanceOfAuditLogOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('entityType' in value) || value['entityType'] === undefined)
-        return false;
-    if (!('entityId' in value) || value['entityId'] === undefined)
-        return false;
-    if (!('action' in value) || value['action'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "entityType" in value;
+    isInstance = isInstance && "entityId" in value;
+    isInstance = isInstance && "action" in value;
+    isInstance = isInstance && "createdAt" in value;
+    return isInstance;
 }
 export function AuditLogOutFromJSON(json) {
     return AuditLogOutFromJSONTyped(json, false);
 }
 export function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -39,27 +36,27 @@ export function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
         'entityType': json['entity_type'],
         'entityId': json['entity_id'],
         'action': json['action'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'actorUserId': json['actor_user_id'] == null ? undefined : json['actor_user_id'],
-        'details': json['details'] == null ? undefined : json['details'],
-        'createdAt': (new Date(json['created_at'])),
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'actorUserId': !exists(json, 'actor_user_id') ? undefined : json['actor_user_id'],
+        'details': !exists(json, 'details') ? undefined : json['details'],
+        'createdAt': json['created_at'],
     };
 }
-export function AuditLogOutToJSON(json) {
-    return AuditLogOutToJSONTyped(json, false);
-}
-export function AuditLogOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AuditLogOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'entity_type': value['entityType'],
-        'entity_id': value['entityId'],
-        'action': value['action'],
-        'owner_user_id': value['ownerUserId'],
-        'actor_user_id': value['actorUserId'],
-        'details': value['details'],
-        'created_at': ((value['createdAt']).toISOString()),
+        'id': value.id,
+        'entity_type': value.entityType,
+        'entity_id': value.entityId,
+        'action': value.action,
+        'owner_user_id': value.ownerUserId,
+        'actor_user_id': value.actorUserId,
+        'details': value.details,
+        'created_at': value.createdAt,
     };
 }

@@ -11,37 +11,38 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BulkBookmarkTagUpdate interface.
  */
 export function instanceOfBulkBookmarkTagUpdate(value) {
-    if (!('bookmarkIds' in value) || value['bookmarkIds'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkIds" in value;
+    return isInstance;
 }
 export function BulkBookmarkTagUpdateFromJSON(json) {
     return BulkBookmarkTagUpdateFromJSONTyped(json, false);
 }
 export function BulkBookmarkTagUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkIds': json['bookmark_ids'],
-        'tags': json['tags'] == null ? undefined : json['tags'],
-        'clear': json['clear'] == null ? undefined : json['clear'],
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
+        'clear': !exists(json, 'clear') ? undefined : json['clear'],
     };
 }
-export function BulkBookmarkTagUpdateToJSON(json) {
-    return BulkBookmarkTagUpdateToJSONTyped(json, false);
-}
-export function BulkBookmarkTagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BulkBookmarkTagUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_ids': value['bookmarkIds'],
-        'tags': value['tags'],
-        'clear': value['clear'],
+        'bookmark_ids': value.bookmarkIds,
+        'tags': value.tags,
+        'clear': value.clear,
     };
 }

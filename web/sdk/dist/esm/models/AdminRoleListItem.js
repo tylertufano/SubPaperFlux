@@ -11,51 +11,49 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AdminRoleListItem interface.
  */
 export function instanceOfAdminRoleListItem(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+    return isInstance;
 }
 export function AdminRoleListItemFromJSON(json) {
     return AdminRoleListItemFromJSONTyped(json, false);
 }
 export function AdminRoleListItemFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'assignedUserCount': json['assigned_user_count'] == null ? undefined : json['assigned_user_count'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'assignedUserCount': !exists(json, 'assigned_user_count') ? undefined : json['assigned_user_count'],
     };
 }
-export function AdminRoleListItemToJSON(json) {
-    return AdminRoleListItemToJSONTyped(json, false);
-}
-export function AdminRoleListItemToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AdminRoleListItemToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'assigned_user_count': value['assignedUserCount'],
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'assigned_user_count': value.assignedUserCount,
     };
 }

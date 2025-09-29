@@ -17,22 +17,22 @@
 export interface Credential {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    id?: string | null;
+    id?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    kind: string;
+    kind: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    description: string;
+    description: any | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -40,25 +40,24 @@ export interface Credential {
      */
     data: {
         [key: string]: any;
-    };
+    } | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    siteConfigId?: string | null;
+    siteConfigId?: any | null;
 }
 /**
  * Check if a given object implements the Credential interface.
  */
-export declare function instanceOfCredential(value: object): value is Credential;
+export declare function instanceOfCredential(value: object): boolean;
 export declare function CredentialFromJSON(json: any): Credential;
 export declare function CredentialFromJSONTyped(json: any, ignoreDiscriminator: boolean): Credential;
-export declare function CredentialToJSON(json: any): Credential;
-export declare function CredentialToJSONTyped(value?: Credential | null, ignoreDiscriminator?: boolean): any;
+export declare function CredentialToJSON(value?: Credential | null): any;

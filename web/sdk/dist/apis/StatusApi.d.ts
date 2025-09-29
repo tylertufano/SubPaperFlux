@@ -10,14 +10,14 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { StatusResponse } from '../models/index';
+import type { StatusResponse } from '../models';
 export interface IntegrationsStatusStatusIntegrationsGetRequest {
-    instapaperCredId?: string | null;
-    minifluxCredId?: string | null;
+    instapaperCredId?: any;
+    minifluxCredId?: any;
 }
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
-    instapaperCredId?: string | null;
-    minifluxCredId?: string | null;
+    instapaperCredId?: any;
+    minifluxCredId?: any;
 }
 /**
  *

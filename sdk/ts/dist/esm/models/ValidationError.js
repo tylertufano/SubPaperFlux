@@ -11,42 +11,39 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ValidationErrorLocInnerFromJSON, ValidationErrorLocInnerToJSON, } from './ValidationErrorLocInner';
 /**
  * Check if a given object implements the ValidationError interface.
  */
 export function instanceOfValidationError(value) {
-    if (!('loc' in value) || value['loc'] === undefined)
-        return false;
-    if (!('msg' in value) || value['msg'] === undefined)
-        return false;
-    if (!('type' in value) || value['type'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "loc" in value;
+    isInstance = isInstance && "msg" in value;
+    isInstance = isInstance && "type" in value;
+    return isInstance;
 }
 export function ValidationErrorFromJSON(json) {
     return ValidationErrorFromJSONTyped(json, false);
 }
 export function ValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'loc': (json['loc'].map(ValidationErrorLocInnerFromJSON)),
+        'loc': json['loc'],
         'msg': json['msg'],
         'type': json['type'],
     };
 }
-export function ValidationErrorToJSON(json) {
-    return ValidationErrorToJSONTyped(json, false);
-}
-export function ValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function ValidationErrorToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'loc': (value['loc'].map(ValidationErrorLocInnerToJSON)),
-        'msg': value['msg'],
-        'type': value['type'],
+        'loc': value.loc,
+        'msg': value.msg,
+        'type': value.type,
     };
 }

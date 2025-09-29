@@ -12,13 +12,12 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 import type { SeleniumConfig } from './SeleniumConfig';
 import {
     SeleniumConfigFromJSON,
     SeleniumConfigFromJSONTyped,
     SeleniumConfigToJSON,
-    SeleniumConfigToJSONTyped,
 } from './SeleniumConfig';
 
 /**
@@ -29,52 +28,52 @@ import {
 export interface SiteConfigSelenium {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    siteUrl: string;
+    siteUrl: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    successTextClass?: string;
+    successTextClass?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    expectedSuccessText?: string;
+    expectedSuccessText?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    requiredCookies?: Array<string>;
+    requiredCookies?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    id?: string | null;
+    id?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigSelenium
      */
-    loginType?: SiteConfigSeleniumLoginTypeEnum;
+    loginType?: any | null;
     /**
      * 
      * @type {SeleniumConfig}
@@ -83,24 +82,16 @@ export interface SiteConfigSelenium {
     seleniumConfig: SeleniumConfig;
 }
 
-
-/**
- * @export
- */
-export const SiteConfigSeleniumLoginTypeEnum = {
-    Selenium: 'selenium'
-} as const;
-export type SiteConfigSeleniumLoginTypeEnum = typeof SiteConfigSeleniumLoginTypeEnum[keyof typeof SiteConfigSeleniumLoginTypeEnum];
-
-
 /**
  * Check if a given object implements the SiteConfigSelenium interface.
  */
-export function instanceOfSiteConfigSelenium(value: object): value is SiteConfigSelenium {
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('siteUrl' in value) || value['siteUrl'] === undefined) return false;
-    if (!('seleniumConfig' in value) || value['seleniumConfig'] === undefined) return false;
-    return true;
+export function instanceOfSiteConfigSelenium(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "siteUrl" in value;
+    isInstance = isInstance && "seleniumConfig" in value;
+
+    return isInstance;
 }
 
 export function SiteConfigSeleniumFromJSON(json: any): SiteConfigSelenium {
@@ -108,43 +99,41 @@ export function SiteConfigSeleniumFromJSON(json: any): SiteConfigSelenium {
 }
 
 export function SiteConfigSeleniumFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigSelenium {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'name': json['name'],
         'siteUrl': json['site_url'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'successTextClass': json['success_text_class'] == null ? undefined : json['success_text_class'],
-        'expectedSuccessText': json['expected_success_text'] == null ? undefined : json['expected_success_text'],
-        'requiredCookies': json['required_cookies'] == null ? undefined : json['required_cookies'],
-        'id': json['id'] == null ? undefined : json['id'],
-        'loginType': json['login_type'] == null ? undefined : json['login_type'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'successTextClass': !exists(json, 'success_text_class') ? undefined : json['success_text_class'],
+        'expectedSuccessText': !exists(json, 'expected_success_text') ? undefined : json['expected_success_text'],
+        'requiredCookies': !exists(json, 'required_cookies') ? undefined : json['required_cookies'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
+        'loginType': !exists(json, 'login_type') ? undefined : json['login_type'],
         'seleniumConfig': SeleniumConfigFromJSON(json['selenium_config']),
     };
 }
 
-export function SiteConfigSeleniumToJSON(json: any): SiteConfigSelenium {
-    return SiteConfigSeleniumToJSONTyped(json, false);
-}
-
-export function SiteConfigSeleniumToJSONTyped(value?: SiteConfigSelenium | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteConfigSeleniumToJSON(value?: SiteConfigSelenium | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'name': value['name'],
-        'site_url': value['siteUrl'],
-        'owner_user_id': value['ownerUserId'],
-        'success_text_class': value['successTextClass'],
-        'expected_success_text': value['expectedSuccessText'],
-        'required_cookies': value['requiredCookies'],
-        'id': value['id'],
-        'login_type': value['loginType'],
-        'selenium_config': SeleniumConfigToJSON(value['seleniumConfig']),
+        'name': value.name,
+        'site_url': value.siteUrl,
+        'owner_user_id': value.ownerUserId,
+        'success_text_class': value.successTextClass,
+        'expected_success_text': value.expectedSuccessText,
+        'required_cookies': value.requiredCookies,
+        'id': value.id,
+        'login_type': value.loginType,
+        'selenium_config': SeleniumConfigToJSON(value.seleniumConfig),
     };
 }
 

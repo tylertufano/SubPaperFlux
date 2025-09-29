@@ -17,22 +17,21 @@
 export interface StatusResponse {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof StatusResponse
      */
-    status?: string;
+    status?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof StatusResponse
      */
-    version?: string;
+    version?: any | null;
 }
 /**
  * Check if a given object implements the StatusResponse interface.
  */
-export declare function instanceOfStatusResponse(value: object): value is StatusResponse;
+export declare function instanceOfStatusResponse(value: object): boolean;
 export declare function StatusResponseFromJSON(json: any): StatusResponse;
 export declare function StatusResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): StatusResponse;
-export declare function StatusResponseToJSON(json: any): StatusResponse;
-export declare function StatusResponseToJSONTyped(value?: StatusResponse | null, ignoreDiscriminator?: boolean): any;
+export declare function StatusResponseToJSON(value?: StatusResponse | null): any;

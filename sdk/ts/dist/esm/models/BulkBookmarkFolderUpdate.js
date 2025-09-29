@@ -11,37 +11,38 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BulkBookmarkFolderUpdate interface.
  */
 export function instanceOfBulkBookmarkFolderUpdate(value) {
-    if (!('bookmarkIds' in value) || value['bookmarkIds'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkIds" in value;
+    return isInstance;
 }
 export function BulkBookmarkFolderUpdateFromJSON(json) {
     return BulkBookmarkFolderUpdateFromJSONTyped(json, false);
 }
 export function BulkBookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkIds': json['bookmark_ids'],
-        'folderId': json['folder_id'] == null ? undefined : json['folder_id'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
-export function BulkBookmarkFolderUpdateToJSON(json) {
-    return BulkBookmarkFolderUpdateToJSONTyped(json, false);
-}
-export function BulkBookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BulkBookmarkFolderUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_ids': value['bookmarkIds'],
-        'folder_id': value['folderId'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'bookmark_ids': value.bookmarkIds,
+        'folder_id': value.folderId,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }

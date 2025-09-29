@@ -17,28 +17,27 @@
 export interface BookmarkFolderUpdate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    folderId?: string | null;
+    folderId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    folderName?: string | null;
+    folderName?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
 }
 /**
  * Check if a given object implements the BookmarkFolderUpdate interface.
  */
-export declare function instanceOfBookmarkFolderUpdate(value: object): value is BookmarkFolderUpdate;
+export declare function instanceOfBookmarkFolderUpdate(value: object): boolean;
 export declare function BookmarkFolderUpdateFromJSON(json: any): BookmarkFolderUpdate;
 export declare function BookmarkFolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkFolderUpdate;
-export declare function BookmarkFolderUpdateToJSON(json: any): BookmarkFolderUpdate;
-export declare function BookmarkFolderUpdateToJSONTyped(value?: BookmarkFolderUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarkFolderUpdateToJSON(value?: BookmarkFolderUpdate | null): any;

@@ -11,35 +11,36 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the FolderCreate interface.
  */
 export function instanceOfFolderCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function FolderCreateFromJSON(json) {
     return FolderCreateFromJSONTyped(json, false);
 }
 export function FolderCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
-export function FolderCreateToJSON(json) {
-    return FolderCreateToJSONTyped(json, false);
-}
-export function FolderCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function FolderCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }

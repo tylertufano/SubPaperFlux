@@ -17,22 +17,21 @@
 export interface FolderUpdate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderUpdate
      */
-    name?: string | null;
+    name?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof FolderUpdate
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
 }
 /**
  * Check if a given object implements the FolderUpdate interface.
  */
-export declare function instanceOfFolderUpdate(value: object): value is FolderUpdate;
+export declare function instanceOfFolderUpdate(value: object): boolean;
 export declare function FolderUpdateFromJSON(json: any): FolderUpdate;
 export declare function FolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): FolderUpdate;
-export declare function FolderUpdateToJSON(json: any): FolderUpdate;
-export declare function FolderUpdateToJSONTyped(value?: FolderUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function FolderUpdateToJSON(value?: FolderUpdate | null): any;

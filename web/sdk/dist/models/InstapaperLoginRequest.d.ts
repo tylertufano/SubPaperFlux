@@ -17,34 +17,33 @@
 export interface InstapaperLoginRequest {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof InstapaperLoginRequest
      */
-    description: string;
+    description: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof InstapaperLoginRequest
      */
-    username: string;
+    username: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof InstapaperLoginRequest
      */
-    password: string;
+    password: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof InstapaperLoginRequest
      */
-    scopeGlobal?: boolean;
+    scopeGlobal?: any | null;
 }
 /**
  * Check if a given object implements the InstapaperLoginRequest interface.
  */
-export declare function instanceOfInstapaperLoginRequest(value: object): value is InstapaperLoginRequest;
+export declare function instanceOfInstapaperLoginRequest(value: object): boolean;
 export declare function InstapaperLoginRequestFromJSON(json: any): InstapaperLoginRequest;
 export declare function InstapaperLoginRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): InstapaperLoginRequest;
-export declare function InstapaperLoginRequestToJSON(json: any): InstapaperLoginRequest;
-export declare function InstapaperLoginRequestToJSONTyped(value?: InstapaperLoginRequest | null, ignoreDiscriminator?: boolean): any;
+export declare function InstapaperLoginRequestToJSON(value?: InstapaperLoginRequest | null): any;

@@ -13,13 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HTTPValidationErrorToJSONTyped = exports.HTTPValidationErrorToJSON = exports.HTTPValidationErrorFromJSONTyped = exports.HTTPValidationErrorFromJSON = exports.instanceOfHTTPValidationError = void 0;
-const ValidationError_1 = require("./ValidationError");
+exports.HTTPValidationErrorToJSON = exports.HTTPValidationErrorFromJSONTyped = exports.HTTPValidationErrorFromJSON = exports.instanceOfHTTPValidationError = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the HTTPValidationError interface.
  */
 function instanceOfHTTPValidationError(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfHTTPValidationError = instanceOfHTTPValidationError;
 function HTTPValidationErrorFromJSON(json) {
@@ -27,24 +28,23 @@ function HTTPValidationErrorFromJSON(json) {
 }
 exports.HTTPValidationErrorFromJSON = HTTPValidationErrorFromJSON;
 function HTTPValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'detail': json['detail'] == null ? undefined : (json['detail'].map(ValidationError_1.ValidationErrorFromJSON)),
+        'detail': !(0, runtime_1.exists)(json, 'detail') ? undefined : json['detail'],
     };
 }
 exports.HTTPValidationErrorFromJSONTyped = HTTPValidationErrorFromJSONTyped;
-function HTTPValidationErrorToJSON(json) {
-    return HTTPValidationErrorToJSONTyped(json, false);
-}
-exports.HTTPValidationErrorToJSON = HTTPValidationErrorToJSON;
-function HTTPValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function HTTPValidationErrorToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'detail': value['detail'] == null ? undefined : (value['detail'].map(ValidationError_1.ValidationErrorToJSON)),
+        'detail': value.detail,
     };
 }
-exports.HTTPValidationErrorToJSONTyped = HTTPValidationErrorToJSONTyped;
+exports.HTTPValidationErrorToJSON = HTTPValidationErrorToJSON;

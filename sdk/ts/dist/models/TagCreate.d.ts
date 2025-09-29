@@ -17,16 +17,15 @@
 export interface TagCreate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof TagCreate
      */
-    name: string;
+    name: any | null;
 }
 /**
  * Check if a given object implements the TagCreate interface.
  */
-export declare function instanceOfTagCreate(value: object): value is TagCreate;
+export declare function instanceOfTagCreate(value: object): boolean;
 export declare function TagCreateFromJSON(json: any): TagCreate;
 export declare function TagCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagCreate;
-export declare function TagCreateToJSON(json: any): TagCreate;
-export declare function TagCreateToJSONTyped(value?: TagCreate | null, ignoreDiscriminator?: boolean): any;
+export declare function TagCreateToJSON(value?: TagCreate | null): any;

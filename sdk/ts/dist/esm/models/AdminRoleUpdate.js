@@ -11,33 +11,35 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AdminRoleUpdate interface.
  */
 export function instanceOfAdminRoleUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function AdminRoleUpdateFromJSON(json) {
     return AdminRoleUpdateFromJSONTyped(json, false);
 }
 export function AdminRoleUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'name': json['name'] == null ? undefined : json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
+        'name': !exists(json, 'name') ? undefined : json['name'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
     };
 }
-export function AdminRoleUpdateToJSON(json) {
-    return AdminRoleUpdateToJSONTyped(json, false);
-}
-export function AdminRoleUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AdminRoleUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
+        'name': value.name,
+        'description': value.description,
     };
 }

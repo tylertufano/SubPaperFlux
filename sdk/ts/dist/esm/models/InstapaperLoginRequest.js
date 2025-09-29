@@ -11,43 +11,42 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the InstapaperLoginRequest interface.
  */
 export function instanceOfInstapaperLoginRequest(value) {
-    if (!('description' in value) || value['description'] === undefined)
-        return false;
-    if (!('username' in value) || value['username'] === undefined)
-        return false;
-    if (!('password' in value) || value['password'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "description" in value;
+    isInstance = isInstance && "username" in value;
+    isInstance = isInstance && "password" in value;
+    return isInstance;
 }
 export function InstapaperLoginRequestFromJSON(json) {
     return InstapaperLoginRequestFromJSONTyped(json, false);
 }
 export function InstapaperLoginRequestFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'description': json['description'],
         'username': json['username'],
         'password': json['password'],
-        'scopeGlobal': json['scope_global'] == null ? undefined : json['scope_global'],
+        'scopeGlobal': !exists(json, 'scope_global') ? undefined : json['scope_global'],
     };
 }
-export function InstapaperLoginRequestToJSON(json) {
-    return InstapaperLoginRequestToJSONTyped(json, false);
-}
-export function InstapaperLoginRequestToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function InstapaperLoginRequestToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'description': value['description'],
-        'username': value['username'],
-        'password': value['password'],
-        'scope_global': value['scopeGlobal'],
+        'description': value.description,
+        'username': value.username,
+        'password': value.password,
+        'scope_global': value.scopeGlobal,
     };
 }

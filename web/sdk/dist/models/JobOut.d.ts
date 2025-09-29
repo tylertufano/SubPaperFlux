@@ -17,46 +17,46 @@
 export interface JobOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobOut
      */
-    type: string;
+    type: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobOut
      */
-    status: string;
+    status: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobOut
      */
-    attempts: number;
+    attempts: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobOut
      */
-    lastError?: string | null;
+    lastError?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof JobOut
      */
-    availableAt?: number | null;
+    availableAt?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -64,7 +64,7 @@ export interface JobOut {
      */
     payload: {
         [key: string]: any;
-    };
+    } | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -72,13 +72,12 @@ export interface JobOut {
      */
     details?: {
         [key: string]: any;
-    };
+    } | null;
 }
 /**
  * Check if a given object implements the JobOut interface.
  */
-export declare function instanceOfJobOut(value: object): value is JobOut;
+export declare function instanceOfJobOut(value: object): boolean;
 export declare function JobOutFromJSON(json: any): JobOut;
 export declare function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobOut;
-export declare function JobOutToJSON(json: any): JobOut;
-export declare function JobOutToJSONTyped(value?: JobOut | null, ignoreDiscriminator?: boolean): any;
+export declare function JobOutToJSON(value?: JobOut | null): any;

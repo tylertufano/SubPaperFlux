@@ -11,35 +11,37 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BookmarkFolderUpdate interface.
  */
 export function instanceOfBookmarkFolderUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function BookmarkFolderUpdateFromJSON(json) {
     return BookmarkFolderUpdateFromJSONTyped(json, false);
 }
 export function BookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'folderId': json['folder_id'] == null ? undefined : json['folder_id'],
-        'folderName': json['folder_name'] == null ? undefined : json['folder_name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
+        'folderName': !exists(json, 'folder_name') ? undefined : json['folder_name'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
-export function BookmarkFolderUpdateToJSON(json) {
-    return BookmarkFolderUpdateToJSONTyped(json, false);
-}
-export function BookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BookmarkFolderUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'folder_id': value['folderId'],
-        'folder_name': value['folderName'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'folder_id': value.folderId,
+        'folder_name': value.folderName,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }

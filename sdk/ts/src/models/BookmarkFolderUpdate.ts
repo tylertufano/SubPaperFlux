@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,29 +21,31 @@ import { mapValues } from '../runtime';
 export interface BookmarkFolderUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    folderId?: string | null;
+    folderId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    folderName?: string | null;
+    folderName?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderUpdate
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
 }
 
 /**
  * Check if a given object implements the BookmarkFolderUpdate interface.
  */
-export function instanceOfBookmarkFolderUpdate(value: object): value is BookmarkFolderUpdate {
-    return true;
+export function instanceOfBookmarkFolderUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function BookmarkFolderUpdateFromJSON(json: any): BookmarkFolderUpdate {
@@ -51,31 +53,29 @@ export function BookmarkFolderUpdateFromJSON(json: any): BookmarkFolderUpdate {
 }
 
 export function BookmarkFolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkFolderUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'folderId': json['folder_id'] == null ? undefined : json['folder_id'],
-        'folderName': json['folder_name'] == null ? undefined : json['folder_name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
+        'folderName': !exists(json, 'folder_name') ? undefined : json['folder_name'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
 
-export function BookmarkFolderUpdateToJSON(json: any): BookmarkFolderUpdate {
-    return BookmarkFolderUpdateToJSONTyped(json, false);
-}
-
-export function BookmarkFolderUpdateToJSONTyped(value?: BookmarkFolderUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function BookmarkFolderUpdateToJSON(value?: BookmarkFolderUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'folder_id': value['folderId'],
-        'folder_name': value['folderName'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'folder_id': value.folderId,
+        'folder_name': value.folderName,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }
 

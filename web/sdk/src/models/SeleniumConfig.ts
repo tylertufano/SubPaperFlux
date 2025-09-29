@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,44 +21,46 @@ import { mapValues } from '../runtime';
 export interface SeleniumConfig {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SeleniumConfig
      */
-    usernameSelector: string;
+    usernameSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SeleniumConfig
      */
-    passwordSelector: string;
+    passwordSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SeleniumConfig
      */
-    loginButtonSelector: string;
+    loginButtonSelector: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SeleniumConfig
      */
-    postLoginSelector?: string | null;
+    postLoginSelector?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof SeleniumConfig
      */
-    cookiesToStore?: Array<string>;
+    cookiesToStore?: any | null;
 }
 
 /**
  * Check if a given object implements the SeleniumConfig interface.
  */
-export function instanceOfSeleniumConfig(value: object): value is SeleniumConfig {
-    if (!('usernameSelector' in value) || value['usernameSelector'] === undefined) return false;
-    if (!('passwordSelector' in value) || value['passwordSelector'] === undefined) return false;
-    if (!('loginButtonSelector' in value) || value['loginButtonSelector'] === undefined) return false;
-    return true;
+export function instanceOfSeleniumConfig(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "usernameSelector" in value;
+    isInstance = isInstance && "passwordSelector" in value;
+    isInstance = isInstance && "loginButtonSelector" in value;
+
+    return isInstance;
 }
 
 export function SeleniumConfigFromJSON(json: any): SeleniumConfig {
@@ -66,7 +68,7 @@ export function SeleniumConfigFromJSON(json: any): SeleniumConfig {
 }
 
 export function SeleniumConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean): SeleniumConfig {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -74,27 +76,25 @@ export function SeleniumConfigFromJSONTyped(json: any, ignoreDiscriminator: bool
         'usernameSelector': json['username_selector'],
         'passwordSelector': json['password_selector'],
         'loginButtonSelector': json['login_button_selector'],
-        'postLoginSelector': json['post_login_selector'] == null ? undefined : json['post_login_selector'],
-        'cookiesToStore': json['cookies_to_store'] == null ? undefined : json['cookies_to_store'],
+        'postLoginSelector': !exists(json, 'post_login_selector') ? undefined : json['post_login_selector'],
+        'cookiesToStore': !exists(json, 'cookies_to_store') ? undefined : json['cookies_to_store'],
     };
 }
 
-export function SeleniumConfigToJSON(json: any): SeleniumConfig {
-    return SeleniumConfigToJSONTyped(json, false);
-}
-
-export function SeleniumConfigToJSONTyped(value?: SeleniumConfig | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SeleniumConfigToJSON(value?: SeleniumConfig | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'username_selector': value['usernameSelector'],
-        'password_selector': value['passwordSelector'],
-        'login_button_selector': value['loginButtonSelector'],
-        'post_login_selector': value['postLoginSelector'],
-        'cookies_to_store': value['cookiesToStore'],
+        'username_selector': value.usernameSelector,
+        'password_selector': value.passwordSelector,
+        'login_button_selector': value.loginButtonSelector,
+        'post_login_selector': value.postLoginSelector,
+        'cookies_to_store': value.cookiesToStore,
     };
 }
 

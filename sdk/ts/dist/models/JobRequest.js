@@ -13,16 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JobRequestToJSONTyped = exports.JobRequestToJSON = exports.JobRequestFromJSONTyped = exports.JobRequestFromJSON = exports.instanceOfJobRequest = void 0;
+exports.JobRequestToJSON = exports.JobRequestFromJSONTyped = exports.JobRequestFromJSON = exports.instanceOfJobRequest = void 0;
 /**
  * Check if a given object implements the JobRequest interface.
  */
 function instanceOfJobRequest(value) {
-    if (!('type' in value) || value['type'] === undefined)
-        return false;
-    if (!('payload' in value) || value['payload'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "type" in value;
+    isInstance = isInstance && "payload" in value;
+    return isInstance;
 }
 exports.instanceOfJobRequest = instanceOfJobRequest;
 function JobRequestFromJSON(json) {
@@ -30,7 +29,7 @@ function JobRequestFromJSON(json) {
 }
 exports.JobRequestFromJSON = JobRequestFromJSON;
 function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -39,17 +38,16 @@ function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
     };
 }
 exports.JobRequestFromJSONTyped = JobRequestFromJSONTyped;
-function JobRequestToJSON(json) {
-    return JobRequestToJSONTyped(json, false);
-}
-exports.JobRequestToJSON = JobRequestToJSON;
-function JobRequestToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function JobRequestToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'type': value['type'],
-        'payload': value['payload'],
+        'type': value.type,
+        'payload': value.payload,
     };
 }
-exports.JobRequestToJSONTyped = JobRequestToJSONTyped;
+exports.JobRequestToJSON = JobRequestToJSON;

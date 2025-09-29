@@ -11,41 +11,41 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the FolderOut interface.
  */
 export function instanceOfFolderOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function FolderOutFromJSON(json) {
     return FolderOutFromJSONTyped(json, false);
 }
 export function FolderOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
-        'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
+        'instapaperFolderId': !exists(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
+        'bookmarkCount': !exists(json, 'bookmark_count') ? undefined : json['bookmark_count'],
     };
 }
-export function FolderOutToJSON(json) {
-    return FolderOutToJSONTyped(json, false);
-}
-export function FolderOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function FolderOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
-        'bookmark_count': value['bookmarkCount'],
+        'id': value.id,
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
+        'bookmark_count': value.bookmarkCount,
     };
 }

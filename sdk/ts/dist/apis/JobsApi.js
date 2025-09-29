@@ -24,7 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobsApi = void 0;
 const runtime = require("../runtime");
-const index_1 = require("../models/index");
+const models_1 = require("../models");
 /**
  *
  */
@@ -34,8 +34,8 @@ class JobsApi extends runtime.BaseAPI {
      */
     enqueueJobJobsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['jobRequest'] == null) {
-                throw new runtime.RequiredError('jobRequest', 'Required parameter "jobRequest" was null or undefined when calling enqueueJobJobsPost().');
+            if (requestParameters.jobRequest === null || requestParameters.jobRequest === undefined) {
+                throw new runtime.RequiredError('jobRequest', 'Required parameter requestParameters.jobRequest was null or undefined when calling enqueueJobJobsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -47,13 +47,12 @@ class JobsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/jobs/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/jobs/`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.JobRequestToJSON)(requestParameters['jobRequest']),
+                body: (0, models_1.JobRequestToJSON)(requestParameters.jobRequest),
             }, initOverrides);
             if (this.isJsonMime(response.headers.get('content-type'))) {
                 return new runtime.JSONApiResponse(response);

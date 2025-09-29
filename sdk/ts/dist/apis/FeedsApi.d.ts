@@ -10,15 +10,15 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { Feed } from '../models/index';
+import type { Feed } from '../models';
 export interface CreateFeedFeedsPostRequest {
     feed: Feed;
 }
 export interface DeleteFeedFeedsFeedIdDeleteRequest {
-    feedId: string;
+    feedId: any;
 }
 export interface UpdateFeedFeedsFeedIdPutRequest {
-    feedId: string;
+    feedId: any;
     feed: Feed;
 }
 /**
@@ -44,19 +44,19 @@ export declare class FeedsApi extends runtime.BaseAPI {
     /**
      * List Feeds
      */
-    listFeedsFeedsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Feed>>>;
+    listFeedsFeedsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * List Feeds
      */
-    listFeedsFeedsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Feed>>;
+    listFeedsFeedsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * List Feeds
      */
-    listFeedsFeedsGet_1Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Feed>>>;
+    listFeedsFeedsGet_1Raw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * List Feeds
      */
-    listFeedsFeedsGet_1(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Feed>>;
+    listFeedsFeedsGet_1(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Update Feed
      */

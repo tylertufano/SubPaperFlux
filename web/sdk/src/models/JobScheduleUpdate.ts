@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,41 +21,43 @@ import { mapValues } from '../runtime';
 export interface JobScheduleUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleUpdate
      */
-    jobType?: string | null;
+    jobType?: any | null;
     /**
      * 
-     * @type {{ [key: string]: any; }}
+     * @type {any}
      * @memberof JobScheduleUpdate
      */
-    payload?: { [key: string]: any; } | null;
+    payload?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleUpdate
      */
-    frequency?: string | null;
+    frequency?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof JobScheduleUpdate
      */
-    nextRunAt?: Date | null;
+    nextRunAt?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof JobScheduleUpdate
      */
-    isActive?: boolean | null;
+    isActive?: any | null;
 }
 
 /**
  * Check if a given object implements the JobScheduleUpdate interface.
  */
-export function instanceOfJobScheduleUpdate(value: object): value is JobScheduleUpdate {
-    return true;
+export function instanceOfJobScheduleUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function JobScheduleUpdateFromJSON(json: any): JobScheduleUpdate {
@@ -63,35 +65,33 @@ export function JobScheduleUpdateFromJSON(json: any): JobScheduleUpdate {
 }
 
 export function JobScheduleUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobScheduleUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'jobType': json['job_type'] == null ? undefined : json['job_type'],
-        'payload': json['payload'] == null ? undefined : json['payload'],
-        'frequency': json['frequency'] == null ? undefined : json['frequency'],
-        'nextRunAt': json['next_run_at'] == null ? undefined : (new Date(json['next_run_at'])),
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
+        'jobType': !exists(json, 'job_type') ? undefined : json['job_type'],
+        'payload': !exists(json, 'payload') ? undefined : json['payload'],
+        'frequency': !exists(json, 'frequency') ? undefined : json['frequency'],
+        'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
     };
 }
 
-export function JobScheduleUpdateToJSON(json: any): JobScheduleUpdate {
-    return JobScheduleUpdateToJSONTyped(json, false);
-}
-
-export function JobScheduleUpdateToJSONTyped(value?: JobScheduleUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobScheduleUpdateToJSON(value?: JobScheduleUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'job_type': value['jobType'],
-        'payload': value['payload'],
-        'frequency': value['frequency'],
-        'next_run_at': value['nextRunAt'] === null ? null : ((value['nextRunAt'] as any)?.toISOString()),
-        'is_active': value['isActive'],
+        'job_type': value.jobType,
+        'payload': value.payload,
+        'frequency': value.frequency,
+        'next_run_at': value.nextRunAt,
+        'is_active': value.isActive,
     };
 }
 

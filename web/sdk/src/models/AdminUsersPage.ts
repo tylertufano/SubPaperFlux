@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { AdminUserOut } from './AdminUserOut';
-import {
-    AdminUserOutFromJSON,
-    AdminUserOutFromJSONTyped,
-    AdminUserOutToJSON,
-    AdminUserOutToJSONTyped,
-} from './AdminUserOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface AdminUsersPage {
     /**
      * 
-     * @type {Array<AdminUserOut>}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    items: Array<AdminUserOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminUsersPage interface.
  */
-export function instanceOfAdminUsersPage(value: object): value is AdminUsersPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfAdminUsersPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function AdminUsersPageFromJSON(json: any): AdminUsersPage {
@@ -81,37 +75,35 @@ export function AdminUsersPageFromJSON(json: any): AdminUsersPage {
 }
 
 export function AdminUsersPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUsersPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(AdminUserOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function AdminUsersPageToJSON(json: any): AdminUsersPage {
-    return AdminUsersPageToJSONTyped(json, false);
-}
-
-export function AdminUsersPageToJSONTyped(value?: AdminUsersPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminUsersPageToJSON(value?: AdminUsersPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(AdminUserOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 

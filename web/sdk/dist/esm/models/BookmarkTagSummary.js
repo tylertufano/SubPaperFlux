@@ -11,36 +11,36 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { TagOutFromJSON, TagOutToJSON, } from './TagOut';
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the BookmarkTagSummary interface.
  */
 export function instanceOfBookmarkTagSummary(value) {
-    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkId" in value;
+    return isInstance;
 }
 export function BookmarkTagSummaryFromJSON(json) {
     return BookmarkTagSummaryFromJSONTyped(json, false);
 }
 export function BookmarkTagSummaryFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkId': json['bookmark_id'],
-        'tags': json['tags'] == null ? undefined : (json['tags'].map(TagOutFromJSON)),
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
     };
 }
-export function BookmarkTagSummaryToJSON(json) {
-    return BookmarkTagSummaryToJSONTyped(json, false);
-}
-export function BookmarkTagSummaryToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function BookmarkTagSummaryToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_id': value['bookmarkId'],
-        'tags': value['tags'] == null ? undefined : (value['tags'].map(TagOutToJSON)),
+        'bookmark_id': value.bookmarkId,
+        'tags': value.tags,
     };
 }

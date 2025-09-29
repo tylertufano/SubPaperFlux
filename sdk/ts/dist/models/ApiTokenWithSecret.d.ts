@@ -17,70 +17,69 @@
 export interface ApiTokenWithSecret {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    scopes?: Array<string>;
+    scopes?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    lastUsedAt?: Date | null;
+    lastUsedAt?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    expiresAt?: Date | null;
+    expiresAt?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    revokedAt?: Date | null;
+    revokedAt?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenWithSecret
      */
-    token: string;
+    token: any | null;
 }
 /**
  * Check if a given object implements the ApiTokenWithSecret interface.
  */
-export declare function instanceOfApiTokenWithSecret(value: object): value is ApiTokenWithSecret;
+export declare function instanceOfApiTokenWithSecret(value: object): boolean;
 export declare function ApiTokenWithSecretFromJSON(json: any): ApiTokenWithSecret;
 export declare function ApiTokenWithSecretFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenWithSecret;
-export declare function ApiTokenWithSecretToJSON(json: any): ApiTokenWithSecret;
-export declare function ApiTokenWithSecretToJSONTyped(value?: ApiTokenWithSecret | null, ignoreDiscriminator?: boolean): any;
+export declare function ApiTokenWithSecretToJSON(value?: ApiTokenWithSecret | null): any;

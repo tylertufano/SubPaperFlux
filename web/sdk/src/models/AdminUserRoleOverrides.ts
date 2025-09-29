@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,29 +21,31 @@ import { mapValues } from '../runtime';
 export interface AdminUserRoleOverrides {
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserRoleOverrides
      */
-    enabled?: boolean;
+    enabled?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof AdminUserRoleOverrides
      */
-    preserve?: Array<string>;
+    preserve?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof AdminUserRoleOverrides
      */
-    suppress?: Array<string>;
+    suppress?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminUserRoleOverrides interface.
  */
-export function instanceOfAdminUserRoleOverrides(value: object): value is AdminUserRoleOverrides {
-    return true;
+export function instanceOfAdminUserRoleOverrides(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function AdminUserRoleOverridesFromJSON(json: any): AdminUserRoleOverrides {
@@ -51,31 +53,29 @@ export function AdminUserRoleOverridesFromJSON(json: any): AdminUserRoleOverride
 }
 
 export function AdminUserRoleOverridesFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserRoleOverrides {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'enabled': json['enabled'] == null ? undefined : json['enabled'],
-        'preserve': json['preserve'] == null ? undefined : json['preserve'],
-        'suppress': json['suppress'] == null ? undefined : json['suppress'],
+        'enabled': !exists(json, 'enabled') ? undefined : json['enabled'],
+        'preserve': !exists(json, 'preserve') ? undefined : json['preserve'],
+        'suppress': !exists(json, 'suppress') ? undefined : json['suppress'],
     };
 }
 
-export function AdminUserRoleOverridesToJSON(json: any): AdminUserRoleOverrides {
-    return AdminUserRoleOverridesToJSONTyped(json, false);
-}
-
-export function AdminUserRoleOverridesToJSONTyped(value?: AdminUserRoleOverrides | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminUserRoleOverridesToJSON(value?: AdminUserRoleOverrides | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'enabled': value['enabled'],
-        'preserve': value['preserve'],
-        'suppress': value['suppress'],
+        'enabled': value.enabled,
+        'preserve': value.preserve,
+        'suppress': value.suppress,
     };
 }
 

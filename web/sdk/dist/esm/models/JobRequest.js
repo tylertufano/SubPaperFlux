@@ -15,17 +15,16 @@
  * Check if a given object implements the JobRequest interface.
  */
 export function instanceOfJobRequest(value) {
-    if (!('type' in value) || value['type'] === undefined)
-        return false;
-    if (!('payload' in value) || value['payload'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "type" in value;
+    isInstance = isInstance && "payload" in value;
+    return isInstance;
 }
 export function JobRequestFromJSON(json) {
     return JobRequestFromJSONTyped(json, false);
 }
 export function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -33,15 +32,15 @@ export function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
         'payload': json['payload'],
     };
 }
-export function JobRequestToJSON(json) {
-    return JobRequestToJSONTyped(json, false);
-}
-export function JobRequestToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function JobRequestToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'type': value['type'],
-        'payload': value['payload'],
+        'type': value.type,
+        'payload': value.payload,
     };
 }

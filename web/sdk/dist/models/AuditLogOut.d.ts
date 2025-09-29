@@ -17,40 +17,40 @@
 export interface AuditLogOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    entityType: string;
+    entityType: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    entityId: string;
+    entityId: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    action: string;
+    action: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    actorUserId?: string | null;
+    actorUserId?: any | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -58,19 +58,18 @@ export interface AuditLogOut {
      */
     details?: {
         [key: string]: any;
-    };
+    } | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AuditLogOut
      */
-    createdAt: Date;
+    createdAt: any | null;
 }
 /**
  * Check if a given object implements the AuditLogOut interface.
  */
-export declare function instanceOfAuditLogOut(value: object): value is AuditLogOut;
+export declare function instanceOfAuditLogOut(value: object): boolean;
 export declare function AuditLogOutFromJSON(json: any): AuditLogOut;
 export declare function AuditLogOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuditLogOut;
-export declare function AuditLogOutToJSON(json: any): AuditLogOut;
-export declare function AuditLogOutToJSONTyped(value?: AuditLogOut | null, ignoreDiscriminator?: boolean): any;
+export declare function AuditLogOutToJSON(value?: AuditLogOut | null): any;

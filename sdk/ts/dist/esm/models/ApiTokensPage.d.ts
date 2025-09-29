@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { ApiTokenOut } from './ApiTokenOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { ApiTokenOut } from './ApiTokenOut';
 export interface ApiTokensPage {
     /**
      *
-     * @type {Array<ApiTokenOut>}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    items: Array<ApiTokenOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof ApiTokensPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the ApiTokensPage interface.
  */
-export declare function instanceOfApiTokensPage(value: object): value is ApiTokensPage;
+export declare function instanceOfApiTokensPage(value: object): boolean;
 export declare function ApiTokensPageFromJSON(json: any): ApiTokensPage;
 export declare function ApiTokensPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokensPage;
-export declare function ApiTokensPageToJSON(json: any): ApiTokensPage;
-export declare function ApiTokensPageToJSONTyped(value?: ApiTokensPage | null, ignoreDiscriminator?: boolean): any;
+export declare function ApiTokensPageToJSON(value?: ApiTokensPage | null): any;

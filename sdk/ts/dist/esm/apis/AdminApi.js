@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, AuditLogsPageFromJSON, RoleGrantRequestToJSON, } from '../models/index';
+import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, AuditLogsPageFromJSON, } from '../models';
 /**
  *
  */
@@ -31,11 +31,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     addOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['organizationId'] == null) {
-                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost().');
+            if (requestParameters.organizationId === null || requestParameters.organizationId === undefined) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter requestParameters.organizationId was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost.');
             }
-            if (requestParameters['adminOrganizationMembershipChange'] == null) {
-                throw new runtime.RequiredError('adminOrganizationMembershipChange', 'Required parameter "adminOrganizationMembershipChange" was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost().');
+            if (requestParameters.adminOrganizationMembershipChange === null || requestParameters.adminOrganizationMembershipChange === undefined) {
+                throw new runtime.RequiredError('adminOrganizationMembershipChange', 'Required parameter requestParameters.adminOrganizationMembershipChange was null or undefined when calling addOrganizationMemberV1AdminOrgsOrganizationIdMembersPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -47,14 +47,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs/{organization_id}/members`;
-            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs/{organization_id}/members`.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters.organizationId))),
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminOrganizationMembershipChangeToJSON(requestParameters['adminOrganizationMembershipChange']),
+                body: AdminOrganizationMembershipChangeToJSON(requestParameters.adminOrganizationMembershipChange),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
         });
@@ -73,8 +71,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -85,10 +83,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}/role-overrides`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}/role-overrides`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -110,8 +106,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     createOrganizationV1AdminOrgsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['adminOrganizationCreate'] == null) {
-                throw new runtime.RequiredError('adminOrganizationCreate', 'Required parameter "adminOrganizationCreate" was null or undefined when calling createOrganizationV1AdminOrgsPost().');
+            if (requestParameters.adminOrganizationCreate === null || requestParameters.adminOrganizationCreate === undefined) {
+                throw new runtime.RequiredError('adminOrganizationCreate', 'Required parameter requestParameters.adminOrganizationCreate was null or undefined when calling createOrganizationV1AdminOrgsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -123,13 +119,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminOrganizationCreateToJSON(requestParameters['adminOrganizationCreate']),
+                body: AdminOrganizationCreateToJSON(requestParameters.adminOrganizationCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
         });
@@ -148,8 +143,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     createRoleV1AdminRolesPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['adminRoleCreate'] == null) {
-                throw new runtime.RequiredError('adminRoleCreate', 'Required parameter "adminRoleCreate" was null or undefined when calling createRoleV1AdminRolesPost().');
+            if (requestParameters.adminRoleCreate === null || requestParameters.adminRoleCreate === undefined) {
+                throw new runtime.RequiredError('adminRoleCreate', 'Required parameter requestParameters.adminRoleCreate was null or undefined when calling createRoleV1AdminRolesPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -161,13 +156,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/roles`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/roles`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminRoleCreateToJSON(requestParameters['adminRoleCreate']),
+                body: AdminRoleCreateToJSON(requestParameters.adminRoleCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminRoleDetailFromJSON(jsonValue));
         });
@@ -186,8 +180,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     deleteOrganizationV1AdminOrgsOrganizationIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['organizationId'] == null) {
-                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling deleteOrganizationV1AdminOrgsOrganizationIdDelete().');
+            if (requestParameters.organizationId === null || requestParameters.organizationId === undefined) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter requestParameters.organizationId was null or undefined when calling deleteOrganizationV1AdminOrgsOrganizationIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -198,10 +192,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs/{organization_id}`;
-            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs/{organization_id}`.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters.organizationId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -222,8 +214,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     deleteRoleV1AdminRolesRoleIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['roleId'] == null) {
-                throw new runtime.RequiredError('roleId', 'Required parameter "roleId" was null or undefined when calling deleteRoleV1AdminRolesRoleIdDelete().');
+            if (requestParameters.roleId === null || requestParameters.roleId === undefined) {
+                throw new runtime.RequiredError('roleId', 'Required parameter requestParameters.roleId was null or undefined when calling deleteRoleV1AdminRolesRoleIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -234,10 +226,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/roles/{role_id}`;
-            urlPath = urlPath.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters['roleId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/roles/{role_id}`.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters.roleId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -258,8 +248,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     getOrganizationV1AdminOrgsOrganizationIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['organizationId'] == null) {
-                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling getOrganizationV1AdminOrgsOrganizationIdGet().');
+            if (requestParameters.organizationId === null || requestParameters.organizationId === undefined) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter requestParameters.organizationId was null or undefined when calling getOrganizationV1AdminOrgsOrganizationIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -270,10 +260,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs/{organization_id}`;
-            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs/{organization_id}`.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters.organizationId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -295,8 +283,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     getRoleV1AdminRolesRoleIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['roleId'] == null) {
-                throw new runtime.RequiredError('roleId', 'Required parameter "roleId" was null or undefined when calling getRoleV1AdminRolesRoleIdGet().');
+            if (requestParameters.roleId === null || requestParameters.roleId === undefined) {
+                throw new runtime.RequiredError('roleId', 'Required parameter requestParameters.roleId was null or undefined when calling getRoleV1AdminRolesRoleIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -307,10 +295,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/roles/{role_id}`;
-            urlPath = urlPath.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters['roleId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/roles/{role_id}`.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters.roleId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -332,8 +318,8 @@ export class AdminApi extends runtime.BaseAPI {
      */
     getUserV1AdminUsersUserIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling getUserV1AdminUsersUserIdGet().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling getUserV1AdminUsersUserIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -344,10 +330,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -369,11 +353,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     grantUserRoleV1AdminUsersUserIdRolesRoleNamePostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost.');
             }
-            if (requestParameters['roleName'] == null) {
-                throw new runtime.RequiredError('roleName', 'Required parameter "roleName" was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost().');
+            if (requestParameters.roleName === null || requestParameters.roleName === undefined) {
+                throw new runtime.RequiredError('roleName', 'Required parameter requestParameters.roleName was null or undefined when calling grantUserRoleV1AdminUsersUserIdRolesRoleNamePost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -385,15 +369,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}/roles/{role_name}`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
-            urlPath = urlPath.replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters['roleName'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}/roles/{role_name}`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))).replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters.roleName))),
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: RoleGrantRequestToJSON(requestParameters['roleGrantRequest']),
+                body: requestParameters.body,
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
         });
@@ -413,32 +394,32 @@ export class AdminApi extends runtime.BaseAPI {
     listAuditLogsAdminAuditGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['entityType'] != null) {
-                queryParameters['entity_type'] = requestParameters['entityType'];
+            if (requestParameters.entityType !== undefined) {
+                queryParameters['entity_type'] = requestParameters.entityType;
             }
-            if (requestParameters['entityId'] != null) {
-                queryParameters['entity_id'] = requestParameters['entityId'];
+            if (requestParameters.entityId !== undefined) {
+                queryParameters['entity_id'] = requestParameters.entityId;
             }
-            if (requestParameters['action'] != null) {
-                queryParameters['action'] = requestParameters['action'];
+            if (requestParameters.action !== undefined) {
+                queryParameters['action'] = requestParameters.action;
             }
-            if (requestParameters['ownerUserId'] != null) {
-                queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+            if (requestParameters.ownerUserId !== undefined) {
+                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
             }
-            if (requestParameters['actorUserId'] != null) {
-                queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+            if (requestParameters.actorUserId !== undefined) {
+                queryParameters['actor_user_id'] = requestParameters.actorUserId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'].toISOString();
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'].toISOString();
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -448,9 +429,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/admin/audit/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/admin/audit/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -473,32 +453,32 @@ export class AdminApi extends runtime.BaseAPI {
     listAuditLogsAdminAuditGet_1Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['entityType'] != null) {
-                queryParameters['entity_type'] = requestParameters['entityType'];
+            if (requestParameters.entityType !== undefined) {
+                queryParameters['entity_type'] = requestParameters.entityType;
             }
-            if (requestParameters['entityId'] != null) {
-                queryParameters['entity_id'] = requestParameters['entityId'];
+            if (requestParameters.entityId !== undefined) {
+                queryParameters['entity_id'] = requestParameters.entityId;
             }
-            if (requestParameters['action'] != null) {
-                queryParameters['action'] = requestParameters['action'];
+            if (requestParameters.action !== undefined) {
+                queryParameters['action'] = requestParameters.action;
             }
-            if (requestParameters['ownerUserId'] != null) {
-                queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+            if (requestParameters.ownerUserId !== undefined) {
+                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
             }
-            if (requestParameters['actorUserId'] != null) {
-                queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+            if (requestParameters.actorUserId !== undefined) {
+                queryParameters['actor_user_id'] = requestParameters.actorUserId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'].toISOString();
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'].toISOString();
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -508,9 +488,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/admin/audit`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/admin/audit`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -533,32 +512,32 @@ export class AdminApi extends runtime.BaseAPI {
     listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['entityType'] != null) {
-                queryParameters['entity_type'] = requestParameters['entityType'];
+            if (requestParameters.entityType !== undefined) {
+                queryParameters['entity_type'] = requestParameters.entityType;
             }
-            if (requestParameters['entityId'] != null) {
-                queryParameters['entity_id'] = requestParameters['entityId'];
+            if (requestParameters.entityId !== undefined) {
+                queryParameters['entity_id'] = requestParameters.entityId;
             }
-            if (requestParameters['action'] != null) {
-                queryParameters['action'] = requestParameters['action'];
+            if (requestParameters.action !== undefined) {
+                queryParameters['action'] = requestParameters.action;
             }
-            if (requestParameters['ownerUserId'] != null) {
-                queryParameters['owner_user_id'] = requestParameters['ownerUserId'];
+            if (requestParameters.ownerUserId !== undefined) {
+                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
             }
-            if (requestParameters['actorUserId'] != null) {
-                queryParameters['actor_user_id'] = requestParameters['actorUserId'];
+            if (requestParameters.actorUserId !== undefined) {
+                queryParameters['actor_user_id'] = requestParameters.actorUserId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'].toISOString();
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'].toISOString();
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -568,9 +547,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/audit`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/audit`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -593,17 +571,17 @@ export class AdminApi extends runtime.BaseAPI {
     listOrganizationsV1AdminOrgsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['isDefault'] != null) {
-                queryParameters['is_default'] = requestParameters['isDefault'];
+            if (requestParameters.isDefault !== undefined) {
+                queryParameters['is_default'] = requestParameters.isDefault;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -613,9 +591,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -638,14 +615,14 @@ export class AdminApi extends runtime.BaseAPI {
     listRolesV1AdminRolesGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -655,9 +632,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/roles`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/roles`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -680,23 +656,23 @@ export class AdminApi extends runtime.BaseAPI {
     listUsersV1AdminUsersGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['isActive'] != null) {
-                queryParameters['is_active'] = requestParameters['isActive'];
+            if (requestParameters.isActive !== undefined) {
+                queryParameters['is_active'] = requestParameters.isActive;
             }
-            if (requestParameters['role'] != null) {
-                queryParameters['role'] = requestParameters['role'];
+            if (requestParameters.role !== undefined) {
+                queryParameters['role'] = requestParameters.role;
             }
-            if (requestParameters['organizationId'] != null) {
-                queryParameters['organization_id'] = requestParameters['organizationId'];
+            if (requestParameters.organizationId !== undefined) {
+                queryParameters['organization_id'] = requestParameters.organizationId;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -706,9 +682,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -739,9 +714,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/admin/postgres/enable-rls`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/admin/postgres/enable-rls`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
@@ -772,9 +746,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/admin/postgres/prepare`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/admin/postgres/prepare`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
@@ -796,11 +769,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['organizationId'] == null) {
-                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete().');
+            if (requestParameters.organizationId === null || requestParameters.organizationId === undefined) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter requestParameters.organizationId was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete.');
             }
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling removeOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -811,11 +784,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs/{organization_id}/members/{user_id}`;
-            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs/{organization_id}/members/{user_id}`.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters.organizationId))).replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -837,15 +807,15 @@ export class AdminApi extends runtime.BaseAPI {
      */
     revokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete.');
             }
-            if (requestParameters['roleName'] == null) {
-                throw new runtime.RequiredError('roleName', 'Required parameter "roleName" was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete().');
+            if (requestParameters.roleName === null || requestParameters.roleName === undefined) {
+                throw new runtime.RequiredError('roleName', 'Required parameter requestParameters.roleName was null or undefined when calling revokeUserRoleV1AdminUsersUserIdRolesRoleNameDelete.');
             }
             const queryParameters = {};
-            if (requestParameters['confirm'] != null) {
-                queryParameters['confirm'] = requestParameters['confirm'];
+            if (requestParameters.confirm !== undefined) {
+                queryParameters['confirm'] = requestParameters.confirm;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -855,11 +825,8 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}/roles/{role_name}`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
-            urlPath = urlPath.replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters['roleName'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}/roles/{role_name}`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))).replace(`{${"role_name"}}`, encodeURIComponent(String(requestParameters.roleName))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -880,11 +847,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     updateOrganizationV1AdminOrgsOrganizationIdPatchRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['organizationId'] == null) {
-                throw new runtime.RequiredError('organizationId', 'Required parameter "organizationId" was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch().');
+            if (requestParameters.organizationId === null || requestParameters.organizationId === undefined) {
+                throw new runtime.RequiredError('organizationId', 'Required parameter requestParameters.organizationId was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch.');
             }
-            if (requestParameters['adminOrganizationUpdate'] == null) {
-                throw new runtime.RequiredError('adminOrganizationUpdate', 'Required parameter "adminOrganizationUpdate" was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch().');
+            if (requestParameters.adminOrganizationUpdate === null || requestParameters.adminOrganizationUpdate === undefined) {
+                throw new runtime.RequiredError('adminOrganizationUpdate', 'Required parameter requestParameters.adminOrganizationUpdate was null or undefined when calling updateOrganizationV1AdminOrgsOrganizationIdPatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -896,14 +863,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/orgs/{organization_id}`;
-            urlPath = urlPath.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters['organizationId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/orgs/{organization_id}`.replace(`{${"organization_id"}}`, encodeURIComponent(String(requestParameters.organizationId))),
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminOrganizationUpdateToJSON(requestParameters['adminOrganizationUpdate']),
+                body: AdminOrganizationUpdateToJSON(requestParameters.adminOrganizationUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminOrganizationDetailFromJSON(jsonValue));
         });
@@ -922,11 +887,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['roleId'] == null) {
-                throw new runtime.RequiredError('roleId', 'Required parameter "roleId" was null or undefined when calling updateRoleV1AdminRolesRoleIdPatch().');
+            if (requestParameters.roleId === null || requestParameters.roleId === undefined) {
+                throw new runtime.RequiredError('roleId', 'Required parameter requestParameters.roleId was null or undefined when calling updateRoleV1AdminRolesRoleIdPatch.');
             }
-            if (requestParameters['adminRoleUpdate'] == null) {
-                throw new runtime.RequiredError('adminRoleUpdate', 'Required parameter "adminRoleUpdate" was null or undefined when calling updateRoleV1AdminRolesRoleIdPatch().');
+            if (requestParameters.adminRoleUpdate === null || requestParameters.adminRoleUpdate === undefined) {
+                throw new runtime.RequiredError('adminRoleUpdate', 'Required parameter requestParameters.adminRoleUpdate was null or undefined when calling updateRoleV1AdminRolesRoleIdPatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -938,14 +903,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/roles/{role_id}`;
-            urlPath = urlPath.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters['roleId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/roles/{role_id}`.replace(`{${"role_id"}}`, encodeURIComponent(String(requestParameters.roleId))),
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminRoleUpdateToJSON(requestParameters['adminRoleUpdate']),
+                body: AdminRoleUpdateToJSON(requestParameters.adminRoleUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminRoleDetailFromJSON(jsonValue));
         });
@@ -964,11 +927,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch.');
             }
-            if (requestParameters['adminUserRoleOverridesUpdate'] == null) {
-                throw new runtime.RequiredError('adminUserRoleOverridesUpdate', 'Required parameter "adminUserRoleOverridesUpdate" was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch().');
+            if (requestParameters.adminUserRoleOverridesUpdate === null || requestParameters.adminUserRoleOverridesUpdate === undefined) {
+                throw new runtime.RequiredError('adminUserRoleOverridesUpdate', 'Required parameter requestParameters.adminUserRoleOverridesUpdate was null or undefined when calling updateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -980,14 +943,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}/role-overrides`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}/role-overrides`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))),
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminUserRoleOverridesUpdateToJSON(requestParameters['adminUserRoleOverridesUpdate']),
+                body: AdminUserRoleOverridesUpdateToJSON(requestParameters.adminUserRoleOverridesUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
         });
@@ -1006,11 +967,11 @@ export class AdminApi extends runtime.BaseAPI {
      */
     updateUserV1AdminUsersUserIdPatchRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['userId'] == null) {
-                throw new runtime.RequiredError('userId', 'Required parameter "userId" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().');
+            if (requestParameters.userId === null || requestParameters.userId === undefined) {
+                throw new runtime.RequiredError('userId', 'Required parameter requestParameters.userId was null or undefined when calling updateUserV1AdminUsersUserIdPatch.');
             }
-            if (requestParameters['adminUserUpdate'] == null) {
-                throw new runtime.RequiredError('adminUserUpdate', 'Required parameter "adminUserUpdate" was null or undefined when calling updateUserV1AdminUsersUserIdPatch().');
+            if (requestParameters.adminUserUpdate === null || requestParameters.adminUserUpdate === undefined) {
+                throw new runtime.RequiredError('adminUserUpdate', 'Required parameter requestParameters.adminUserUpdate was null or undefined when calling updateUserV1AdminUsersUserIdPatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1022,14 +983,12 @@ export class AdminApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/admin/users/{user_id}`;
-            urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/admin/users/{user_id}`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters.userId))),
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: AdminUserUpdateToJSON(requestParameters['adminUserUpdate']),
+                body: AdminUserUpdateToJSON(requestParameters.adminUserUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => AdminUserOutFromJSON(jsonValue));
         });

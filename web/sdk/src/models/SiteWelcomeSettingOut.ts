@@ -12,13 +12,12 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 import type { SiteWelcomeContent } from './SiteWelcomeContent';
 import {
     SiteWelcomeContentFromJSON,
     SiteWelcomeContentFromJSONTyped,
     SiteWelcomeContentToJSON,
-    SiteWelcomeContentToJSONTyped,
 } from './SiteWelcomeContent';
 
 /**
@@ -29,10 +28,10 @@ import {
 export interface SiteWelcomeSettingOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingOut
      */
-    key: string;
+    key: any | null;
     /**
      * 
      * @type {SiteWelcomeContent}
@@ -41,31 +40,33 @@ export interface SiteWelcomeSettingOut {
     value: SiteWelcomeContent;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof SiteWelcomeSettingOut
      */
-    createdAt?: Date | null;
+    createdAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof SiteWelcomeSettingOut
      */
-    updatedAt?: Date | null;
+    updatedAt?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingOut
      */
-    updatedByUserId?: string | null;
+    updatedByUserId?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteWelcomeSettingOut interface.
  */
-export function instanceOfSiteWelcomeSettingOut(value: object): value is SiteWelcomeSettingOut {
-    if (!('key' in value) || value['key'] === undefined) return false;
-    if (!('value' in value) || value['value'] === undefined) return false;
-    return true;
+export function instanceOfSiteWelcomeSettingOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "key" in value;
+    isInstance = isInstance && "value" in value;
+
+    return isInstance;
 }
 
 export function SiteWelcomeSettingOutFromJSON(json: any): SiteWelcomeSettingOut {
@@ -73,35 +74,33 @@ export function SiteWelcomeSettingOutFromJSON(json: any): SiteWelcomeSettingOut 
 }
 
 export function SiteWelcomeSettingOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteWelcomeSettingOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'key': json['key'],
         'value': SiteWelcomeContentFromJSON(json['value']),
-        'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
-        'updatedAt': json['updated_at'] == null ? undefined : (new Date(json['updated_at'])),
-        'updatedByUserId': json['updated_by_user_id'] == null ? undefined : json['updated_by_user_id'],
+        'createdAt': !exists(json, 'created_at') ? undefined : json['created_at'],
+        'updatedAt': !exists(json, 'updated_at') ? undefined : json['updated_at'],
+        'updatedByUserId': !exists(json, 'updated_by_user_id') ? undefined : json['updated_by_user_id'],
     };
 }
 
-export function SiteWelcomeSettingOutToJSON(json: any): SiteWelcomeSettingOut {
-    return SiteWelcomeSettingOutToJSONTyped(json, false);
-}
-
-export function SiteWelcomeSettingOutToJSONTyped(value?: SiteWelcomeSettingOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteWelcomeSettingOutToJSON(value?: SiteWelcomeSettingOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'key': value['key'],
-        'value': SiteWelcomeContentToJSON(value['value']),
-        'created_at': value['createdAt'] === null ? null : ((value['createdAt'] as any)?.toISOString()),
-        'updated_at': value['updatedAt'] === null ? null : ((value['updatedAt'] as any)?.toISOString()),
-        'updated_by_user_id': value['updatedByUserId'],
+        'key': value.key,
+        'value': SiteWelcomeContentToJSON(value.value),
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'updated_by_user_id': value.updatedByUserId,
     };
 }
 

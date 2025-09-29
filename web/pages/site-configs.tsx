@@ -1,6 +1,12 @@
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, InlineTip, Nav } from '../components'
-import { v1, siteConfigs as site } from '../lib/openapi'
+import {
+  v1,
+  siteConfigs as site,
+  type SiteConfigCopyResponse,
+  type SiteConfigRecord,
+  type SiteConfigRequest,
+} from '../lib/openapi'
 import { useMemo, useState } from 'react'
 import {
   isValidUrl,
@@ -17,9 +23,6 @@ import { useRouter } from 'next/router'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
-import type { SiteConfigsPageItemsInner } from '../sdk/src/models/SiteConfigsPageItemsInner'
-import type { ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost } from '../sdk/src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost'
-import type { Body as SiteConfigRequest } from '../sdk/src/models/Body'
 
 const API_METHOD_OPTIONS = SUPPORTED_HTTP_METHODS
 const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
@@ -31,7 +34,7 @@ type ApiFormState = Extract<SiteConfigFormState, { login_type: 'api' }>
 
 type LocalizedErrors = Record<string, string>
 
-type SiteConfigList = SiteConfigsPage | Array<SiteConfigsPageItemsInner>
+type SiteConfigList = SiteConfigsPage | Array<SiteConfigRecord>
 
 type LoginType = 'selenium' | 'api'
 
@@ -278,10 +281,10 @@ export default function SiteConfigs() {
     setBanner(null)
     setCopyingId(configId)
     try {
-      const copied: ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = await site.copySiteConfigToUser({ configId })
+      const copied: SiteConfigCopyResponse = await site.copySiteConfigToUser({ configId })
       const normalizedCopied = normalizeListItem(copied)
       const appendConfig = (candidate: any) => {
-        const list: SiteConfigsPageItemsInner[] = Array.isArray(candidate)
+        const list: SiteConfigRecord[] = Array.isArray(candidate)
           ? candidate.map(normalizeListItem)
           : []
         const exists = list.some((item) => item?.id === normalizedCopied.id)
@@ -720,11 +723,11 @@ export default function SiteConfigs() {
     return value === 'api' ? t('site_configs_login_type_api') : t('site_configs_login_type_selenium')
   }
 
-  function resolveLoginType(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut): LoginType {
+  function resolveLoginType(value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut): LoginType {
     return isApiConfig(value) ? 'api' : 'selenium'
   }
 
-  function renderConfigSummary(value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut) {
+  function renderConfigSummary(value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut) {
     if (isApiConfig(value)) {
       const apiConfig = value.apiConfig
       const method = apiConfig?.method ?? ''
@@ -771,16 +774,16 @@ export default function SiteConfigs() {
   }
 
   function normalizeListItem(
-    value: SiteConfigsPageItemsInner | SiteConfigApiOut | SiteConfigSeleniumOut,
-  ): SiteConfigsPageItemsInner {
+    value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut,
+  ): SiteConfigRecord {
     if (isApiConfig(value)) {
-      const normalizedApi: SiteConfigsPageItemsInner = {
+      const normalizedApi: SiteConfigRecord = {
         ...(value as SiteConfigApiOut),
         loginType: 'api' as const,
       }
       return normalizedApi
     }
-    const normalizedSelenium: SiteConfigsPageItemsInner = {
+    const normalizedSelenium: SiteConfigRecord = {
       ...(value as SiteConfigSeleniumOut),
       loginType: 'selenium' as const,
     }
@@ -788,7 +791,7 @@ export default function SiteConfigs() {
   }
 
   const listItems = Array.isArray(data)
-    ? (data as SiteConfigsPageItemsInner[]).map(normalizeListItem)
+    ? (data as SiteConfigRecord[]).map(normalizeListItem)
     : (data as SiteConfigsPage | undefined)?.items?.map(normalizeListItem) ?? []
 
   return (
@@ -920,7 +923,7 @@ export default function SiteConfigs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {listItems.map((sc: SiteConfigsPageItemsInner) => {
+                  {listItems.map((sc: SiteConfigRecord) => {
                     const loginType = resolveLoginType(sc)
                     return (
                       <tr key={sc.id} className="odd:bg-white even:bg-gray-50">

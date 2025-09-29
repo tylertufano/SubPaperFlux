@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { MeNotificationPreferencesUpdate } from './MeNotificationPreferencesUpdate';
 /**
  *
  * @export
@@ -18,22 +17,21 @@ import type { MeNotificationPreferencesUpdate } from './MeNotificationPreference
 export interface MeUpdate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeUpdate
      */
-    locale?: string | null;
+    locale?: any | null;
     /**
      *
-     * @type {MeNotificationPreferencesUpdate}
+     * @type {any}
      * @memberof MeUpdate
      */
-    notificationPreferences?: MeNotificationPreferencesUpdate | null;
+    notificationPreferences?: any | null;
 }
 /**
  * Check if a given object implements the MeUpdate interface.
  */
-export declare function instanceOfMeUpdate(value: object): value is MeUpdate;
+export declare function instanceOfMeUpdate(value: object): boolean;
 export declare function MeUpdateFromJSON(json: any): MeUpdate;
 export declare function MeUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeUpdate;
-export declare function MeUpdateToJSON(json: any): MeUpdate;
-export declare function MeUpdateToJSONTyped(value?: MeUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function MeUpdateToJSON(value?: MeUpdate | null): any;

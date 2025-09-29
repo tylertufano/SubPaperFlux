@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { TagOut } from './TagOut';
 /**
  *
  * @export
@@ -18,22 +17,21 @@ import type { TagOut } from './TagOut';
 export interface BookmarkTagSummary {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkTagSummary
      */
-    bookmarkId: string;
+    bookmarkId: any | null;
     /**
      *
-     * @type {Array<TagOut>}
+     * @type {any}
      * @memberof BookmarkTagSummary
      */
-    tags?: Array<TagOut>;
+    tags?: any | null;
 }
 /**
  * Check if a given object implements the BookmarkTagSummary interface.
  */
-export declare function instanceOfBookmarkTagSummary(value: object): value is BookmarkTagSummary;
+export declare function instanceOfBookmarkTagSummary(value: object): boolean;
 export declare function BookmarkTagSummaryFromJSON(json: any): BookmarkTagSummary;
 export declare function BookmarkTagSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkTagSummary;
-export declare function BookmarkTagSummaryToJSON(json: any): BookmarkTagSummary;
-export declare function BookmarkTagSummaryToJSONTyped(value?: BookmarkTagSummary | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarkTagSummaryToJSON(value?: BookmarkTagSummary | null): any;

@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { JobScheduleOut } from './JobScheduleOut';
-import {
-    JobScheduleOutFromJSON,
-    JobScheduleOutFromJSONTyped,
-    JobScheduleOutToJSON,
-    JobScheduleOutToJSONTyped,
-} from './JobScheduleOut';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,51 +21,53 @@ import {
 export interface JobSchedulesPage {
     /**
      * 
-     * @type {Array<JobScheduleOut>}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    items: Array<JobScheduleOut>;
+    items: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    total: number;
+    total: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    page: number;
+    page: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    size: number;
+    size: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof JobSchedulesPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 
 /**
  * Check if a given object implements the JobSchedulesPage interface.
  */
-export function instanceOfJobSchedulesPage(value: object): value is JobSchedulesPage {
-    if (!('items' in value) || value['items'] === undefined) return false;
-    if (!('total' in value) || value['total'] === undefined) return false;
-    if (!('page' in value) || value['page'] === undefined) return false;
-    if (!('size' in value) || value['size'] === undefined) return false;
-    return true;
+export function instanceOfJobSchedulesPage(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+
+    return isInstance;
 }
 
 export function JobSchedulesPageFromJSON(json: any): JobSchedulesPage {
@@ -81,37 +75,35 @@ export function JobSchedulesPageFromJSON(json: any): JobSchedulesPage {
 }
 
 export function JobSchedulesPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobSchedulesPage {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'items': ((json['items'] as Array<any>).map(JobScheduleOutFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !exists(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !exists(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 
-export function JobSchedulesPageToJSON(json: any): JobSchedulesPage {
-    return JobSchedulesPageToJSONTyped(json, false);
-}
-
-export function JobSchedulesPageToJSONTyped(value?: JobSchedulesPage | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobSchedulesPageToJSON(value?: JobSchedulesPage | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'items': ((value['items'] as Array<any>).map(JobScheduleOutToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
 

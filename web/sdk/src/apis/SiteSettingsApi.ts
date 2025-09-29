@@ -20,7 +20,7 @@ import type {
   SiteSetupStatusUpdate,
   SiteWelcomeSettingOut,
   SiteWelcomeSettingUpdate,
-} from '../models/index';
+} from '../models';
 import {
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
@@ -32,18 +32,18 @@ import {
     SiteWelcomeSettingOutToJSON,
     SiteWelcomeSettingUpdateFromJSON,
     SiteWelcomeSettingUpdateToJSON,
-} from '../models/index';
+} from '../models';
 
 export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
-    siteSetupStatusUpdate: SiteSetupStatusUpdate;
+    requestBody: { [key: string]: any; } | null;
 }
 
 export interface UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest {
-    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+    requestBody: { [key: string]: any; } | null;
 }
 
 export interface UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest {
-    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+    requestBody: { [key: string]: any; } | null;
 }
 
 /**
@@ -67,11 +67,8 @@ export class SiteSettingsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/site-settings/setup-status`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/site-settings/setup-status`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -96,11 +93,8 @@ export class SiteSettingsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/v1/site-settings/welcome`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/site-settings/welcome`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -121,11 +115,8 @@ export class SiteSettingsApi extends runtime.BaseAPI {
      * Create or replace setup progress
      */
     async updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>> {
-        if (requestParameters['siteSetupStatusUpdate'] == null) {
-            throw new runtime.RequiredError(
-                'siteSetupStatusUpdate',
-                'Required parameter "siteSetupStatusUpdate" was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut().'
-            );
+        if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+            throw new runtime.RequiredError('requestBody','Required parameter requestParameters.requestBody was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut.');
         }
 
         const queryParameters: any = {};
@@ -142,15 +133,12 @@ export class SiteSettingsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/site-settings/setup-status`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/site-settings/setup-status`,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteSetupStatusUpdateToJSON(requestParameters['siteSetupStatusUpdate']),
+            body: requestParameters.requestBody,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SiteSetupStatusOutFromJSON(jsonValue));
@@ -168,11 +156,8 @@ export class SiteSettingsApi extends runtime.BaseAPI {
      * Partially update the welcome message
      */
     async updateWelcomeSettingV1SiteSettingsWelcomePatchRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>> {
-        if (requestParameters['siteWelcomeSettingUpdate'] == null) {
-            throw new runtime.RequiredError(
-                'siteWelcomeSettingUpdate',
-                'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePatch().'
-            );
+        if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+            throw new runtime.RequiredError('requestBody','Required parameter requestParameters.requestBody was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePatch.');
         }
 
         const queryParameters: any = {};
@@ -189,15 +174,12 @@ export class SiteSettingsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/site-settings/welcome`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/site-settings/welcome`,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteWelcomeSettingUpdateToJSON(requestParameters['siteWelcomeSettingUpdate']),
+            body: requestParameters.requestBody,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SiteWelcomeSettingOutFromJSON(jsonValue));
@@ -215,11 +197,8 @@ export class SiteSettingsApi extends runtime.BaseAPI {
      * Create or replace the welcome message
      */
     async updateWelcomeSettingV1SiteSettingsWelcomePutRaw(requestParameters: UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteWelcomeSettingOut>> {
-        if (requestParameters['siteWelcomeSettingUpdate'] == null) {
-            throw new runtime.RequiredError(
-                'siteWelcomeSettingUpdate',
-                'Required parameter "siteWelcomeSettingUpdate" was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePut().'
-            );
+        if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+            throw new runtime.RequiredError('requestBody','Required parameter requestParameters.requestBody was null or undefined when calling updateWelcomeSettingV1SiteSettingsWelcomePut.');
         }
 
         const queryParameters: any = {};
@@ -236,15 +215,12 @@ export class SiteSettingsApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
-
-        let urlPath = `/v1/site-settings/welcome`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/v1/site-settings/welcome`,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: SiteWelcomeSettingUpdateToJSON(requestParameters['siteWelcomeSettingUpdate']),
+            body: requestParameters.requestBody,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SiteWelcomeSettingOutFromJSON(jsonValue));

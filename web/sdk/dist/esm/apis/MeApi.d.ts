@@ -10,20 +10,20 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, MeOut, MeUpdate } from '../models/index';
+import type { ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, MeOut, MeUpdate } from '../models';
 export interface CreateTokenV1MeTokensPostRequest {
     apiTokenCreate: ApiTokenCreate;
 }
 export interface GetTokenV1MeTokensTokenIdGetRequest {
-    tokenId: string;
+    tokenId: any;
 }
 export interface ListTokensV1MeTokensGetRequest {
-    page?: number;
-    size?: number;
-    includeRevoked?: boolean;
+    page?: any;
+    size?: any;
+    includeRevoked?: any;
 }
 export interface RevokeTokenV1MeTokensTokenIdDeleteRequest {
-    tokenId: string;
+    tokenId: any;
 }
 export interface UpdateMeV1MePatchRequest {
     meUpdate: MeUpdate;

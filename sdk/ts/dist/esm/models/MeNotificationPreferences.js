@@ -11,33 +11,35 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the MeNotificationPreferences interface.
  */
 export function instanceOfMeNotificationPreferences(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function MeNotificationPreferencesFromJSON(json) {
     return MeNotificationPreferencesFromJSONTyped(json, false);
 }
 export function MeNotificationPreferencesFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'emailJobUpdates': json['email_job_updates'] == null ? undefined : json['email_job_updates'],
-        'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
+        'emailJobUpdates': !exists(json, 'email_job_updates') ? undefined : json['email_job_updates'],
+        'emailDigest': !exists(json, 'email_digest') ? undefined : json['email_digest'],
     };
 }
-export function MeNotificationPreferencesToJSON(json) {
-    return MeNotificationPreferencesToJSONTyped(json, false);
-}
-export function MeNotificationPreferencesToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function MeNotificationPreferencesToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'email_job_updates': value['emailJobUpdates'],
-        'email_digest': value['emailDigest'],
+        'email_job_updates': value.emailJobUpdates,
+        'email_digest': value.emailDigest,
     };
 }

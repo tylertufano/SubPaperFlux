@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,18 +21,20 @@ import { mapValues } from '../runtime';
 export interface AdminOrganizationMembershipChange {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationMembershipChange
      */
-    userId: string;
+    userId: any | null;
 }
 
 /**
  * Check if a given object implements the AdminOrganizationMembershipChange interface.
  */
-export function instanceOfAdminOrganizationMembershipChange(value: object): value is AdminOrganizationMembershipChange {
-    if (!('userId' in value) || value['userId'] === undefined) return false;
-    return true;
+export function instanceOfAdminOrganizationMembershipChange(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "userId" in value;
+
+    return isInstance;
 }
 
 export function AdminOrganizationMembershipChangeFromJSON(json: any): AdminOrganizationMembershipChange {
@@ -40,7 +42,7 @@ export function AdminOrganizationMembershipChangeFromJSON(json: any): AdminOrgan
 }
 
 export function AdminOrganizationMembershipChangeFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationMembershipChange {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -49,18 +51,16 @@ export function AdminOrganizationMembershipChangeFromJSONTyped(json: any, ignore
     };
 }
 
-export function AdminOrganizationMembershipChangeToJSON(json: any): AdminOrganizationMembershipChange {
-    return AdminOrganizationMembershipChangeToJSONTyped(json, false);
-}
-
-export function AdminOrganizationMembershipChangeToJSONTyped(value?: AdminOrganizationMembershipChange | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminOrganizationMembershipChangeToJSON(value?: AdminOrganizationMembershipChange | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'user_id': value['userId'],
+        'user_id': value.userId,
     };
 }
 

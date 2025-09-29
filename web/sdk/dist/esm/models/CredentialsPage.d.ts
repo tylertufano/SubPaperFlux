@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { Credential } from './Credential';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { Credential } from './Credential';
 export interface CredentialsPage {
     /**
      *
-     * @type {Array<Credential>}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    items: Array<Credential>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof CredentialsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the CredentialsPage interface.
  */
-export declare function instanceOfCredentialsPage(value: object): value is CredentialsPage;
+export declare function instanceOfCredentialsPage(value: object): boolean;
 export declare function CredentialsPageFromJSON(json: any): CredentialsPage;
 export declare function CredentialsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): CredentialsPage;
-export declare function CredentialsPageToJSON(json: any): CredentialsPage;
-export declare function CredentialsPageToJSONTyped(value?: CredentialsPage | null, ignoreDiscriminator?: boolean): any;
+export declare function CredentialsPageToJSON(value?: CredentialsPage | null): any;

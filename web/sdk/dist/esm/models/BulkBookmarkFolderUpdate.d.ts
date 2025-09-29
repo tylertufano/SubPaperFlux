@@ -17,28 +17,27 @@
 export interface BulkBookmarkFolderUpdate {
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof BulkBookmarkFolderUpdate
      */
-    bookmarkIds: Array<string>;
+    bookmarkIds: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BulkBookmarkFolderUpdate
      */
-    folderId?: string | null;
+    folderId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BulkBookmarkFolderUpdate
      */
-    instapaperFolderId?: string | null;
+    instapaperFolderId?: any | null;
 }
 /**
  * Check if a given object implements the BulkBookmarkFolderUpdate interface.
  */
-export declare function instanceOfBulkBookmarkFolderUpdate(value: object): value is BulkBookmarkFolderUpdate;
+export declare function instanceOfBulkBookmarkFolderUpdate(value: object): boolean;
 export declare function BulkBookmarkFolderUpdateFromJSON(json: any): BulkBookmarkFolderUpdate;
 export declare function BulkBookmarkFolderUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BulkBookmarkFolderUpdate;
-export declare function BulkBookmarkFolderUpdateToJSON(json: any): BulkBookmarkFolderUpdate;
-export declare function BulkBookmarkFolderUpdateToJSONTyped(value?: BulkBookmarkFolderUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function BulkBookmarkFolderUpdateToJSON(value?: BulkBookmarkFolderUpdate | null): any;

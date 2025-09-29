@@ -10,13 +10,13 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, AuditLogsPage, RoleGrantRequest } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, AuditLogsPage } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
-    organizationId: string;
+    organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
 }
 export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
-    userId: string;
+    userId: any;
 }
 export interface CreateOrganizationV1AdminOrgsPostRequest {
     adminOrganizationCreate: AdminOrganizationCreate;
@@ -25,100 +25,100 @@ export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
 }
 export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
-    organizationId: string;
+    organizationId: any;
 }
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
-    roleId: string;
+    roleId: any;
 }
 export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
-    organizationId: string;
+    organizationId: any;
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
-    roleId: string;
+    roleId: any;
 }
 export interface GetUserV1AdminUsersUserIdGetRequest {
-    userId: string;
+    userId: any;
 }
 export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
-    userId: string;
-    roleName: string;
-    roleGrantRequest?: RoleGrantRequest;
+    userId: any;
+    roleName: any;
+    body?: any | null;
 }
 export interface ListAuditLogsAdminAuditGetRequest {
-    page?: number;
-    size?: number;
-    entityType?: string | null;
-    entityId?: string | null;
-    action?: string | null;
-    ownerUserId?: string | null;
-    actorUserId?: string | null;
-    since?: Date | null;
-    until?: Date | null;
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
 }
 export interface ListAuditLogsAdminAuditGet0Request {
-    page?: number;
-    size?: number;
-    entityType?: string | null;
-    entityId?: string | null;
-    action?: string | null;
-    ownerUserId?: string | null;
-    actorUserId?: string | null;
-    since?: Date | null;
-    until?: Date | null;
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
 }
 export interface ListAuditLogsV1AdminAuditGetRequest {
-    page?: number;
-    size?: number;
-    entityType?: string | null;
-    entityId?: string | null;
-    action?: string | null;
-    ownerUserId?: string | null;
-    actorUserId?: string | null;
-    since?: Date | null;
-    until?: Date | null;
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
 }
 export interface ListOrganizationsV1AdminOrgsGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    isDefault?: boolean | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    isDefault?: any;
 }
 export interface ListRolesV1AdminRolesGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
 }
 export interface ListUsersV1AdminUsersGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    isActive?: boolean | null;
-    role?: string | null;
-    organizationId?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    isActive?: any;
+    role?: any;
+    organizationId?: any;
 }
 export interface RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest {
-    organizationId: string;
-    userId: string;
+    organizationId: any;
+    userId: any;
 }
 export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
-    userId: string;
-    roleName: string;
-    confirm?: boolean;
+    userId: any;
+    roleName: any;
+    confirm?: any;
 }
 export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
-    organizationId: string;
+    organizationId: any;
     adminOrganizationUpdate: AdminOrganizationUpdate;
 }
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
-    roleId: string;
+    roleId: any;
     adminRoleUpdate: AdminRoleUpdate;
 }
 export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest {
-    userId: string;
+    userId: any;
     adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdate;
 }
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
-    userId: string;
+    userId: any;
     adminUserUpdate: AdminUserUpdate;
 }
 /**

@@ -13,15 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookmarkFolderSummaryToJSONTyped = exports.BookmarkFolderSummaryToJSON = exports.BookmarkFolderSummaryFromJSONTyped = exports.BookmarkFolderSummaryFromJSON = exports.instanceOfBookmarkFolderSummary = void 0;
-const FolderOut_1 = require("./FolderOut");
+exports.BookmarkFolderSummaryToJSON = exports.BookmarkFolderSummaryFromJSONTyped = exports.BookmarkFolderSummaryFromJSON = exports.instanceOfBookmarkFolderSummary = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the BookmarkFolderSummary interface.
  */
 function instanceOfBookmarkFolderSummary(value) {
-    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkId" in value;
+    return isInstance;
 }
 exports.instanceOfBookmarkFolderSummary = instanceOfBookmarkFolderSummary;
 function BookmarkFolderSummaryFromJSON(json) {
@@ -29,26 +29,25 @@ function BookmarkFolderSummaryFromJSON(json) {
 }
 exports.BookmarkFolderSummaryFromJSON = BookmarkFolderSummaryFromJSON;
 function BookmarkFolderSummaryFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkId': json['bookmark_id'],
-        'folder': json['folder'] == null ? undefined : (0, FolderOut_1.FolderOutFromJSON)(json['folder']),
+        'folder': !(0, runtime_1.exists)(json, 'folder') ? undefined : json['folder'],
     };
 }
 exports.BookmarkFolderSummaryFromJSONTyped = BookmarkFolderSummaryFromJSONTyped;
-function BookmarkFolderSummaryToJSON(json) {
-    return BookmarkFolderSummaryToJSONTyped(json, false);
-}
-exports.BookmarkFolderSummaryToJSON = BookmarkFolderSummaryToJSON;
-function BookmarkFolderSummaryToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function BookmarkFolderSummaryToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_id': value['bookmarkId'],
-        'folder': (0, FolderOut_1.FolderOutToJSON)(value['folder']),
+        'bookmark_id': value.bookmarkId,
+        'folder': value.folder,
     };
 }
-exports.BookmarkFolderSummaryToJSONTyped = BookmarkFolderSummaryToJSONTyped;
+exports.BookmarkFolderSummaryToJSON = BookmarkFolderSummaryToJSON;

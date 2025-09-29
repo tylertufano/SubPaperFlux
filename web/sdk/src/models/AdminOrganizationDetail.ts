@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { AdminOrganizationMember } from './AdminOrganizationMember';
-import {
-    AdminOrganizationMemberFromJSON,
-    AdminOrganizationMemberFromJSONTyped,
-    AdminOrganizationMemberToJSON,
-    AdminOrganizationMemberToJSONTyped,
-} from './AdminOrganizationMember';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -29,70 +21,72 @@ import {
 export interface AdminOrganizationDetail {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    slug: string;
+    slug: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    isDefault?: boolean;
+    isDefault?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    memberCount?: number;
+    memberCount?: any | null;
     /**
      * 
-     * @type {Array<AdminOrganizationMember>}
+     * @type {any}
      * @memberof AdminOrganizationDetail
      */
-    members?: Array<AdminOrganizationMember>;
+    members?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminOrganizationDetail interface.
  */
-export function instanceOfAdminOrganizationDetail(value: object): value is AdminOrganizationDetail {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('slug' in value) || value['slug'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
-    return true;
+export function instanceOfAdminOrganizationDetail(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "slug" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+
+    return isInstance;
 }
 
 export function AdminOrganizationDetailFromJSON(json: any): AdminOrganizationDetail {
@@ -100,7 +94,7 @@ export function AdminOrganizationDetailFromJSON(json: any): AdminOrganizationDet
 }
 
 export function AdminOrganizationDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationDetail {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -108,35 +102,33 @@ export function AdminOrganizationDetailFromJSONTyped(json: any, ignoreDiscrimina
         'id': json['id'],
         'slug': json['slug'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isDefault': json['is_default'] == null ? undefined : json['is_default'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'memberCount': json['member_count'] == null ? undefined : json['member_count'],
-        'members': json['members'] == null ? undefined : ((json['members'] as Array<any>).map(AdminOrganizationMemberFromJSON)),
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isDefault': !exists(json, 'is_default') ? undefined : json['is_default'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'memberCount': !exists(json, 'member_count') ? undefined : json['member_count'],
+        'members': !exists(json, 'members') ? undefined : json['members'],
     };
 }
 
-export function AdminOrganizationDetailToJSON(json: any): AdminOrganizationDetail {
-    return AdminOrganizationDetailToJSONTyped(json, false);
-}
-
-export function AdminOrganizationDetailToJSONTyped(value?: AdminOrganizationDetail | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminOrganizationDetailToJSON(value?: AdminOrganizationDetail | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'slug': value['slug'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_default': value['isDefault'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'member_count': value['memberCount'],
-        'members': value['members'] == null ? undefined : ((value['members'] as Array<any>).map(AdminOrganizationMemberToJSON)),
+        'id': value.id,
+        'slug': value.slug,
+        'name': value.name,
+        'description': value.description,
+        'is_default': value.isDefault,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'member_count': value.memberCount,
+        'members': value.members,
     };
 }
 

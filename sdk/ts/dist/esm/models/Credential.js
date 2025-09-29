@@ -11,47 +11,46 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the Credential interface.
  */
 export function instanceOfCredential(value) {
-    if (!('kind' in value) || value['kind'] === undefined)
-        return false;
-    if (!('description' in value) || value['description'] === undefined)
-        return false;
-    if (!('data' in value) || value['data'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "kind" in value;
+    isInstance = isInstance && "description" in value;
+    isInstance = isInstance && "data" in value;
+    return isInstance;
 }
 export function CredentialFromJSON(json) {
     return CredentialFromJSONTyped(json, false);
 }
 export function CredentialFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'id': json['id'] == null ? undefined : json['id'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
         'kind': json['kind'],
         'description': json['description'],
         'data': json['data'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
     };
 }
-export function CredentialToJSON(json) {
-    return CredentialToJSONTyped(json, false);
-}
-export function CredentialToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function CredentialToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'kind': value['kind'],
-        'description': value['description'],
-        'data': value['data'],
-        'owner_user_id': value['ownerUserId'],
-        'site_config_id': value['siteConfigId'],
+        'id': value.id,
+        'kind': value.kind,
+        'description': value.description,
+        'data': value.data,
+        'owner_user_id': value.ownerUserId,
+        'site_config_id': value.siteConfigId,
     };
 }

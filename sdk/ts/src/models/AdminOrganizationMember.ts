@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,43 +21,45 @@ import { mapValues } from '../runtime';
 export interface AdminOrganizationMember {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationMember
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationMember
      */
-    email?: string | null;
+    email?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationMember
      */
-    fullName?: string | null;
+    fullName?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminOrganizationMember
      */
-    isActive?: boolean | null;
+    isActive?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminOrganizationMember
      */
-    joinedAt: Date;
+    joinedAt: any | null;
 }
 
 /**
  * Check if a given object implements the AdminOrganizationMember interface.
  */
-export function instanceOfAdminOrganizationMember(value: object): value is AdminOrganizationMember {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('joinedAt' in value) || value['joinedAt'] === undefined) return false;
-    return true;
+export function instanceOfAdminOrganizationMember(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "joinedAt" in value;
+
+    return isInstance;
 }
 
 export function AdminOrganizationMemberFromJSON(json: any): AdminOrganizationMember {
@@ -65,35 +67,33 @@ export function AdminOrganizationMemberFromJSON(json: any): AdminOrganizationMem
 }
 
 export function AdminOrganizationMemberFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationMember {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
-        'email': json['email'] == null ? undefined : json['email'],
-        'fullName': json['full_name'] == null ? undefined : json['full_name'],
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
-        'joinedAt': (new Date(json['joined_at'])),
+        'email': !exists(json, 'email') ? undefined : json['email'],
+        'fullName': !exists(json, 'full_name') ? undefined : json['full_name'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
+        'joinedAt': json['joined_at'],
     };
 }
 
-export function AdminOrganizationMemberToJSON(json: any): AdminOrganizationMember {
-    return AdminOrganizationMemberToJSONTyped(json, false);
-}
-
-export function AdminOrganizationMemberToJSONTyped(value?: AdminOrganizationMember | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminOrganizationMemberToJSON(value?: AdminOrganizationMember | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'email': value['email'],
-        'full_name': value['fullName'],
-        'is_active': value['isActive'],
-        'joined_at': ((value['joinedAt']).toISOString()),
+        'id': value.id,
+        'email': value.email,
+        'full_name': value.fullName,
+        'is_active': value.isActive,
+        'joined_at': value.joinedAt,
     };
 }
 

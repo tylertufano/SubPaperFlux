@@ -18,34 +18,34 @@ import type { MeNotificationPreferences } from './MeNotificationPreferences';
 export interface MeOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    email?: string | null;
+    email?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    fullName?: string | null;
+    fullName?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    pictureUrl?: string | null;
+    pictureUrl?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof MeOut
      */
-    locale?: string | null;
+    locale?: any | null;
     /**
      *
      * @type {MeNotificationPreferences}
@@ -56,8 +56,7 @@ export interface MeOut {
 /**
  * Check if a given object implements the MeOut interface.
  */
-export declare function instanceOfMeOut(value: object): value is MeOut;
+export declare function instanceOfMeOut(value: object): boolean;
 export declare function MeOutFromJSON(json: any): MeOut;
 export declare function MeOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeOut;
-export declare function MeOutToJSON(json: any): MeOut;
-export declare function MeOutToJSONTyped(value?: MeOut | null, ignoreDiscriminator?: boolean): any;
+export declare function MeOutToJSON(value?: MeOut | null): any;

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,66 +21,68 @@ import { mapValues } from '../runtime';
 export interface TemplateMetadata {
     /**
      * Stable template identifier
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    id: string;
+    id: any | null;
     /**
      * Source filename within the templates directory
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    filename: string;
+    filename: any | null;
     /**
      * Display title for the template
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    title: string;
+    title: any | null;
     /**
      * Short description of the template contents
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    description: string;
+    description: any | null;
     /**
      * Primary file format (derived from the extension)
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    format: string;
+    format: any | null;
     /**
      * File size in bytes
-     * @type {number}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    sizeBytes: number;
+    sizeBytes: any | null;
     /**
      * List of category identifiers that apply to the template
-     * @type {Array<string>}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    categories?: Array<string>;
+    categories?: any | null;
     /**
      * Relative URL to download the template asset
-     * @type {string}
+     * @type {any}
      * @memberof TemplateMetadata
      */
-    downloadUrl: string;
+    downloadUrl: any | null;
 }
 
 /**
  * Check if a given object implements the TemplateMetadata interface.
  */
-export function instanceOfTemplateMetadata(value: object): value is TemplateMetadata {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('filename' in value) || value['filename'] === undefined) return false;
-    if (!('title' in value) || value['title'] === undefined) return false;
-    if (!('description' in value) || value['description'] === undefined) return false;
-    if (!('format' in value) || value['format'] === undefined) return false;
-    if (!('sizeBytes' in value) || value['sizeBytes'] === undefined) return false;
-    if (!('downloadUrl' in value) || value['downloadUrl'] === undefined) return false;
-    return true;
+export function instanceOfTemplateMetadata(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "filename" in value;
+    isInstance = isInstance && "title" in value;
+    isInstance = isInstance && "description" in value;
+    isInstance = isInstance && "format" in value;
+    isInstance = isInstance && "sizeBytes" in value;
+    isInstance = isInstance && "downloadUrl" in value;
+
+    return isInstance;
 }
 
 export function TemplateMetadataFromJSON(json: any): TemplateMetadata {
@@ -88,7 +90,7 @@ export function TemplateMetadataFromJSON(json: any): TemplateMetadata {
 }
 
 export function TemplateMetadataFromJSONTyped(json: any, ignoreDiscriminator: boolean): TemplateMetadata {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -99,30 +101,28 @@ export function TemplateMetadataFromJSONTyped(json: any, ignoreDiscriminator: bo
         'description': json['description'],
         'format': json['format'],
         'sizeBytes': json['size_bytes'],
-        'categories': json['categories'] == null ? undefined : json['categories'],
+        'categories': !exists(json, 'categories') ? undefined : json['categories'],
         'downloadUrl': json['download_url'],
     };
 }
 
-export function TemplateMetadataToJSON(json: any): TemplateMetadata {
-    return TemplateMetadataToJSONTyped(json, false);
-}
-
-export function TemplateMetadataToJSONTyped(value?: TemplateMetadata | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function TemplateMetadataToJSON(value?: TemplateMetadata | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'filename': value['filename'],
-        'title': value['title'],
-        'description': value['description'],
-        'format': value['format'],
-        'size_bytes': value['sizeBytes'],
-        'categories': value['categories'],
-        'download_url': value['downloadUrl'],
+        'id': value.id,
+        'filename': value.filename,
+        'title': value.title,
+        'description': value.description,
+        'format': value.format,
+        'size_bytes': value.sizeBytes,
+        'categories': value.categories,
+        'download_url': value.downloadUrl,
     };
 }
 

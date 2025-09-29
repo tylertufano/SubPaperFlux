@@ -11,46 +11,46 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 import { MeNotificationPreferencesFromJSON, MeNotificationPreferencesToJSON, } from './MeNotificationPreferences';
 /**
  * Check if a given object implements the MeOut interface.
  */
 export function instanceOfMeOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('notificationPreferences' in value) || value['notificationPreferences'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "notificationPreferences" in value;
+    return isInstance;
 }
 export function MeOutFromJSON(json) {
     return MeOutFromJSONTyped(json, false);
 }
 export function MeOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
-        'email': json['email'] == null ? undefined : json['email'],
-        'fullName': json['full_name'] == null ? undefined : json['full_name'],
-        'pictureUrl': json['picture_url'] == null ? undefined : json['picture_url'],
-        'locale': json['locale'] == null ? undefined : json['locale'],
+        'email': !exists(json, 'email') ? undefined : json['email'],
+        'fullName': !exists(json, 'full_name') ? undefined : json['full_name'],
+        'pictureUrl': !exists(json, 'picture_url') ? undefined : json['picture_url'],
+        'locale': !exists(json, 'locale') ? undefined : json['locale'],
         'notificationPreferences': MeNotificationPreferencesFromJSON(json['notification_preferences']),
     };
 }
-export function MeOutToJSON(json) {
-    return MeOutToJSONTyped(json, false);
-}
-export function MeOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function MeOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'email': value['email'],
-        'full_name': value['fullName'],
-        'picture_url': value['pictureUrl'],
-        'locale': value['locale'],
-        'notification_preferences': MeNotificationPreferencesToJSON(value['notificationPreferences']),
+        'id': value.id,
+        'email': value.email,
+        'full_name': value.fullName,
+        'picture_url': value.pictureUrl,
+        'locale': value.locale,
+        'notification_preferences': MeNotificationPreferencesToJSON(value.notificationPreferences),
     };
 }

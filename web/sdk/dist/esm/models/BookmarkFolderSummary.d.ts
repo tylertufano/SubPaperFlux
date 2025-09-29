@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { FolderOut } from './FolderOut';
 /**
  *
  * @export
@@ -18,22 +17,21 @@ import type { FolderOut } from './FolderOut';
 export interface BookmarkFolderSummary {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkFolderSummary
      */
-    bookmarkId: string;
+    bookmarkId: any | null;
     /**
      *
-     * @type {FolderOut}
+     * @type {any}
      * @memberof BookmarkFolderSummary
      */
-    folder?: FolderOut | null;
+    folder?: any | null;
 }
 /**
  * Check if a given object implements the BookmarkFolderSummary interface.
  */
-export declare function instanceOfBookmarkFolderSummary(value: object): value is BookmarkFolderSummary;
+export declare function instanceOfBookmarkFolderSummary(value: object): boolean;
 export declare function BookmarkFolderSummaryFromJSON(json: any): BookmarkFolderSummary;
 export declare function BookmarkFolderSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkFolderSummary;
-export declare function BookmarkFolderSummaryToJSON(json: any): BookmarkFolderSummary;
-export declare function BookmarkFolderSummaryToJSONTyped(value?: BookmarkFolderSummary | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarkFolderSummaryToJSON(value?: BookmarkFolderSummary | null): any;

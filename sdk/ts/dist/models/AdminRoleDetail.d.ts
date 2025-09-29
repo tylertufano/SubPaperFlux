@@ -17,46 +17,46 @@
 export interface AdminRoleDetail {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    isSystem?: boolean;
+    isSystem?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    assignedUserCount?: number;
+    assignedUserCount?: any | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -64,13 +64,12 @@ export interface AdminRoleDetail {
      */
     metadata?: {
         [key: string]: any;
-    };
+    } | null;
 }
 /**
  * Check if a given object implements the AdminRoleDetail interface.
  */
-export declare function instanceOfAdminRoleDetail(value: object): value is AdminRoleDetail;
+export declare function instanceOfAdminRoleDetail(value: object): boolean;
 export declare function AdminRoleDetailFromJSON(json: any): AdminRoleDetail;
 export declare function AdminRoleDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleDetail;
-export declare function AdminRoleDetailToJSON(json: any): AdminRoleDetail;
-export declare function AdminRoleDetailToJSONTyped(value?: AdminRoleDetail | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminRoleDetailToJSON(value?: AdminRoleDetail | null): any;

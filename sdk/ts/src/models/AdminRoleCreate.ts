@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,30 +21,32 @@ import { mapValues } from '../runtime';
 export interface AdminRoleCreate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRoleCreate
      */
-    isSystem?: boolean | null;
+    isSystem?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminRoleCreate interface.
  */
-export function instanceOfAdminRoleCreate(value: object): value is AdminRoleCreate {
-    if (!('name' in value) || value['name'] === undefined) return false;
-    return true;
+export function instanceOfAdminRoleCreate(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+
+    return isInstance;
 }
 
 export function AdminRoleCreateFromJSON(json: any): AdminRoleCreate {
@@ -52,31 +54,29 @@ export function AdminRoleCreateFromJSON(json: any): AdminRoleCreate {
 }
 
 export function AdminRoleCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleCreate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
     };
 }
 
-export function AdminRoleCreateToJSON(json: any): AdminRoleCreate {
-    return AdminRoleCreateToJSONTyped(json, false);
-}
-
-export function AdminRoleCreateToJSONTyped(value?: AdminRoleCreate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminRoleCreateToJSON(value?: AdminRoleCreate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
     };
 }
 

@@ -12,22 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { TemplateCategory } from './TemplateCategory';
-import {
-    TemplateCategoryFromJSON,
-    TemplateCategoryFromJSONTyped,
-    TemplateCategoryToJSON,
-    TemplateCategoryToJSONTyped,
-} from './TemplateCategory';
-import type { TemplateMetadata } from './TemplateMetadata';
-import {
-    TemplateMetadataFromJSON,
-    TemplateMetadataFromJSONTyped,
-    TemplateMetadataToJSON,
-    TemplateMetadataToJSONTyped,
-} from './TemplateMetadata';
-
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -36,23 +21,25 @@ import {
 export interface TemplateListResponse {
     /**
      * Available template definitions
-     * @type {Array<TemplateMetadata>}
+     * @type {any}
      * @memberof TemplateListResponse
      */
-    templates?: Array<TemplateMetadata>;
+    templates?: any | null;
     /**
      * Filter categories for the templates
-     * @type {Array<TemplateCategory>}
+     * @type {any}
      * @memberof TemplateListResponse
      */
-    categories?: Array<TemplateCategory>;
+    categories?: any | null;
 }
 
 /**
  * Check if a given object implements the TemplateListResponse interface.
  */
-export function instanceOfTemplateListResponse(value: object): value is TemplateListResponse {
-    return true;
+export function instanceOfTemplateListResponse(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function TemplateListResponseFromJSON(json: any): TemplateListResponse {
@@ -60,29 +47,27 @@ export function TemplateListResponseFromJSON(json: any): TemplateListResponse {
 }
 
 export function TemplateListResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): TemplateListResponse {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'templates': json['templates'] == null ? undefined : ((json['templates'] as Array<any>).map(TemplateMetadataFromJSON)),
-        'categories': json['categories'] == null ? undefined : ((json['categories'] as Array<any>).map(TemplateCategoryFromJSON)),
+        'templates': !exists(json, 'templates') ? undefined : json['templates'],
+        'categories': !exists(json, 'categories') ? undefined : json['categories'],
     };
 }
 
-export function TemplateListResponseToJSON(json: any): TemplateListResponse {
-    return TemplateListResponseToJSONTyped(json, false);
-}
-
-export function TemplateListResponseToJSONTyped(value?: TemplateListResponse | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function TemplateListResponseToJSON(value?: TemplateListResponse | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'templates': value['templates'] == null ? undefined : ((value['templates'] as Array<any>).map(TemplateMetadataToJSON)),
-        'categories': value['categories'] == null ? undefined : ((value['categories'] as Array<any>).map(TemplateCategoryToJSON)),
+        'templates': value.templates,
+        'categories': value.categories,
     };
 }
 

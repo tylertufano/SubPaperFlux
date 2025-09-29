@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiTokenOutToJSONTyped = exports.ApiTokenOutToJSON = exports.ApiTokenOutFromJSONTyped = exports.ApiTokenOutFromJSON = exports.instanceOfApiTokenOut = void 0;
+exports.ApiTokenOutToJSON = exports.ApiTokenOutFromJSONTyped = exports.ApiTokenOutFromJSON = exports.instanceOfApiTokenOut = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the ApiTokenOut interface.
  */
 function instanceOfApiTokenOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+    return isInstance;
 }
 exports.instanceOfApiTokenOut = instanceOfApiTokenOut;
 function ApiTokenOutFromJSON(json) {
@@ -34,41 +32,39 @@ function ApiTokenOutFromJSON(json) {
 }
 exports.ApiTokenOutFromJSON = ApiTokenOutFromJSON;
 function ApiTokenOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'scopes': json['scopes'] == null ? undefined : json['scopes'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'lastUsedAt': json['last_used_at'] == null ? undefined : (new Date(json['last_used_at'])),
-        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
-        'revokedAt': json['revoked_at'] == null ? undefined : (new Date(json['revoked_at'])),
+        'description': !(0, runtime_1.exists)(json, 'description') ? undefined : json['description'],
+        'scopes': !(0, runtime_1.exists)(json, 'scopes') ? undefined : json['scopes'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'lastUsedAt': !(0, runtime_1.exists)(json, 'last_used_at') ? undefined : json['last_used_at'],
+        'expiresAt': !(0, runtime_1.exists)(json, 'expires_at') ? undefined : json['expires_at'],
+        'revokedAt': !(0, runtime_1.exists)(json, 'revoked_at') ? undefined : json['revoked_at'],
     };
 }
 exports.ApiTokenOutFromJSONTyped = ApiTokenOutFromJSONTyped;
-function ApiTokenOutToJSON(json) {
-    return ApiTokenOutToJSONTyped(json, false);
-}
-exports.ApiTokenOutToJSON = ApiTokenOutToJSON;
-function ApiTokenOutToJSONTyped(value, ignoreDiscriminator = false) {
-    var _a, _b, _c;
-    if (value == null) {
-        return value;
+function ApiTokenOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'scopes': value['scopes'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'last_used_at': value['lastUsedAt'] === null ? null : ((_a = value['lastUsedAt']) === null || _a === void 0 ? void 0 : _a.toISOString()),
-        'expires_at': value['expiresAt'] === null ? null : ((_b = value['expiresAt']) === null || _b === void 0 ? void 0 : _b.toISOString()),
-        'revoked_at': value['revokedAt'] === null ? null : ((_c = value['revokedAt']) === null || _c === void 0 ? void 0 : _c.toISOString()),
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'scopes': value.scopes,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'last_used_at': value.lastUsedAt,
+        'expires_at': value.expiresAt,
+        'revoked_at': value.revokedAt,
     };
 }
-exports.ApiTokenOutToJSONTyped = ApiTokenOutToJSONTyped;
+exports.ApiTokenOutToJSON = ApiTokenOutToJSON;

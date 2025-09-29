@@ -13,13 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MeUpdateToJSONTyped = exports.MeUpdateToJSON = exports.MeUpdateFromJSONTyped = exports.MeUpdateFromJSON = exports.instanceOfMeUpdate = void 0;
-const MeNotificationPreferencesUpdate_1 = require("./MeNotificationPreferencesUpdate");
+exports.MeUpdateToJSON = exports.MeUpdateFromJSONTyped = exports.MeUpdateFromJSON = exports.instanceOfMeUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the MeUpdate interface.
  */
 function instanceOfMeUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfMeUpdate = instanceOfMeUpdate;
 function MeUpdateFromJSON(json) {
@@ -27,26 +28,25 @@ function MeUpdateFromJSON(json) {
 }
 exports.MeUpdateFromJSON = MeUpdateFromJSON;
 function MeUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'locale': json['locale'] == null ? undefined : json['locale'],
-        'notificationPreferences': json['notification_preferences'] == null ? undefined : (0, MeNotificationPreferencesUpdate_1.MeNotificationPreferencesUpdateFromJSON)(json['notification_preferences']),
+        'locale': !(0, runtime_1.exists)(json, 'locale') ? undefined : json['locale'],
+        'notificationPreferences': !(0, runtime_1.exists)(json, 'notification_preferences') ? undefined : json['notification_preferences'],
     };
 }
 exports.MeUpdateFromJSONTyped = MeUpdateFromJSONTyped;
-function MeUpdateToJSON(json) {
-    return MeUpdateToJSONTyped(json, false);
-}
-exports.MeUpdateToJSON = MeUpdateToJSON;
-function MeUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function MeUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'locale': value['locale'],
-        'notification_preferences': (0, MeNotificationPreferencesUpdate_1.MeNotificationPreferencesUpdateToJSON)(value['notificationPreferences']),
+        'locale': value.locale,
+        'notification_preferences': value.notificationPreferences,
     };
 }
-exports.MeUpdateToJSONTyped = MeUpdateToJSONTyped;
+exports.MeUpdateToJSON = MeUpdateToJSON;

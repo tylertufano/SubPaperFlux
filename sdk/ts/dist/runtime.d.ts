@@ -17,7 +17,7 @@ export interface ConfigurationParameters {
     queryParamsStringify?: (params: HTTPQuery) => string;
     username?: string;
     password?: string;
-    apiKey?: string | Promise<string> | ((name: string) => string | Promise<string>);
+    apiKey?: string | ((name: string) => string);
     accessToken?: string | Promise<string> | ((name?: string, scopes?: string[]) => string | Promise<string>);
     headers?: HTTPHeaders;
     credentials?: RequestCredentials;
@@ -32,7 +32,7 @@ export declare class Configuration {
     get queryParamsStringify(): (params: HTTPQuery) => string;
     get username(): string | undefined;
     get password(): string | undefined;
-    get apiKey(): ((name: string) => string | Promise<string>) | undefined;
+    get apiKey(): ((name: string) => string) | undefined;
     get accessToken(): ((name?: string, scopes?: string[]) => string | Promise<string>) | undefined;
     get headers(): HTTPHeaders | undefined;
     get credentials(): RequestCredentials | undefined;
@@ -122,11 +122,9 @@ export interface RequestOpts {
     query?: HTTPQuery;
     body?: HTTPBody;
 }
-export declare function querystring(params: HTTPQuery, prefix?: string): string;
 export declare function exists(json: any, key: string): boolean;
-export declare function mapValues(data: any, fn: (item: any) => any): {
-    [key: string]: any;
-};
+export declare function querystring(params: HTTPQuery, prefix?: string): string;
+export declare function mapValues(data: any, fn: (item: any) => any): {};
 export declare function canConsumeForm(consumes: Consume[]): boolean;
 export interface Consume {
     contentType: string;

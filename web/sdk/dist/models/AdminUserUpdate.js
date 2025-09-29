@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminUserUpdateToJSONTyped = exports.AdminUserUpdateToJSON = exports.AdminUserUpdateFromJSONTyped = exports.AdminUserUpdateFromJSON = exports.instanceOfAdminUserUpdate = void 0;
+exports.AdminUserUpdateToJSON = exports.AdminUserUpdateFromJSONTyped = exports.AdminUserUpdateFromJSON = exports.instanceOfAdminUserUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the AdminUserUpdate interface.
  */
 function instanceOfAdminUserUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfAdminUserUpdate = instanceOfAdminUserUpdate;
 function AdminUserUpdateFromJSON(json) {
@@ -26,34 +28,33 @@ function AdminUserUpdateFromJSON(json) {
 }
 exports.AdminUserUpdateFromJSON = AdminUserUpdateFromJSON;
 function AdminUserUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
-        'confirm': json['confirm'] == null ? undefined : json['confirm'],
-        'quotaCredentials': json['quota_credentials'] == null ? undefined : json['quota_credentials'],
-        'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
-        'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
-        'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'isActive': !(0, runtime_1.exists)(json, 'is_active') ? undefined : json['is_active'],
+        'confirm': !(0, runtime_1.exists)(json, 'confirm') ? undefined : json['confirm'],
+        'quotaCredentials': !(0, runtime_1.exists)(json, 'quota_credentials') ? undefined : json['quota_credentials'],
+        'quotaSiteConfigs': !(0, runtime_1.exists)(json, 'quota_site_configs') ? undefined : json['quota_site_configs'],
+        'quotaFeeds': !(0, runtime_1.exists)(json, 'quota_feeds') ? undefined : json['quota_feeds'],
+        'quotaApiTokens': !(0, runtime_1.exists)(json, 'quota_api_tokens') ? undefined : json['quota_api_tokens'],
     };
 }
 exports.AdminUserUpdateFromJSONTyped = AdminUserUpdateFromJSONTyped;
-function AdminUserUpdateToJSON(json) {
-    return AdminUserUpdateToJSONTyped(json, false);
-}
-exports.AdminUserUpdateToJSON = AdminUserUpdateToJSON;
-function AdminUserUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function AdminUserUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'is_active': value['isActive'],
-        'confirm': value['confirm'],
-        'quota_credentials': value['quotaCredentials'],
-        'quota_site_configs': value['quotaSiteConfigs'],
-        'quota_feeds': value['quotaFeeds'],
-        'quota_api_tokens': value['quotaApiTokens'],
+        'is_active': value.isActive,
+        'confirm': value.confirm,
+        'quota_credentials': value.quotaCredentials,
+        'quota_site_configs': value.quotaSiteConfigs,
+        'quota_feeds': value.quotaFeeds,
+        'quota_api_tokens': value.quotaApiTokens,
     };
 }
-exports.AdminUserUpdateToJSONTyped = AdminUserUpdateToJSONTyped;
+exports.AdminUserUpdateToJSON = AdminUserUpdateToJSON;

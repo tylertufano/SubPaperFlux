@@ -13,22 +13,19 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuditLogOutToJSONTyped = exports.AuditLogOutToJSON = exports.AuditLogOutFromJSONTyped = exports.AuditLogOutFromJSON = exports.instanceOfAuditLogOut = void 0;
+exports.AuditLogOutToJSON = exports.AuditLogOutFromJSONTyped = exports.AuditLogOutFromJSON = exports.instanceOfAuditLogOut = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the AuditLogOut interface.
  */
 function instanceOfAuditLogOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('entityType' in value) || value['entityType'] === undefined)
-        return false;
-    if (!('entityId' in value) || value['entityId'] === undefined)
-        return false;
-    if (!('action' in value) || value['action'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "entityType" in value;
+    isInstance = isInstance && "entityId" in value;
+    isInstance = isInstance && "action" in value;
+    isInstance = isInstance && "createdAt" in value;
+    return isInstance;
 }
 exports.instanceOfAuditLogOut = instanceOfAuditLogOut;
 function AuditLogOutFromJSON(json) {
@@ -36,7 +33,7 @@ function AuditLogOutFromJSON(json) {
 }
 exports.AuditLogOutFromJSON = AuditLogOutFromJSON;
 function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -44,30 +41,29 @@ function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
         'entityType': json['entity_type'],
         'entityId': json['entity_id'],
         'action': json['action'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'actorUserId': json['actor_user_id'] == null ? undefined : json['actor_user_id'],
-        'details': json['details'] == null ? undefined : json['details'],
-        'createdAt': (new Date(json['created_at'])),
+        'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'actorUserId': !(0, runtime_1.exists)(json, 'actor_user_id') ? undefined : json['actor_user_id'],
+        'details': !(0, runtime_1.exists)(json, 'details') ? undefined : json['details'],
+        'createdAt': json['created_at'],
     };
 }
 exports.AuditLogOutFromJSONTyped = AuditLogOutFromJSONTyped;
-function AuditLogOutToJSON(json) {
-    return AuditLogOutToJSONTyped(json, false);
-}
-exports.AuditLogOutToJSON = AuditLogOutToJSON;
-function AuditLogOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function AuditLogOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'entity_type': value['entityType'],
-        'entity_id': value['entityId'],
-        'action': value['action'],
-        'owner_user_id': value['ownerUserId'],
-        'actor_user_id': value['actorUserId'],
-        'details': value['details'],
-        'created_at': ((value['createdAt']).toISOString()),
+        'id': value.id,
+        'entity_type': value.entityType,
+        'entity_id': value.entityId,
+        'action': value.action,
+        'owner_user_id': value.ownerUserId,
+        'actor_user_id': value.actorUserId,
+        'details': value.details,
+        'created_at': value.createdAt,
     };
 }
-exports.AuditLogOutToJSONTyped = AuditLogOutToJSONTyped;
+exports.AuditLogOutToJSON = AuditLogOutToJSON;

@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { AdminUserOut } from './AdminUserOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { AdminUserOut } from './AdminUserOut';
 export interface AdminUsersPage {
     /**
      *
-     * @type {Array<AdminUserOut>}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    items: Array<AdminUserOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUsersPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the AdminUsersPage interface.
  */
-export declare function instanceOfAdminUsersPage(value: object): value is AdminUsersPage;
+export declare function instanceOfAdminUsersPage(value: object): boolean;
 export declare function AdminUsersPageFromJSON(json: any): AdminUsersPage;
 export declare function AdminUsersPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUsersPage;
-export declare function AdminUsersPageToJSON(json: any): AdminUsersPage;
-export declare function AdminUsersPageToJSONTyped(value?: AdminUsersPage | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminUsersPageToJSON(value?: AdminUsersPage | null): any;

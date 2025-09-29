@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,63 +21,65 @@ import { mapValues } from '../runtime';
 export interface AdminRoleDetail {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    isSystem?: boolean;
+    isSystem?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminRoleDetail
      */
-    assignedUserCount?: number;
+    assignedUserCount?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof AdminRoleDetail
      */
-    metadata?: { [key: string]: any; };
+    metadata?: { [key: string]: any; } | null;
 }
 
 /**
  * Check if a given object implements the AdminRoleDetail interface.
  */
-export function instanceOfAdminRoleDetail(value: object): value is AdminRoleDetail {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
-    return true;
+export function instanceOfAdminRoleDetail(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+
+    return isInstance;
 }
 
 export function AdminRoleDetailFromJSON(json: any): AdminRoleDetail {
@@ -85,41 +87,39 @@ export function AdminRoleDetailFromJSON(json: any): AdminRoleDetail {
 }
 
 export function AdminRoleDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleDetail {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'assignedUserCount': json['assigned_user_count'] == null ? undefined : json['assigned_user_count'],
-        'metadata': json['metadata'] == null ? undefined : json['metadata'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'assignedUserCount': !exists(json, 'assigned_user_count') ? undefined : json['assigned_user_count'],
+        'metadata': !exists(json, 'metadata') ? undefined : json['metadata'],
     };
 }
 
-export function AdminRoleDetailToJSON(json: any): AdminRoleDetail {
-    return AdminRoleDetailToJSONTyped(json, false);
-}
-
-export function AdminRoleDetailToJSONTyped(value?: AdminRoleDetail | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminRoleDetailToJSON(value?: AdminRoleDetail | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'assigned_user_count': value['assignedUserCount'],
-        'metadata': value['metadata'],
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'assigned_user_count': value.assignedUserCount,
+        'metadata': value.metadata,
     };
 }
 

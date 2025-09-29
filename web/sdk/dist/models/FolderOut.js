@@ -13,16 +13,16 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FolderOutToJSONTyped = exports.FolderOutToJSON = exports.FolderOutFromJSONTyped = exports.FolderOutFromJSON = exports.instanceOfFolderOut = void 0;
+exports.FolderOutToJSON = exports.FolderOutFromJSONTyped = exports.FolderOutFromJSON = exports.instanceOfFolderOut = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the FolderOut interface.
  */
 function instanceOfFolderOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 exports.instanceOfFolderOut = instanceOfFolderOut;
 function FolderOutFromJSON(json) {
@@ -30,30 +30,29 @@ function FolderOutFromJSON(json) {
 }
 exports.FolderOutFromJSON = FolderOutFromJSON;
 function FolderOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
-        'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
+        'instapaperFolderId': !(0, runtime_1.exists)(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
+        'bookmarkCount': !(0, runtime_1.exists)(json, 'bookmark_count') ? undefined : json['bookmark_count'],
     };
 }
 exports.FolderOutFromJSONTyped = FolderOutFromJSONTyped;
-function FolderOutToJSON(json) {
-    return FolderOutToJSONTyped(json, false);
-}
-exports.FolderOutToJSON = FolderOutToJSON;
-function FolderOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function FolderOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
-        'bookmark_count': value['bookmarkCount'],
+        'id': value.id,
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
+        'bookmark_count': value.bookmarkCount,
     };
 }
-exports.FolderOutToJSONTyped = FolderOutToJSONTyped;
+exports.FolderOutToJSON = FolderOutToJSON;

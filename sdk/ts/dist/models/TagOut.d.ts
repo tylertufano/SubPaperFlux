@@ -17,28 +17,27 @@
 export interface TagOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof TagOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof TagOut
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof TagOut
      */
-    bookmarkCount?: number;
+    bookmarkCount?: any | null;
 }
 /**
  * Check if a given object implements the TagOut interface.
  */
-export declare function instanceOfTagOut(value: object): value is TagOut;
+export declare function instanceOfTagOut(value: object): boolean;
 export declare function TagOutFromJSON(json: any): TagOut;
 export declare function TagOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagOut;
-export declare function TagOutToJSON(json: any): TagOut;
-export declare function TagOutToJSONTyped(value?: TagOut | null, ignoreDiscriminator?: boolean): any;
+export declare function TagOutToJSON(value?: TagOut | null): any;

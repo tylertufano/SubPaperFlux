@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,50 +21,52 @@ import { mapValues } from '../runtime';
 export interface Credential {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    id?: string | null;
+    id?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    kind: string;
+    kind: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    description: string;
+    description: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof Credential
      */
-    data: { [key: string]: any; };
+    data: { [key: string]: any; } | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof Credential
      */
-    siteConfigId?: string | null;
+    siteConfigId?: any | null;
 }
 
 /**
  * Check if a given object implements the Credential interface.
  */
-export function instanceOfCredential(value: object): value is Credential {
-    if (!('kind' in value) || value['kind'] === undefined) return false;
-    if (!('description' in value) || value['description'] === undefined) return false;
-    if (!('data' in value) || value['data'] === undefined) return false;
-    return true;
+export function instanceOfCredential(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "kind" in value;
+    isInstance = isInstance && "description" in value;
+    isInstance = isInstance && "data" in value;
+
+    return isInstance;
 }
 
 export function CredentialFromJSON(json: any): Credential {
@@ -72,37 +74,35 @@ export function CredentialFromJSON(json: any): Credential {
 }
 
 export function CredentialFromJSONTyped(json: any, ignoreDiscriminator: boolean): Credential {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
+        'id': !exists(json, 'id') ? undefined : json['id'],
         'kind': json['kind'],
         'description': json['description'],
         'data': json['data'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
     };
 }
 
-export function CredentialToJSON(json: any): Credential {
-    return CredentialToJSONTyped(json, false);
-}
-
-export function CredentialToJSONTyped(value?: Credential | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function CredentialToJSON(value?: Credential | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'kind': value['kind'],
-        'description': value['description'],
-        'data': value['data'],
-        'owner_user_id': value['ownerUserId'],
-        'site_config_id': value['siteConfigId'],
+        'id': value.id,
+        'kind': value.kind,
+        'description': value.description,
+        'data': value.data,
+        'owner_user_id': value.ownerUserId,
+        'site_config_id': value.siteConfigId,
     };
 }
 

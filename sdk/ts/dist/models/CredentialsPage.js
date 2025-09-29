@@ -13,21 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CredentialsPageToJSONTyped = exports.CredentialsPageToJSON = exports.CredentialsPageFromJSONTyped = exports.CredentialsPageFromJSON = exports.instanceOfCredentialsPage = void 0;
-const Credential_1 = require("./Credential");
+exports.CredentialsPageToJSON = exports.CredentialsPageFromJSONTyped = exports.CredentialsPageFromJSON = exports.instanceOfCredentialsPage = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the CredentialsPage interface.
  */
 function instanceOfCredentialsPage(value) {
-    if (!('items' in value) || value['items'] === undefined)
-        return false;
-    if (!('total' in value) || value['total'] === undefined)
-        return false;
-    if (!('page' in value) || value['page'] === undefined)
-        return false;
-    if (!('size' in value) || value['size'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "items" in value;
+    isInstance = isInstance && "total" in value;
+    isInstance = isInstance && "page" in value;
+    isInstance = isInstance && "size" in value;
+    return isInstance;
 }
 exports.instanceOfCredentialsPage = instanceOfCredentialsPage;
 function CredentialsPageFromJSON(json) {
@@ -35,34 +32,33 @@ function CredentialsPageFromJSON(json) {
 }
 exports.CredentialsPageFromJSON = CredentialsPageFromJSON;
 function CredentialsPageFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'items': (json['items'].map(Credential_1.CredentialFromJSON)),
+        'items': json['items'],
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
-        'hasNext': json['has_next'] == null ? undefined : json['has_next'],
-        'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
+        'hasNext': !(0, runtime_1.exists)(json, 'has_next') ? undefined : json['has_next'],
+        'totalPages': !(0, runtime_1.exists)(json, 'total_pages') ? undefined : json['total_pages'],
     };
 }
 exports.CredentialsPageFromJSONTyped = CredentialsPageFromJSONTyped;
-function CredentialsPageToJSON(json) {
-    return CredentialsPageToJSONTyped(json, false);
-}
-exports.CredentialsPageToJSON = CredentialsPageToJSON;
-function CredentialsPageToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function CredentialsPageToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'items': (value['items'].map(Credential_1.CredentialToJSON)),
-        'total': value['total'],
-        'page': value['page'],
-        'size': value['size'],
-        'has_next': value['hasNext'],
-        'total_pages': value['totalPages'],
+        'items': value.items,
+        'total': value.total,
+        'page': value.page,
+        'size': value.size,
+        'has_next': value.hasNext,
+        'total_pages': value.totalPages,
     };
 }
-exports.CredentialsPageToJSONTyped = CredentialsPageToJSONTyped;
+exports.CredentialsPageToJSON = CredentialsPageToJSON;

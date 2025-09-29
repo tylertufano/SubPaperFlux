@@ -13,17 +13,17 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MeOutToJSONTyped = exports.MeOutToJSON = exports.MeOutFromJSONTyped = exports.MeOutFromJSON = exports.instanceOfMeOut = void 0;
+exports.MeOutToJSON = exports.MeOutFromJSONTyped = exports.MeOutFromJSON = exports.instanceOfMeOut = void 0;
+const runtime_1 = require("../runtime");
 const MeNotificationPreferences_1 = require("./MeNotificationPreferences");
 /**
  * Check if a given object implements the MeOut interface.
  */
 function instanceOfMeOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('notificationPreferences' in value) || value['notificationPreferences'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "notificationPreferences" in value;
+    return isInstance;
 }
 exports.instanceOfMeOut = instanceOfMeOut;
 function MeOutFromJSON(json) {
@@ -31,34 +31,33 @@ function MeOutFromJSON(json) {
 }
 exports.MeOutFromJSON = MeOutFromJSON;
 function MeOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
-        'email': json['email'] == null ? undefined : json['email'],
-        'fullName': json['full_name'] == null ? undefined : json['full_name'],
-        'pictureUrl': json['picture_url'] == null ? undefined : json['picture_url'],
-        'locale': json['locale'] == null ? undefined : json['locale'],
+        'email': !(0, runtime_1.exists)(json, 'email') ? undefined : json['email'],
+        'fullName': !(0, runtime_1.exists)(json, 'full_name') ? undefined : json['full_name'],
+        'pictureUrl': !(0, runtime_1.exists)(json, 'picture_url') ? undefined : json['picture_url'],
+        'locale': !(0, runtime_1.exists)(json, 'locale') ? undefined : json['locale'],
         'notificationPreferences': (0, MeNotificationPreferences_1.MeNotificationPreferencesFromJSON)(json['notification_preferences']),
     };
 }
 exports.MeOutFromJSONTyped = MeOutFromJSONTyped;
-function MeOutToJSON(json) {
-    return MeOutToJSONTyped(json, false);
-}
-exports.MeOutToJSON = MeOutToJSON;
-function MeOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function MeOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'email': value['email'],
-        'full_name': value['fullName'],
-        'picture_url': value['pictureUrl'],
-        'locale': value['locale'],
-        'notification_preferences': (0, MeNotificationPreferences_1.MeNotificationPreferencesToJSON)(value['notificationPreferences']),
+        'id': value.id,
+        'email': value.email,
+        'full_name': value.fullName,
+        'picture_url': value.pictureUrl,
+        'locale': value.locale,
+        'notification_preferences': (0, MeNotificationPreferences_1.MeNotificationPreferencesToJSON)(value.notificationPreferences),
     };
 }
-exports.MeOutToJSONTyped = MeOutToJSONTyped;
+exports.MeOutToJSON = MeOutToJSON;

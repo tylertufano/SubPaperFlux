@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Alert, Breadcrumbs, EmptyState, Nav } from "../components";
 import { useI18n } from "../lib/i18n";
 import { buildBreadcrumbs } from "../lib/breadcrumbs";
-import { v1 } from "../lib/openapi";
+import { v1, type SiteConfigRecord } from "../lib/openapi";
 import {
   extractPermissionList,
   hasPermission,
@@ -14,7 +14,6 @@ import {
 } from "../lib/rbac";
 import type { JobScheduleOut } from "../sdk/src/models/JobScheduleOut";
 import type { Credential } from "../sdk/src/models/Credential";
-import type { SiteConfigsPageItemsInner } from "../sdk/src/models/SiteConfigsPageItemsInner";
 import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
@@ -55,7 +54,7 @@ type ScheduleFormProps = {
   mode: ScheduleFormMode;
   initialSchedule?: ExtendedJobSchedule;
   credentials: Credential[];
-  siteConfigs: SiteConfigsPageItemsInner[];
+  siteConfigs: SiteConfigRecord[];
   feeds: FeedOut[];
   onSubmit: (values: ScheduleFormResult) => Promise<void>;
   onCancel?: () => void;

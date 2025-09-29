@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FolderUpdateToJSONTyped = exports.FolderUpdateToJSON = exports.FolderUpdateFromJSONTyped = exports.FolderUpdateFromJSON = exports.instanceOfFolderUpdate = void 0;
+exports.FolderUpdateToJSON = exports.FolderUpdateFromJSONTyped = exports.FolderUpdateFromJSON = exports.instanceOfFolderUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the FolderUpdate interface.
  */
 function instanceOfFolderUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfFolderUpdate = instanceOfFolderUpdate;
 function FolderUpdateFromJSON(json) {
@@ -26,26 +28,25 @@ function FolderUpdateFromJSON(json) {
 }
 exports.FolderUpdateFromJSON = FolderUpdateFromJSON;
 function FolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'name': json['name'] == null ? undefined : json['name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'name': !(0, runtime_1.exists)(json, 'name') ? undefined : json['name'],
+        'instapaperFolderId': !(0, runtime_1.exists)(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
 exports.FolderUpdateFromJSONTyped = FolderUpdateFromJSONTyped;
-function FolderUpdateToJSON(json) {
-    return FolderUpdateToJSONTyped(json, false);
-}
-exports.FolderUpdateToJSON = FolderUpdateToJSON;
-function FolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function FolderUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'name': value.name,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }
-exports.FolderUpdateToJSONTyped = FolderUpdateToJSONTyped;
+exports.FolderUpdateToJSON = FolderUpdateToJSON;

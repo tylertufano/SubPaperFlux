@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,35 +21,37 @@ import { mapValues } from '../runtime';
 export interface AdminOrganizationUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationUpdate
      */
-    slug?: string | null;
+    slug?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationUpdate
      */
-    name?: string | null;
+    name?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminOrganizationUpdate
      */
-    description?: string | null;
+    description?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminOrganizationUpdate
      */
-    isDefault?: boolean | null;
+    isDefault?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminOrganizationUpdate interface.
  */
-export function instanceOfAdminOrganizationUpdate(value: object): value is AdminOrganizationUpdate {
-    return true;
+export function instanceOfAdminOrganizationUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function AdminOrganizationUpdateFromJSON(json: any): AdminOrganizationUpdate {
@@ -57,33 +59,31 @@ export function AdminOrganizationUpdateFromJSON(json: any): AdminOrganizationUpd
 }
 
 export function AdminOrganizationUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminOrganizationUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'slug': json['slug'] == null ? undefined : json['slug'],
-        'name': json['name'] == null ? undefined : json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isDefault': json['is_default'] == null ? undefined : json['is_default'],
+        'slug': !exists(json, 'slug') ? undefined : json['slug'],
+        'name': !exists(json, 'name') ? undefined : json['name'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isDefault': !exists(json, 'is_default') ? undefined : json['is_default'],
     };
 }
 
-export function AdminOrganizationUpdateToJSON(json: any): AdminOrganizationUpdate {
-    return AdminOrganizationUpdateToJSONTyped(json, false);
-}
-
-export function AdminOrganizationUpdateToJSONTyped(value?: AdminOrganizationUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminOrganizationUpdateToJSON(value?: AdminOrganizationUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'slug': value['slug'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_default': value['isDefault'],
+        'slug': value.slug,
+        'name': value.name,
+        'description': value.description,
+        'is_default': value.isDefault,
     };
 }
 

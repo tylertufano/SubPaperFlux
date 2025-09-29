@@ -11,35 +11,37 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the RoleGrantRequest interface.
  */
 export function instanceOfRoleGrantRequest(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function RoleGrantRequestFromJSON(json) {
     return RoleGrantRequestFromJSONTyped(json, false);
 }
 export function RoleGrantRequestFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'description': json['description'] == null ? undefined : json['description'],
-        'createMissing': json['create_missing'] == null ? undefined : json['create_missing'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'createMissing': !exists(json, 'create_missing') ? undefined : json['create_missing'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
     };
 }
-export function RoleGrantRequestToJSON(json) {
-    return RoleGrantRequestToJSONTyped(json, false);
-}
-export function RoleGrantRequestToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function RoleGrantRequestToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'description': value['description'],
-        'create_missing': value['createMissing'],
-        'is_system': value['isSystem'],
+        'description': value.description,
+        'create_missing': value.createMissing,
+        'is_system': value.isSystem,
     };
 }

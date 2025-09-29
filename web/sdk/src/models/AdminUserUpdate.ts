@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,47 +21,49 @@ import { mapValues } from '../runtime';
 export interface AdminUserUpdate {
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    isActive?: boolean | null;
+    isActive?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    confirm?: boolean | null;
+    confirm?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaCredentials?: number | null;
+    quotaCredentials?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaSiteConfigs?: number | null;
+    quotaSiteConfigs?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaFeeds?: number | null;
+    quotaFeeds?: any | null;
     /**
      * 
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserUpdate
      */
-    quotaApiTokens?: number | null;
+    quotaApiTokens?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminUserUpdate interface.
  */
-export function instanceOfAdminUserUpdate(value: object): value is AdminUserUpdate {
-    return true;
+export function instanceOfAdminUserUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function AdminUserUpdateFromJSON(json: any): AdminUserUpdate {
@@ -69,37 +71,35 @@ export function AdminUserUpdateFromJSON(json: any): AdminUserUpdate {
 }
 
 export function AdminUserUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
-        'confirm': json['confirm'] == null ? undefined : json['confirm'],
-        'quotaCredentials': json['quota_credentials'] == null ? undefined : json['quota_credentials'],
-        'quotaSiteConfigs': json['quota_site_configs'] == null ? undefined : json['quota_site_configs'],
-        'quotaFeeds': json['quota_feeds'] == null ? undefined : json['quota_feeds'],
-        'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
+        'confirm': !exists(json, 'confirm') ? undefined : json['confirm'],
+        'quotaCredentials': !exists(json, 'quota_credentials') ? undefined : json['quota_credentials'],
+        'quotaSiteConfigs': !exists(json, 'quota_site_configs') ? undefined : json['quota_site_configs'],
+        'quotaFeeds': !exists(json, 'quota_feeds') ? undefined : json['quota_feeds'],
+        'quotaApiTokens': !exists(json, 'quota_api_tokens') ? undefined : json['quota_api_tokens'],
     };
 }
 
-export function AdminUserUpdateToJSON(json: any): AdminUserUpdate {
-    return AdminUserUpdateToJSONTyped(json, false);
-}
-
-export function AdminUserUpdateToJSONTyped(value?: AdminUserUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminUserUpdateToJSON(value?: AdminUserUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'is_active': value['isActive'],
-        'confirm': value['confirm'],
-        'quota_credentials': value['quotaCredentials'],
-        'quota_site_configs': value['quotaSiteConfigs'],
-        'quota_feeds': value['quotaFeeds'],
-        'quota_api_tokens': value['quotaApiTokens'],
+        'is_active': value.isActive,
+        'confirm': value.confirm,
+        'quota_credentials': value.quotaCredentials,
+        'quota_site_configs': value.quotaSiteConfigs,
+        'quota_feeds': value.quotaFeeds,
+        'quota_api_tokens': value.quotaApiTokens,
     };
 }
 

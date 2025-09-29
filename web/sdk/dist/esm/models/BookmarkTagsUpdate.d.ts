@@ -17,16 +17,15 @@
 export interface BookmarkTagsUpdate {
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof BookmarkTagsUpdate
      */
-    tags?: Array<string>;
+    tags?: any | null;
 }
 /**
  * Check if a given object implements the BookmarkTagsUpdate interface.
  */
-export declare function instanceOfBookmarkTagsUpdate(value: object): value is BookmarkTagsUpdate;
+export declare function instanceOfBookmarkTagsUpdate(value: object): boolean;
 export declare function BookmarkTagsUpdateFromJSON(json: any): BookmarkTagsUpdate;
 export declare function BookmarkTagsUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkTagsUpdate;
-export declare function BookmarkTagsUpdateToJSON(json: any): BookmarkTagsUpdate;
-export declare function BookmarkTagsUpdateToJSONTyped(value?: BookmarkTagsUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarkTagsUpdateToJSON(value?: BookmarkTagsUpdate | null): any;

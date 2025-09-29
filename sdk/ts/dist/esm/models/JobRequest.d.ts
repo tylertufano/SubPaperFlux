@@ -17,10 +17,10 @@
 export interface JobRequest {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof JobRequest
      */
-    type: string;
+    type: any | null;
     /**
      *
      * @type {{ [key: string]: any; }}
@@ -28,13 +28,12 @@ export interface JobRequest {
      */
     payload: {
         [key: string]: any;
-    };
+    } | null;
 }
 /**
  * Check if a given object implements the JobRequest interface.
  */
-export declare function instanceOfJobRequest(value: object): value is JobRequest;
+export declare function instanceOfJobRequest(value: object): boolean;
 export declare function JobRequestFromJSON(json: any): JobRequest;
 export declare function JobRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobRequest;
-export declare function JobRequestToJSON(json: any): JobRequest;
-export declare function JobRequestToJSONTyped(value?: JobRequest | null, ignoreDiscriminator?: boolean): any;
+export declare function JobRequestToJSON(value?: JobRequest | null): any;

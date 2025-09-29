@@ -21,7 +21,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { SiteConfigFromJSON, SiteConfigToJSON, } from '../models/index';
 /**
  *
  */
@@ -31,14 +30,14 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      */
     createSiteConfigSiteConfigsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['siteConfig'] == null) {
-                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling createSiteConfigSiteConfigsPost().');
+            if (requestParameters.body === null || requestParameters.body === undefined) {
+                throw new runtime.RequiredError('body', 'Required parameter requestParameters.body was null or undefined when calling createSiteConfigSiteConfigsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -47,15 +46,19 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/site-configs/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/site-configs/`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: SiteConfigToJSON(requestParameters['siteConfig']),
+                body: requestParameters.body,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -72,13 +75,13 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      */
     deleteSiteConfigSiteConfigsConfigIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['configId'] == null) {
-                throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling deleteSiteConfigSiteConfigsConfigIdDelete().');
+            if (requestParameters.configId === null || requestParameters.configId === undefined) {
+                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling deleteSiteConfigSiteConfigsConfigIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -87,10 +90,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/site-configs/{config_id}`;
-            urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -111,8 +112,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      */
     getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['configId'] == null) {
-                throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling getSiteConfigSiteConfigsConfigIdGet().');
+            if (requestParameters.configId === null || requestParameters.configId === undefined) {
+                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling getSiteConfigSiteConfigsConfigIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -123,15 +124,18 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/site-configs/{config_id}`;
-            urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -149,8 +153,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
     listSiteConfigsSiteConfigsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['includeGlobal'] != null) {
-                queryParameters['include_global'] = requestParameters['includeGlobal'];
+            if (requestParameters.includeGlobal !== undefined) {
+                queryParameters['include_global'] = requestParameters.includeGlobal;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -160,14 +164,18 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/site-configs/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/site-configs/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SiteConfigFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -184,17 +192,17 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      */
     updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['configId'] == null) {
-                throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
+            if (requestParameters.configId === null || requestParameters.configId === undefined) {
+                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut.');
             }
-            if (requestParameters['siteConfig'] == null) {
-                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
+            if (requestParameters.body === null || requestParameters.body === undefined) {
+                throw new runtime.RequiredError('body', 'Required parameter requestParameters.body was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -203,16 +211,19 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/site-configs/{config_id}`;
-            urlPath = urlPath.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters['configId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: SiteConfigToJSON(requestParameters['siteConfig']),
+                body: requestParameters.body,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**

@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { BookmarkFolderSummaryFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagSummaryFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models/index';
+import { BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models';
 /**
  *
  */
@@ -31,14 +31,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkDeleteBookmarksBookmarksBulkDeletePostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['requestBody'] == null) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter "requestBody" was null or undefined when calling bulkDeleteBookmarksBookmarksBulkDeletePost().');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkDeleteBookmarksBookmarksBulkDeletePost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -47,13 +47,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/bulk-delete`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/bulk-delete`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: requestParameters['requestBody'],
+                body: requestParameters.requestBody,
             }, initOverrides);
             return new runtime.VoidApiResponse(response);
         });
@@ -71,14 +70,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkDeleteBookmarksV1BookmarksBulkDeletePostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['requestBody'] == null) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter "requestBody" was null or undefined when calling bulkDeleteBookmarksV1BookmarksBulkDeletePost().');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkDeleteBookmarksV1BookmarksBulkDeletePost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -87,13 +86,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/bulk-delete`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/bulk-delete`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: requestParameters['requestBody'],
+                body: requestParameters.requestBody,
             }, initOverrides);
             return new runtime.VoidApiResponse(response);
         });
@@ -111,14 +109,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkPublishBookmarksBookmarksBulkPublishPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['requestBody'] == null) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter "requestBody" was null or undefined when calling bulkPublishBookmarksBookmarksBulkPublishPost().');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkPublishBookmarksBookmarksBulkPublishPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -127,13 +125,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/bulk-publish`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/bulk-publish`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: requestParameters['requestBody'],
+                body: requestParameters.requestBody,
             }, initOverrides);
             if (this.isJsonMime(response.headers.get('content-type'))) {
                 return new runtime.JSONApiResponse(response);
@@ -157,14 +154,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkPublishBookmarksV1BookmarksBulkPublishPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['requestBody'] == null) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter "requestBody" was null or undefined when calling bulkPublishBookmarksV1BookmarksBulkPublishPost().');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkPublishBookmarksV1BookmarksBulkPublishPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -173,13 +170,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/bulk-publish`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/bulk-publish`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: requestParameters['requestBody'],
+                body: requestParameters.requestBody,
             }, initOverrides);
             if (this.isJsonMime(response.headers.get('content-type'))) {
                 return new runtime.JSONApiResponse(response);
@@ -203,14 +199,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkFoldersBookmarksBulkFoldersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bulkBookmarkFolderUpdate'] == null) {
-                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter "bulkBookmarkFolderUpdate" was null or undefined when calling bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost().');
+            if (requestParameters.bulkBookmarkFolderUpdate === null || requestParameters.bulkBookmarkFolderUpdate === undefined) {
+                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter requestParameters.bulkBookmarkFolderUpdate was null or undefined when calling bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -219,15 +215,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/bulk-folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/bulk-folders`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BulkBookmarkFolderUpdateToJSON(requestParameters['bulkBookmarkFolderUpdate']),
+                body: BulkBookmarkFolderUpdateToJSON(requestParameters.bulkBookmarkFolderUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkFolderSummaryFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -244,14 +244,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bulkBookmarkFolderUpdate'] == null) {
-                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter "bulkBookmarkFolderUpdate" was null or undefined when calling bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost().');
+            if (requestParameters.bulkBookmarkFolderUpdate === null || requestParameters.bulkBookmarkFolderUpdate === undefined) {
+                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter requestParameters.bulkBookmarkFolderUpdate was null or undefined when calling bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -260,15 +260,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/bulk-folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/bulk-folders`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BulkBookmarkFolderUpdateToJSON(requestParameters['bulkBookmarkFolderUpdate']),
+                body: BulkBookmarkFolderUpdateToJSON(requestParameters.bulkBookmarkFolderUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkFolderSummaryFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -285,14 +289,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkTagsBookmarksBulkTagsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bulkBookmarkTagUpdate'] == null) {
-                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter "bulkBookmarkTagUpdate" was null or undefined when calling bulkUpdateBookmarkTagsBookmarksBulkTagsPost().');
+            if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
+                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter requestParameters.bulkBookmarkTagUpdate was null or undefined when calling bulkUpdateBookmarkTagsBookmarksBulkTagsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -301,15 +305,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/bulk-tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/bulk-tags`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BulkBookmarkTagUpdateToJSON(requestParameters['bulkBookmarkTagUpdate']),
+                body: BulkBookmarkTagUpdateToJSON(requestParameters.bulkBookmarkTagUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkTagSummaryFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -326,14 +334,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bulkBookmarkTagUpdate'] == null) {
-                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter "bulkBookmarkTagUpdate" was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost().');
+            if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
+                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter requestParameters.bulkBookmarkTagUpdate was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -342,15 +350,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/bulk-tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/bulk-tags`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BulkBookmarkTagUpdateToJSON(requestParameters['bulkBookmarkTagUpdate']),
+                body: BulkBookmarkTagUpdateToJSON(requestParameters.bulkBookmarkTagUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookmarkTagSummaryFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -368,41 +380,41 @@ export class BookmarksApi extends runtime.BaseAPI {
     countBookmarksBookmarksCountGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -412,9 +424,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/count`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/count`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -437,41 +448,41 @@ export class BookmarksApi extends runtime.BaseAPI {
     countBookmarksV1BookmarksCountGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -481,9 +492,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/count`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/count`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -505,14 +515,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     createFolderBookmarksFoldersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderCreate'] == null) {
-                throw new runtime.RequiredError('folderCreate', 'Required parameter "folderCreate" was null or undefined when calling createFolderBookmarksFoldersPost().');
+            if (requestParameters.folderCreate === null || requestParameters.folderCreate === undefined) {
+                throw new runtime.RequiredError('folderCreate', 'Required parameter requestParameters.folderCreate was null or undefined when calling createFolderBookmarksFoldersPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -521,13 +531,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/folders`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: FolderCreateToJSON(requestParameters['folderCreate']),
+                body: FolderCreateToJSON(requestParameters.folderCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -546,14 +555,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderCreate'] == null) {
-                throw new runtime.RequiredError('folderCreate', 'Required parameter "folderCreate" was null or undefined when calling createFolderV1BookmarksFoldersPost().');
+            if (requestParameters.folderCreate === null || requestParameters.folderCreate === undefined) {
+                throw new runtime.RequiredError('folderCreate', 'Required parameter requestParameters.folderCreate was null or undefined when calling createFolderV1BookmarksFoldersPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -562,13 +571,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/folders`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: FolderCreateToJSON(requestParameters['folderCreate']),
+                body: FolderCreateToJSON(requestParameters.folderCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -587,14 +595,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     createTagBookmarksTagsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagCreate'] == null) {
-                throw new runtime.RequiredError('tagCreate', 'Required parameter "tagCreate" was null or undefined when calling createTagBookmarksTagsPost().');
+            if (requestParameters.tagCreate === null || requestParameters.tagCreate === undefined) {
+                throw new runtime.RequiredError('tagCreate', 'Required parameter requestParameters.tagCreate was null or undefined when calling createTagBookmarksTagsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -603,13 +611,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/tags`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: TagCreateToJSON(requestParameters['tagCreate']),
+                body: TagCreateToJSON(requestParameters.tagCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
         });
@@ -628,14 +635,14 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     createTagV1BookmarksTagsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagCreate'] == null) {
-                throw new runtime.RequiredError('tagCreate', 'Required parameter "tagCreate" was null or undefined when calling createTagV1BookmarksTagsPost().');
+            if (requestParameters.tagCreate === null || requestParameters.tagCreate === undefined) {
+                throw new runtime.RequiredError('tagCreate', 'Required parameter requestParameters.tagCreate was null or undefined when calling createTagV1BookmarksTagsPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -644,13 +651,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/tags`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: TagCreateToJSON(requestParameters['tagCreate']),
+                body: TagCreateToJSON(requestParameters.tagCreate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
         });
@@ -669,16 +675,16 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteBookmarkBookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling deleteBookmarkBookmarksBookmarkIdDelete().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkBookmarksBookmarkIdDelete.');
             }
             const queryParameters = {};
-            if (requestParameters['deleteRemote'] != null) {
-                queryParameters['delete_remote'] = requestParameters['deleteRemote'];
+            if (requestParameters.deleteRemote !== undefined) {
+                queryParameters['delete_remote'] = requestParameters.deleteRemote;
             }
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -687,10 +693,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -711,13 +715,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteBookmarkFolderBookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling deleteBookmarkFolderBookmarksBookmarkIdFolderDelete().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkFolderBookmarksBookmarkIdFolderDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -726,10 +730,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -750,13 +752,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -765,10 +767,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -789,16 +789,16 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteBookmarkV1BookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling deleteBookmarkV1BookmarksBookmarkIdDelete().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkV1BookmarksBookmarkIdDelete.');
             }
             const queryParameters = {};
-            if (requestParameters['deleteRemote'] != null) {
-                queryParameters['delete_remote'] = requestParameters['deleteRemote'];
+            if (requestParameters.deleteRemote !== undefined) {
+                queryParameters['delete_remote'] = requestParameters.deleteRemote;
             }
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -807,10 +807,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -831,13 +829,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteFolderBookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderId'] == null) {
-                throw new runtime.RequiredError('folderId', 'Required parameter "folderId" was null or undefined when calling deleteFolderBookmarksFoldersFolderIdDelete().');
+            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
+                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling deleteFolderBookmarksFoldersFolderIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -846,10 +844,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/folders/{folder_id}`;
-            urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -870,13 +866,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderId'] == null) {
-                throw new runtime.RequiredError('folderId', 'Required parameter "folderId" was null or undefined when calling deleteFolderV1BookmarksFoldersFolderIdDelete().');
+            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
+                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling deleteFolderV1BookmarksFoldersFolderIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -885,10 +881,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/folders/{folder_id}`;
-            urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -909,13 +903,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteTagBookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagId'] == null) {
-                throw new runtime.RequiredError('tagId', 'Required parameter "tagId" was null or undefined when calling deleteTagBookmarksTagsTagIdDelete().');
+            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
+                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling deleteTagBookmarksTagsTagIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -924,10 +918,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/tags/{tag_id}`;
-            urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -948,13 +940,13 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     deleteTagV1BookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagId'] == null) {
-                throw new runtime.RequiredError('tagId', 'Required parameter "tagId" was null or undefined when calling deleteTagV1BookmarksTagsTagIdDelete().');
+            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
+                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling deleteTagV1BookmarksTagsTagIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -963,10 +955,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/tags/{tag_id}`;
-            urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -988,50 +978,50 @@ export class BookmarksApi extends runtime.BaseAPI {
     exportBookmarksBookmarksExportGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['format'] != null) {
-                queryParameters['format'] = requestParameters['format'];
+            if (requestParameters.format !== undefined) {
+                queryParameters['format'] = requestParameters.format;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1041,9 +1031,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/export`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/export`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1071,50 +1060,50 @@ export class BookmarksApi extends runtime.BaseAPI {
     exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['format'] != null) {
-                queryParameters['format'] = requestParameters['format'];
+            if (requestParameters.format !== undefined) {
+                queryParameters['format'] = requestParameters.format;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1124,9 +1113,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/export`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/export`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1153,8 +1141,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkBookmarksBookmarkIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkBookmarksBookmarkIdGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkBookmarksBookmarkIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1165,10 +1153,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1190,8 +1176,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkFolderBookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkFolderBookmarksBookmarkIdFolderGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkFolderBookmarksBookmarkIdFolderGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1202,15 +1188,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -1227,8 +1216,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkFolderV1BookmarksBookmarkIdFolderGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkFolderV1BookmarksBookmarkIdFolderGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1239,15 +1228,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -1264,8 +1256,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkTagsBookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkTagsBookmarksBookmarkIdTagsGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkTagsBookmarksBookmarkIdTagsGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1276,15 +1268,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/tags`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -1301,8 +1296,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkTagsV1BookmarksBookmarkIdTagsGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkTagsV1BookmarksBookmarkIdTagsGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1313,15 +1308,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/tags`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -1338,8 +1336,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     getBookmarkV1BookmarksBookmarkIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling getBookmarkV1BookmarksBookmarkIdGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkV1BookmarksBookmarkIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -1350,10 +1348,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1376,38 +1372,38 @@ export class BookmarksApi extends runtime.BaseAPI {
     headBookmarksBookmarksHeadRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1417,9 +1413,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/`,
                 method: 'HEAD',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1447,38 +1442,38 @@ export class BookmarksApi extends runtime.BaseAPI {
     headBookmarksBookmarksHead_1Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1488,9 +1483,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks`,
                 method: 'HEAD',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1518,38 +1512,38 @@ export class BookmarksApi extends runtime.BaseAPI {
     headBookmarksV1BookmarksHeadRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1559,9 +1553,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/`,
                 method: 'HEAD',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1589,38 +1582,38 @@ export class BookmarksApi extends runtime.BaseAPI {
     headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1630,9 +1623,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks`,
                 method: 'HEAD',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1660,53 +1652,53 @@ export class BookmarksApi extends runtime.BaseAPI {
     listBookmarksBookmarksGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1716,9 +1708,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1741,53 +1732,53 @@ export class BookmarksApi extends runtime.BaseAPI {
     listBookmarksBookmarksGet_3Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1797,9 +1788,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1822,53 +1812,53 @@ export class BookmarksApi extends runtime.BaseAPI {
     listBookmarksV1BookmarksGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1878,9 +1868,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1903,53 +1892,53 @@ export class BookmarksApi extends runtime.BaseAPI {
     listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['search'] != null) {
-                queryParameters['search'] = requestParameters['search'];
+            if (requestParameters.search !== undefined) {
+                queryParameters['search'] = requestParameters.search;
             }
-            if (requestParameters['fuzzy'] != null) {
-                queryParameters['fuzzy'] = requestParameters['fuzzy'];
+            if (requestParameters.fuzzy !== undefined) {
+                queryParameters['fuzzy'] = requestParameters.fuzzy;
             }
-            if (requestParameters['feedId'] != null) {
-                queryParameters['feed_id'] = requestParameters['feedId'];
+            if (requestParameters.feedId !== undefined) {
+                queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters['tagId'] != null) {
-                queryParameters['tag_id'] = requestParameters['tagId'];
+            if (requestParameters.tagId !== undefined) {
+                queryParameters['tag_id'] = requestParameters.tagId;
             }
-            if (requestParameters['folderId'] != null) {
-                queryParameters['folder_id'] = requestParameters['folderId'];
+            if (requestParameters.folderId !== undefined) {
+                queryParameters['folder_id'] = requestParameters.folderId;
             }
-            if (requestParameters['since'] != null) {
-                queryParameters['since'] = requestParameters['since'];
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
             }
-            if (requestParameters['until'] != null) {
-                queryParameters['until'] = requestParameters['until'];
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
             }
-            if (requestParameters['sortBy'] != null) {
-                queryParameters['sort_by'] = requestParameters['sortBy'];
+            if (requestParameters.sortBy !== undefined) {
+                queryParameters['sort_by'] = requestParameters.sortBy;
             }
-            if (requestParameters['sortDir'] != null) {
-                queryParameters['sort_dir'] = requestParameters['sortDir'];
+            if (requestParameters.sortDir !== undefined) {
+                queryParameters['sort_dir'] = requestParameters.sortDir;
             }
-            if (requestParameters['titleQuery'] != null) {
-                queryParameters['title_query'] = requestParameters['titleQuery'];
+            if (requestParameters.titleQuery !== undefined) {
+                queryParameters['title_query'] = requestParameters.titleQuery;
             }
-            if (requestParameters['urlQuery'] != null) {
-                queryParameters['url_query'] = requestParameters['urlQuery'];
+            if (requestParameters.urlQuery !== undefined) {
+                queryParameters['url_query'] = requestParameters.urlQuery;
             }
-            if (requestParameters['regex'] != null) {
-                queryParameters['regex'] = requestParameters['regex'];
+            if (requestParameters.regex !== undefined) {
+                queryParameters['regex'] = requestParameters.regex;
             }
-            if (requestParameters['regexTarget'] != null) {
-                queryParameters['regex_target'] = requestParameters['regexTarget'];
+            if (requestParameters.regexTarget !== undefined) {
+                queryParameters['regex_target'] = requestParameters.regexTarget;
             }
-            if (requestParameters['regexFlags'] != null) {
-                queryParameters['regex_flags'] = requestParameters['regexFlags'];
+            if (requestParameters.regexFlags !== undefined) {
+                queryParameters['regex_flags'] = requestParameters.regexFlags;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -1959,9 +1948,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -1992,14 +1980,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/folders`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FolderOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2025,14 +2017,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/folders`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/folders`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FolderOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2058,14 +2054,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/tags`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2091,14 +2091,18 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/tags`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/tags`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2115,8 +2119,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkBookmarksBookmarkIdPreviewGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling previewBookmarkBookmarksBookmarkIdPreviewGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -2127,10 +2131,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/preview`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/preview`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -2157,8 +2159,8 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling previewBookmarkV1BookmarksBookmarkIdPreviewGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -2169,10 +2171,8 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/preview`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/preview`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -2199,17 +2199,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateBookmarkFolderBookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut.');
             }
-            if (requestParameters['bookmarkFolderUpdate'] == null) {
-                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter "bookmarkFolderUpdate" was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut().');
+            if (requestParameters.bookmarkFolderUpdate === null || requestParameters.bookmarkFolderUpdate === undefined) {
+                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter requestParameters.bookmarkFolderUpdate was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2218,14 +2218,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BookmarkFolderUpdateToJSON(requestParameters['bookmarkFolderUpdate']),
+                body: BookmarkFolderUpdateToJSON(requestParameters.bookmarkFolderUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -2244,17 +2242,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
             }
-            if (requestParameters['bookmarkFolderUpdate'] == null) {
-                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter "bookmarkFolderUpdate" was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut().');
+            if (requestParameters.bookmarkFolderUpdate === null || requestParameters.bookmarkFolderUpdate === undefined) {
+                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter requestParameters.bookmarkFolderUpdate was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2263,14 +2261,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/folder`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BookmarkFolderUpdateToJSON(requestParameters['bookmarkFolderUpdate']),
+                body: BookmarkFolderUpdateToJSON(requestParameters.bookmarkFolderUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -2289,17 +2285,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateBookmarkTagsBookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut.');
             }
-            if (requestParameters['bookmarkTagsUpdate'] == null) {
-                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter "bookmarkTagsUpdate" was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut().');
+            if (requestParameters.bookmarkTagsUpdate === null || requestParameters.bookmarkTagsUpdate === undefined) {
+                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter requestParameters.bookmarkTagsUpdate was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2308,16 +2304,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/{bookmark_id}/tags`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BookmarkTagsUpdateToJSON(requestParameters['bookmarkTagsUpdate']),
+                body: BookmarkTagsUpdateToJSON(requestParameters.bookmarkTagsUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2334,17 +2333,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['bookmarkId'] == null) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter "bookmarkId" was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut().');
+            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
+                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
             }
-            if (requestParameters['bookmarkTagsUpdate'] == null) {
-                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter "bookmarkTagsUpdate" was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut().');
+            if (requestParameters.bookmarkTagsUpdate === null || requestParameters.bookmarkTagsUpdate === undefined) {
+                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter requestParameters.bookmarkTagsUpdate was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2353,16 +2352,19 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/{bookmark_id}/tags`;
-            urlPath = urlPath.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters['bookmarkId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BookmarkTagsUpdateToJSON(requestParameters['bookmarkTagsUpdate']),
+                body: BookmarkTagsUpdateToJSON(requestParameters.bookmarkTagsUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TagOutFromJSON));
+            if (this.isJsonMime(response.headers.get('content-type'))) {
+                return new runtime.JSONApiResponse(response);
+            }
+            else {
+                return new runtime.TextApiResponse(response);
+            }
         });
     }
     /**
@@ -2379,17 +2381,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateFolderBookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderId'] == null) {
-                throw new runtime.RequiredError('folderId', 'Required parameter "folderId" was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut().');
+            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
+                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut.');
             }
-            if (requestParameters['folderUpdate'] == null) {
-                throw new runtime.RequiredError('folderUpdate', 'Required parameter "folderUpdate" was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut().');
+            if (requestParameters.folderUpdate === null || requestParameters.folderUpdate === undefined) {
+                throw new runtime.RequiredError('folderUpdate', 'Required parameter requestParameters.folderUpdate was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2398,14 +2400,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/folders/{folder_id}`;
-            urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: FolderUpdateToJSON(requestParameters['folderUpdate']),
+                body: FolderUpdateToJSON(requestParameters.folderUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -2424,17 +2424,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['folderId'] == null) {
-                throw new runtime.RequiredError('folderId', 'Required parameter "folderId" was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut().');
+            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
+                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut.');
             }
-            if (requestParameters['folderUpdate'] == null) {
-                throw new runtime.RequiredError('folderUpdate', 'Required parameter "folderUpdate" was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut().');
+            if (requestParameters.folderUpdate === null || requestParameters.folderUpdate === undefined) {
+                throw new runtime.RequiredError('folderUpdate', 'Required parameter requestParameters.folderUpdate was null or undefined when calling updateFolderV1BookmarksFoldersFolderIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2443,14 +2443,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/folders/{folder_id}`;
-            urlPath = urlPath.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters['folderId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: FolderUpdateToJSON(requestParameters['folderUpdate']),
+                body: FolderUpdateToJSON(requestParameters.folderUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
         });
@@ -2469,17 +2467,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateTagBookmarksTagsTagIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagId'] == null) {
-                throw new runtime.RequiredError('tagId', 'Required parameter "tagId" was null or undefined when calling updateTagBookmarksTagsTagIdPut().');
+            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
+                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling updateTagBookmarksTagsTagIdPut.');
             }
-            if (requestParameters['tagUpdate'] == null) {
-                throw new runtime.RequiredError('tagUpdate', 'Required parameter "tagUpdate" was null or undefined when calling updateTagBookmarksTagsTagIdPut().');
+            if (requestParameters.tagUpdate === null || requestParameters.tagUpdate === undefined) {
+                throw new runtime.RequiredError('tagUpdate', 'Required parameter requestParameters.tagUpdate was null or undefined when calling updateTagBookmarksTagsTagIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2488,14 +2486,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/bookmarks/tags/{tag_id}`;
-            urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: TagUpdateToJSON(requestParameters['tagUpdate']),
+                body: TagUpdateToJSON(requestParameters.tagUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
         });
@@ -2514,17 +2510,17 @@ export class BookmarksApi extends runtime.BaseAPI {
      */
     updateTagV1BookmarksTagsTagIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tagId'] == null) {
-                throw new runtime.RequiredError('tagId', 'Required parameter "tagId" was null or undefined when calling updateTagV1BookmarksTagsTagIdPut().');
+            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
+                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling updateTagV1BookmarksTagsTagIdPut.');
             }
-            if (requestParameters['tagUpdate'] == null) {
-                throw new runtime.RequiredError('tagUpdate', 'Required parameter "tagUpdate" was null or undefined when calling updateTagV1BookmarksTagsTagIdPut().');
+            if (requestParameters.tagUpdate === null || requestParameters.tagUpdate === undefined) {
+                throw new runtime.RequiredError('tagUpdate', 'Required parameter requestParameters.tagUpdate was null or undefined when calling updateTagV1BookmarksTagsTagIdPut.');
             }
             const queryParameters = {};
             const headerParameters = {};
             headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters['xCsrfToken'] != null) {
-                headerParameters['x-csrf-token'] = String(requestParameters['xCsrfToken']);
+            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
             }
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -2533,14 +2529,12 @@ export class BookmarksApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/bookmarks/tags/{tag_id}`;
-            urlPath = urlPath.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters['tagId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: TagUpdateToJSON(requestParameters['tagUpdate']),
+                body: TagUpdateToJSON(requestParameters.tagUpdate),
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => TagOutFromJSON(jsonValue));
         });

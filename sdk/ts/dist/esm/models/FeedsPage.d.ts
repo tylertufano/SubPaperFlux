@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { FeedOut } from './FeedOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { FeedOut } from './FeedOut';
 export interface FeedsPage {
     /**
      *
-     * @type {Array<FeedOut>}
+     * @type {any}
      * @memberof FeedsPage
      */
-    items: Array<FeedOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof FeedsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof FeedsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the FeedsPage interface.
  */
-export declare function instanceOfFeedsPage(value: object): value is FeedsPage;
+export declare function instanceOfFeedsPage(value: object): boolean;
 export declare function FeedsPageFromJSON(json: any): FeedsPage;
 export declare function FeedsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): FeedsPage;
-export declare function FeedsPageToJSON(json: any): FeedsPage;
-export declare function FeedsPageToJSONTyped(value?: FeedsPage | null, ignoreDiscriminator?: boolean): any;
+export declare function FeedsPageToJSON(value?: FeedsPage | null): any;

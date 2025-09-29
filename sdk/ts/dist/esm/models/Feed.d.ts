@@ -17,58 +17,63 @@
 export interface Feed {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    id?: string | null;
+    id?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    url: string;
+    url: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    pollFrequency?: string;
+    pollFrequency?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    initialLookbackPeriod?: string | null;
+    initialLookbackPeriod?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof Feed
      */
-    isPaywalled?: boolean;
+    isPaywalled?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof Feed
      */
-    rssRequiresAuth?: boolean;
+    rssRequiresAuth?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    siteConfigId?: string | null;
+    siteConfigId?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof Feed
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof Feed
+     */
+    siteLoginCredentialId?: any | null;
 }
 /**
  * Check if a given object implements the Feed interface.
  */
-export declare function instanceOfFeed(value: object): value is Feed;
+export declare function instanceOfFeed(value: object): boolean;
 export declare function FeedFromJSON(json: any): Feed;
 export declare function FeedFromJSONTyped(json: any, ignoreDiscriminator: boolean): Feed;
-export declare function FeedToJSON(json: any): Feed;
-export declare function FeedToJSONTyped(value?: Feed | null, ignoreDiscriminator?: boolean): any;
+export declare function FeedToJSON(value?: Feed | null): any;

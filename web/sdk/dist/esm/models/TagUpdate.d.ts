@@ -17,16 +17,15 @@
 export interface TagUpdate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof TagUpdate
      */
-    name: string;
+    name: any | null;
 }
 /**
  * Check if a given object implements the TagUpdate interface.
  */
-export declare function instanceOfTagUpdate(value: object): value is TagUpdate;
+export declare function instanceOfTagUpdate(value: object): boolean;
 export declare function TagUpdateFromJSON(json: any): TagUpdate;
 export declare function TagUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): TagUpdate;
-export declare function TagUpdateToJSON(json: any): TagUpdate;
-export declare function TagUpdateToJSONTyped(value?: TagUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function TagUpdateToJSON(value?: TagUpdate | null): any;

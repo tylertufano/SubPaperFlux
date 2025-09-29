@@ -15,29 +15,29 @@
  * Check if a given object implements the TagCreate interface.
  */
 export function instanceOfTagCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function TagCreateFromJSON(json) {
     return TagCreateFromJSONTyped(json, false);
 }
 export function TagCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
     };
 }
-export function TagCreateToJSON(json) {
-    return TagCreateToJSONTyped(json, false);
-}
-export function TagCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function TagCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
+        'name': value.name,
     };
 }

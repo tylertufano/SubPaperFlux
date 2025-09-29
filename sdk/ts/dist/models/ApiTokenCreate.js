@@ -13,14 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiTokenCreateToJSONTyped = exports.ApiTokenCreateToJSON = exports.ApiTokenCreateFromJSONTyped = exports.ApiTokenCreateFromJSON = exports.instanceOfApiTokenCreate = void 0;
+exports.ApiTokenCreateToJSON = exports.ApiTokenCreateFromJSONTyped = exports.ApiTokenCreateFromJSON = exports.instanceOfApiTokenCreate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the ApiTokenCreate interface.
  */
 function instanceOfApiTokenCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 exports.instanceOfApiTokenCreate = instanceOfApiTokenCreate;
 function ApiTokenCreateFromJSON(json) {
@@ -28,31 +29,29 @@ function ApiTokenCreateFromJSON(json) {
 }
 exports.ApiTokenCreateFromJSON = ApiTokenCreateFromJSON;
 function ApiTokenCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'scopes': json['scopes'] == null ? undefined : json['scopes'],
-        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
+        'description': !(0, runtime_1.exists)(json, 'description') ? undefined : json['description'],
+        'scopes': !(0, runtime_1.exists)(json, 'scopes') ? undefined : json['scopes'],
+        'expiresAt': !(0, runtime_1.exists)(json, 'expires_at') ? undefined : json['expires_at'],
     };
 }
 exports.ApiTokenCreateFromJSONTyped = ApiTokenCreateFromJSONTyped;
-function ApiTokenCreateToJSON(json) {
-    return ApiTokenCreateToJSONTyped(json, false);
-}
-exports.ApiTokenCreateToJSON = ApiTokenCreateToJSON;
-function ApiTokenCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    var _a;
-    if (value == null) {
-        return value;
+function ApiTokenCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
-        'scopes': value['scopes'],
-        'expires_at': value['expiresAt'] === null ? null : ((_a = value['expiresAt']) === null || _a === void 0 ? void 0 : _a.toISOString()),
+        'name': value.name,
+        'description': value.description,
+        'scopes': value.scopes,
+        'expires_at': value.expiresAt,
     };
 }
-exports.ApiTokenCreateToJSONTyped = ApiTokenCreateToJSONTyped;
+exports.ApiTokenCreateToJSON = ApiTokenCreateToJSON;

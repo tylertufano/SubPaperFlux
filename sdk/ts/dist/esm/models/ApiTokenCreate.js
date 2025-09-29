@@ -11,40 +11,40 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the ApiTokenCreate interface.
  */
 export function instanceOfApiTokenCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function ApiTokenCreateFromJSON(json) {
     return ApiTokenCreateFromJSONTyped(json, false);
 }
 export function ApiTokenCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'scopes': json['scopes'] == null ? undefined : json['scopes'],
-        'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'scopes': !exists(json, 'scopes') ? undefined : json['scopes'],
+        'expiresAt': !exists(json, 'expires_at') ? undefined : json['expires_at'],
     };
 }
-export function ApiTokenCreateToJSON(json) {
-    return ApiTokenCreateToJSONTyped(json, false);
-}
-export function ApiTokenCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    var _a;
-    if (value == null) {
-        return value;
+export function ApiTokenCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
-        'scopes': value['scopes'],
-        'expires_at': value['expiresAt'] === null ? null : ((_a = value['expiresAt']) === null || _a === void 0 ? void 0 : _a.toISOString()),
+        'name': value.name,
+        'description': value.description,
+        'scopes': value.scopes,
+        'expires_at': value.expiresAt,
     };
 }

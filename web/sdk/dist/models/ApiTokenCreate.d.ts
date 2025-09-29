@@ -17,34 +17,33 @@
 export interface ApiTokenCreate {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenCreate
      */
-    name: string;
+    name: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ApiTokenCreate
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof ApiTokenCreate
      */
-    scopes?: Array<string>;
+    scopes?: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof ApiTokenCreate
      */
-    expiresAt?: Date | null;
+    expiresAt?: any | null;
 }
 /**
  * Check if a given object implements the ApiTokenCreate interface.
  */
-export declare function instanceOfApiTokenCreate(value: object): value is ApiTokenCreate;
+export declare function instanceOfApiTokenCreate(value: object): boolean;
 export declare function ApiTokenCreateFromJSON(json: any): ApiTokenCreate;
 export declare function ApiTokenCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiTokenCreate;
-export declare function ApiTokenCreateToJSON(json: any): ApiTokenCreate;
-export declare function ApiTokenCreateToJSONTyped(value?: ApiTokenCreate | null, ignoreDiscriminator?: boolean): any;
+export declare function ApiTokenCreateToJSON(value?: ApiTokenCreate | null): any;

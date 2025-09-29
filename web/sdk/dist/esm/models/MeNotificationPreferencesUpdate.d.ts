@@ -17,22 +17,21 @@
 export interface MeNotificationPreferencesUpdate {
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof MeNotificationPreferencesUpdate
      */
-    emailJobUpdates?: boolean | null;
+    emailJobUpdates?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof MeNotificationPreferencesUpdate
      */
-    emailDigest?: boolean | null;
+    emailDigest?: any | null;
 }
 /**
  * Check if a given object implements the MeNotificationPreferencesUpdate interface.
  */
-export declare function instanceOfMeNotificationPreferencesUpdate(value: object): value is MeNotificationPreferencesUpdate;
+export declare function instanceOfMeNotificationPreferencesUpdate(value: object): boolean;
 export declare function MeNotificationPreferencesUpdateFromJSON(json: any): MeNotificationPreferencesUpdate;
 export declare function MeNotificationPreferencesUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): MeNotificationPreferencesUpdate;
-export declare function MeNotificationPreferencesUpdateToJSON(json: any): MeNotificationPreferencesUpdate;
-export declare function MeNotificationPreferencesUpdateToJSONTyped(value?: MeNotificationPreferencesUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function MeNotificationPreferencesUpdateToJSON(value?: MeNotificationPreferencesUpdate | null): any;

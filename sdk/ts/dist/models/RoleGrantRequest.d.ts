@@ -17,28 +17,27 @@
 export interface RoleGrantRequest {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    description?: string | null;
+    description?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    createMissing?: boolean;
+    createMissing?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof RoleGrantRequest
      */
-    isSystem?: boolean | null;
+    isSystem?: any | null;
 }
 /**
  * Check if a given object implements the RoleGrantRequest interface.
  */
-export declare function instanceOfRoleGrantRequest(value: object): value is RoleGrantRequest;
+export declare function instanceOfRoleGrantRequest(value: object): boolean;
 export declare function RoleGrantRequestFromJSON(json: any): RoleGrantRequest;
 export declare function RoleGrantRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RoleGrantRequest;
-export declare function RoleGrantRequestToJSON(json: any): RoleGrantRequest;
-export declare function RoleGrantRequestToJSONTyped(value?: RoleGrantRequest | null, ignoreDiscriminator?: boolean): any;
+export declare function RoleGrantRequestToJSON(value?: RoleGrantRequest | null): any;

@@ -11,32 +11,33 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { ValidationErrorFromJSON, ValidationErrorToJSON, } from './ValidationError';
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the HTTPValidationError interface.
  */
 export function instanceOfHTTPValidationError(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function HTTPValidationErrorFromJSON(json) {
     return HTTPValidationErrorFromJSONTyped(json, false);
 }
 export function HTTPValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'detail': json['detail'] == null ? undefined : (json['detail'].map(ValidationErrorFromJSON)),
+        'detail': !exists(json, 'detail') ? undefined : json['detail'],
     };
 }
-export function HTTPValidationErrorToJSON(json) {
-    return HTTPValidationErrorToJSONTyped(json, false);
-}
-export function HTTPValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function HTTPValidationErrorToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'detail': value['detail'] == null ? undefined : (value['detail'].map(ValidationErrorToJSON)),
+        'detail': value.detail,
     };
 }

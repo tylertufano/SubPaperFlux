@@ -41,7 +41,6 @@ src/models/ApiTokenWithSecret.ts
 src/models/ApiTokensPage.ts
 src/models/AuditLogOut.ts
 src/models/AuditLogsPage.ts
-src/models/Body.ts
 src/models/BookmarkFolderSummary.ts
 src/models/BookmarkFolderUpdate.ts
 src/models/BookmarkOut.ts
@@ -67,15 +66,10 @@ src/models/JobScheduleOut.ts
 src/models/JobScheduleUpdate.ts
 src/models/JobSchedulesPage.ts
 src/models/JobsPage.ts
-src/models/ListSiteConfigsSiteConfigsGet200ResponseInner.ts
 src/models/MeNotificationPreferences.ts
 src/models/MeNotificationPreferencesUpdate.ts
 src/models/MeOut.ts
 src/models/MeUpdate.ts
-src/models/ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost.ts
-src/models/ResponseCreateSiteConfigSiteConfigsPost.ts
-src/models/ResponseGetSiteConfigSiteConfigsConfigIdGet.ts
-src/models/ResponseUpdateSiteConfigSiteConfigsConfigIdPut.ts
 src/models/RoleGrantRequest.ts
 src/models/SeleniumConfig.ts
 src/models/SiteConfigApi.ts
@@ -83,7 +77,6 @@ src/models/SiteConfigApiOut.ts
 src/models/SiteConfigSelenium.ts
 src/models/SiteConfigSeleniumOut.ts
 src/models/SiteConfigsPage.ts
-src/models/SiteConfigsPageItemsInner.ts
 src/models/SiteSetupStatus.ts
 src/models/SiteSetupStatusOut.ts
 src/models/SiteSetupStatusUpdate.ts
@@ -98,7 +91,6 @@ src/models/TemplateCategory.ts
 src/models/TemplateListResponse.ts
 src/models/TemplateMetadata.ts
 src/models/ValidationError.ts
-src/models/ValidationErrorLocInner.ts
 src/models/index.ts
 src/runtime.ts
 tsconfig.esm.json

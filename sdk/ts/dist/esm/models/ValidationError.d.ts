@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { ValidationErrorLocInner } from './ValidationErrorLocInner';
 /**
  *
  * @export
@@ -18,28 +17,27 @@ import type { ValidationErrorLocInner } from './ValidationErrorLocInner';
 export interface ValidationError {
     /**
      *
-     * @type {Array<ValidationErrorLocInner>}
+     * @type {any}
      * @memberof ValidationError
      */
-    loc: Array<ValidationErrorLocInner>;
+    loc: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ValidationError
      */
-    msg: string;
+    msg: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof ValidationError
      */
-    type: string;
+    type: any | null;
 }
 /**
  * Check if a given object implements the ValidationError interface.
  */
-export declare function instanceOfValidationError(value: object): value is ValidationError;
+export declare function instanceOfValidationError(value: object): boolean;
 export declare function ValidationErrorFromJSON(json: any): ValidationError;
 export declare function ValidationErrorFromJSONTyped(json: any, ignoreDiscriminator: boolean): ValidationError;
-export declare function ValidationErrorToJSON(json: any): ValidationError;
-export declare function ValidationErrorToJSONTyped(value?: ValidationError | null, ignoreDiscriminator?: boolean): any;
+export declare function ValidationErrorToJSON(value?: ValidationError | null): any;

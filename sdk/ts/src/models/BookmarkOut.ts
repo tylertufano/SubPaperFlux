@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,78 +21,80 @@ import { mapValues } from '../runtime';
 export interface BookmarkOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    instapaperBookmarkId?: string | null;
+    instapaperBookmarkId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    title?: string | null;
+    title?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    url?: string | null;
+    url?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    contentLocation?: string | null;
+    contentLocation?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    feedId?: string | null;
+    feedId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof BookmarkOut
      */
-    publishedAt?: string | null;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof BookmarkOut
-     */
-    rssEntry?: { [key: string]: any; };
-    /**
-     * 
-     * @type {string}
-     * @memberof BookmarkOut
-     */
-    rawHtmlContent?: string | null;
+    publishedAt?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof BookmarkOut
      */
-    publicationStatuses?: { [key: string]: any; };
+    rssEntry?: { [key: string]: any; } | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof BookmarkOut
+     */
+    rawHtmlContent?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof BookmarkOut
      */
-    publicationFlags?: { [key: string]: any; };
+    publicationStatuses?: { [key: string]: any; } | null;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof BookmarkOut
+     */
+    publicationFlags?: { [key: string]: any; } | null;
 }
 
 /**
  * Check if a given object implements the BookmarkOut interface.
  */
-export function instanceOfBookmarkOut(value: object): value is BookmarkOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    return true;
+export function instanceOfBookmarkOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+
+    return isInstance;
 }
 
 export function BookmarkOutFromJSON(json: any): BookmarkOut {
@@ -100,47 +102,45 @@ export function BookmarkOutFromJSON(json: any): BookmarkOut {
 }
 
 export function BookmarkOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarkOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
-        'instapaperBookmarkId': json['instapaper_bookmark_id'] == null ? undefined : json['instapaper_bookmark_id'],
-        'title': json['title'] == null ? undefined : json['title'],
-        'url': json['url'] == null ? undefined : json['url'],
-        'contentLocation': json['content_location'] == null ? undefined : json['content_location'],
-        'feedId': json['feed_id'] == null ? undefined : json['feed_id'],
-        'publishedAt': json['published_at'] == null ? undefined : json['published_at'],
-        'rssEntry': json['rss_entry'] == null ? undefined : json['rss_entry'],
-        'rawHtmlContent': json['raw_html_content'] == null ? undefined : json['raw_html_content'],
-        'publicationStatuses': json['publication_statuses'] == null ? undefined : json['publication_statuses'],
-        'publicationFlags': json['publication_flags'] == null ? undefined : json['publication_flags'],
+        'instapaperBookmarkId': !exists(json, 'instapaper_bookmark_id') ? undefined : json['instapaper_bookmark_id'],
+        'title': !exists(json, 'title') ? undefined : json['title'],
+        'url': !exists(json, 'url') ? undefined : json['url'],
+        'contentLocation': !exists(json, 'content_location') ? undefined : json['content_location'],
+        'feedId': !exists(json, 'feed_id') ? undefined : json['feed_id'],
+        'publishedAt': !exists(json, 'published_at') ? undefined : json['published_at'],
+        'rssEntry': !exists(json, 'rss_entry') ? undefined : json['rss_entry'],
+        'rawHtmlContent': !exists(json, 'raw_html_content') ? undefined : json['raw_html_content'],
+        'publicationStatuses': !exists(json, 'publication_statuses') ? undefined : json['publication_statuses'],
+        'publicationFlags': !exists(json, 'publication_flags') ? undefined : json['publication_flags'],
     };
 }
 
-export function BookmarkOutToJSON(json: any): BookmarkOut {
-    return BookmarkOutToJSONTyped(json, false);
-}
-
-export function BookmarkOutToJSONTyped(value?: BookmarkOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function BookmarkOutToJSON(value?: BookmarkOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'instapaper_bookmark_id': value['instapaperBookmarkId'],
-        'title': value['title'],
-        'url': value['url'],
-        'content_location': value['contentLocation'],
-        'feed_id': value['feedId'],
-        'published_at': value['publishedAt'],
-        'rss_entry': value['rssEntry'],
-        'raw_html_content': value['rawHtmlContent'],
-        'publication_statuses': value['publicationStatuses'],
-        'publication_flags': value['publicationFlags'],
+        'id': value.id,
+        'instapaper_bookmark_id': value.instapaperBookmarkId,
+        'title': value.title,
+        'url': value.url,
+        'content_location': value.contentLocation,
+        'feed_id': value.feedId,
+        'published_at': value.publishedAt,
+        'rss_entry': value.rssEntry,
+        'raw_html_content': value.rawHtmlContent,
+        'publication_statuses': value.publicationStatuses,
+        'publication_flags': value.publicationFlags,
     };
 }
 

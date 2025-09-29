@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -22,41 +22,43 @@ export interface SiteWelcomeSettingUpdate {
     [key: string]: any | any;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingUpdate
      */
-    headline?: string | null;
+    headline?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingUpdate
      */
-    subheadline?: string | null;
+    subheadline?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingUpdate
      */
-    body?: string | null;
+    body?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingUpdate
      */
-    ctaText?: string | null;
+    ctaText?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeSettingUpdate
      */
-    ctaUrl?: string | null;
+    ctaUrl?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteWelcomeSettingUpdate interface.
  */
-export function instanceOfSiteWelcomeSettingUpdate(value: object): value is SiteWelcomeSettingUpdate {
-    return true;
+export function instanceOfSiteWelcomeSettingUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function SiteWelcomeSettingUpdateFromJSON(json: any): SiteWelcomeSettingUpdate {
@@ -64,37 +66,35 @@ export function SiteWelcomeSettingUpdateFromJSON(json: any): SiteWelcomeSettingU
 }
 
 export function SiteWelcomeSettingUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteWelcomeSettingUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
             ...json,
-        'headline': json['headline'] == null ? undefined : json['headline'],
-        'subheadline': json['subheadline'] == null ? undefined : json['subheadline'],
-        'body': json['body'] == null ? undefined : json['body'],
-        'ctaText': json['cta_text'] == null ? undefined : json['cta_text'],
-        'ctaUrl': json['cta_url'] == null ? undefined : json['cta_url'],
+        'headline': !exists(json, 'headline') ? undefined : json['headline'],
+        'subheadline': !exists(json, 'subheadline') ? undefined : json['subheadline'],
+        'body': !exists(json, 'body') ? undefined : json['body'],
+        'ctaText': !exists(json, 'cta_text') ? undefined : json['cta_text'],
+        'ctaUrl': !exists(json, 'cta_url') ? undefined : json['cta_url'],
     };
 }
 
-export function SiteWelcomeSettingUpdateToJSON(json: any): SiteWelcomeSettingUpdate {
-    return SiteWelcomeSettingUpdateToJSONTyped(json, false);
-}
-
-export function SiteWelcomeSettingUpdateToJSONTyped(value?: SiteWelcomeSettingUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteWelcomeSettingUpdateToJSON(value?: SiteWelcomeSettingUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
             ...value,
-        'headline': value['headline'],
-        'subheadline': value['subheadline'],
-        'body': value['body'],
-        'cta_text': value['ctaText'],
-        'cta_url': value['ctaUrl'],
+        'headline': value.headline,
+        'subheadline': value.subheadline,
+        'body': value.body,
+        'cta_text': value.ctaText,
+        'cta_url': value.ctaUrl,
     };
 }
 

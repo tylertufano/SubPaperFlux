@@ -13,14 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminRoleCreateToJSONTyped = exports.AdminRoleCreateToJSON = exports.AdminRoleCreateFromJSONTyped = exports.AdminRoleCreateFromJSON = exports.instanceOfAdminRoleCreate = void 0;
+exports.AdminRoleCreateToJSON = exports.AdminRoleCreateFromJSONTyped = exports.AdminRoleCreateFromJSON = exports.instanceOfAdminRoleCreate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the AdminRoleCreate interface.
  */
 function instanceOfAdminRoleCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 exports.instanceOfAdminRoleCreate = instanceOfAdminRoleCreate;
 function AdminRoleCreateFromJSON(json) {
@@ -28,28 +29,27 @@ function AdminRoleCreateFromJSON(json) {
 }
 exports.AdminRoleCreateFromJSON = AdminRoleCreateFromJSON;
 function AdminRoleCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
+        'description': !(0, runtime_1.exists)(json, 'description') ? undefined : json['description'],
+        'isSystem': !(0, runtime_1.exists)(json, 'is_system') ? undefined : json['is_system'],
     };
 }
 exports.AdminRoleCreateFromJSONTyped = AdminRoleCreateFromJSONTyped;
-function AdminRoleCreateToJSON(json) {
-    return AdminRoleCreateToJSONTyped(json, false);
-}
-exports.AdminRoleCreateToJSON = AdminRoleCreateToJSON;
-function AdminRoleCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function AdminRoleCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
     };
 }
-exports.AdminRoleCreateToJSONTyped = AdminRoleCreateToJSONTyped;
+exports.AdminRoleCreateToJSON = AdminRoleCreateToJSON;

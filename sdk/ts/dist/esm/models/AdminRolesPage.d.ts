@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { AdminRoleListItem } from './AdminRoleListItem';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { AdminRoleListItem } from './AdminRoleListItem';
 export interface AdminRolesPage {
     /**
      *
-     * @type {Array<AdminRoleListItem>}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    items: Array<AdminRoleListItem>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminRolesPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the AdminRolesPage interface.
  */
-export declare function instanceOfAdminRolesPage(value: object): value is AdminRolesPage;
+export declare function instanceOfAdminRolesPage(value: object): boolean;
 export declare function AdminRolesPageFromJSON(json: any): AdminRolesPage;
 export declare function AdminRolesPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRolesPage;
-export declare function AdminRolesPageToJSON(json: any): AdminRolesPage;
-export declare function AdminRolesPageToJSONTyped(value?: AdminRolesPage | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminRolesPageToJSON(value?: AdminRolesPage | null): any;

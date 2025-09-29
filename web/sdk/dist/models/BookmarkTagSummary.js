@@ -13,15 +13,15 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookmarkTagSummaryToJSONTyped = exports.BookmarkTagSummaryToJSON = exports.BookmarkTagSummaryFromJSONTyped = exports.BookmarkTagSummaryFromJSON = exports.instanceOfBookmarkTagSummary = void 0;
-const TagOut_1 = require("./TagOut");
+exports.BookmarkTagSummaryToJSON = exports.BookmarkTagSummaryFromJSONTyped = exports.BookmarkTagSummaryFromJSON = exports.instanceOfBookmarkTagSummary = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the BookmarkTagSummary interface.
  */
 function instanceOfBookmarkTagSummary(value) {
-    if (!('bookmarkId' in value) || value['bookmarkId'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "bookmarkId" in value;
+    return isInstance;
 }
 exports.instanceOfBookmarkTagSummary = instanceOfBookmarkTagSummary;
 function BookmarkTagSummaryFromJSON(json) {
@@ -29,26 +29,25 @@ function BookmarkTagSummaryFromJSON(json) {
 }
 exports.BookmarkTagSummaryFromJSON = BookmarkTagSummaryFromJSON;
 function BookmarkTagSummaryFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'bookmarkId': json['bookmark_id'],
-        'tags': json['tags'] == null ? undefined : (json['tags'].map(TagOut_1.TagOutFromJSON)),
+        'tags': !(0, runtime_1.exists)(json, 'tags') ? undefined : json['tags'],
     };
 }
 exports.BookmarkTagSummaryFromJSONTyped = BookmarkTagSummaryFromJSONTyped;
-function BookmarkTagSummaryToJSON(json) {
-    return BookmarkTagSummaryToJSONTyped(json, false);
-}
-exports.BookmarkTagSummaryToJSON = BookmarkTagSummaryToJSON;
-function BookmarkTagSummaryToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function BookmarkTagSummaryToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'bookmark_id': value['bookmarkId'],
-        'tags': value['tags'] == null ? undefined : (value['tags'].map(TagOut_1.TagOutToJSON)),
+        'bookmark_id': value.bookmarkId,
+        'tags': value.tags,
     };
 }
-exports.BookmarkTagSummaryToJSONTyped = BookmarkTagSummaryToJSONTyped;
+exports.BookmarkTagSummaryToJSON = BookmarkTagSummaryToJSON;

@@ -10,57 +10,57 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost, RoleGrantRequest, SiteConfigsPage, SiteSetupStatusOut, SiteSetupStatusUpdate, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteSetupStatusOut, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
-    organizationId: string;
+    organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
 }
 export interface BulkDeleteBookmarksV1BookmarksBulkDeletePostRequest {
     requestBody: {
         [key: string]: any;
-    };
-    xCsrfToken?: string | null;
+    } | null;
+    xCsrfToken?: any;
 }
 export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
     requestBody: {
         [key: string]: any;
-    };
-    xCsrfToken?: string | null;
+    } | null;
+    xCsrfToken?: any;
 }
 export interface BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest {
     bulkBookmarkFolderUpdate: BulkBookmarkFolderUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest {
     bulkBookmarkTagUpdate: BulkBookmarkTagUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
-    userId: string;
+    userId: any;
 }
 export interface CopyCredentialV1CredentialsCredIdCopyPostRequest {
-    credId: string;
+    credId: any;
 }
 export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
-    configId: string;
+    configId: any;
 }
 export interface CountBookmarksV1BookmarksCountGetRequest {
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    search?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
-    size?: number;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    search?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
+    size?: any;
 }
 export interface CreateFolderV1BookmarksFoldersPostRequest {
     folderCreate: FolderCreate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface CreateJobScheduleV1JobSchedulesPostRequest {
     jobScheduleCreate: JobScheduleCreate;
@@ -76,357 +76,363 @@ export interface CreateRoleV1AdminRolesPostRequest {
 }
 export interface CreateTagV1BookmarksTagsPostRequest {
     tagCreate: TagCreate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface CreateTokenV1MeTokensPostRequest {
     apiTokenCreate: ApiTokenCreate;
 }
 export interface DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest {
-    bookmarkId: string;
-    xCsrfToken?: string | null;
+    bookmarkId: any;
+    xCsrfToken?: any;
 }
 export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
-    bookmarkId: string;
-    deleteRemote?: boolean;
-    xCsrfToken?: string | null;
+    bookmarkId: any;
+    deleteRemote?: any;
+    xCsrfToken?: any;
 }
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
-    folderId: string;
-    xCsrfToken?: string | null;
+    folderId: any;
+    xCsrfToken?: any;
 }
 export interface DeleteJobScheduleV1JobSchedulesScheduleIdDeleteRequest {
-    scheduleId: string;
+    scheduleId: any;
 }
 export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
-    organizationId: string;
+    organizationId: any;
 }
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
-    roleId: string;
+    roleId: any;
 }
 export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
-    tagId: string;
-    xCsrfToken?: string | null;
+    tagId: any;
+    xCsrfToken?: any;
 }
 export interface DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest {
-    templateId: string;
+    templateId: any;
 }
 export interface EnqueueJobV1JobsPostRequest {
     jobRequest: JobRequest;
 }
 export interface ExportBookmarksV1BookmarksExportGetRequest {
-    format?: string;
-    search?: string | null;
-    fuzzy?: boolean;
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    sortBy?: string | null;
-    sortDir?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
+    format?: any;
+    search?: any;
+    fuzzy?: any;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    sortBy?: any;
+    sortDir?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
 }
 export interface GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest {
-    bookmarkId: string;
+    bookmarkId: any;
 }
 export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
-    bookmarkId: string;
+    bookmarkId: any;
 }
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
-    bookmarkId: string;
+    bookmarkId: any;
 }
 export interface GetJobScheduleV1JobSchedulesScheduleIdGetRequest {
-    scheduleId: string;
+    scheduleId: any;
 }
 export interface GetJobV1JobsJobIdGetRequest {
-    jobId: string;
+    jobId: any;
 }
 export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
-    organizationId: string;
+    organizationId: any;
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
-    roleId: string;
+    roleId: any;
 }
 export interface GetTokenV1MeTokensTokenIdGetRequest {
-    tokenId: string;
+    tokenId: any;
 }
 export interface GetUserV1AdminUsersUserIdGetRequest {
-    userId: string;
+    userId: any;
 }
 export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
-    userId: string;
-    roleName: string;
-    roleGrantRequest?: RoleGrantRequest;
+    userId: any;
+    roleName: any;
+    body?: any | null;
 }
 export interface HeadBookmarksV1BookmarksHeadRequest {
-    search?: string | null;
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
+    search?: any;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
 }
 export interface HeadBookmarksV1BookmarksHead0Request {
-    search?: string | null;
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
+    search?: any;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
 }
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
-    instapaperCredId?: string | null;
-    minifluxCredId?: string | null;
+    instapaperCredId?: any;
+    minifluxCredId?: any;
 }
 export interface ListAuditLogsV1AdminAuditGetRequest {
-    page?: number;
-    size?: number;
-    entityType?: string | null;
-    entityId?: string | null;
-    action?: string | null;
-    ownerUserId?: string | null;
-    actorUserId?: string | null;
-    since?: Date | null;
-    until?: Date | null;
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
 }
 export interface ListBookmarksV1BookmarksGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    fuzzy?: boolean;
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    sortBy?: string | null;
-    sortDir?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    fuzzy?: any;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    sortBy?: any;
+    sortDir?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
 }
 export interface ListBookmarksV1BookmarksGet0Request {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    fuzzy?: boolean;
-    feedId?: string | null;
-    tagId?: string | null;
-    folderId?: string | null;
-    since?: string | null;
-    until?: string | null;
-    sortBy?: string | null;
-    sortDir?: string | null;
-    titleQuery?: string | null;
-    urlQuery?: string | null;
-    regex?: string | null;
-    regexTarget?: string | null;
-    regexFlags?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    fuzzy?: any;
+    feedId?: any;
+    tagId?: any;
+    folderId?: any;
+    since?: any;
+    until?: any;
+    sortBy?: any;
+    sortDir?: any;
+    titleQuery?: any;
+    urlQuery?: any;
+    regex?: any;
+    regexTarget?: any;
+    regexFlags?: any;
 }
 export interface ListCredentialsV1V1CredentialsGetRequest {
-    includeGlobal?: boolean;
-    kind?: string | null;
-    page?: number;
-    size?: number;
+    includeGlobal?: any;
+    kind?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListCredentialsV1V1CredentialsGet0Request {
-    includeGlobal?: boolean;
-    kind?: string | null;
-    page?: number;
-    size?: number;
+    includeGlobal?: any;
+    kind?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListFeedsV1V1FeedsGetRequest {
-    ownerUserIds?: Array<string> | null;
-    page?: number;
-    size?: number;
+    ownerUserIds?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListFeedsV1V1FeedsGet0Request {
-    ownerUserIds?: Array<string> | null;
-    page?: number;
-    size?: number;
+    ownerUserIds?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListJobSchedulesV1JobSchedulesGetRequest {
-    ownerUserId?: Array<string> | null;
-    jobType?: string | null;
-    isActive?: boolean | null;
-    page?: number;
-    size?: number;
+    ownerUserId?: any;
+    jobType?: any;
+    isActive?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListJobSchedulesV1JobSchedulesGet0Request {
-    ownerUserId?: Array<string> | null;
-    jobType?: string | null;
-    isActive?: boolean | null;
-    page?: number;
-    size?: number;
+    ownerUserId?: any;
+    jobType?: any;
+    isActive?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListJobsV1JobsGetRequest {
-    status?: string | null;
-    jobType?: string | null;
-    page?: number;
-    size?: number;
-    orderBy?: string;
-    orderDir?: string;
+    status?: any;
+    jobType?: any;
+    page?: any;
+    size?: any;
+    orderBy?: any;
+    orderDir?: any;
 }
 export interface ListJobsV1JobsGet0Request {
-    status?: string | null;
-    jobType?: string | null;
-    page?: number;
-    size?: number;
-    orderBy?: string;
-    orderDir?: string;
+    status?: any;
+    jobType?: any;
+    page?: any;
+    size?: any;
+    orderBy?: any;
+    orderDir?: any;
 }
 export interface ListOrganizationsV1AdminOrgsGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    isDefault?: boolean | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    isDefault?: any;
 }
 export interface ListRolesV1AdminRolesGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
 }
 export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
-    includeGlobal?: boolean;
-    search?: string | null;
-    page?: number;
-    size?: number;
+    includeGlobal?: any;
+    search?: any;
+    page?: any;
+    size?: any;
 }
 export interface ListTokensV1MeTokensGetRequest {
-    page?: number;
-    size?: number;
-    includeRevoked?: boolean;
+    page?: any;
+    size?: any;
+    includeRevoked?: any;
 }
 export interface ListUsersV1AdminUsersGetRequest {
-    page?: number;
-    size?: number;
-    search?: string | null;
-    isActive?: boolean | null;
-    role?: string | null;
-    organizationId?: string | null;
+    page?: any;
+    size?: any;
+    search?: any;
+    isActive?: any;
+    role?: any;
+    organizationId?: any;
 }
 export interface PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest {
-    bookmarkId: string;
+    bookmarkId: any;
 }
 export interface RemoveOrganizationMemberV1AdminOrgsOrganizationIdMembersUserIdDeleteRequest {
-    organizationId: string;
-    userId: string;
+    organizationId: any;
+    userId: any;
 }
 export interface RetryAllJobsV1JobsRetryAllPostRequest {
     requestBody: {
         [key: string]: any;
-    };
+    } | null;
 }
 export interface RetryJobV1JobsJobIdRetryPostRequest {
-    jobId: string;
+    jobId: any;
 }
 export interface RevokeTokenV1MeTokensTokenIdDeleteRequest {
-    tokenId: string;
+    tokenId: any;
 }
 export interface RevokeUserRoleV1AdminUsersUserIdRolesRoleNameDeleteRequest {
-    userId: string;
-    roleName: string;
-    confirm?: boolean;
+    userId: any;
+    roleName: any;
+    confirm?: any;
 }
 export interface RunJobScheduleNowV1JobSchedulesScheduleIdRunNowPostRequest {
-    scheduleId: string;
+    scheduleId: any;
 }
 export interface StreamJobsV1JobsStreamGetRequest {
-    status?: string | null;
-    jobType?: string | null;
-    page?: number;
-    size?: number;
-    orderBy?: string;
-    orderDir?: string;
+    status?: any;
+    jobType?: any;
+    page?: any;
+    size?: any;
+    orderBy?: any;
+    orderDir?: any;
 }
 export interface TestInstapaperV1IntegrationsInstapaperTestPostRequest {
     requestBody: {
         [key: string]: any;
-    };
+    } | null;
 }
 export interface TestMinifluxV1IntegrationsMinifluxTestPostRequest {
     requestBody: {
         [key: string]: any;
-    };
+    } | null;
 }
 export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
-    configId: string;
+    configId: any;
 }
 export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
-    scheduleId: string;
+    scheduleId: any;
 }
 export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
-    bookmarkId: string;
+    bookmarkId: any;
     bookmarkFolderUpdate: BookmarkFolderUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
-    bookmarkId: string;
+    bookmarkId: any;
     bookmarkTagsUpdate: BookmarkTagsUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
-    folderId: string;
+    folderId: any;
     folderUpdate: FolderUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface UpdateJobScheduleV1JobSchedulesScheduleIdPatchRequest {
-    scheduleId: string;
+    scheduleId: any;
     jobScheduleUpdate: JobScheduleUpdate;
 }
 export interface UpdateMeV1MePatchRequest {
     meUpdate: MeUpdate;
 }
 export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
-    organizationId: string;
+    organizationId: any;
     adminOrganizationUpdate: AdminOrganizationUpdate;
 }
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
-    roleId: string;
+    roleId: any;
     adminRoleUpdate: AdminRoleUpdate;
 }
 export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
-    siteSetupStatusUpdate: SiteSetupStatusUpdate;
+    requestBody: {
+        [key: string]: any;
+    } | null;
 }
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
-    tagId: string;
+    tagId: any;
     tagUpdate: TagUpdate;
-    xCsrfToken?: string | null;
+    xCsrfToken?: any;
 }
 export interface UpdateUserRoleOverridesV1AdminUsersUserIdRoleOverridesPatchRequest {
-    userId: string;
+    userId: any;
     adminUserRoleOverridesUpdate: AdminUserRoleOverridesUpdate;
 }
 export interface UpdateUserV1AdminUsersUserIdPatchRequest {
-    userId: string;
+    userId: any;
     adminUserUpdate: AdminUserUpdate;
 }
 export interface UpdateWelcomeSettingV1SiteSettingsWelcomePatchRequest {
-    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+    requestBody: {
+        [key: string]: any;
+    } | null;
 }
 export interface UpdateWelcomeSettingV1SiteSettingsWelcomePutRequest {
-    siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate;
+    requestBody: {
+        [key: string]: any;
+    } | null;
 }
 export interface ValidateJobPayloadV1JobsValidatePostRequest {
     requestBody: {
         [key: string]: any;
-    };
+    } | null;
 }
 /**
  *
@@ -459,19 +465,19 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Bulk Update Bookmark Folders
      */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<BookmarkFolderSummary>>>;
+    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Bulk Update Bookmark Folders
      */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkFolderSummary>>;
+    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Bulk Update Bookmark Tags
      */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<BookmarkTagSummary>>>;
+    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Bulk Update Bookmark Tags
      */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<BookmarkTagSummary>>;
+    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Clear user role overrides
      */
@@ -491,11 +497,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Copy Site Config V1
      */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost>>;
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Copy Site Config V1
      */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost>;
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Count Bookmarks
      */
@@ -659,19 +665,19 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Get Bookmark Folder
      */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>>;
+    getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Get Bookmark Folder
      */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
+    getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Get Bookmark Tags
      */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>>;
+    getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Get Bookmark Tags
      */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>>;
+    getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Get Bookmark
      */
@@ -857,11 +863,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List Folders
      */
-    listFoldersV1BookmarksFoldersGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FolderOut>>>;
+    listFoldersV1BookmarksFoldersGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * List Folders
      */
-    listFoldersV1BookmarksFoldersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FolderOut>>;
+    listFoldersV1BookmarksFoldersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * List job schedules
      */
@@ -925,11 +931,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List Tags
      */
-    listTagsV1BookmarksTagsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>>;
+    listTagsV1BookmarksTagsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * List Tags
      */
-    listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>>;
+    listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * List available templates
      */
@@ -957,11 +963,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Preview Bookmark
      */
-    previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>>;
+    previewBookmarkV1BookmarksBookmarkIdPreviewGetRaw(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Preview Bookmark
      */
-    previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string>;
+    previewBookmarkV1BookmarksBookmarkIdPreviewGet(requestParameters: PreviewBookmarkV1BookmarksBookmarkIdPreviewGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Remove a user from an organization
      */
@@ -1083,11 +1089,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Update Bookmark Tags
      */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TagOut>>>;
+    updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
     /**
      * Update Bookmark Tags
      */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>>;
+    updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Update Folder
      */

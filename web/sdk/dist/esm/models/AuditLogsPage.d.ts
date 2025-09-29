@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { AuditLogOut } from './AuditLogOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { AuditLogOut } from './AuditLogOut';
 export interface AuditLogsPage {
     /**
      *
-     * @type {Array<AuditLogOut>}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    items: Array<AuditLogOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AuditLogsPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the AuditLogsPage interface.
  */
-export declare function instanceOfAuditLogsPage(value: object): value is AuditLogsPage;
+export declare function instanceOfAuditLogsPage(value: object): boolean;
 export declare function AuditLogsPageFromJSON(json: any): AuditLogsPage;
 export declare function AuditLogsPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuditLogsPage;
-export declare function AuditLogsPageToJSON(json: any): AuditLogsPage;
-export declare function AuditLogsPageToJSONTyped(value?: AuditLogsPage | null, ignoreDiscriminator?: boolean): any;
+export declare function AuditLogsPageToJSON(value?: AuditLogsPage | null): any;

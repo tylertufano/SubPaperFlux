@@ -11,51 +11,52 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the FeedOut interface.
  */
 export function instanceOfFeedOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('url' in value) || value['url'] === undefined)
-        return false;
-    if (!('pollFrequency' in value) || value['pollFrequency'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "url" in value;
+    isInstance = isInstance && "pollFrequency" in value;
+    return isInstance;
 }
 export function FeedOutFromJSON(json) {
     return FeedOutFromJSONTyped(json, false);
 }
 export function FeedOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'url': json['url'],
         'pollFrequency': json['poll_frequency'],
-        'initialLookbackPeriod': json['initial_lookback_period'] == null ? undefined : json['initial_lookback_period'],
-        'isPaywalled': json['is_paywalled'] == null ? undefined : json['is_paywalled'],
-        'rssRequiresAuth': json['rss_requires_auth'] == null ? undefined : json['rss_requires_auth'],
-        'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'initialLookbackPeriod': !exists(json, 'initial_lookback_period') ? undefined : json['initial_lookback_period'],
+        'isPaywalled': !exists(json, 'is_paywalled') ? undefined : json['is_paywalled'],
+        'rssRequiresAuth': !exists(json, 'rss_requires_auth') ? undefined : json['rss_requires_auth'],
+        'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'siteLoginCredentialId': !exists(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'],
     };
 }
-export function FeedOutToJSON(json) {
-    return FeedOutToJSONTyped(json, false);
-}
-export function FeedOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function FeedOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'url': value['url'],
-        'poll_frequency': value['pollFrequency'],
-        'initial_lookback_period': value['initialLookbackPeriod'],
-        'is_paywalled': value['isPaywalled'],
-        'rss_requires_auth': value['rssRequiresAuth'],
-        'site_config_id': value['siteConfigId'],
-        'owner_user_id': value['ownerUserId'],
+        'id': value.id,
+        'url': value.url,
+        'poll_frequency': value.pollFrequency,
+        'initial_lookback_period': value.initialLookbackPeriod,
+        'is_paywalled': value.isPaywalled,
+        'rss_requires_auth': value.rssRequiresAuth,
+        'site_config_id': value.siteConfigId,
+        'owner_user_id': value.ownerUserId,
+        'site_login_credential_id': value.siteLoginCredentialId,
     };
 }

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,81 +21,83 @@ import { mapValues } from '../runtime';
 export interface JobScheduleOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    jobType: string;
+    jobType: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof JobScheduleOut
      */
-    payload: { [key: string]: any; };
+    payload: { [key: string]: any; } | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    frequency: string;
+    frequency: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    nextRunAt?: Date | null;
+    nextRunAt?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    lastRunAt?: Date | null;
+    lastRunAt?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    lastJobId?: string | null;
+    lastJobId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    lastError?: string | null;
+    lastError?: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    lastErrorAt?: Date | null;
+    lastErrorAt?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof JobScheduleOut
      */
-    isActive?: boolean;
+    isActive?: any | null;
 }
 
 /**
  * Check if a given object implements the JobScheduleOut interface.
  */
-export function instanceOfJobScheduleOut(value: object): value is JobScheduleOut {
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('jobType' in value) || value['jobType'] === undefined) return false;
-    if (!('payload' in value) || value['payload'] === undefined) return false;
-    if (!('frequency' in value) || value['frequency'] === undefined) return false;
-    return true;
+export function instanceOfJobScheduleOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "jobType" in value;
+    isInstance = isInstance && "payload" in value;
+    isInstance = isInstance && "frequency" in value;
+
+    return isInstance;
 }
 
 export function JobScheduleOutFromJSON(json: any): JobScheduleOut {
@@ -103,47 +105,45 @@ export function JobScheduleOutFromJSON(json: any): JobScheduleOut {
 }
 
 export function JobScheduleOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobScheduleOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'id': json['id'],
         'jobType': json['job_type'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
         'frequency': json['frequency'],
-        'nextRunAt': json['next_run_at'] == null ? undefined : (new Date(json['next_run_at'])),
-        'lastRunAt': json['last_run_at'] == null ? undefined : (new Date(json['last_run_at'])),
-        'lastJobId': json['last_job_id'] == null ? undefined : json['last_job_id'],
-        'lastError': json['last_error'] == null ? undefined : json['last_error'],
-        'lastErrorAt': json['last_error_at'] == null ? undefined : (new Date(json['last_error_at'])),
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
+        'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
+        'lastRunAt': !exists(json, 'last_run_at') ? undefined : json['last_run_at'],
+        'lastJobId': !exists(json, 'last_job_id') ? undefined : json['last_job_id'],
+        'lastError': !exists(json, 'last_error') ? undefined : json['last_error'],
+        'lastErrorAt': !exists(json, 'last_error_at') ? undefined : json['last_error_at'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
     };
 }
 
-export function JobScheduleOutToJSON(json: any): JobScheduleOut {
-    return JobScheduleOutToJSONTyped(json, false);
-}
-
-export function JobScheduleOutToJSONTyped(value?: JobScheduleOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobScheduleOutToJSON(value?: JobScheduleOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'id': value['id'],
-        'job_type': value['jobType'],
-        'owner_user_id': value['ownerUserId'],
-        'payload': value['payload'],
-        'frequency': value['frequency'],
-        'next_run_at': value['nextRunAt'] === null ? null : ((value['nextRunAt'] as any)?.toISOString()),
-        'last_run_at': value['lastRunAt'] === null ? null : ((value['lastRunAt'] as any)?.toISOString()),
-        'last_job_id': value['lastJobId'],
-        'last_error': value['lastError'],
-        'last_error_at': value['lastErrorAt'] === null ? null : ((value['lastErrorAt'] as any)?.toISOString()),
-        'is_active': value['isActive'],
+        'id': value.id,
+        'job_type': value.jobType,
+        'owner_user_id': value.ownerUserId,
+        'payload': value.payload,
+        'frequency': value.frequency,
+        'next_run_at': value.nextRunAt,
+        'last_run_at': value.lastRunAt,
+        'last_job_id': value.lastJobId,
+        'last_error': value.lastError,
+        'last_error_at': value.lastErrorAt,
+        'is_active': value.isActive,
     };
 }
 

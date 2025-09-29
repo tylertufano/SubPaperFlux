@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminRoleDetailToJSONTyped = exports.AdminRoleDetailToJSON = exports.AdminRoleDetailFromJSONTyped = exports.AdminRoleDetailFromJSON = exports.instanceOfAdminRoleDetail = void 0;
+exports.AdminRoleDetailToJSON = exports.AdminRoleDetailFromJSONTyped = exports.AdminRoleDetailFromJSON = exports.instanceOfAdminRoleDetail = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the AdminRoleDetail interface.
  */
 function instanceOfAdminRoleDetail(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    if (!('createdAt' in value) || value['createdAt'] === undefined)
-        return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "createdAt" in value;
+    isInstance = isInstance && "updatedAt" in value;
+    return isInstance;
 }
 exports.instanceOfAdminRoleDetail = instanceOfAdminRoleDetail;
 function AdminRoleDetailFromJSON(json) {
@@ -34,38 +32,37 @@ function AdminRoleDetailFromJSON(json) {
 }
 exports.AdminRoleDetailFromJSON = AdminRoleDetailFromJSON;
 function AdminRoleDetailFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
-        'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
-        'assignedUserCount': json['assigned_user_count'] == null ? undefined : json['assigned_user_count'],
-        'metadata': json['metadata'] == null ? undefined : json['metadata'],
+        'description': !(0, runtime_1.exists)(json, 'description') ? undefined : json['description'],
+        'isSystem': !(0, runtime_1.exists)(json, 'is_system') ? undefined : json['is_system'],
+        'createdAt': json['created_at'],
+        'updatedAt': json['updated_at'],
+        'assignedUserCount': !(0, runtime_1.exists)(json, 'assigned_user_count') ? undefined : json['assigned_user_count'],
+        'metadata': !(0, runtime_1.exists)(json, 'metadata') ? undefined : json['metadata'],
     };
 }
 exports.AdminRoleDetailFromJSONTyped = AdminRoleDetailFromJSONTyped;
-function AdminRoleDetailToJSON(json) {
-    return AdminRoleDetailToJSONTyped(json, false);
-}
-exports.AdminRoleDetailToJSON = AdminRoleDetailToJSON;
-function AdminRoleDetailToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function AdminRoleDetailToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
-        'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
-        'assigned_user_count': value['assignedUserCount'],
-        'metadata': value['metadata'],
+        'id': value.id,
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
+        'created_at': value.createdAt,
+        'updated_at': value.updatedAt,
+        'assigned_user_count': value.assignedUserCount,
+        'metadata': value.metadata,
     };
 }
-exports.AdminRoleDetailToJSONTyped = AdminRoleDetailToJSONTyped;
+exports.AdminRoleDetailToJSON = AdminRoleDetailToJSON;

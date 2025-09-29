@@ -13,19 +13,16 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ValidationErrorToJSONTyped = exports.ValidationErrorToJSON = exports.ValidationErrorFromJSONTyped = exports.ValidationErrorFromJSON = exports.instanceOfValidationError = void 0;
-const ValidationErrorLocInner_1 = require("./ValidationErrorLocInner");
+exports.ValidationErrorToJSON = exports.ValidationErrorFromJSONTyped = exports.ValidationErrorFromJSON = exports.instanceOfValidationError = void 0;
 /**
  * Check if a given object implements the ValidationError interface.
  */
 function instanceOfValidationError(value) {
-    if (!('loc' in value) || value['loc'] === undefined)
-        return false;
-    if (!('msg' in value) || value['msg'] === undefined)
-        return false;
-    if (!('type' in value) || value['type'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "loc" in value;
+    isInstance = isInstance && "msg" in value;
+    isInstance = isInstance && "type" in value;
+    return isInstance;
 }
 exports.instanceOfValidationError = instanceOfValidationError;
 function ValidationErrorFromJSON(json) {
@@ -33,28 +30,27 @@ function ValidationErrorFromJSON(json) {
 }
 exports.ValidationErrorFromJSON = ValidationErrorFromJSON;
 function ValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'loc': (json['loc'].map(ValidationErrorLocInner_1.ValidationErrorLocInnerFromJSON)),
+        'loc': json['loc'],
         'msg': json['msg'],
         'type': json['type'],
     };
 }
 exports.ValidationErrorFromJSONTyped = ValidationErrorFromJSONTyped;
-function ValidationErrorToJSON(json) {
-    return ValidationErrorToJSONTyped(json, false);
-}
-exports.ValidationErrorToJSON = ValidationErrorToJSON;
-function ValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function ValidationErrorToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'loc': (value['loc'].map(ValidationErrorLocInner_1.ValidationErrorLocInnerToJSON)),
-        'msg': value['msg'],
-        'type': value['type'],
+        'loc': value.loc,
+        'msg': value.msg,
+        'type': value.type,
     };
 }
-exports.ValidationErrorToJSONTyped = ValidationErrorToJSONTyped;
+exports.ValidationErrorToJSON = ValidationErrorToJSON;

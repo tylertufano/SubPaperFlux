@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -22,41 +22,43 @@ export interface SiteWelcomeContent {
     [key: string]: any | any;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeContent
      */
-    headline?: string | null;
+    headline?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeContent
      */
-    subheadline?: string | null;
+    subheadline?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeContent
      */
-    body?: string | null;
+    body?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeContent
      */
-    ctaText?: string | null;
+    ctaText?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteWelcomeContent
      */
-    ctaUrl?: string | null;
+    ctaUrl?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteWelcomeContent interface.
  */
-export function instanceOfSiteWelcomeContent(value: object): value is SiteWelcomeContent {
-    return true;
+export function instanceOfSiteWelcomeContent(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function SiteWelcomeContentFromJSON(json: any): SiteWelcomeContent {
@@ -64,37 +66,35 @@ export function SiteWelcomeContentFromJSON(json: any): SiteWelcomeContent {
 }
 
 export function SiteWelcomeContentFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteWelcomeContent {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
             ...json,
-        'headline': json['headline'] == null ? undefined : json['headline'],
-        'subheadline': json['subheadline'] == null ? undefined : json['subheadline'],
-        'body': json['body'] == null ? undefined : json['body'],
-        'ctaText': json['cta_text'] == null ? undefined : json['cta_text'],
-        'ctaUrl': json['cta_url'] == null ? undefined : json['cta_url'],
+        'headline': !exists(json, 'headline') ? undefined : json['headline'],
+        'subheadline': !exists(json, 'subheadline') ? undefined : json['subheadline'],
+        'body': !exists(json, 'body') ? undefined : json['body'],
+        'ctaText': !exists(json, 'cta_text') ? undefined : json['cta_text'],
+        'ctaUrl': !exists(json, 'cta_url') ? undefined : json['cta_url'],
     };
 }
 
-export function SiteWelcomeContentToJSON(json: any): SiteWelcomeContent {
-    return SiteWelcomeContentToJSONTyped(json, false);
-}
-
-export function SiteWelcomeContentToJSONTyped(value?: SiteWelcomeContent | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteWelcomeContentToJSON(value?: SiteWelcomeContent | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
             ...value,
-        'headline': value['headline'],
-        'subheadline': value['subheadline'],
-        'body': value['body'],
-        'cta_text': value['ctaText'],
-        'cta_url': value['ctaUrl'],
+        'headline': value.headline,
+        'subheadline': value.subheadline,
+        'body': value.body,
+        'cta_text': value.ctaText,
+        'cta_url': value.ctaUrl,
     };
 }
 

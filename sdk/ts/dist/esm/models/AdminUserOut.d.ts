@@ -10,8 +10,6 @@
  * Do not edit the class manually.
  */
 import type { AdminUserRoleOverrides } from './AdminUserRoleOverrides';
-import type { AdminUserOrganization } from './AdminUserOrganization';
-import type { AdminUserOrganizationMembership } from './AdminUserOrganizationMembership';
 /**
  *
  * @export
@@ -20,94 +18,94 @@ import type { AdminUserOrganizationMembership } from './AdminUserOrganizationMem
 export interface AdminUserOut {
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    id: string;
+    id: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    email?: string | null;
+    email?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    fullName?: string | null;
+    fullName?: any | null;
     /**
      *
-     * @type {string}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    pictureUrl?: string | null;
+    pictureUrl?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    isActive: boolean;
+    isActive: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    createdAt: Date;
+    createdAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    updatedAt: Date;
+    updatedAt: any | null;
     /**
      *
-     * @type {Date}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    lastLoginAt?: Date | null;
+    lastLoginAt?: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    groups?: Array<string>;
+    groups?: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    roles?: Array<string>;
+    roles?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    isAdmin?: boolean;
+    isAdmin?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    quotaCredentials?: number | null;
+    quotaCredentials?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    quotaSiteConfigs?: number | null;
+    quotaSiteConfigs?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    quotaFeeds?: number | null;
+    quotaFeeds?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    quotaApiTokens?: number | null;
+    quotaApiTokens?: any | null;
     /**
      *
      * @type {AdminUserRoleOverrides}
@@ -116,28 +114,27 @@ export interface AdminUserOut {
     roleOverrides?: AdminUserRoleOverrides;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    organizationIds?: Array<string>;
+    organizationIds?: any | null;
     /**
      *
-     * @type {Array<AdminUserOrganizationMembership>}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    organizationMemberships?: Array<AdminUserOrganizationMembership>;
+    organizationMemberships?: any | null;
     /**
      *
-     * @type {Array<AdminUserOrganization>}
+     * @type {any}
      * @memberof AdminUserOut
      */
-    organizations?: Array<AdminUserOrganization>;
+    organizations?: any | null;
 }
 /**
  * Check if a given object implements the AdminUserOut interface.
  */
-export declare function instanceOfAdminUserOut(value: object): value is AdminUserOut;
+export declare function instanceOfAdminUserOut(value: object): boolean;
 export declare function AdminUserOutFromJSON(json: any): AdminUserOut;
 export declare function AdminUserOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminUserOut;
-export declare function AdminUserOutToJSON(json: any): AdminUserOut;
-export declare function AdminUserOutToJSONTyped(value?: AdminUserOut | null, ignoreDiscriminator?: boolean): any;
+export declare function AdminUserOutToJSON(value?: AdminUserOut | null): any;

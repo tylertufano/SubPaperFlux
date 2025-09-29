@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,23 +21,25 @@ import { mapValues } from '../runtime';
 export interface AdminRoleUpdate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleUpdate
      */
-    name?: string | null;
+    name?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof AdminRoleUpdate
      */
-    description?: string | null;
+    description?: any | null;
 }
 
 /**
  * Check if a given object implements the AdminRoleUpdate interface.
  */
-export function instanceOfAdminRoleUpdate(value: object): value is AdminRoleUpdate {
-    return true;
+export function instanceOfAdminRoleUpdate(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function AdminRoleUpdateFromJSON(json: any): AdminRoleUpdate {
@@ -45,29 +47,27 @@ export function AdminRoleUpdateFromJSON(json: any): AdminRoleUpdate {
 }
 
 export function AdminRoleUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdminRoleUpdate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
-        'name': json['name'] == null ? undefined : json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
+        'name': !exists(json, 'name') ? undefined : json['name'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
     };
 }
 
-export function AdminRoleUpdateToJSON(json: any): AdminRoleUpdate {
-    return AdminRoleUpdateToJSONTyped(json, false);
-}
-
-export function AdminRoleUpdateToJSONTyped(value?: AdminRoleUpdate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function AdminRoleUpdateToJSON(value?: AdminRoleUpdate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'name': value['name'],
-        'description': value['description'],
+        'name': value.name,
+        'description': value.description,
     };
 }
 

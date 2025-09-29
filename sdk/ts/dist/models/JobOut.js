@@ -13,22 +13,19 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JobOutToJSONTyped = exports.JobOutToJSON = exports.JobOutFromJSONTyped = exports.JobOutFromJSON = exports.instanceOfJobOut = void 0;
+exports.JobOutToJSON = exports.JobOutFromJSONTyped = exports.JobOutFromJSON = exports.instanceOfJobOut = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the JobOut interface.
  */
 function instanceOfJobOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('type' in value) || value['type'] === undefined)
-        return false;
-    if (!('status' in value) || value['status'] === undefined)
-        return false;
-    if (!('attempts' in value) || value['attempts'] === undefined)
-        return false;
-    if (!('payload' in value) || value['payload'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "type" in value;
+    isInstance = isInstance && "status" in value;
+    isInstance = isInstance && "attempts" in value;
+    isInstance = isInstance && "payload" in value;
+    return isInstance;
 }
 exports.instanceOfJobOut = instanceOfJobOut;
 function JobOutFromJSON(json) {
@@ -36,7 +33,7 @@ function JobOutFromJSON(json) {
 }
 exports.JobOutFromJSON = JobOutFromJSON;
 function JobOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
@@ -44,32 +41,31 @@ function JobOutFromJSONTyped(json, ignoreDiscriminator) {
         'type': json['type'],
         'status': json['status'],
         'attempts': json['attempts'],
-        'lastError': json['last_error'] == null ? undefined : json['last_error'],
-        'availableAt': json['available_at'] == null ? undefined : json['available_at'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'lastError': !(0, runtime_1.exists)(json, 'last_error') ? undefined : json['last_error'],
+        'availableAt': !(0, runtime_1.exists)(json, 'available_at') ? undefined : json['available_at'],
+        'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
-        'details': json['details'] == null ? undefined : json['details'],
+        'details': !(0, runtime_1.exists)(json, 'details') ? undefined : json['details'],
     };
 }
 exports.JobOutFromJSONTyped = JobOutFromJSONTyped;
-function JobOutToJSON(json) {
-    return JobOutToJSONTyped(json, false);
-}
-exports.JobOutToJSON = JobOutToJSON;
-function JobOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function JobOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'type': value['type'],
-        'status': value['status'],
-        'attempts': value['attempts'],
-        'last_error': value['lastError'],
-        'available_at': value['availableAt'],
-        'owner_user_id': value['ownerUserId'],
-        'payload': value['payload'],
-        'details': value['details'],
+        'id': value.id,
+        'type': value.type,
+        'status': value.status,
+        'attempts': value.attempts,
+        'last_error': value.lastError,
+        'available_at': value.availableAt,
+        'owner_user_id': value.ownerUserId,
+        'payload': value.payload,
+        'details': value.details,
     };
 }
-exports.JobOutToJSONTyped = JobOutToJSONTyped;
+exports.JobOutToJSON = JobOutToJSON;

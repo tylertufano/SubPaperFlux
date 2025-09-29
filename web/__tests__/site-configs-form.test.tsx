@@ -7,7 +7,7 @@ import SiteConfigs from '../pages/site-configs'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
-import type { SiteConfigsPageItemsInner } from '../sdk/src/models/SiteConfigsPageItemsInner'
+import type { SiteConfigRecord } from '../lib/openapi'
 
 const openApiSpies = vi.hoisted(() => ({
   listSiteConfigs: vi.fn(),
@@ -112,7 +112,7 @@ export const defaultSiteConfigsResponse: SiteConfigsPage = {
 }
 
 export type SiteConfigsSetupOptions = {
-  data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[] | SiteConfigsPageItemsInner[]
+  data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[] | SiteConfigRecord[]
   locale?: string
   swr?: RenderWithSWROptions['swr']
 }

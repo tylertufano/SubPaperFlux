@@ -11,37 +11,38 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the AdminRoleCreate interface.
  */
 export function instanceOfAdminRoleCreate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function AdminRoleCreateFromJSON(json) {
     return AdminRoleCreateFromJSONTyped(json, false);
 }
 export function AdminRoleCreateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
-        'description': json['description'] == null ? undefined : json['description'],
-        'isSystem': json['is_system'] == null ? undefined : json['is_system'],
+        'description': !exists(json, 'description') ? undefined : json['description'],
+        'isSystem': !exists(json, 'is_system') ? undefined : json['is_system'],
     };
 }
-export function AdminRoleCreateToJSON(json) {
-    return AdminRoleCreateToJSONTyped(json, false);
-}
-export function AdminRoleCreateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function AdminRoleCreateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
-        'description': value['description'],
-        'is_system': value['isSystem'],
+        'name': value.name,
+        'description': value.description,
+        'is_system': value.isSystem,
     };
 }

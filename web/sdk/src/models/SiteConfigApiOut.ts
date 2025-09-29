@@ -12,13 +12,12 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 import type { ApiConfig } from './ApiConfig';
 import {
     ApiConfigFromJSON,
     ApiConfigFromJSONTyped,
     ApiConfigToJSON,
-    ApiConfigToJSONTyped,
 } from './ApiConfig';
 
 /**
@@ -29,52 +28,52 @@ import {
 export interface SiteConfigApiOut {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    name: string;
+    name: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    siteUrl: string;
+    siteUrl: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    successTextClass?: string;
+    successTextClass?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    expectedSuccessText?: string;
+    expectedSuccessText?: any | null;
     /**
      * 
-     * @type {Array<string>}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    requiredCookies?: Array<string>;
+    requiredCookies?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    id: string;
+    id: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteConfigApiOut
      */
-    loginType?: SiteConfigApiOutLoginTypeEnum;
+    loginType?: any | null;
     /**
      * 
      * @type {ApiConfig}
@@ -83,25 +82,17 @@ export interface SiteConfigApiOut {
     apiConfig: ApiConfig;
 }
 
-
-/**
- * @export
- */
-export const SiteConfigApiOutLoginTypeEnum = {
-    Api: 'api'
-} as const;
-export type SiteConfigApiOutLoginTypeEnum = typeof SiteConfigApiOutLoginTypeEnum[keyof typeof SiteConfigApiOutLoginTypeEnum];
-
-
 /**
  * Check if a given object implements the SiteConfigApiOut interface.
  */
-export function instanceOfSiteConfigApiOut(value: object): value is SiteConfigApiOut {
-    if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('siteUrl' in value) || value['siteUrl'] === undefined) return false;
-    if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('apiConfig' in value) || value['apiConfig'] === undefined) return false;
-    return true;
+export function instanceOfSiteConfigApiOut(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    isInstance = isInstance && "siteUrl" in value;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "apiConfig" in value;
+
+    return isInstance;
 }
 
 export function SiteConfigApiOutFromJSON(json: any): SiteConfigApiOut {
@@ -109,43 +100,41 @@ export function SiteConfigApiOutFromJSON(json: any): SiteConfigApiOut {
 }
 
 export function SiteConfigApiOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteConfigApiOut {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'name': json['name'],
         'siteUrl': json['site_url'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
-        'successTextClass': json['success_text_class'] == null ? undefined : json['success_text_class'],
-        'expectedSuccessText': json['expected_success_text'] == null ? undefined : json['expected_success_text'],
-        'requiredCookies': json['required_cookies'] == null ? undefined : json['required_cookies'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'successTextClass': !exists(json, 'success_text_class') ? undefined : json['success_text_class'],
+        'expectedSuccessText': !exists(json, 'expected_success_text') ? undefined : json['expected_success_text'],
+        'requiredCookies': !exists(json, 'required_cookies') ? undefined : json['required_cookies'],
         'id': json['id'],
-        'loginType': json['login_type'] == null ? undefined : json['login_type'],
+        'loginType': !exists(json, 'login_type') ? undefined : json['login_type'],
         'apiConfig': ApiConfigFromJSON(json['api_config']),
     };
 }
 
-export function SiteConfigApiOutToJSON(json: any): SiteConfigApiOut {
-    return SiteConfigApiOutToJSONTyped(json, false);
-}
-
-export function SiteConfigApiOutToJSONTyped(value?: SiteConfigApiOut | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteConfigApiOutToJSON(value?: SiteConfigApiOut | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'name': value['name'],
-        'site_url': value['siteUrl'],
-        'owner_user_id': value['ownerUserId'],
-        'success_text_class': value['successTextClass'],
-        'expected_success_text': value['expectedSuccessText'],
-        'required_cookies': value['requiredCookies'],
-        'id': value['id'],
-        'login_type': value['loginType'],
-        'api_config': ApiConfigToJSON(value['apiConfig']),
+        'name': value.name,
+        'site_url': value.siteUrl,
+        'owner_user_id': value.ownerUserId,
+        'success_text_class': value.successTextClass,
+        'expected_success_text': value.expectedSuccessText,
+        'required_cookies': value.requiredCookies,
+        'id': value.id,
+        'login_type': value.loginType,
+        'api_config': ApiConfigToJSON(value.apiConfig),
     };
 }
 

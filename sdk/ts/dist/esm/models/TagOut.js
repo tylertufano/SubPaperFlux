@@ -11,39 +11,39 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the TagOut interface.
  */
 export function instanceOfTagOut(value) {
-    if (!('id' in value) || value['id'] === undefined)
-        return false;
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function TagOutFromJSON(json) {
     return TagOutFromJSONTyped(json, false);
 }
 export function TagOutFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'id': json['id'],
         'name': json['name'],
-        'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
+        'bookmarkCount': !exists(json, 'bookmark_count') ? undefined : json['bookmark_count'],
     };
 }
-export function TagOutToJSON(json) {
-    return TagOutToJSONTyped(json, false);
-}
-export function TagOutToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function TagOutToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'id': value['id'],
-        'name': value['name'],
-        'bookmark_count': value['bookmarkCount'],
+        'id': value.id,
+        'name': value.name,
+        'bookmark_count': value.bookmarkCount,
     };
 }

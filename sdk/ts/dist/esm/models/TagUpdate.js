@@ -15,29 +15,29 @@
  * Check if a given object implements the TagUpdate interface.
  */
 export function instanceOfTagUpdate(value) {
-    if (!('name' in value) || value['name'] === undefined)
-        return false;
-    return true;
+    let isInstance = true;
+    isInstance = isInstance && "name" in value;
+    return isInstance;
 }
 export function TagUpdateFromJSON(json) {
     return TagUpdateFromJSONTyped(json, false);
 }
 export function TagUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         'name': json['name'],
     };
 }
-export function TagUpdateToJSON(json) {
-    return TagUpdateToJSONTyped(json, false);
-}
-export function TagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function TagUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'name': value['name'],
+        'name': value.name,
     };
 }

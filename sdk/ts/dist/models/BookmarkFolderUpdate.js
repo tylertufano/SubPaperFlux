@@ -13,12 +13,14 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BookmarkFolderUpdateToJSONTyped = exports.BookmarkFolderUpdateToJSON = exports.BookmarkFolderUpdateFromJSONTyped = exports.BookmarkFolderUpdateFromJSON = exports.instanceOfBookmarkFolderUpdate = void 0;
+exports.BookmarkFolderUpdateToJSON = exports.BookmarkFolderUpdateFromJSONTyped = exports.BookmarkFolderUpdateFromJSON = exports.instanceOfBookmarkFolderUpdate = void 0;
+const runtime_1 = require("../runtime");
 /**
  * Check if a given object implements the BookmarkFolderUpdate interface.
  */
 function instanceOfBookmarkFolderUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 exports.instanceOfBookmarkFolderUpdate = instanceOfBookmarkFolderUpdate;
 function BookmarkFolderUpdateFromJSON(json) {
@@ -26,28 +28,27 @@ function BookmarkFolderUpdateFromJSON(json) {
 }
 exports.BookmarkFolderUpdateFromJSON = BookmarkFolderUpdateFromJSON;
 function BookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'folderId': json['folder_id'] == null ? undefined : json['folder_id'],
-        'folderName': json['folder_name'] == null ? undefined : json['folder_name'],
-        'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
+        'folderId': !(0, runtime_1.exists)(json, 'folder_id') ? undefined : json['folder_id'],
+        'folderName': !(0, runtime_1.exists)(json, 'folder_name') ? undefined : json['folder_name'],
+        'instapaperFolderId': !(0, runtime_1.exists)(json, 'instapaper_folder_id') ? undefined : json['instapaper_folder_id'],
     };
 }
 exports.BookmarkFolderUpdateFromJSONTyped = BookmarkFolderUpdateFromJSONTyped;
-function BookmarkFolderUpdateToJSON(json) {
-    return BookmarkFolderUpdateToJSONTyped(json, false);
-}
-exports.BookmarkFolderUpdateToJSON = BookmarkFolderUpdateToJSON;
-function BookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+function BookmarkFolderUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'folder_id': value['folderId'],
-        'folder_name': value['folderName'],
-        'instapaper_folder_id': value['instapaperFolderId'],
+        'folder_id': value.folderId,
+        'folder_name': value.folderName,
+        'instapaper_folder_id': value.instapaperFolderId,
     };
 }
-exports.BookmarkFolderUpdateToJSONTyped = BookmarkFolderUpdateToJSONTyped;
+exports.BookmarkFolderUpdateToJSON = BookmarkFolderUpdateToJSON;

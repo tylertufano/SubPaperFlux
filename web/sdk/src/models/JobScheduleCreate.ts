@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -21,49 +21,51 @@ import { mapValues } from '../runtime';
 export interface JobScheduleCreate {
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleCreate
      */
-    jobType: string;
+    jobType: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
      * @memberof JobScheduleCreate
      */
-    payload?: { [key: string]: any; };
+    payload?: { [key: string]: any; } | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleCreate
      */
-    frequency: string;
+    frequency: any | null;
     /**
      * 
-     * @type {Date}
+     * @type {any}
      * @memberof JobScheduleCreate
      */
-    nextRunAt?: Date | null;
+    nextRunAt?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof JobScheduleCreate
      */
-    isActive?: boolean;
+    isActive?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof JobScheduleCreate
      */
-    ownerUserId?: string | null;
+    ownerUserId?: any | null;
 }
 
 /**
  * Check if a given object implements the JobScheduleCreate interface.
  */
-export function instanceOfJobScheduleCreate(value: object): value is JobScheduleCreate {
-    if (!('jobType' in value) || value['jobType'] === undefined) return false;
-    if (!('frequency' in value) || value['frequency'] === undefined) return false;
-    return true;
+export function instanceOfJobScheduleCreate(value: object): boolean {
+    let isInstance = true;
+    isInstance = isInstance && "jobType" in value;
+    isInstance = isInstance && "frequency" in value;
+
+    return isInstance;
 }
 
 export function JobScheduleCreateFromJSON(json: any): JobScheduleCreate {
@@ -71,37 +73,35 @@ export function JobScheduleCreateFromJSON(json: any): JobScheduleCreate {
 }
 
 export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: boolean): JobScheduleCreate {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
         'jobType': json['job_type'],
-        'payload': json['payload'] == null ? undefined : json['payload'],
+        'payload': !exists(json, 'payload') ? undefined : json['payload'],
         'frequency': json['frequency'],
-        'nextRunAt': json['next_run_at'] == null ? undefined : (new Date(json['next_run_at'])),
-        'isActive': json['is_active'] == null ? undefined : json['is_active'],
-        'ownerUserId': json['owner_user_id'] == null ? undefined : json['owner_user_id'],
+        'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
+        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
+        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
     };
 }
 
-export function JobScheduleCreateToJSON(json: any): JobScheduleCreate {
-    return JobScheduleCreateToJSONTyped(json, false);
-}
-
-export function JobScheduleCreateToJSONTyped(value?: JobScheduleCreate | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
-        'job_type': value['jobType'],
-        'payload': value['payload'],
-        'frequency': value['frequency'],
-        'next_run_at': value['nextRunAt'] === null ? null : ((value['nextRunAt'] as any)?.toISOString()),
-        'is_active': value['isActive'],
-        'owner_user_id': value['ownerUserId'],
+        'job_type': value.jobType,
+        'payload': value.payload,
+        'frequency': value.frequency,
+        'next_run_at': value.nextRunAt,
+        'is_active': value.isActive,
+        'owner_user_id': value.ownerUserId,
     };
 }
 

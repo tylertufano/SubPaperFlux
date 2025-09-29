@@ -11,34 +11,35 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { MeNotificationPreferencesUpdateFromJSON, MeNotificationPreferencesUpdateToJSON, } from './MeNotificationPreferencesUpdate';
+import { exists } from '../runtime';
 /**
  * Check if a given object implements the MeUpdate interface.
  */
 export function instanceOfMeUpdate(value) {
-    return true;
+    let isInstance = true;
+    return isInstance;
 }
 export function MeUpdateFromJSON(json) {
     return MeUpdateFromJSONTyped(json, false);
 }
 export function MeUpdateFromJSONTyped(json, ignoreDiscriminator) {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
-        'locale': json['locale'] == null ? undefined : json['locale'],
-        'notificationPreferences': json['notification_preferences'] == null ? undefined : MeNotificationPreferencesUpdateFromJSON(json['notification_preferences']),
+        'locale': !exists(json, 'locale') ? undefined : json['locale'],
+        'notificationPreferences': !exists(json, 'notification_preferences') ? undefined : json['notification_preferences'],
     };
 }
-export function MeUpdateToJSON(json) {
-    return MeUpdateToJSONTyped(json, false);
-}
-export function MeUpdateToJSONTyped(value, ignoreDiscriminator = false) {
-    if (value == null) {
-        return value;
+export function MeUpdateToJSON(value) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (value === null) {
+        return null;
     }
     return {
-        'locale': value['locale'],
-        'notification_preferences': MeNotificationPreferencesUpdateToJSON(value['notificationPreferences']),
+        'locale': value.locale,
+        'notification_preferences': value.notificationPreferences,
     };
 }

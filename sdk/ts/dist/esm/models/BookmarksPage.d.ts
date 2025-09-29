@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { BookmarkOut } from './BookmarkOut';
 /**
  *
  * @export
@@ -18,46 +17,45 @@ import type { BookmarkOut } from './BookmarkOut';
 export interface BookmarksPage {
     /**
      *
-     * @type {Array<BookmarkOut>}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    items: Array<BookmarkOut>;
+    items: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    total: number;
+    total: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    page: number;
+    page: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    size: number;
+    size: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    hasNext?: boolean;
+    hasNext?: any | null;
     /**
      *
-     * @type {number}
+     * @type {any}
      * @memberof BookmarksPage
      */
-    totalPages?: number;
+    totalPages?: any | null;
 }
 /**
  * Check if a given object implements the BookmarksPage interface.
  */
-export declare function instanceOfBookmarksPage(value: object): value is BookmarksPage;
+export declare function instanceOfBookmarksPage(value: object): boolean;
 export declare function BookmarksPageFromJSON(json: any): BookmarksPage;
 export declare function BookmarksPageFromJSONTyped(json: any, ignoreDiscriminator: boolean): BookmarksPage;
-export declare function BookmarksPageToJSON(json: any): BookmarksPage;
-export declare function BookmarksPageToJSONTyped(value?: BookmarksPage | null, ignoreDiscriminator?: boolean): any;
+export declare function BookmarksPageToJSON(value?: BookmarksPage | null): any;

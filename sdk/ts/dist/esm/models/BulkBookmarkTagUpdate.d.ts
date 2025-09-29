@@ -17,28 +17,27 @@
 export interface BulkBookmarkTagUpdate {
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof BulkBookmarkTagUpdate
      */
-    bookmarkIds: Array<string>;
+    bookmarkIds: any | null;
     /**
      *
-     * @type {Array<string>}
+     * @type {any}
      * @memberof BulkBookmarkTagUpdate
      */
-    tags?: Array<string>;
+    tags?: any | null;
     /**
      *
-     * @type {boolean}
+     * @type {any}
      * @memberof BulkBookmarkTagUpdate
      */
-    clear?: boolean;
+    clear?: any | null;
 }
 /**
  * Check if a given object implements the BulkBookmarkTagUpdate interface.
  */
-export declare function instanceOfBulkBookmarkTagUpdate(value: object): value is BulkBookmarkTagUpdate;
+export declare function instanceOfBulkBookmarkTagUpdate(value: object): boolean;
 export declare function BulkBookmarkTagUpdateFromJSON(json: any): BulkBookmarkTagUpdate;
 export declare function BulkBookmarkTagUpdateFromJSONTyped(json: any, ignoreDiscriminator: boolean): BulkBookmarkTagUpdate;
-export declare function BulkBookmarkTagUpdateToJSON(json: any): BulkBookmarkTagUpdate;
-export declare function BulkBookmarkTagUpdateToJSONTyped(value?: BulkBookmarkTagUpdate | null, ignoreDiscriminator?: boolean): any;
+export declare function BulkBookmarkTagUpdateToJSON(value?: BulkBookmarkTagUpdate | null): any;

@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { JobRequest } from '../models/index';
+import type { JobRequest } from '../models';
 export interface EnqueueJobJobsPostRequest {
     jobRequest: JobRequest;
 }

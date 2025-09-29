@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { exists, mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -22,47 +22,49 @@ export interface SiteSetupStatus {
     [key: string]: any | any;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    completed?: boolean;
+    completed?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    currentStep?: string | null;
+    currentStep?: any | null;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    lastCompletedStep?: string | null;
+    lastCompletedStep?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    welcomeConfigured?: boolean | null;
+    welcomeConfigured?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    credentialsCreated?: boolean | null;
+    credentialsCreated?: any | null;
     /**
      * 
-     * @type {boolean}
+     * @type {any}
      * @memberof SiteSetupStatus
      */
-    feedsImported?: boolean | null;
+    feedsImported?: any | null;
 }
 
 /**
  * Check if a given object implements the SiteSetupStatus interface.
  */
-export function instanceOfSiteSetupStatus(value: object): value is SiteSetupStatus {
-    return true;
+export function instanceOfSiteSetupStatus(value: object): boolean {
+    let isInstance = true;
+
+    return isInstance;
 }
 
 export function SiteSetupStatusFromJSON(json: any): SiteSetupStatus {
@@ -70,39 +72,37 @@ export function SiteSetupStatusFromJSON(json: any): SiteSetupStatus {
 }
 
 export function SiteSetupStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): SiteSetupStatus {
-    if (json == null) {
+    if ((json === undefined) || (json === null)) {
         return json;
     }
     return {
         
             ...json,
-        'completed': json['completed'] == null ? undefined : json['completed'],
-        'currentStep': json['current_step'] == null ? undefined : json['current_step'],
-        'lastCompletedStep': json['last_completed_step'] == null ? undefined : json['last_completed_step'],
-        'welcomeConfigured': json['welcome_configured'] == null ? undefined : json['welcome_configured'],
-        'credentialsCreated': json['credentials_created'] == null ? undefined : json['credentials_created'],
-        'feedsImported': json['feeds_imported'] == null ? undefined : json['feeds_imported'],
+        'completed': !exists(json, 'completed') ? undefined : json['completed'],
+        'currentStep': !exists(json, 'current_step') ? undefined : json['current_step'],
+        'lastCompletedStep': !exists(json, 'last_completed_step') ? undefined : json['last_completed_step'],
+        'welcomeConfigured': !exists(json, 'welcome_configured') ? undefined : json['welcome_configured'],
+        'credentialsCreated': !exists(json, 'credentials_created') ? undefined : json['credentials_created'],
+        'feedsImported': !exists(json, 'feeds_imported') ? undefined : json['feeds_imported'],
     };
 }
 
-export function SiteSetupStatusToJSON(json: any): SiteSetupStatus {
-    return SiteSetupStatusToJSONTyped(json, false);
-}
-
-export function SiteSetupStatusToJSONTyped(value?: SiteSetupStatus | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
+export function SiteSetupStatusToJSON(value?: SiteSetupStatus | null): any {
+    if (value === undefined) {
+        return undefined;
     }
-
+    if (value === null) {
+        return null;
+    }
     return {
         
             ...value,
-        'completed': value['completed'],
-        'current_step': value['currentStep'],
-        'last_completed_step': value['lastCompletedStep'],
-        'welcome_configured': value['welcomeConfigured'],
-        'credentials_created': value['credentialsCreated'],
-        'feeds_imported': value['feedsImported'],
+        'completed': value.completed,
+        'current_step': value.currentStep,
+        'last_completed_step': value.lastCompletedStep,
+        'welcome_configured': value.welcomeConfigured,
+        'credentials_created': value.credentialsCreated,
+        'feeds_imported': value.feedsImported,
     };
 }
 

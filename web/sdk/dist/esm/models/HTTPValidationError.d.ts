@@ -9,7 +9,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { ValidationError } from './ValidationError';
 /**
  *
  * @export
@@ -18,16 +17,15 @@ import type { ValidationError } from './ValidationError';
 export interface HTTPValidationError {
     /**
      *
-     * @type {Array<ValidationError>}
+     * @type {any}
      * @memberof HTTPValidationError
      */
-    detail?: Array<ValidationError>;
+    detail?: any | null;
 }
 /**
  * Check if a given object implements the HTTPValidationError interface.
  */
-export declare function instanceOfHTTPValidationError(value: object): value is HTTPValidationError;
+export declare function instanceOfHTTPValidationError(value: object): boolean;
 export declare function HTTPValidationErrorFromJSON(json: any): HTTPValidationError;
 export declare function HTTPValidationErrorFromJSONTyped(json: any, ignoreDiscriminator: boolean): HTTPValidationError;
-export declare function HTTPValidationErrorToJSON(json: any): HTTPValidationError;
-export declare function HTTPValidationErrorToJSONTyped(value?: HTTPValidationError | null, ignoreDiscriminator?: boolean): any;
+export declare function HTTPValidationErrorToJSON(value?: HTTPValidationError | null): any;

@@ -24,7 +24,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeApi = void 0;
 const runtime = require("../runtime");
-const index_1 = require("../models/index");
+const models_1 = require("../models");
 /**
  *
  */
@@ -34,8 +34,8 @@ class MeApi extends runtime.BaseAPI {
      */
     createTokenV1MeTokensPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['apiTokenCreate'] == null) {
-                throw new runtime.RequiredError('apiTokenCreate', 'Required parameter "apiTokenCreate" was null or undefined when calling createTokenV1MeTokensPost().');
+            if (requestParameters.apiTokenCreate === null || requestParameters.apiTokenCreate === undefined) {
+                throw new runtime.RequiredError('apiTokenCreate', 'Required parameter requestParameters.apiTokenCreate was null or undefined when calling createTokenV1MeTokensPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -47,15 +47,14 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me/tokens`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me/tokens`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.ApiTokenCreateToJSON)(requestParameters['apiTokenCreate']),
+                body: (0, models_1.ApiTokenCreateToJSON)(requestParameters.apiTokenCreate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ApiTokenWithSecretFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.ApiTokenWithSecretFromJSON)(jsonValue));
         });
     }
     /**
@@ -81,14 +80,13 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.MeOutFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.MeOutFromJSON)(jsonValue));
         });
     }
     /**
@@ -105,8 +103,8 @@ class MeApi extends runtime.BaseAPI {
      */
     getTokenV1MeTokensTokenIdGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tokenId'] == null) {
-                throw new runtime.RequiredError('tokenId', 'Required parameter "tokenId" was null or undefined when calling getTokenV1MeTokensTokenIdGet().');
+            if (requestParameters.tokenId === null || requestParameters.tokenId === undefined) {
+                throw new runtime.RequiredError('tokenId', 'Required parameter requestParameters.tokenId was null or undefined when calling getTokenV1MeTokensTokenIdGet.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -117,15 +115,13 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me/tokens/{token_id}`;
-            urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me/tokens/{token_id}`.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters.tokenId))),
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ApiTokenOutFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.ApiTokenOutFromJSON)(jsonValue));
         });
     }
     /**
@@ -143,14 +139,14 @@ class MeApi extends runtime.BaseAPI {
     listTokensV1MeTokensGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters['page'] != null) {
-                queryParameters['page'] = requestParameters['page'];
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
             }
-            if (requestParameters['size'] != null) {
-                queryParameters['size'] = requestParameters['size'];
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
             }
-            if (requestParameters['includeRevoked'] != null) {
-                queryParameters['include_revoked'] = requestParameters['includeRevoked'];
+            if (requestParameters.includeRevoked !== undefined) {
+                queryParameters['include_revoked'] = requestParameters.includeRevoked;
             }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
@@ -160,14 +156,13 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me/tokens`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me/tokens`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ApiTokensPageFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.ApiTokensPageFromJSON)(jsonValue));
         });
     }
     /**
@@ -184,8 +179,8 @@ class MeApi extends runtime.BaseAPI {
      */
     revokeTokenV1MeTokensTokenIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['tokenId'] == null) {
-                throw new runtime.RequiredError('tokenId', 'Required parameter "tokenId" was null or undefined when calling revokeTokenV1MeTokensTokenIdDelete().');
+            if (requestParameters.tokenId === null || requestParameters.tokenId === undefined) {
+                throw new runtime.RequiredError('tokenId', 'Required parameter requestParameters.tokenId was null or undefined when calling revokeTokenV1MeTokensTokenIdDelete.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -196,10 +191,8 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me/tokens/{token_id}`;
-            urlPath = urlPath.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters['tokenId'])));
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me/tokens/{token_id}`.replace(`{${"token_id"}}`, encodeURIComponent(String(requestParameters.tokenId))),
                 method: 'DELETE',
                 headers: headerParameters,
                 query: queryParameters,
@@ -220,8 +213,8 @@ class MeApi extends runtime.BaseAPI {
      */
     updateMeV1MePatchRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['meUpdate'] == null) {
-                throw new runtime.RequiredError('meUpdate', 'Required parameter "meUpdate" was null or undefined when calling updateMeV1MePatch().');
+            if (requestParameters.meUpdate === null || requestParameters.meUpdate === undefined) {
+                throw new runtime.RequiredError('meUpdate', 'Required parameter requestParameters.meUpdate was null or undefined when calling updateMeV1MePatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -233,15 +226,14 @@ class MeApi extends runtime.BaseAPI {
                     headerParameters["Authorization"] = `Bearer ${tokenString}`;
                 }
             }
-            let urlPath = `/v1/me`;
             const response = yield this.request({
-                path: urlPath,
+                path: `/v1/me`,
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.MeUpdateToJSON)(requestParameters['meUpdate']),
+                body: (0, models_1.MeUpdateToJSON)(requestParameters.meUpdate),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.MeOutFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.MeOutFromJSON)(jsonValue));
         });
     }
     /**
