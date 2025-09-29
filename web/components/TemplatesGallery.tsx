@@ -190,7 +190,7 @@ export default function TemplatesGallery({
                 <div>
                   <dt className="font-medium text-gray-700">{t('templates_categories_label')}:</dt>
                   <dd className="mt-1 flex flex-wrap gap-2">
-                    {(template.categories ?? []).map((categoryId) => (
+                    {(template.categories ?? []).map((categoryId: string) => (
                       <span
                         key={`${template.id}-${categoryId}`}
                         className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
