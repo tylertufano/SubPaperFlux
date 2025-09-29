@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const defaultWebBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
+const defaultWebBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const defaultApiBaseURL =
   process.env.NEXT_PUBLIC_API_BASE ?? process.env.API_BASE ?? 'http://127.0.0.1:8000'
 const baseURL = defaultWebBaseURL
