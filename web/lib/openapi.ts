@@ -1637,6 +1637,17 @@ export const v1 = {
 
   getStatusV1StatusGet: async () => (await getClients()).v1.getStatusV1StatusGet(),
   dbStatusV1StatusDbGet: async () => (await getClients()).v1.dbStatusV1StatusDbGet(),
+  integrationsStatusV1StatusIntegrationsGet: async ({
+    instapaperCredId,
+    minifluxCredId,
+  }: {
+    instapaperCredId?: string | null
+    minifluxCredId?: string | null
+  } = {}) =>
+    (await getClients()).v1.integrationsStatusV1StatusIntegrationsGet({
+      instapaperCredId: instapaperCredId ?? undefined,
+      minifluxCredId: minifluxCredId ?? undefined,
+    }),
 
   postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).admin.postgresPrepareAdminPostgresPreparePost(),
   postgresEnableRlsV1AdminPostgresEnableRlsPost: async () =>
