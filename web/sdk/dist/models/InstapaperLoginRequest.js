@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfInstapaperLoginRequest = instanceOfInstapaperLoginRequest;
-exports.InstapaperLoginRequestFromJSON = InstapaperLoginRequestFromJSON;
-exports.InstapaperLoginRequestFromJSONTyped = InstapaperLoginRequestFromJSONTyped;
-exports.InstapaperLoginRequestToJSON = InstapaperLoginRequestToJSON;
-exports.InstapaperLoginRequestToJSONTyped = InstapaperLoginRequestToJSONTyped;
+exports.InstapaperLoginRequestToJSONTyped = exports.InstapaperLoginRequestToJSON = exports.InstapaperLoginRequestFromJSONTyped = exports.InstapaperLoginRequestFromJSON = exports.instanceOfInstapaperLoginRequest = void 0;
 /**
  * Check if a given object implements the InstapaperLoginRequest interface.
  */
@@ -30,9 +26,11 @@ function instanceOfInstapaperLoginRequest(value) {
         return false;
     return true;
 }
+exports.instanceOfInstapaperLoginRequest = instanceOfInstapaperLoginRequest;
 function InstapaperLoginRequestFromJSON(json) {
     return InstapaperLoginRequestFromJSONTyped(json, false);
 }
+exports.InstapaperLoginRequestFromJSON = InstapaperLoginRequestFromJSON;
 function InstapaperLoginRequestFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -44,9 +42,11 @@ function InstapaperLoginRequestFromJSONTyped(json, ignoreDiscriminator) {
         'scopeGlobal': json['scope_global'] == null ? undefined : json['scope_global'],
     };
 }
+exports.InstapaperLoginRequestFromJSONTyped = InstapaperLoginRequestFromJSONTyped;
 function InstapaperLoginRequestToJSON(json) {
     return InstapaperLoginRequestToJSONTyped(json, false);
 }
+exports.InstapaperLoginRequestToJSON = InstapaperLoginRequestToJSON;
 function InstapaperLoginRequestToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -58,3 +58,4 @@ function InstapaperLoginRequestToJSONTyped(value, ignoreDiscriminator = false) {
         'scope_global': value['scopeGlobal'],
     };
 }
+exports.InstapaperLoginRequestToJSONTyped = InstapaperLoginRequestToJSONTyped;

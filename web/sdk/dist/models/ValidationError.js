@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfValidationError = instanceOfValidationError;
-exports.ValidationErrorFromJSON = ValidationErrorFromJSON;
-exports.ValidationErrorFromJSONTyped = ValidationErrorFromJSONTyped;
-exports.ValidationErrorToJSON = ValidationErrorToJSON;
-exports.ValidationErrorToJSONTyped = ValidationErrorToJSONTyped;
+exports.ValidationErrorToJSONTyped = exports.ValidationErrorToJSON = exports.ValidationErrorFromJSONTyped = exports.ValidationErrorFromJSON = exports.instanceOfValidationError = void 0;
 const ValidationErrorLocInner_1 = require("./ValidationErrorLocInner");
 /**
  * Check if a given object implements the ValidationError interface.
@@ -31,9 +27,11 @@ function instanceOfValidationError(value) {
         return false;
     return true;
 }
+exports.instanceOfValidationError = instanceOfValidationError;
 function ValidationErrorFromJSON(json) {
     return ValidationErrorFromJSONTyped(json, false);
 }
+exports.ValidationErrorFromJSON = ValidationErrorFromJSON;
 function ValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -44,9 +42,11 @@ function ValidationErrorFromJSONTyped(json, ignoreDiscriminator) {
         'type': json['type'],
     };
 }
+exports.ValidationErrorFromJSONTyped = ValidationErrorFromJSONTyped;
 function ValidationErrorToJSON(json) {
     return ValidationErrorToJSONTyped(json, false);
 }
+exports.ValidationErrorToJSON = ValidationErrorToJSON;
 function ValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -57,3 +57,4 @@ function ValidationErrorToJSONTyped(value, ignoreDiscriminator = false) {
         'type': value['type'],
     };
 }
+exports.ValidationErrorToJSONTyped = ValidationErrorToJSONTyped;

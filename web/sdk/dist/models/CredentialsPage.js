@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfCredentialsPage = instanceOfCredentialsPage;
-exports.CredentialsPageFromJSON = CredentialsPageFromJSON;
-exports.CredentialsPageFromJSONTyped = CredentialsPageFromJSONTyped;
-exports.CredentialsPageToJSON = CredentialsPageToJSON;
-exports.CredentialsPageToJSONTyped = CredentialsPageToJSONTyped;
+exports.CredentialsPageToJSONTyped = exports.CredentialsPageToJSON = exports.CredentialsPageFromJSONTyped = exports.CredentialsPageFromJSON = exports.instanceOfCredentialsPage = void 0;
 const Credential_1 = require("./Credential");
 /**
  * Check if a given object implements the CredentialsPage interface.
@@ -33,9 +29,11 @@ function instanceOfCredentialsPage(value) {
         return false;
     return true;
 }
+exports.instanceOfCredentialsPage = instanceOfCredentialsPage;
 function CredentialsPageFromJSON(json) {
     return CredentialsPageFromJSONTyped(json, false);
 }
+exports.CredentialsPageFromJSON = CredentialsPageFromJSON;
 function CredentialsPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function CredentialsPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.CredentialsPageFromJSONTyped = CredentialsPageFromJSONTyped;
 function CredentialsPageToJSON(json) {
     return CredentialsPageToJSONTyped(json, false);
 }
+exports.CredentialsPageToJSON = CredentialsPageToJSON;
 function CredentialsPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function CredentialsPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.CredentialsPageToJSONTyped = CredentialsPageToJSONTyped;

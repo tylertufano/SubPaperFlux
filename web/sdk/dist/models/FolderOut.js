@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFolderOut = instanceOfFolderOut;
-exports.FolderOutFromJSON = FolderOutFromJSON;
-exports.FolderOutFromJSONTyped = FolderOutFromJSONTyped;
-exports.FolderOutToJSON = FolderOutToJSON;
-exports.FolderOutToJSONTyped = FolderOutToJSONTyped;
+exports.FolderOutToJSONTyped = exports.FolderOutToJSON = exports.FolderOutFromJSONTyped = exports.FolderOutFromJSON = exports.instanceOfFolderOut = void 0;
 /**
  * Check if a given object implements the FolderOut interface.
  */
@@ -28,9 +24,11 @@ function instanceOfFolderOut(value) {
         return false;
     return true;
 }
+exports.instanceOfFolderOut = instanceOfFolderOut;
 function FolderOutFromJSON(json) {
     return FolderOutFromJSONTyped(json, false);
 }
+exports.FolderOutFromJSON = FolderOutFromJSON;
 function FolderOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -42,9 +40,11 @@ function FolderOutFromJSONTyped(json, ignoreDiscriminator) {
         'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
     };
 }
+exports.FolderOutFromJSONTyped = FolderOutFromJSONTyped;
 function FolderOutToJSON(json) {
     return FolderOutToJSONTyped(json, false);
 }
+exports.FolderOutToJSON = FolderOutToJSON;
 function FolderOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -56,3 +56,4 @@ function FolderOutToJSONTyped(value, ignoreDiscriminator = false) {
         'bookmark_count': value['bookmarkCount'],
     };
 }
+exports.FolderOutToJSONTyped = FolderOutToJSONTyped;

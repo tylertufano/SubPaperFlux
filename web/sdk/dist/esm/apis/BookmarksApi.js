@@ -425,8 +425,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Count Bookmarks
      */
-    countBookmarksBookmarksCountGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    countBookmarksBookmarksCountGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.countBookmarksBookmarksCountGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -494,8 +494,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Count Bookmarks
      */
-    countBookmarksV1BookmarksCountGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    countBookmarksV1BookmarksCountGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.countBookmarksV1BookmarksCountGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1059,8 +1059,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Export Bookmarks
      */
-    exportBookmarksBookmarksExportGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    exportBookmarksBookmarksExportGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.exportBookmarksBookmarksExportGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1142,8 +1142,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Export Bookmarks
      */
-    exportBookmarksV1BookmarksExportGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    exportBookmarksV1BookmarksExportGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1435,8 +1435,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksBookmarksHead() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksBookmarksHead(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksBookmarksHeadRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1506,8 +1506,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksBookmarksHead_1() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksBookmarksHead_1(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksBookmarksHead_1Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1577,8 +1577,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksV1BookmarksHeadRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1648,8 +1648,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_2() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead_2(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1729,8 +1729,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksBookmarksGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksBookmarksGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksBookmarksGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1810,8 +1810,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksBookmarksGet_3() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksBookmarksGet_3(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksBookmarksGet_3Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1891,8 +1891,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksV1BookmarksGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1972,8 +1972,8 @@ export class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet_4(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides);
             return yield response.value();
         });

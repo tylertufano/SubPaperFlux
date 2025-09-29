@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminRoleCreate = instanceOfAdminRoleCreate;
-exports.AdminRoleCreateFromJSON = AdminRoleCreateFromJSON;
-exports.AdminRoleCreateFromJSONTyped = AdminRoleCreateFromJSONTyped;
-exports.AdminRoleCreateToJSON = AdminRoleCreateToJSON;
-exports.AdminRoleCreateToJSONTyped = AdminRoleCreateToJSONTyped;
+exports.AdminRoleCreateToJSONTyped = exports.AdminRoleCreateToJSON = exports.AdminRoleCreateFromJSONTyped = exports.AdminRoleCreateFromJSON = exports.instanceOfAdminRoleCreate = void 0;
 /**
  * Check if a given object implements the AdminRoleCreate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfAdminRoleCreate(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminRoleCreate = instanceOfAdminRoleCreate;
 function AdminRoleCreateFromJSON(json) {
     return AdminRoleCreateFromJSONTyped(json, false);
 }
+exports.AdminRoleCreateFromJSON = AdminRoleCreateFromJSON;
 function AdminRoleCreateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -39,9 +37,11 @@ function AdminRoleCreateFromJSONTyped(json, ignoreDiscriminator) {
         'isSystem': json['is_system'] == null ? undefined : json['is_system'],
     };
 }
+exports.AdminRoleCreateFromJSONTyped = AdminRoleCreateFromJSONTyped;
 function AdminRoleCreateToJSON(json) {
     return AdminRoleCreateToJSONTyped(json, false);
 }
+exports.AdminRoleCreateToJSON = AdminRoleCreateToJSON;
 function AdminRoleCreateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -52,3 +52,4 @@ function AdminRoleCreateToJSONTyped(value, ignoreDiscriminator = false) {
         'is_system': value['isSystem'],
     };
 }
+exports.AdminRoleCreateToJSONTyped = AdminRoleCreateToJSONTyped;

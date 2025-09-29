@@ -461,8 +461,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsAdminAuditGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listAuditLogsAdminAuditGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listAuditLogsAdminAuditGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -521,8 +521,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsAdminAuditGet_1() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listAuditLogsAdminAuditGet_1(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listAuditLogsAdminAuditGet_1Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -581,8 +581,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsV1AdminAuditGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listAuditLogsV1AdminAuditGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -626,8 +626,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List organizations
      */
-    listOrganizationsV1AdminOrgsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listOrganizationsV1AdminOrgsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listOrganizationsV1AdminOrgsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -668,8 +668,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List roles
      */
-    listRolesV1AdminRolesGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listRolesV1AdminRolesGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listRolesV1AdminRolesGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -719,8 +719,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List users
      */
-    listUsersV1AdminUsersGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listUsersV1AdminUsersGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listUsersV1AdminUsersGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

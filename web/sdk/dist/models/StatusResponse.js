@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfStatusResponse = instanceOfStatusResponse;
-exports.StatusResponseFromJSON = StatusResponseFromJSON;
-exports.StatusResponseFromJSONTyped = StatusResponseFromJSONTyped;
-exports.StatusResponseToJSON = StatusResponseToJSON;
-exports.StatusResponseToJSONTyped = StatusResponseToJSONTyped;
+exports.StatusResponseToJSONTyped = exports.StatusResponseToJSON = exports.StatusResponseFromJSONTyped = exports.StatusResponseFromJSON = exports.instanceOfStatusResponse = void 0;
 /**
  * Check if a given object implements the StatusResponse interface.
  */
 function instanceOfStatusResponse(value) {
     return true;
 }
+exports.instanceOfStatusResponse = instanceOfStatusResponse;
 function StatusResponseFromJSON(json) {
     return StatusResponseFromJSONTyped(json, false);
 }
+exports.StatusResponseFromJSON = StatusResponseFromJSON;
 function StatusResponseFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -36,9 +34,11 @@ function StatusResponseFromJSONTyped(json, ignoreDiscriminator) {
         'version': json['version'] == null ? undefined : json['version'],
     };
 }
+exports.StatusResponseFromJSONTyped = StatusResponseFromJSONTyped;
 function StatusResponseToJSON(json) {
     return StatusResponseToJSONTyped(json, false);
 }
+exports.StatusResponseToJSON = StatusResponseToJSON;
 function StatusResponseToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function StatusResponseToJSONTyped(value, ignoreDiscriminator = false) {
         'version': value['version'],
     };
 }
+exports.StatusResponseToJSONTyped = StatusResponseToJSONTyped;

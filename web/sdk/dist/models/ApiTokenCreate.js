@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfApiTokenCreate = instanceOfApiTokenCreate;
-exports.ApiTokenCreateFromJSON = ApiTokenCreateFromJSON;
-exports.ApiTokenCreateFromJSONTyped = ApiTokenCreateFromJSONTyped;
-exports.ApiTokenCreateToJSON = ApiTokenCreateToJSON;
-exports.ApiTokenCreateToJSONTyped = ApiTokenCreateToJSONTyped;
+exports.ApiTokenCreateToJSONTyped = exports.ApiTokenCreateToJSON = exports.ApiTokenCreateFromJSONTyped = exports.ApiTokenCreateFromJSON = exports.instanceOfApiTokenCreate = void 0;
 /**
  * Check if a given object implements the ApiTokenCreate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfApiTokenCreate(value) {
         return false;
     return true;
 }
+exports.instanceOfApiTokenCreate = instanceOfApiTokenCreate;
 function ApiTokenCreateFromJSON(json) {
     return ApiTokenCreateFromJSONTyped(json, false);
 }
+exports.ApiTokenCreateFromJSON = ApiTokenCreateFromJSON;
 function ApiTokenCreateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -40,9 +38,11 @@ function ApiTokenCreateFromJSONTyped(json, ignoreDiscriminator) {
         'expiresAt': json['expires_at'] == null ? undefined : (new Date(json['expires_at'])),
     };
 }
+exports.ApiTokenCreateFromJSONTyped = ApiTokenCreateFromJSONTyped;
 function ApiTokenCreateToJSON(json) {
     return ApiTokenCreateToJSONTyped(json, false);
 }
+exports.ApiTokenCreateToJSON = ApiTokenCreateToJSON;
 function ApiTokenCreateToJSONTyped(value, ignoreDiscriminator = false) {
     var _a;
     if (value == null) {
@@ -55,3 +55,4 @@ function ApiTokenCreateToJSONTyped(value, ignoreDiscriminator = false) {
         'expires_at': value['expiresAt'] === null ? null : ((_a = value['expiresAt']) === null || _a === void 0 ? void 0 : _a.toISOString()),
     };
 }
+exports.ApiTokenCreateToJSONTyped = ApiTokenCreateToJSONTyped;

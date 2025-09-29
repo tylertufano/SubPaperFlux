@@ -22,7 +22,6 @@ import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from 
  * 
  * @export
  */
-
 export type ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = { loginType: 'api' } & SiteConfigApiOut | { loginType: 'selenium' } & SiteConfigSeleniumOut;
 
 export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON(json: any): ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost {

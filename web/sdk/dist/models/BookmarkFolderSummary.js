@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarkFolderSummary = instanceOfBookmarkFolderSummary;
-exports.BookmarkFolderSummaryFromJSON = BookmarkFolderSummaryFromJSON;
-exports.BookmarkFolderSummaryFromJSONTyped = BookmarkFolderSummaryFromJSONTyped;
-exports.BookmarkFolderSummaryToJSON = BookmarkFolderSummaryToJSON;
-exports.BookmarkFolderSummaryToJSONTyped = BookmarkFolderSummaryToJSONTyped;
+exports.BookmarkFolderSummaryToJSONTyped = exports.BookmarkFolderSummaryToJSON = exports.BookmarkFolderSummaryFromJSONTyped = exports.BookmarkFolderSummaryFromJSON = exports.instanceOfBookmarkFolderSummary = void 0;
 const FolderOut_1 = require("./FolderOut");
 /**
  * Check if a given object implements the BookmarkFolderSummary interface.
@@ -27,9 +23,11 @@ function instanceOfBookmarkFolderSummary(value) {
         return false;
     return true;
 }
+exports.instanceOfBookmarkFolderSummary = instanceOfBookmarkFolderSummary;
 function BookmarkFolderSummaryFromJSON(json) {
     return BookmarkFolderSummaryFromJSONTyped(json, false);
 }
+exports.BookmarkFolderSummaryFromJSON = BookmarkFolderSummaryFromJSON;
 function BookmarkFolderSummaryFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -39,9 +37,11 @@ function BookmarkFolderSummaryFromJSONTyped(json, ignoreDiscriminator) {
         'folder': json['folder'] == null ? undefined : (0, FolderOut_1.FolderOutFromJSON)(json['folder']),
     };
 }
+exports.BookmarkFolderSummaryFromJSONTyped = BookmarkFolderSummaryFromJSONTyped;
 function BookmarkFolderSummaryToJSON(json) {
     return BookmarkFolderSummaryToJSONTyped(json, false);
 }
+exports.BookmarkFolderSummaryToJSON = BookmarkFolderSummaryToJSON;
 function BookmarkFolderSummaryToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -51,3 +51,4 @@ function BookmarkFolderSummaryToJSONTyped(value, ignoreDiscriminator = false) {
         'folder': (0, FolderOut_1.FolderOutToJSON)(value['folder']),
     };
 }
+exports.BookmarkFolderSummaryToJSONTyped = BookmarkFolderSummaryToJSONTyped;

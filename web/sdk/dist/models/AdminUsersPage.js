@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminUsersPage = instanceOfAdminUsersPage;
-exports.AdminUsersPageFromJSON = AdminUsersPageFromJSON;
-exports.AdminUsersPageFromJSONTyped = AdminUsersPageFromJSONTyped;
-exports.AdminUsersPageToJSON = AdminUsersPageToJSON;
-exports.AdminUsersPageToJSONTyped = AdminUsersPageToJSONTyped;
+exports.AdminUsersPageToJSONTyped = exports.AdminUsersPageToJSON = exports.AdminUsersPageFromJSONTyped = exports.AdminUsersPageFromJSON = exports.instanceOfAdminUsersPage = void 0;
 const AdminUserOut_1 = require("./AdminUserOut");
 /**
  * Check if a given object implements the AdminUsersPage interface.
@@ -33,9 +29,11 @@ function instanceOfAdminUsersPage(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminUsersPage = instanceOfAdminUsersPage;
 function AdminUsersPageFromJSON(json) {
     return AdminUsersPageFromJSONTyped(json, false);
 }
+exports.AdminUsersPageFromJSON = AdminUsersPageFromJSON;
 function AdminUsersPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function AdminUsersPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.AdminUsersPageFromJSONTyped = AdminUsersPageFromJSONTyped;
 function AdminUsersPageToJSON(json) {
     return AdminUsersPageToJSONTyped(json, false);
 }
+exports.AdminUsersPageToJSON = AdminUsersPageToJSON;
 function AdminUsersPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function AdminUsersPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.AdminUsersPageToJSONTyped = AdminUsersPageToJSONTyped;

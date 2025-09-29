@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminUserUpdate = instanceOfAdminUserUpdate;
-exports.AdminUserUpdateFromJSON = AdminUserUpdateFromJSON;
-exports.AdminUserUpdateFromJSONTyped = AdminUserUpdateFromJSONTyped;
-exports.AdminUserUpdateToJSON = AdminUserUpdateToJSON;
-exports.AdminUserUpdateToJSONTyped = AdminUserUpdateToJSONTyped;
+exports.AdminUserUpdateToJSONTyped = exports.AdminUserUpdateToJSON = exports.AdminUserUpdateFromJSONTyped = exports.AdminUserUpdateFromJSON = exports.instanceOfAdminUserUpdate = void 0;
 /**
  * Check if a given object implements the AdminUserUpdate interface.
  */
 function instanceOfAdminUserUpdate(value) {
     return true;
 }
+exports.instanceOfAdminUserUpdate = instanceOfAdminUserUpdate;
 function AdminUserUpdateFromJSON(json) {
     return AdminUserUpdateFromJSONTyped(json, false);
 }
+exports.AdminUserUpdateFromJSON = AdminUserUpdateFromJSON;
 function AdminUserUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -40,9 +38,11 @@ function AdminUserUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'quotaApiTokens': json['quota_api_tokens'] == null ? undefined : json['quota_api_tokens'],
     };
 }
+exports.AdminUserUpdateFromJSONTyped = AdminUserUpdateFromJSONTyped;
 function AdminUserUpdateToJSON(json) {
     return AdminUserUpdateToJSONTyped(json, false);
 }
+exports.AdminUserUpdateToJSON = AdminUserUpdateToJSON;
 function AdminUserUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -56,3 +56,4 @@ function AdminUserUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'quota_api_tokens': value['quotaApiTokens'],
     };
 }
+exports.AdminUserUpdateToJSONTyped = AdminUserUpdateToJSONTyped;

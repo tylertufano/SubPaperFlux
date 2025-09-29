@@ -11,7 +11,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { SiteConfigsPageItemsInnerFromJSON, SiteConfigsPageItemsInnerToJSON, } from './SiteConfigsPageItemsInner';
+import { SiteConfigOutFromJSON, SiteConfigOutToJSON, } from './SiteConfigOut';
 /**
  * Check if a given object implements the SiteConfigsPage interface.
  */
@@ -34,7 +34,7 @@ export function SiteConfigsPageFromJSONTyped(json, ignoreDiscriminator) {
         return json;
     }
     return {
-        'items': (json['items'].map(SiteConfigsPageItemsInnerFromJSON)),
+        'items': (json['items'].map(SiteConfigOutFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
@@ -50,7 +50,7 @@ export function SiteConfigsPageToJSONTyped(value, ignoreDiscriminator = false) {
         return value;
     }
     return {
-        'items': (value['items'].map(SiteConfigsPageItemsInnerToJSON)),
+        'items': (value['items'].map(SiteConfigOutToJSON)),
         'total': value['total'],
         'page': value['page'],
         'size': value['size'],

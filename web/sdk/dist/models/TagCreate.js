@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfTagCreate = instanceOfTagCreate;
-exports.TagCreateFromJSON = TagCreateFromJSON;
-exports.TagCreateFromJSONTyped = TagCreateFromJSONTyped;
-exports.TagCreateToJSON = TagCreateToJSON;
-exports.TagCreateToJSONTyped = TagCreateToJSONTyped;
+exports.TagCreateToJSONTyped = exports.TagCreateToJSON = exports.TagCreateFromJSONTyped = exports.TagCreateFromJSON = exports.instanceOfTagCreate = void 0;
 /**
  * Check if a given object implements the TagCreate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfTagCreate(value) {
         return false;
     return true;
 }
+exports.instanceOfTagCreate = instanceOfTagCreate;
 function TagCreateFromJSON(json) {
     return TagCreateFromJSONTyped(json, false);
 }
+exports.TagCreateFromJSON = TagCreateFromJSON;
 function TagCreateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -37,9 +35,11 @@ function TagCreateFromJSONTyped(json, ignoreDiscriminator) {
         'name': json['name'],
     };
 }
+exports.TagCreateFromJSONTyped = TagCreateFromJSONTyped;
 function TagCreateToJSON(json) {
     return TagCreateToJSONTyped(json, false);
 }
+exports.TagCreateToJSON = TagCreateToJSON;
 function TagCreateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function TagCreateToJSONTyped(value, ignoreDiscriminator = false) {
         'name': value['name'],
     };
 }
+exports.TagCreateToJSONTyped = TagCreateToJSONTyped;

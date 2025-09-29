@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfApiTokensPage = instanceOfApiTokensPage;
-exports.ApiTokensPageFromJSON = ApiTokensPageFromJSON;
-exports.ApiTokensPageFromJSONTyped = ApiTokensPageFromJSONTyped;
-exports.ApiTokensPageToJSON = ApiTokensPageToJSON;
-exports.ApiTokensPageToJSONTyped = ApiTokensPageToJSONTyped;
+exports.ApiTokensPageToJSONTyped = exports.ApiTokensPageToJSON = exports.ApiTokensPageFromJSONTyped = exports.ApiTokensPageFromJSON = exports.instanceOfApiTokensPage = void 0;
 const ApiTokenOut_1 = require("./ApiTokenOut");
 /**
  * Check if a given object implements the ApiTokensPage interface.
@@ -33,9 +29,11 @@ function instanceOfApiTokensPage(value) {
         return false;
     return true;
 }
+exports.instanceOfApiTokensPage = instanceOfApiTokensPage;
 function ApiTokensPageFromJSON(json) {
     return ApiTokensPageFromJSONTyped(json, false);
 }
+exports.ApiTokensPageFromJSON = ApiTokensPageFromJSON;
 function ApiTokensPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function ApiTokensPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.ApiTokensPageFromJSONTyped = ApiTokensPageFromJSONTyped;
 function ApiTokensPageToJSON(json) {
     return ApiTokensPageToJSONTyped(json, false);
 }
+exports.ApiTokensPageToJSON = ApiTokensPageToJSON;
 function ApiTokensPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function ApiTokensPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.ApiTokensPageToJSONTyped = ApiTokensPageToJSONTyped;

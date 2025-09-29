@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarkFolderUpdate = instanceOfBookmarkFolderUpdate;
-exports.BookmarkFolderUpdateFromJSON = BookmarkFolderUpdateFromJSON;
-exports.BookmarkFolderUpdateFromJSONTyped = BookmarkFolderUpdateFromJSONTyped;
-exports.BookmarkFolderUpdateToJSON = BookmarkFolderUpdateToJSON;
-exports.BookmarkFolderUpdateToJSONTyped = BookmarkFolderUpdateToJSONTyped;
+exports.BookmarkFolderUpdateToJSONTyped = exports.BookmarkFolderUpdateToJSON = exports.BookmarkFolderUpdateFromJSONTyped = exports.BookmarkFolderUpdateFromJSON = exports.instanceOfBookmarkFolderUpdate = void 0;
 /**
  * Check if a given object implements the BookmarkFolderUpdate interface.
  */
 function instanceOfBookmarkFolderUpdate(value) {
     return true;
 }
+exports.instanceOfBookmarkFolderUpdate = instanceOfBookmarkFolderUpdate;
 function BookmarkFolderUpdateFromJSON(json) {
     return BookmarkFolderUpdateFromJSONTyped(json, false);
 }
+exports.BookmarkFolderUpdateFromJSON = BookmarkFolderUpdateFromJSON;
 function BookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -37,9 +35,11 @@ function BookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
+exports.BookmarkFolderUpdateFromJSONTyped = BookmarkFolderUpdateFromJSONTyped;
 function BookmarkFolderUpdateToJSON(json) {
     return BookmarkFolderUpdateToJSONTyped(json, false);
 }
+exports.BookmarkFolderUpdateToJSON = BookmarkFolderUpdateToJSON;
 function BookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -50,3 +50,4 @@ function BookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
+exports.BookmarkFolderUpdateToJSONTyped = BookmarkFolderUpdateToJSONTyped;

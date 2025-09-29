@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfMeUpdate = instanceOfMeUpdate;
-exports.MeUpdateFromJSON = MeUpdateFromJSON;
-exports.MeUpdateFromJSONTyped = MeUpdateFromJSONTyped;
-exports.MeUpdateToJSON = MeUpdateToJSON;
-exports.MeUpdateToJSONTyped = MeUpdateToJSONTyped;
+exports.MeUpdateToJSONTyped = exports.MeUpdateToJSON = exports.MeUpdateFromJSONTyped = exports.MeUpdateFromJSON = exports.instanceOfMeUpdate = void 0;
 const MeNotificationPreferencesUpdate_1 = require("./MeNotificationPreferencesUpdate");
 /**
  * Check if a given object implements the MeUpdate interface.
@@ -25,9 +21,11 @@ const MeNotificationPreferencesUpdate_1 = require("./MeNotificationPreferencesUp
 function instanceOfMeUpdate(value) {
     return true;
 }
+exports.instanceOfMeUpdate = instanceOfMeUpdate;
 function MeUpdateFromJSON(json) {
     return MeUpdateFromJSONTyped(json, false);
 }
+exports.MeUpdateFromJSON = MeUpdateFromJSON;
 function MeUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -37,9 +35,11 @@ function MeUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'notificationPreferences': json['notification_preferences'] == null ? undefined : (0, MeNotificationPreferencesUpdate_1.MeNotificationPreferencesUpdateFromJSON)(json['notification_preferences']),
     };
 }
+exports.MeUpdateFromJSONTyped = MeUpdateFromJSONTyped;
 function MeUpdateToJSON(json) {
     return MeUpdateToJSONTyped(json, false);
 }
+exports.MeUpdateToJSON = MeUpdateToJSON;
 function MeUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -49,3 +49,4 @@ function MeUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'notification_preferences': (0, MeNotificationPreferencesUpdate_1.MeNotificationPreferencesUpdateToJSON)(value['notificationPreferences']),
     };
 }
+exports.MeUpdateToJSONTyped = MeUpdateToJSONTyped;

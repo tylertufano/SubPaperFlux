@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfApiTokenOut = instanceOfApiTokenOut;
-exports.ApiTokenOutFromJSON = ApiTokenOutFromJSON;
-exports.ApiTokenOutFromJSONTyped = ApiTokenOutFromJSONTyped;
-exports.ApiTokenOutToJSON = ApiTokenOutToJSON;
-exports.ApiTokenOutToJSONTyped = ApiTokenOutToJSONTyped;
+exports.ApiTokenOutToJSONTyped = exports.ApiTokenOutToJSON = exports.ApiTokenOutFromJSONTyped = exports.ApiTokenOutFromJSON = exports.instanceOfApiTokenOut = void 0;
 /**
  * Check if a given object implements the ApiTokenOut interface.
  */
@@ -32,9 +28,11 @@ function instanceOfApiTokenOut(value) {
         return false;
     return true;
 }
+exports.instanceOfApiTokenOut = instanceOfApiTokenOut;
 function ApiTokenOutFromJSON(json) {
     return ApiTokenOutFromJSONTyped(json, false);
 }
+exports.ApiTokenOutFromJSON = ApiTokenOutFromJSON;
 function ApiTokenOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -51,9 +49,11 @@ function ApiTokenOutFromJSONTyped(json, ignoreDiscriminator) {
         'revokedAt': json['revoked_at'] == null ? undefined : (new Date(json['revoked_at'])),
     };
 }
+exports.ApiTokenOutFromJSONTyped = ApiTokenOutFromJSONTyped;
 function ApiTokenOutToJSON(json) {
     return ApiTokenOutToJSONTyped(json, false);
 }
+exports.ApiTokenOutToJSON = ApiTokenOutToJSON;
 function ApiTokenOutToJSONTyped(value, ignoreDiscriminator = false) {
     var _a, _b, _c;
     if (value == null) {
@@ -71,3 +71,4 @@ function ApiTokenOutToJSONTyped(value, ignoreDiscriminator = false) {
         'revoked_at': value['revokedAt'] === null ? null : ((_c = value['revokedAt']) === null || _c === void 0 ? void 0 : _c.toISOString()),
     };
 }
+exports.ApiTokenOutToJSONTyped = ApiTokenOutToJSONTyped;

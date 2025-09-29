@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfJobsPage = instanceOfJobsPage;
-exports.JobsPageFromJSON = JobsPageFromJSON;
-exports.JobsPageFromJSONTyped = JobsPageFromJSONTyped;
-exports.JobsPageToJSON = JobsPageToJSON;
-exports.JobsPageToJSONTyped = JobsPageToJSONTyped;
+exports.JobsPageToJSONTyped = exports.JobsPageToJSON = exports.JobsPageFromJSONTyped = exports.JobsPageFromJSON = exports.instanceOfJobsPage = void 0;
 const JobOut_1 = require("./JobOut");
 /**
  * Check if a given object implements the JobsPage interface.
@@ -33,9 +29,11 @@ function instanceOfJobsPage(value) {
         return false;
     return true;
 }
+exports.instanceOfJobsPage = instanceOfJobsPage;
 function JobsPageFromJSON(json) {
     return JobsPageFromJSONTyped(json, false);
 }
+exports.JobsPageFromJSON = JobsPageFromJSON;
 function JobsPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function JobsPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.JobsPageFromJSONTyped = JobsPageFromJSONTyped;
 function JobsPageToJSON(json) {
     return JobsPageToJSONTyped(json, false);
 }
+exports.JobsPageToJSON = JobsPageToJSON;
 function JobsPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function JobsPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.JobsPageToJSONTyped = JobsPageToJSONTyped;

@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { BodyToJSON, ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON, ResponseCreateSiteConfigSiteConfigsPostFromJSON, ResponseGetSiteConfigSiteConfigsConfigIdGetFromJSON, ResponseUpdateSiteConfigSiteConfigsConfigIdPutFromJSON, } from '../models/index';
+import { SiteConfigFromJSON, SiteConfigToJSON, } from '../models/index';
 /**
  *
  */
@@ -31,8 +31,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
      */
     createSiteConfigSiteConfigsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['body'] == null) {
-                throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling createSiteConfigSiteConfigsPost().');
+            if (requestParameters['siteConfig'] == null) {
+                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling createSiteConfigSiteConfigsPost().');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -53,9 +53,9 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BodyToJSON(requestParameters['body']),
+                body: SiteConfigToJSON(requestParameters['siteConfig']),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => ResponseCreateSiteConfigSiteConfigsPostFromJSON(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
         });
     }
     /**
@@ -131,7 +131,7 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => ResponseGetSiteConfigSiteConfigsConfigIdGetFromJSON(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
         });
     }
     /**
@@ -167,14 +167,14 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON));
+            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SiteConfigFromJSON));
         });
     }
     /**
      * List Site Configs
      */
-    listSiteConfigsSiteConfigsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listSiteConfigsSiteConfigsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listSiteConfigsSiteConfigsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -187,8 +187,8 @@ export class SiteConfigsApi extends runtime.BaseAPI {
             if (requestParameters['configId'] == null) {
                 throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
             }
-            if (requestParameters['body'] == null) {
-                throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
+            if (requestParameters['siteConfig'] == null) {
+                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -210,9 +210,9 @@ export class SiteConfigsApi extends runtime.BaseAPI {
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: BodyToJSON(requestParameters['body']),
+                body: SiteConfigToJSON(requestParameters['siteConfig']),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => ResponseUpdateSiteConfigSiteConfigsConfigIdPutFromJSON(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigFromJSON(jsonValue));
         });
     }
     /**

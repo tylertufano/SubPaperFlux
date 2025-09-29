@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfJobOut = instanceOfJobOut;
-exports.JobOutFromJSON = JobOutFromJSON;
-exports.JobOutFromJSONTyped = JobOutFromJSONTyped;
-exports.JobOutToJSON = JobOutToJSON;
-exports.JobOutToJSONTyped = JobOutToJSONTyped;
+exports.JobOutToJSONTyped = exports.JobOutToJSON = exports.JobOutFromJSONTyped = exports.JobOutFromJSON = exports.instanceOfJobOut = void 0;
 /**
  * Check if a given object implements the JobOut interface.
  */
@@ -34,9 +30,11 @@ function instanceOfJobOut(value) {
         return false;
     return true;
 }
+exports.instanceOfJobOut = instanceOfJobOut;
 function JobOutFromJSON(json) {
     return JobOutFromJSONTyped(json, false);
 }
+exports.JobOutFromJSON = JobOutFromJSON;
 function JobOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -53,9 +51,11 @@ function JobOutFromJSONTyped(json, ignoreDiscriminator) {
         'details': json['details'] == null ? undefined : json['details'],
     };
 }
+exports.JobOutFromJSONTyped = JobOutFromJSONTyped;
 function JobOutToJSON(json) {
     return JobOutToJSONTyped(json, false);
 }
+exports.JobOutToJSON = JobOutToJSON;
 function JobOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -72,3 +72,4 @@ function JobOutToJSONTyped(value, ignoreDiscriminator = false) {
         'details': value['details'],
     };
 }
+exports.JobOutToJSONTyped = JobOutToJSONTyped;

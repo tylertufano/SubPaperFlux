@@ -22,7 +22,6 @@ import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './Sit
  * 
  * @export
  */
-
 export type ListSiteConfigsSiteConfigsGet200ResponseInner = { loginType: 'api' } & SiteConfigApi | { loginType: 'selenium' } & SiteConfigSelenium;
 
 export function ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON(json: any): ListSiteConfigsSiteConfigsGet200ResponseInner {

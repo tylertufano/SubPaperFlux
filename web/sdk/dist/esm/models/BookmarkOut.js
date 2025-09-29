@@ -17,6 +17,8 @@
 export function instanceOfBookmarkOut(value) {
     if (!('id' in value) || value['id'] === undefined)
         return false;
+    if (!('instapaperBookmarkId' in value) || value['instapaperBookmarkId'] === undefined)
+        return false;
     return true;
 }
 export function BookmarkOutFromJSON(json) {
@@ -28,16 +30,12 @@ export function BookmarkOutFromJSONTyped(json, ignoreDiscriminator) {
     }
     return {
         'id': json['id'],
-        'instapaperBookmarkId': json['instapaper_bookmark_id'] == null ? undefined : json['instapaper_bookmark_id'],
+        'instapaperBookmarkId': json['instapaper_bookmark_id'],
         'title': json['title'] == null ? undefined : json['title'],
         'url': json['url'] == null ? undefined : json['url'],
         'contentLocation': json['content_location'] == null ? undefined : json['content_location'],
         'feedId': json['feed_id'] == null ? undefined : json['feed_id'],
         'publishedAt': json['published_at'] == null ? undefined : json['published_at'],
-        'rssEntry': json['rss_entry'] == null ? undefined : json['rss_entry'],
-        'rawHtmlContent': json['raw_html_content'] == null ? undefined : json['raw_html_content'],
-        'publicationStatuses': json['publication_statuses'] == null ? undefined : json['publication_statuses'],
-        'publicationFlags': json['publication_flags'] == null ? undefined : json['publication_flags'],
     };
 }
 export function BookmarkOutToJSON(json) {
@@ -55,9 +53,5 @@ export function BookmarkOutToJSONTyped(value, ignoreDiscriminator = false) {
         'content_location': value['contentLocation'],
         'feed_id': value['feedId'],
         'published_at': value['publishedAt'],
-        'rss_entry': value['rssEntry'],
-        'raw_html_content': value['rawHtmlContent'],
-        'publication_statuses': value['publicationStatuses'],
-        'publication_flags': value['publicationFlags'],
     };
 }

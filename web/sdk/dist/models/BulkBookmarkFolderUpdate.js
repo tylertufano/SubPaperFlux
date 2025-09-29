@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBulkBookmarkFolderUpdate = instanceOfBulkBookmarkFolderUpdate;
-exports.BulkBookmarkFolderUpdateFromJSON = BulkBookmarkFolderUpdateFromJSON;
-exports.BulkBookmarkFolderUpdateFromJSONTyped = BulkBookmarkFolderUpdateFromJSONTyped;
-exports.BulkBookmarkFolderUpdateToJSON = BulkBookmarkFolderUpdateToJSON;
-exports.BulkBookmarkFolderUpdateToJSONTyped = BulkBookmarkFolderUpdateToJSONTyped;
+exports.BulkBookmarkFolderUpdateToJSONTyped = exports.BulkBookmarkFolderUpdateToJSON = exports.BulkBookmarkFolderUpdateFromJSONTyped = exports.BulkBookmarkFolderUpdateFromJSON = exports.instanceOfBulkBookmarkFolderUpdate = void 0;
 /**
  * Check if a given object implements the BulkBookmarkFolderUpdate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfBulkBookmarkFolderUpdate(value) {
         return false;
     return true;
 }
+exports.instanceOfBulkBookmarkFolderUpdate = instanceOfBulkBookmarkFolderUpdate;
 function BulkBookmarkFolderUpdateFromJSON(json) {
     return BulkBookmarkFolderUpdateFromJSONTyped(json, false);
 }
+exports.BulkBookmarkFolderUpdateFromJSON = BulkBookmarkFolderUpdateFromJSON;
 function BulkBookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -39,9 +37,11 @@ function BulkBookmarkFolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
+exports.BulkBookmarkFolderUpdateFromJSONTyped = BulkBookmarkFolderUpdateFromJSONTyped;
 function BulkBookmarkFolderUpdateToJSON(json) {
     return BulkBookmarkFolderUpdateToJSONTyped(json, false);
 }
+exports.BulkBookmarkFolderUpdateToJSON = BulkBookmarkFolderUpdateToJSON;
 function BulkBookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -52,3 +52,4 @@ function BulkBookmarkFolderUpdateToJSONTyped(value, ignoreDiscriminator = false)
         'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
+exports.BulkBookmarkFolderUpdateToJSONTyped = BulkBookmarkFolderUpdateToJSONTyped;

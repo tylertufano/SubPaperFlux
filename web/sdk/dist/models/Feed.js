@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFeed = instanceOfFeed;
-exports.FeedFromJSON = FeedFromJSON;
-exports.FeedFromJSONTyped = FeedFromJSONTyped;
-exports.FeedToJSON = FeedToJSON;
-exports.FeedToJSONTyped = FeedToJSONTyped;
+exports.FeedToJSONTyped = exports.FeedToJSON = exports.FeedFromJSONTyped = exports.FeedFromJSON = exports.instanceOfFeed = void 0;
 /**
  * Check if a given object implements the Feed interface.
  */
@@ -26,9 +22,11 @@ function instanceOfFeed(value) {
         return false;
     return true;
 }
+exports.instanceOfFeed = instanceOfFeed;
 function FeedFromJSON(json) {
     return FeedFromJSONTyped(json, false);
 }
+exports.FeedFromJSON = FeedFromJSON;
 function FeedFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -45,9 +43,11 @@ function FeedFromJSONTyped(json, ignoreDiscriminator) {
         'siteLoginCredentialId': json['site_login_credential_id'] == null ? undefined : json['site_login_credential_id'],
     };
 }
+exports.FeedFromJSONTyped = FeedFromJSONTyped;
 function FeedToJSON(json) {
     return FeedToJSONTyped(json, false);
 }
+exports.FeedToJSON = FeedToJSON;
 function FeedToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -64,3 +64,4 @@ function FeedToJSONTyped(value, ignoreDiscriminator = false) {
         'site_login_credential_id': value['siteLoginCredentialId'],
     };
 }
+exports.FeedToJSONTyped = FeedToJSONTyped;

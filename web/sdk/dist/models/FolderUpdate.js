@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFolderUpdate = instanceOfFolderUpdate;
-exports.FolderUpdateFromJSON = FolderUpdateFromJSON;
-exports.FolderUpdateFromJSONTyped = FolderUpdateFromJSONTyped;
-exports.FolderUpdateToJSON = FolderUpdateToJSON;
-exports.FolderUpdateToJSONTyped = FolderUpdateToJSONTyped;
+exports.FolderUpdateToJSONTyped = exports.FolderUpdateToJSON = exports.FolderUpdateFromJSONTyped = exports.FolderUpdateFromJSON = exports.instanceOfFolderUpdate = void 0;
 /**
  * Check if a given object implements the FolderUpdate interface.
  */
 function instanceOfFolderUpdate(value) {
     return true;
 }
+exports.instanceOfFolderUpdate = instanceOfFolderUpdate;
 function FolderUpdateFromJSON(json) {
     return FolderUpdateFromJSONTyped(json, false);
 }
+exports.FolderUpdateFromJSON = FolderUpdateFromJSON;
 function FolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -36,9 +34,11 @@ function FolderUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
+exports.FolderUpdateFromJSONTyped = FolderUpdateFromJSONTyped;
 function FolderUpdateToJSON(json) {
     return FolderUpdateToJSONTyped(json, false);
 }
+exports.FolderUpdateToJSON = FolderUpdateToJSON;
 function FolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function FolderUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
+exports.FolderUpdateToJSONTyped = FolderUpdateToJSONTyped;

@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfSiteConfigsPage = instanceOfSiteConfigsPage;
-exports.SiteConfigsPageFromJSON = SiteConfigsPageFromJSON;
-exports.SiteConfigsPageFromJSONTyped = SiteConfigsPageFromJSONTyped;
-exports.SiteConfigsPageToJSON = SiteConfigsPageToJSON;
-exports.SiteConfigsPageToJSONTyped = SiteConfigsPageToJSONTyped;
+exports.SiteConfigsPageToJSONTyped = exports.SiteConfigsPageToJSON = exports.SiteConfigsPageFromJSONTyped = exports.SiteConfigsPageFromJSON = exports.instanceOfSiteConfigsPage = void 0;
 const SiteConfigsPageItemsInner_1 = require("./SiteConfigsPageItemsInner");
 /**
  * Check if a given object implements the SiteConfigsPage interface.
@@ -33,9 +29,11 @@ function instanceOfSiteConfigsPage(value) {
         return false;
     return true;
 }
+exports.instanceOfSiteConfigsPage = instanceOfSiteConfigsPage;
 function SiteConfigsPageFromJSON(json) {
     return SiteConfigsPageFromJSONTyped(json, false);
 }
+exports.SiteConfigsPageFromJSON = SiteConfigsPageFromJSON;
 function SiteConfigsPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function SiteConfigsPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.SiteConfigsPageFromJSONTyped = SiteConfigsPageFromJSONTyped;
 function SiteConfigsPageToJSON(json) {
     return SiteConfigsPageToJSONTyped(json, false);
 }
+exports.SiteConfigsPageToJSON = SiteConfigsPageToJSON;
 function SiteConfigsPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function SiteConfigsPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.SiteConfigsPageToJSONTyped = SiteConfigsPageToJSONTyped;

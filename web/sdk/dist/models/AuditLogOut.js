@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAuditLogOut = instanceOfAuditLogOut;
-exports.AuditLogOutFromJSON = AuditLogOutFromJSON;
-exports.AuditLogOutFromJSONTyped = AuditLogOutFromJSONTyped;
-exports.AuditLogOutToJSON = AuditLogOutToJSON;
-exports.AuditLogOutToJSONTyped = AuditLogOutToJSONTyped;
+exports.AuditLogOutToJSONTyped = exports.AuditLogOutToJSON = exports.AuditLogOutFromJSONTyped = exports.AuditLogOutFromJSON = exports.instanceOfAuditLogOut = void 0;
 /**
  * Check if a given object implements the AuditLogOut interface.
  */
@@ -34,9 +30,11 @@ function instanceOfAuditLogOut(value) {
         return false;
     return true;
 }
+exports.instanceOfAuditLogOut = instanceOfAuditLogOut;
 function AuditLogOutFromJSON(json) {
     return AuditLogOutFromJSONTyped(json, false);
 }
+exports.AuditLogOutFromJSON = AuditLogOutFromJSON;
 function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -52,9 +50,11 @@ function AuditLogOutFromJSONTyped(json, ignoreDiscriminator) {
         'createdAt': (new Date(json['created_at'])),
     };
 }
+exports.AuditLogOutFromJSONTyped = AuditLogOutFromJSONTyped;
 function AuditLogOutToJSON(json) {
     return AuditLogOutToJSONTyped(json, false);
 }
+exports.AuditLogOutToJSON = AuditLogOutToJSON;
 function AuditLogOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -70,3 +70,4 @@ function AuditLogOutToJSONTyped(value, ignoreDiscriminator = false) {
         'created_at': ((value['createdAt']).toISOString()),
     };
 }
+exports.AuditLogOutToJSONTyped = AuditLogOutToJSONTyped;

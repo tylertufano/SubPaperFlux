@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarksPage = instanceOfBookmarksPage;
-exports.BookmarksPageFromJSON = BookmarksPageFromJSON;
-exports.BookmarksPageFromJSONTyped = BookmarksPageFromJSONTyped;
-exports.BookmarksPageToJSON = BookmarksPageToJSON;
-exports.BookmarksPageToJSONTyped = BookmarksPageToJSONTyped;
+exports.BookmarksPageToJSONTyped = exports.BookmarksPageToJSON = exports.BookmarksPageFromJSONTyped = exports.BookmarksPageFromJSON = exports.instanceOfBookmarksPage = void 0;
 const BookmarkOut_1 = require("./BookmarkOut");
 /**
  * Check if a given object implements the BookmarksPage interface.
@@ -33,9 +29,11 @@ function instanceOfBookmarksPage(value) {
         return false;
     return true;
 }
+exports.instanceOfBookmarksPage = instanceOfBookmarksPage;
 function BookmarksPageFromJSON(json) {
     return BookmarksPageFromJSONTyped(json, false);
 }
+exports.BookmarksPageFromJSON = BookmarksPageFromJSON;
 function BookmarksPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function BookmarksPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.BookmarksPageFromJSONTyped = BookmarksPageFromJSONTyped;
 function BookmarksPageToJSON(json) {
     return BookmarksPageToJSONTyped(json, false);
 }
+exports.BookmarksPageToJSON = BookmarksPageToJSON;
 function BookmarksPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function BookmarksPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.BookmarksPageToJSONTyped = BookmarksPageToJSONTyped;

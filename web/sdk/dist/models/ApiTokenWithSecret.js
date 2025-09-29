@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfApiTokenWithSecret = instanceOfApiTokenWithSecret;
-exports.ApiTokenWithSecretFromJSON = ApiTokenWithSecretFromJSON;
-exports.ApiTokenWithSecretFromJSONTyped = ApiTokenWithSecretFromJSONTyped;
-exports.ApiTokenWithSecretToJSON = ApiTokenWithSecretToJSON;
-exports.ApiTokenWithSecretToJSONTyped = ApiTokenWithSecretToJSONTyped;
+exports.ApiTokenWithSecretToJSONTyped = exports.ApiTokenWithSecretToJSON = exports.ApiTokenWithSecretFromJSONTyped = exports.ApiTokenWithSecretFromJSON = exports.instanceOfApiTokenWithSecret = void 0;
 /**
  * Check if a given object implements the ApiTokenWithSecret interface.
  */
@@ -34,9 +30,11 @@ function instanceOfApiTokenWithSecret(value) {
         return false;
     return true;
 }
+exports.instanceOfApiTokenWithSecret = instanceOfApiTokenWithSecret;
 function ApiTokenWithSecretFromJSON(json) {
     return ApiTokenWithSecretFromJSONTyped(json, false);
 }
+exports.ApiTokenWithSecretFromJSON = ApiTokenWithSecretFromJSON;
 function ApiTokenWithSecretFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -54,9 +52,11 @@ function ApiTokenWithSecretFromJSONTyped(json, ignoreDiscriminator) {
         'token': json['token'],
     };
 }
+exports.ApiTokenWithSecretFromJSONTyped = ApiTokenWithSecretFromJSONTyped;
 function ApiTokenWithSecretToJSON(json) {
     return ApiTokenWithSecretToJSONTyped(json, false);
 }
+exports.ApiTokenWithSecretToJSON = ApiTokenWithSecretToJSON;
 function ApiTokenWithSecretToJSONTyped(value, ignoreDiscriminator = false) {
     var _a, _b, _c;
     if (value == null) {
@@ -75,3 +75,4 @@ function ApiTokenWithSecretToJSONTyped(value, ignoreDiscriminator = false) {
         'token': value['token'],
     };
 }
+exports.ApiTokenWithSecretToJSONTyped = ApiTokenWithSecretToJSONTyped;

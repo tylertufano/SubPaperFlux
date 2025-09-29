@@ -9,7 +9,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import type { SiteConfigsPageItemsInner } from './SiteConfigsPageItemsInner';
+import type { SiteConfigOut } from './SiteConfigOut';
 /**
  *
  * @export
@@ -18,10 +18,10 @@ import type { SiteConfigsPageItemsInner } from './SiteConfigsPageItemsInner';
 export interface SiteConfigsPage {
     /**
      *
-     * @type {Array<SiteConfigsPageItemsInner>}
+     * @type {Array<SiteConfigOut>}
      * @memberof SiteConfigsPage
      */
-    items: Array<SiteConfigsPageItemsInner>;
+    items: Array<SiteConfigOut>;
     /**
      *
      * @type {number}

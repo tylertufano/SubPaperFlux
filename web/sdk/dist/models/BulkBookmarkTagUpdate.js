@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBulkBookmarkTagUpdate = instanceOfBulkBookmarkTagUpdate;
-exports.BulkBookmarkTagUpdateFromJSON = BulkBookmarkTagUpdateFromJSON;
-exports.BulkBookmarkTagUpdateFromJSONTyped = BulkBookmarkTagUpdateFromJSONTyped;
-exports.BulkBookmarkTagUpdateToJSON = BulkBookmarkTagUpdateToJSON;
-exports.BulkBookmarkTagUpdateToJSONTyped = BulkBookmarkTagUpdateToJSONTyped;
+exports.BulkBookmarkTagUpdateToJSONTyped = exports.BulkBookmarkTagUpdateToJSON = exports.BulkBookmarkTagUpdateFromJSONTyped = exports.BulkBookmarkTagUpdateFromJSON = exports.instanceOfBulkBookmarkTagUpdate = void 0;
 /**
  * Check if a given object implements the BulkBookmarkTagUpdate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfBulkBookmarkTagUpdate(value) {
         return false;
     return true;
 }
+exports.instanceOfBulkBookmarkTagUpdate = instanceOfBulkBookmarkTagUpdate;
 function BulkBookmarkTagUpdateFromJSON(json) {
     return BulkBookmarkTagUpdateFromJSONTyped(json, false);
 }
+exports.BulkBookmarkTagUpdateFromJSON = BulkBookmarkTagUpdateFromJSON;
 function BulkBookmarkTagUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -39,9 +37,11 @@ function BulkBookmarkTagUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'clear': json['clear'] == null ? undefined : json['clear'],
     };
 }
+exports.BulkBookmarkTagUpdateFromJSONTyped = BulkBookmarkTagUpdateFromJSONTyped;
 function BulkBookmarkTagUpdateToJSON(json) {
     return BulkBookmarkTagUpdateToJSONTyped(json, false);
 }
+exports.BulkBookmarkTagUpdateToJSON = BulkBookmarkTagUpdateToJSON;
 function BulkBookmarkTagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -52,3 +52,4 @@ function BulkBookmarkTagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'clear': value['clear'],
     };
 }
+exports.BulkBookmarkTagUpdateToJSONTyped = BulkBookmarkTagUpdateToJSONTyped;

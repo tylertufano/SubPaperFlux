@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminUserOut = instanceOfAdminUserOut;
-exports.AdminUserOutFromJSON = AdminUserOutFromJSON;
-exports.AdminUserOutFromJSONTyped = AdminUserOutFromJSONTyped;
-exports.AdminUserOutToJSON = AdminUserOutToJSON;
-exports.AdminUserOutToJSONTyped = AdminUserOutToJSONTyped;
+exports.AdminUserOutToJSONTyped = exports.AdminUserOutToJSON = exports.AdminUserOutFromJSONTyped = exports.AdminUserOutFromJSON = exports.instanceOfAdminUserOut = void 0;
 const AdminUserRoleOverrides_1 = require("./AdminUserRoleOverrides");
 const AdminUserOrganization_1 = require("./AdminUserOrganization");
 const AdminUserOrganizationMembership_1 = require("./AdminUserOrganizationMembership");
@@ -35,9 +31,11 @@ function instanceOfAdminUserOut(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminUserOut = instanceOfAdminUserOut;
 function AdminUserOutFromJSON(json) {
     return AdminUserOutFromJSONTyped(json, false);
 }
+exports.AdminUserOutFromJSON = AdminUserOutFromJSON;
 function AdminUserOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -64,9 +62,11 @@ function AdminUserOutFromJSONTyped(json, ignoreDiscriminator) {
         'organizations': json['organizations'] == null ? undefined : (json['organizations'].map(AdminUserOrganization_1.AdminUserOrganizationFromJSON)),
     };
 }
+exports.AdminUserOutFromJSONTyped = AdminUserOutFromJSONTyped;
 function AdminUserOutToJSON(json) {
     return AdminUserOutToJSONTyped(json, false);
 }
+exports.AdminUserOutToJSON = AdminUserOutToJSON;
 function AdminUserOutToJSONTyped(value, ignoreDiscriminator = false) {
     var _a;
     if (value == null) {
@@ -94,3 +94,4 @@ function AdminUserOutToJSONTyped(value, ignoreDiscriminator = false) {
         'organizations': value['organizations'] == null ? undefined : (value['organizations'].map(AdminUserOrganization_1.AdminUserOrganizationToJSON)),
     };
 }
+exports.AdminUserOutToJSONTyped = AdminUserOutToJSONTyped;
