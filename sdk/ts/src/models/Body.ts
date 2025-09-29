@@ -57,7 +57,7 @@ export function BodyToJSONTyped(value?: Body | null, ignoreDiscriminator: boolea
         case 'selenium':
             return Object.assign({}, SiteConfigSeleniumToJSON(value as SiteConfigSelenium), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

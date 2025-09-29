@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+import re
 
 IMPORT_BLOCK = (
     "import type { SiteConfigApi } from './SiteConfigApi'\n"
@@ -71,6 +72,14 @@ def patch_body_file(body_file: Path) -> bool:
         if old in text and new not in text:
             text = text.replace(old, new)
             changed = True
+
+    text, count = re.subn(
+        r"(switch \(value\['loginType'\]\) \{[\s\S]*?default:\s+)return json;",
+        r"\1return value;",
+        text,
+    )
+    if count:
+        changed = True
 
     if changed and text != original_text:
         body_file.write_text(text)
