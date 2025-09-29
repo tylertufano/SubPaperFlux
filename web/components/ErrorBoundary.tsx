@@ -1,3 +1,4 @@
+import { captureException, withScope } from '@sentry/nextjs'
 import React from 'react'
 import { I18nContext } from '../lib/i18n'
 
@@ -18,8 +19,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
-    // TODO: send to monitoring if desired
     console.error('UI ErrorBoundary caught', error, info)
+    withScope((scope) => {
+      scope.setExtra('componentStack', info.componentStack)
+      scope.setTag('react_error_boundary', 'true')
+      captureException(error)
+    })
   }
 
   private handleRetry = () => {
