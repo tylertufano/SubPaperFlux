@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfMeNotificationPreferencesUpdate = instanceOfMeNotificationPreferencesUpdate;
-exports.MeNotificationPreferencesUpdateFromJSON = MeNotificationPreferencesUpdateFromJSON;
-exports.MeNotificationPreferencesUpdateFromJSONTyped = MeNotificationPreferencesUpdateFromJSONTyped;
-exports.MeNotificationPreferencesUpdateToJSON = MeNotificationPreferencesUpdateToJSON;
-exports.MeNotificationPreferencesUpdateToJSONTyped = MeNotificationPreferencesUpdateToJSONTyped;
+exports.MeNotificationPreferencesUpdateToJSONTyped = exports.MeNotificationPreferencesUpdateToJSON = exports.MeNotificationPreferencesUpdateFromJSONTyped = exports.MeNotificationPreferencesUpdateFromJSON = exports.instanceOfMeNotificationPreferencesUpdate = void 0;
 /**
  * Check if a given object implements the MeNotificationPreferencesUpdate interface.
  */
 function instanceOfMeNotificationPreferencesUpdate(value) {
     return true;
 }
+exports.instanceOfMeNotificationPreferencesUpdate = instanceOfMeNotificationPreferencesUpdate;
 function MeNotificationPreferencesUpdateFromJSON(json) {
     return MeNotificationPreferencesUpdateFromJSONTyped(json, false);
 }
+exports.MeNotificationPreferencesUpdateFromJSON = MeNotificationPreferencesUpdateFromJSON;
 function MeNotificationPreferencesUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -36,9 +34,11 @@ function MeNotificationPreferencesUpdateFromJSONTyped(json, ignoreDiscriminator)
         'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
     };
 }
+exports.MeNotificationPreferencesUpdateFromJSONTyped = MeNotificationPreferencesUpdateFromJSONTyped;
 function MeNotificationPreferencesUpdateToJSON(json) {
     return MeNotificationPreferencesUpdateToJSONTyped(json, false);
 }
+exports.MeNotificationPreferencesUpdateToJSON = MeNotificationPreferencesUpdateToJSON;
 function MeNotificationPreferencesUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function MeNotificationPreferencesUpdateToJSONTyped(value, ignoreDiscriminator =
         'email_digest': value['emailDigest'],
     };
 }
+exports.MeNotificationPreferencesUpdateToJSONTyped = MeNotificationPreferencesUpdateToJSONTyped;

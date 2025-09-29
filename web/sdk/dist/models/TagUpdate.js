@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfTagUpdate = instanceOfTagUpdate;
-exports.TagUpdateFromJSON = TagUpdateFromJSON;
-exports.TagUpdateFromJSONTyped = TagUpdateFromJSONTyped;
-exports.TagUpdateToJSON = TagUpdateToJSON;
-exports.TagUpdateToJSONTyped = TagUpdateToJSONTyped;
+exports.TagUpdateToJSONTyped = exports.TagUpdateToJSON = exports.TagUpdateFromJSONTyped = exports.TagUpdateFromJSON = exports.instanceOfTagUpdate = void 0;
 /**
  * Check if a given object implements the TagUpdate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfTagUpdate(value) {
         return false;
     return true;
 }
+exports.instanceOfTagUpdate = instanceOfTagUpdate;
 function TagUpdateFromJSON(json) {
     return TagUpdateFromJSONTyped(json, false);
 }
+exports.TagUpdateFromJSON = TagUpdateFromJSON;
 function TagUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -37,9 +35,11 @@ function TagUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'name': json['name'],
     };
 }
+exports.TagUpdateFromJSONTyped = TagUpdateFromJSONTyped;
 function TagUpdateToJSON(json) {
     return TagUpdateToJSONTyped(json, false);
 }
+exports.TagUpdateToJSON = TagUpdateToJSON;
 function TagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function TagUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'name': value['name'],
     };
 }
+exports.TagUpdateToJSONTyped = TagUpdateToJSONTyped;

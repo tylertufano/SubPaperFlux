@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarkTagsUpdate = instanceOfBookmarkTagsUpdate;
-exports.BookmarkTagsUpdateFromJSON = BookmarkTagsUpdateFromJSON;
-exports.BookmarkTagsUpdateFromJSONTyped = BookmarkTagsUpdateFromJSONTyped;
-exports.BookmarkTagsUpdateToJSON = BookmarkTagsUpdateToJSON;
-exports.BookmarkTagsUpdateToJSONTyped = BookmarkTagsUpdateToJSONTyped;
+exports.BookmarkTagsUpdateToJSONTyped = exports.BookmarkTagsUpdateToJSON = exports.BookmarkTagsUpdateFromJSONTyped = exports.BookmarkTagsUpdateFromJSON = exports.instanceOfBookmarkTagsUpdate = void 0;
 /**
  * Check if a given object implements the BookmarkTagsUpdate interface.
  */
 function instanceOfBookmarkTagsUpdate(value) {
     return true;
 }
+exports.instanceOfBookmarkTagsUpdate = instanceOfBookmarkTagsUpdate;
 function BookmarkTagsUpdateFromJSON(json) {
     return BookmarkTagsUpdateFromJSONTyped(json, false);
 }
+exports.BookmarkTagsUpdateFromJSON = BookmarkTagsUpdateFromJSON;
 function BookmarkTagsUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -35,9 +33,11 @@ function BookmarkTagsUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'tags': json['tags'] == null ? undefined : json['tags'],
     };
 }
+exports.BookmarkTagsUpdateFromJSONTyped = BookmarkTagsUpdateFromJSONTyped;
 function BookmarkTagsUpdateToJSON(json) {
     return BookmarkTagsUpdateToJSONTyped(json, false);
 }
+exports.BookmarkTagsUpdateToJSON = BookmarkTagsUpdateToJSON;
 function BookmarkTagsUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -46,3 +46,4 @@ function BookmarkTagsUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'tags': value['tags'],
     };
 }
+exports.BookmarkTagsUpdateToJSONTyped = BookmarkTagsUpdateToJSONTyped;

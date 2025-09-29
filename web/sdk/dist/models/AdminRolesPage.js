@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminRolesPage = instanceOfAdminRolesPage;
-exports.AdminRolesPageFromJSON = AdminRolesPageFromJSON;
-exports.AdminRolesPageFromJSONTyped = AdminRolesPageFromJSONTyped;
-exports.AdminRolesPageToJSON = AdminRolesPageToJSON;
-exports.AdminRolesPageToJSONTyped = AdminRolesPageToJSONTyped;
+exports.AdminRolesPageToJSONTyped = exports.AdminRolesPageToJSON = exports.AdminRolesPageFromJSONTyped = exports.AdminRolesPageFromJSON = exports.instanceOfAdminRolesPage = void 0;
 const AdminRoleListItem_1 = require("./AdminRoleListItem");
 /**
  * Check if a given object implements the AdminRolesPage interface.
@@ -33,9 +29,11 @@ function instanceOfAdminRolesPage(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminRolesPage = instanceOfAdminRolesPage;
 function AdminRolesPageFromJSON(json) {
     return AdminRolesPageFromJSONTyped(json, false);
 }
+exports.AdminRolesPageFromJSON = AdminRolesPageFromJSON;
 function AdminRolesPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function AdminRolesPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.AdminRolesPageFromJSONTyped = AdminRolesPageFromJSONTyped;
 function AdminRolesPageToJSON(json) {
     return AdminRolesPageToJSONTyped(json, false);
 }
+exports.AdminRolesPageToJSON = AdminRolesPageToJSON;
 function AdminRolesPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function AdminRolesPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.AdminRolesPageToJSONTyped = AdminRolesPageToJSONTyped;

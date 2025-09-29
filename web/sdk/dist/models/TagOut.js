@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfTagOut = instanceOfTagOut;
-exports.TagOutFromJSON = TagOutFromJSON;
-exports.TagOutFromJSONTyped = TagOutFromJSONTyped;
-exports.TagOutToJSON = TagOutToJSON;
-exports.TagOutToJSONTyped = TagOutToJSONTyped;
+exports.TagOutToJSONTyped = exports.TagOutToJSON = exports.TagOutFromJSONTyped = exports.TagOutFromJSON = exports.instanceOfTagOut = void 0;
 /**
  * Check if a given object implements the TagOut interface.
  */
@@ -28,9 +24,11 @@ function instanceOfTagOut(value) {
         return false;
     return true;
 }
+exports.instanceOfTagOut = instanceOfTagOut;
 function TagOutFromJSON(json) {
     return TagOutFromJSONTyped(json, false);
 }
+exports.TagOutFromJSON = TagOutFromJSON;
 function TagOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -41,9 +39,11 @@ function TagOutFromJSONTyped(json, ignoreDiscriminator) {
         'bookmarkCount': json['bookmark_count'] == null ? undefined : json['bookmark_count'],
     };
 }
+exports.TagOutFromJSONTyped = TagOutFromJSONTyped;
 function TagOutToJSON(json) {
     return TagOutToJSONTyped(json, false);
 }
+exports.TagOutToJSON = TagOutToJSON;
 function TagOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -54,3 +54,4 @@ function TagOutToJSONTyped(value, ignoreDiscriminator = false) {
         'bookmark_count': value['bookmarkCount'],
     };
 }
+exports.TagOutToJSONTyped = TagOutToJSONTyped;

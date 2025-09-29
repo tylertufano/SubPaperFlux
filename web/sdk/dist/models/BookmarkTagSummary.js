@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarkTagSummary = instanceOfBookmarkTagSummary;
-exports.BookmarkTagSummaryFromJSON = BookmarkTagSummaryFromJSON;
-exports.BookmarkTagSummaryFromJSONTyped = BookmarkTagSummaryFromJSONTyped;
-exports.BookmarkTagSummaryToJSON = BookmarkTagSummaryToJSON;
-exports.BookmarkTagSummaryToJSONTyped = BookmarkTagSummaryToJSONTyped;
+exports.BookmarkTagSummaryToJSONTyped = exports.BookmarkTagSummaryToJSON = exports.BookmarkTagSummaryFromJSONTyped = exports.BookmarkTagSummaryFromJSON = exports.instanceOfBookmarkTagSummary = void 0;
 const TagOut_1 = require("./TagOut");
 /**
  * Check if a given object implements the BookmarkTagSummary interface.
@@ -27,9 +23,11 @@ function instanceOfBookmarkTagSummary(value) {
         return false;
     return true;
 }
+exports.instanceOfBookmarkTagSummary = instanceOfBookmarkTagSummary;
 function BookmarkTagSummaryFromJSON(json) {
     return BookmarkTagSummaryFromJSONTyped(json, false);
 }
+exports.BookmarkTagSummaryFromJSON = BookmarkTagSummaryFromJSON;
 function BookmarkTagSummaryFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -39,9 +37,11 @@ function BookmarkTagSummaryFromJSONTyped(json, ignoreDiscriminator) {
         'tags': json['tags'] == null ? undefined : (json['tags'].map(TagOut_1.TagOutFromJSON)),
     };
 }
+exports.BookmarkTagSummaryFromJSONTyped = BookmarkTagSummaryFromJSONTyped;
 function BookmarkTagSummaryToJSON(json) {
     return BookmarkTagSummaryToJSONTyped(json, false);
 }
+exports.BookmarkTagSummaryToJSON = BookmarkTagSummaryToJSON;
 function BookmarkTagSummaryToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -51,3 +51,4 @@ function BookmarkTagSummaryToJSONTyped(value, ignoreDiscriminator = false) {
         'tags': value['tags'] == null ? undefined : (value['tags'].map(TagOut_1.TagOutToJSON)),
     };
 }
+exports.BookmarkTagSummaryToJSONTyped = BookmarkTagSummaryToJSONTyped;

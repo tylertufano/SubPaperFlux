@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFolderCreate = instanceOfFolderCreate;
-exports.FolderCreateFromJSON = FolderCreateFromJSON;
-exports.FolderCreateFromJSONTyped = FolderCreateFromJSONTyped;
-exports.FolderCreateToJSON = FolderCreateToJSON;
-exports.FolderCreateToJSONTyped = FolderCreateToJSONTyped;
+exports.FolderCreateToJSONTyped = exports.FolderCreateToJSON = exports.FolderCreateFromJSONTyped = exports.FolderCreateFromJSON = exports.instanceOfFolderCreate = void 0;
 /**
  * Check if a given object implements the FolderCreate interface.
  */
@@ -26,9 +22,11 @@ function instanceOfFolderCreate(value) {
         return false;
     return true;
 }
+exports.instanceOfFolderCreate = instanceOfFolderCreate;
 function FolderCreateFromJSON(json) {
     return FolderCreateFromJSONTyped(json, false);
 }
+exports.FolderCreateFromJSON = FolderCreateFromJSON;
 function FolderCreateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -38,9 +36,11 @@ function FolderCreateFromJSONTyped(json, ignoreDiscriminator) {
         'instapaperFolderId': json['instapaper_folder_id'] == null ? undefined : json['instapaper_folder_id'],
     };
 }
+exports.FolderCreateFromJSONTyped = FolderCreateFromJSONTyped;
 function FolderCreateToJSON(json) {
     return FolderCreateToJSONTyped(json, false);
 }
+exports.FolderCreateToJSON = FolderCreateToJSON;
 function FolderCreateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -50,3 +50,4 @@ function FolderCreateToJSONTyped(value, ignoreDiscriminator = false) {
         'instapaper_folder_id': value['instapaperFolderId'],
     };
 }
+exports.FolderCreateToJSONTyped = FolderCreateToJSONTyped;

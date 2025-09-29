@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAuditLogsPage = instanceOfAuditLogsPage;
-exports.AuditLogsPageFromJSON = AuditLogsPageFromJSON;
-exports.AuditLogsPageFromJSONTyped = AuditLogsPageFromJSONTyped;
-exports.AuditLogsPageToJSON = AuditLogsPageToJSON;
-exports.AuditLogsPageToJSONTyped = AuditLogsPageToJSONTyped;
+exports.AuditLogsPageToJSONTyped = exports.AuditLogsPageToJSON = exports.AuditLogsPageFromJSONTyped = exports.AuditLogsPageFromJSON = exports.instanceOfAuditLogsPage = void 0;
 const AuditLogOut_1 = require("./AuditLogOut");
 /**
  * Check if a given object implements the AuditLogsPage interface.
@@ -33,9 +29,11 @@ function instanceOfAuditLogsPage(value) {
         return false;
     return true;
 }
+exports.instanceOfAuditLogsPage = instanceOfAuditLogsPage;
 function AuditLogsPageFromJSON(json) {
     return AuditLogsPageFromJSONTyped(json, false);
 }
+exports.AuditLogsPageFromJSON = AuditLogsPageFromJSON;
 function AuditLogsPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function AuditLogsPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.AuditLogsPageFromJSONTyped = AuditLogsPageFromJSONTyped;
 function AuditLogsPageToJSON(json) {
     return AuditLogsPageToJSONTyped(json, false);
 }
+exports.AuditLogsPageToJSON = AuditLogsPageToJSON;
 function AuditLogsPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function AuditLogsPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.AuditLogsPageToJSONTyped = AuditLogsPageToJSONTyped;

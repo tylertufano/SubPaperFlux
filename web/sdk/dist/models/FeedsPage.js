@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFeedsPage = instanceOfFeedsPage;
-exports.FeedsPageFromJSON = FeedsPageFromJSON;
-exports.FeedsPageFromJSONTyped = FeedsPageFromJSONTyped;
-exports.FeedsPageToJSON = FeedsPageToJSON;
-exports.FeedsPageToJSONTyped = FeedsPageToJSONTyped;
+exports.FeedsPageToJSONTyped = exports.FeedsPageToJSON = exports.FeedsPageFromJSONTyped = exports.FeedsPageFromJSON = exports.instanceOfFeedsPage = void 0;
 const FeedOut_1 = require("./FeedOut");
 /**
  * Check if a given object implements the FeedsPage interface.
@@ -33,9 +29,11 @@ function instanceOfFeedsPage(value) {
         return false;
     return true;
 }
+exports.instanceOfFeedsPage = instanceOfFeedsPage;
 function FeedsPageFromJSON(json) {
     return FeedsPageFromJSONTyped(json, false);
 }
+exports.FeedsPageFromJSON = FeedsPageFromJSON;
 function FeedsPageFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function FeedsPageFromJSONTyped(json, ignoreDiscriminator) {
         'totalPages': json['total_pages'] == null ? undefined : json['total_pages'],
     };
 }
+exports.FeedsPageFromJSONTyped = FeedsPageFromJSONTyped;
 function FeedsPageToJSON(json) {
     return FeedsPageToJSONTyped(json, false);
 }
+exports.FeedsPageToJSON = FeedsPageToJSON;
 function FeedsPageToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -65,3 +65,4 @@ function FeedsPageToJSONTyped(value, ignoreDiscriminator = false) {
         'total_pages': value['totalPages'],
     };
 }
+exports.FeedsPageToJSONTyped = FeedsPageToJSONTyped;

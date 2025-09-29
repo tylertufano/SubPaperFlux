@@ -10,9 +10,9 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { Body, ListSiteConfigsSiteConfigsGet200ResponseInner, ResponseCreateSiteConfigSiteConfigsPost, ResponseGetSiteConfigSiteConfigsConfigIdGet, ResponseUpdateSiteConfigSiteConfigsConfigIdPut } from '../models/index';
+import type { SiteConfig } from '../models/index';
 export interface CreateSiteConfigSiteConfigsPostRequest {
-    body: Body;
+    siteConfig: SiteConfig;
     xCsrfToken?: string | null;
 }
 export interface DeleteSiteConfigSiteConfigsConfigIdDeleteRequest {
@@ -27,7 +27,7 @@ export interface ListSiteConfigsSiteConfigsGetRequest {
 }
 export interface UpdateSiteConfigSiteConfigsConfigIdPutRequest {
     configId: string;
-    body: Body;
+    siteConfig: SiteConfig;
     xCsrfToken?: string | null;
 }
 /**
@@ -37,11 +37,11 @@ export declare class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * Create Site Config
      */
-    createSiteConfigSiteConfigsPostRaw(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseCreateSiteConfigSiteConfigsPost>>;
+    createSiteConfigSiteConfigsPostRaw(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>>;
     /**
      * Create Site Config
      */
-    createSiteConfigSiteConfigsPost(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseCreateSiteConfigSiteConfigsPost>;
+    createSiteConfigSiteConfigsPost(requestParameters: CreateSiteConfigSiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig>;
     /**
      * Delete Site Config
      */
@@ -53,25 +53,25 @@ export declare class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * Get Site Config
      */
-    getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseGetSiteConfigSiteConfigsConfigIdGet>>;
+    getSiteConfigSiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>>;
     /**
      * Get Site Config
      */
-    getSiteConfigSiteConfigsConfigIdGet(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseGetSiteConfigSiteConfigsConfigIdGet>;
+    getSiteConfigSiteConfigsConfigIdGet(requestParameters: GetSiteConfigSiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig>;
     /**
      * List Site Configs
      */
-    listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ListSiteConfigsSiteConfigsGet200ResponseInner>>>;
+    listSiteConfigsSiteConfigsGetRaw(requestParameters: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SiteConfig>>>;
     /**
      * List Site Configs
      */
-    listSiteConfigsSiteConfigsGet(requestParameters?: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ListSiteConfigsSiteConfigsGet200ResponseInner>>;
+    listSiteConfigsSiteConfigsGet(requestParameters?: ListSiteConfigsSiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SiteConfig>>;
     /**
      * Update Site Config
      */
-    updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseUpdateSiteConfigSiteConfigsConfigIdPut>>;
+    updateSiteConfigSiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfig>>;
     /**
      * Update Site Config
      */
-    updateSiteConfigSiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseUpdateSiteConfigSiteConfigsConfigIdPut>;
+    updateSiteConfigSiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigSiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfig>;
 }

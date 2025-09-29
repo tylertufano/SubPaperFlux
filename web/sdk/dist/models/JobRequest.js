@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfJobRequest = instanceOfJobRequest;
-exports.JobRequestFromJSON = JobRequestFromJSON;
-exports.JobRequestFromJSONTyped = JobRequestFromJSONTyped;
-exports.JobRequestToJSON = JobRequestToJSON;
-exports.JobRequestToJSONTyped = JobRequestToJSONTyped;
+exports.JobRequestToJSONTyped = exports.JobRequestToJSON = exports.JobRequestFromJSONTyped = exports.JobRequestFromJSON = exports.instanceOfJobRequest = void 0;
 /**
  * Check if a given object implements the JobRequest interface.
  */
@@ -28,9 +24,11 @@ function instanceOfJobRequest(value) {
         return false;
     return true;
 }
+exports.instanceOfJobRequest = instanceOfJobRequest;
 function JobRequestFromJSON(json) {
     return JobRequestFromJSONTyped(json, false);
 }
+exports.JobRequestFromJSON = JobRequestFromJSON;
 function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -40,9 +38,11 @@ function JobRequestFromJSONTyped(json, ignoreDiscriminator) {
         'payload': json['payload'],
     };
 }
+exports.JobRequestFromJSONTyped = JobRequestFromJSONTyped;
 function JobRequestToJSON(json) {
     return JobRequestToJSONTyped(json, false);
 }
+exports.JobRequestToJSON = JobRequestToJSON;
 function JobRequestToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -52,3 +52,4 @@ function JobRequestToJSONTyped(value, ignoreDiscriminator = false) {
         'payload': value['payload'],
     };
 }
+exports.JobRequestToJSONTyped = JobRequestToJSONTyped;

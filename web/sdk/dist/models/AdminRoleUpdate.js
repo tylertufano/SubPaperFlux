@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminRoleUpdate = instanceOfAdminRoleUpdate;
-exports.AdminRoleUpdateFromJSON = AdminRoleUpdateFromJSON;
-exports.AdminRoleUpdateFromJSONTyped = AdminRoleUpdateFromJSONTyped;
-exports.AdminRoleUpdateToJSON = AdminRoleUpdateToJSON;
-exports.AdminRoleUpdateToJSONTyped = AdminRoleUpdateToJSONTyped;
+exports.AdminRoleUpdateToJSONTyped = exports.AdminRoleUpdateToJSON = exports.AdminRoleUpdateFromJSONTyped = exports.AdminRoleUpdateFromJSON = exports.instanceOfAdminRoleUpdate = void 0;
 /**
  * Check if a given object implements the AdminRoleUpdate interface.
  */
 function instanceOfAdminRoleUpdate(value) {
     return true;
 }
+exports.instanceOfAdminRoleUpdate = instanceOfAdminRoleUpdate;
 function AdminRoleUpdateFromJSON(json) {
     return AdminRoleUpdateFromJSONTyped(json, false);
 }
+exports.AdminRoleUpdateFromJSON = AdminRoleUpdateFromJSON;
 function AdminRoleUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -36,9 +34,11 @@ function AdminRoleUpdateFromJSONTyped(json, ignoreDiscriminator) {
         'description': json['description'] == null ? undefined : json['description'],
     };
 }
+exports.AdminRoleUpdateFromJSONTyped = AdminRoleUpdateFromJSONTyped;
 function AdminRoleUpdateToJSON(json) {
     return AdminRoleUpdateToJSONTyped(json, false);
 }
+exports.AdminRoleUpdateToJSON = AdminRoleUpdateToJSON;
 function AdminRoleUpdateToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function AdminRoleUpdateToJSONTyped(value, ignoreDiscriminator = false) {
         'description': value['description'],
     };
 }
+exports.AdminRoleUpdateToJSONTyped = AdminRoleUpdateToJSONTyped;

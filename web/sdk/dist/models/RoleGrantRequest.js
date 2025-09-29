@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfRoleGrantRequest = instanceOfRoleGrantRequest;
-exports.RoleGrantRequestFromJSON = RoleGrantRequestFromJSON;
-exports.RoleGrantRequestFromJSONTyped = RoleGrantRequestFromJSONTyped;
-exports.RoleGrantRequestToJSON = RoleGrantRequestToJSON;
-exports.RoleGrantRequestToJSONTyped = RoleGrantRequestToJSONTyped;
+exports.RoleGrantRequestToJSONTyped = exports.RoleGrantRequestToJSON = exports.RoleGrantRequestFromJSONTyped = exports.RoleGrantRequestFromJSON = exports.instanceOfRoleGrantRequest = void 0;
 /**
  * Check if a given object implements the RoleGrantRequest interface.
  */
 function instanceOfRoleGrantRequest(value) {
     return true;
 }
+exports.instanceOfRoleGrantRequest = instanceOfRoleGrantRequest;
 function RoleGrantRequestFromJSON(json) {
     return RoleGrantRequestFromJSONTyped(json, false);
 }
+exports.RoleGrantRequestFromJSON = RoleGrantRequestFromJSON;
 function RoleGrantRequestFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -37,9 +35,11 @@ function RoleGrantRequestFromJSONTyped(json, ignoreDiscriminator) {
         'isSystem': json['is_system'] == null ? undefined : json['is_system'],
     };
 }
+exports.RoleGrantRequestFromJSONTyped = RoleGrantRequestFromJSONTyped;
 function RoleGrantRequestToJSON(json) {
     return RoleGrantRequestToJSONTyped(json, false);
 }
+exports.RoleGrantRequestToJSON = RoleGrantRequestToJSON;
 function RoleGrantRequestToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -50,3 +50,4 @@ function RoleGrantRequestToJSONTyped(value, ignoreDiscriminator = false) {
         'is_system': value['isSystem'],
     };
 }
+exports.RoleGrantRequestToJSONTyped = RoleGrantRequestToJSONTyped;

@@ -163,8 +163,8 @@ export class StatusApi extends runtime.BaseAPI {
     /**
      * Integrations Status
      */
-    integrationsStatusStatusIntegrationsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    integrationsStatusStatusIntegrationsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.integrationsStatusStatusIntegrationsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -202,8 +202,8 @@ export class StatusApi extends runtime.BaseAPI {
     /**
      * Integrations Status
      */
-    integrationsStatusV1StatusIntegrationsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    integrationsStatusV1StatusIntegrationsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.integrationsStatusV1StatusIntegrationsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

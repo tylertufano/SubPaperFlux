@@ -13,20 +13,18 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfMeNotificationPreferences = instanceOfMeNotificationPreferences;
-exports.MeNotificationPreferencesFromJSON = MeNotificationPreferencesFromJSON;
-exports.MeNotificationPreferencesFromJSONTyped = MeNotificationPreferencesFromJSONTyped;
-exports.MeNotificationPreferencesToJSON = MeNotificationPreferencesToJSON;
-exports.MeNotificationPreferencesToJSONTyped = MeNotificationPreferencesToJSONTyped;
+exports.MeNotificationPreferencesToJSONTyped = exports.MeNotificationPreferencesToJSON = exports.MeNotificationPreferencesFromJSONTyped = exports.MeNotificationPreferencesFromJSON = exports.instanceOfMeNotificationPreferences = void 0;
 /**
  * Check if a given object implements the MeNotificationPreferences interface.
  */
 function instanceOfMeNotificationPreferences(value) {
     return true;
 }
+exports.instanceOfMeNotificationPreferences = instanceOfMeNotificationPreferences;
 function MeNotificationPreferencesFromJSON(json) {
     return MeNotificationPreferencesFromJSONTyped(json, false);
 }
+exports.MeNotificationPreferencesFromJSON = MeNotificationPreferencesFromJSON;
 function MeNotificationPreferencesFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -36,9 +34,11 @@ function MeNotificationPreferencesFromJSONTyped(json, ignoreDiscriminator) {
         'emailDigest': json['email_digest'] == null ? undefined : json['email_digest'],
     };
 }
+exports.MeNotificationPreferencesFromJSONTyped = MeNotificationPreferencesFromJSONTyped;
 function MeNotificationPreferencesToJSON(json) {
     return MeNotificationPreferencesToJSONTyped(json, false);
 }
+exports.MeNotificationPreferencesToJSON = MeNotificationPreferencesToJSON;
 function MeNotificationPreferencesToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -48,3 +48,4 @@ function MeNotificationPreferencesToJSONTyped(value, ignoreDiscriminator = false
         'email_digest': value['emailDigest'],
     };
 }
+exports.MeNotificationPreferencesToJSONTyped = MeNotificationPreferencesToJSONTyped;

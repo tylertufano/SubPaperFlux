@@ -176,8 +176,8 @@ class SiteConfigsApi extends runtime.BaseAPI {
     /**
      * List Site Configs
      */
-    listSiteConfigsSiteConfigsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listSiteConfigsSiteConfigsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listSiteConfigsSiteConfigsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

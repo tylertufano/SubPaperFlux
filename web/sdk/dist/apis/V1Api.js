@@ -413,8 +413,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Count Bookmarks
      */
-    countBookmarksV1BookmarksCountGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    countBookmarksV1BookmarksCountGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.countBookmarksV1BookmarksCountGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1133,8 +1133,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Export Bookmarks
      */
-    exportBookmarksV1BookmarksExportGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    exportBookmarksV1BookmarksExportGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1700,8 +1700,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksV1BookmarksHeadRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1771,8 +1771,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_2() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead_2(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1810,8 +1810,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * Integrations Status
      */
-    integrationsStatusV1StatusIntegrationsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    integrationsStatusV1StatusIntegrationsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.integrationsStatusV1StatusIntegrationsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1870,8 +1870,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsV1AdminAuditGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listAuditLogsV1AdminAuditGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -1951,8 +1951,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksV1BookmarksGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2032,8 +2032,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_3() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet_3(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2077,8 +2077,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listCredentialsV1V1CredentialsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2122,8 +2122,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet_4() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listCredentialsV1V1CredentialsGet_4(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2164,8 +2164,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listFeedsV1V1FeedsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2206,8 +2206,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet_5() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listFeedsV1V1FeedsGet_5(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2287,8 +2287,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listJobSchedulesV1JobSchedulesGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listJobSchedulesV1JobSchedulesGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2335,8 +2335,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet_6() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listJobSchedulesV1JobSchedulesGet_6(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2388,8 +2388,8 @@ class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listJobsV1JobsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listJobsV1JobsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2441,8 +2441,8 @@ class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_7() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listJobsV1JobsGet_7(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listJobsV1JobsGet_7Raw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2486,8 +2486,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List organizations
      */
-    listOrganizationsV1AdminOrgsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listOrganizationsV1AdminOrgsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listOrganizationsV1AdminOrgsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2528,8 +2528,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List roles
      */
-    listRolesV1AdminRolesGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listRolesV1AdminRolesGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listRolesV1AdminRolesGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2573,8 +2573,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List site configs
      */
-    listSiteConfigsV1V1SiteConfigsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listSiteConfigsV1V1SiteConfigsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listSiteConfigsV1V1SiteConfigsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2674,8 +2674,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List API tokens
      */
-    listTokensV1MeTokensGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listTokensV1MeTokensGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listTokensV1MeTokensGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -2725,8 +2725,8 @@ class V1Api extends runtime.BaseAPI {
     /**
      * List users
      */
-    listUsersV1AdminUsersGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listUsersV1AdminUsersGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listUsersV1AdminUsersGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
@@ -3061,8 +3061,8 @@ class V1Api extends runtime.BaseAPI {
      * Server-sent events stream of jobs list.
      * Stream jobs
      */
-    streamJobsV1JobsStreamGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    streamJobsV1JobsStreamGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.streamJobsV1JobsStreamGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminRoleListItem = instanceOfAdminRoleListItem;
-exports.AdminRoleListItemFromJSON = AdminRoleListItemFromJSON;
-exports.AdminRoleListItemFromJSONTyped = AdminRoleListItemFromJSONTyped;
-exports.AdminRoleListItemToJSON = AdminRoleListItemToJSON;
-exports.AdminRoleListItemToJSONTyped = AdminRoleListItemToJSONTyped;
+exports.AdminRoleListItemToJSONTyped = exports.AdminRoleListItemToJSON = exports.AdminRoleListItemFromJSONTyped = exports.AdminRoleListItemFromJSON = exports.instanceOfAdminRoleListItem = void 0;
 /**
  * Check if a given object implements the AdminRoleListItem interface.
  */
@@ -32,9 +28,11 @@ function instanceOfAdminRoleListItem(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminRoleListItem = instanceOfAdminRoleListItem;
 function AdminRoleListItemFromJSON(json) {
     return AdminRoleListItemFromJSONTyped(json, false);
 }
+exports.AdminRoleListItemFromJSON = AdminRoleListItemFromJSON;
 function AdminRoleListItemFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function AdminRoleListItemFromJSONTyped(json, ignoreDiscriminator) {
         'assignedUserCount': json['assigned_user_count'] == null ? undefined : json['assigned_user_count'],
     };
 }
+exports.AdminRoleListItemFromJSONTyped = AdminRoleListItemFromJSONTyped;
 function AdminRoleListItemToJSON(json) {
     return AdminRoleListItemToJSONTyped(json, false);
 }
+exports.AdminRoleListItemToJSON = AdminRoleListItemToJSON;
 function AdminRoleListItemToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -66,3 +66,4 @@ function AdminRoleListItemToJSONTyped(value, ignoreDiscriminator = false) {
         'assigned_user_count': value['assignedUserCount'],
     };
 }
+exports.AdminRoleListItemToJSONTyped = AdminRoleListItemToJSONTyped;

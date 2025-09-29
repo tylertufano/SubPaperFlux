@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfMeOut = instanceOfMeOut;
-exports.MeOutFromJSON = MeOutFromJSON;
-exports.MeOutFromJSONTyped = MeOutFromJSONTyped;
-exports.MeOutToJSON = MeOutToJSON;
-exports.MeOutToJSONTyped = MeOutToJSONTyped;
+exports.MeOutToJSONTyped = exports.MeOutToJSON = exports.MeOutFromJSONTyped = exports.MeOutFromJSON = exports.instanceOfMeOut = void 0;
 const MeNotificationPreferences_1 = require("./MeNotificationPreferences");
 /**
  * Check if a given object implements the MeOut interface.
@@ -29,9 +25,11 @@ function instanceOfMeOut(value) {
         return false;
     return true;
 }
+exports.instanceOfMeOut = instanceOfMeOut;
 function MeOutFromJSON(json) {
     return MeOutFromJSONTyped(json, false);
 }
+exports.MeOutFromJSON = MeOutFromJSON;
 function MeOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -45,9 +43,11 @@ function MeOutFromJSONTyped(json, ignoreDiscriminator) {
         'notificationPreferences': (0, MeNotificationPreferences_1.MeNotificationPreferencesFromJSON)(json['notification_preferences']),
     };
 }
+exports.MeOutFromJSONTyped = MeOutFromJSONTyped;
 function MeOutToJSON(json) {
     return MeOutToJSONTyped(json, false);
 }
+exports.MeOutToJSON = MeOutToJSON;
 function MeOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -61,3 +61,4 @@ function MeOutToJSONTyped(value, ignoreDiscriminator = false) {
         'notification_preferences': (0, MeNotificationPreferences_1.MeNotificationPreferencesToJSON)(value['notificationPreferences']),
     };
 }
+exports.MeOutToJSONTyped = MeOutToJSONTyped;

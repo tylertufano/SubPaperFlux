@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfCredential = instanceOfCredential;
-exports.CredentialFromJSON = CredentialFromJSON;
-exports.CredentialFromJSONTyped = CredentialFromJSONTyped;
-exports.CredentialToJSON = CredentialToJSON;
-exports.CredentialToJSONTyped = CredentialToJSONTyped;
+exports.CredentialToJSONTyped = exports.CredentialToJSON = exports.CredentialFromJSONTyped = exports.CredentialFromJSON = exports.instanceOfCredential = void 0;
 /**
  * Check if a given object implements the Credential interface.
  */
@@ -30,9 +26,11 @@ function instanceOfCredential(value) {
         return false;
     return true;
 }
+exports.instanceOfCredential = instanceOfCredential;
 function CredentialFromJSON(json) {
     return CredentialFromJSONTyped(json, false);
 }
+exports.CredentialFromJSON = CredentialFromJSON;
 function CredentialFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -46,9 +44,11 @@ function CredentialFromJSONTyped(json, ignoreDiscriminator) {
         'siteConfigId': json['site_config_id'] == null ? undefined : json['site_config_id'],
     };
 }
+exports.CredentialFromJSONTyped = CredentialFromJSONTyped;
 function CredentialToJSON(json) {
     return CredentialToJSONTyped(json, false);
 }
+exports.CredentialToJSON = CredentialToJSON;
 function CredentialToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -62,3 +62,4 @@ function CredentialToJSONTyped(value, ignoreDiscriminator = false) {
         'site_config_id': value['siteConfigId'],
     };
 }
+exports.CredentialToJSONTyped = CredentialToJSONTyped;

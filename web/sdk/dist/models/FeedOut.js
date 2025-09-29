@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfFeedOut = instanceOfFeedOut;
-exports.FeedOutFromJSON = FeedOutFromJSON;
-exports.FeedOutFromJSONTyped = FeedOutFromJSONTyped;
-exports.FeedOutToJSON = FeedOutToJSON;
-exports.FeedOutToJSONTyped = FeedOutToJSONTyped;
+exports.FeedOutToJSONTyped = exports.FeedOutToJSON = exports.FeedOutFromJSONTyped = exports.FeedOutFromJSON = exports.instanceOfFeedOut = void 0;
 /**
  * Check if a given object implements the FeedOut interface.
  */
@@ -30,9 +26,11 @@ function instanceOfFeedOut(value) {
         return false;
     return true;
 }
+exports.instanceOfFeedOut = instanceOfFeedOut;
 function FeedOutFromJSON(json) {
     return FeedOutFromJSONTyped(json, false);
 }
+exports.FeedOutFromJSON = FeedOutFromJSON;
 function FeedOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -49,9 +47,11 @@ function FeedOutFromJSONTyped(json, ignoreDiscriminator) {
         'siteLoginCredentialId': json['site_login_credential_id'] == null ? undefined : json['site_login_credential_id'],
     };
 }
+exports.FeedOutFromJSONTyped = FeedOutFromJSONTyped;
 function FeedOutToJSON(json) {
     return FeedOutToJSONTyped(json, false);
 }
+exports.FeedOutToJSON = FeedOutToJSON;
 function FeedOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -68,3 +68,4 @@ function FeedOutToJSONTyped(value, ignoreDiscriminator = false) {
         'site_login_credential_id': value['siteLoginCredentialId'],
     };
 }
+exports.FeedOutToJSONTyped = FeedOutToJSONTyped;

@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfBookmarkOut = instanceOfBookmarkOut;
-exports.BookmarkOutFromJSON = BookmarkOutFromJSON;
-exports.BookmarkOutFromJSONTyped = BookmarkOutFromJSONTyped;
-exports.BookmarkOutToJSON = BookmarkOutToJSON;
-exports.BookmarkOutToJSONTyped = BookmarkOutToJSONTyped;
+exports.BookmarkOutToJSONTyped = exports.BookmarkOutToJSON = exports.BookmarkOutFromJSONTyped = exports.BookmarkOutFromJSON = exports.instanceOfBookmarkOut = void 0;
 /**
  * Check if a given object implements the BookmarkOut interface.
  */
@@ -26,9 +22,11 @@ function instanceOfBookmarkOut(value) {
         return false;
     return true;
 }
+exports.instanceOfBookmarkOut = instanceOfBookmarkOut;
 function BookmarkOutFromJSON(json) {
     return BookmarkOutFromJSONTyped(json, false);
 }
+exports.BookmarkOutFromJSON = BookmarkOutFromJSON;
 function BookmarkOutFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -47,9 +45,11 @@ function BookmarkOutFromJSONTyped(json, ignoreDiscriminator) {
         'publicationFlags': json['publication_flags'] == null ? undefined : json['publication_flags'],
     };
 }
+exports.BookmarkOutFromJSONTyped = BookmarkOutFromJSONTyped;
 function BookmarkOutToJSON(json) {
     return BookmarkOutToJSONTyped(json, false);
 }
+exports.BookmarkOutToJSON = BookmarkOutToJSON;
 function BookmarkOutToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -68,3 +68,4 @@ function BookmarkOutToJSONTyped(value, ignoreDiscriminator = false) {
         'publication_flags': value['publicationFlags'],
     };
 }
+exports.BookmarkOutToJSONTyped = BookmarkOutToJSONTyped;

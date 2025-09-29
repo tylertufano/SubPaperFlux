@@ -26,7 +26,7 @@ export interface BookmarkOut {
      * @type {string}
      * @memberof BookmarkOut
      */
-    instapaperBookmarkId?: string | null;
+    instapaperBookmarkId: string;
     /**
      *
      * @type {string}
@@ -57,36 +57,6 @@ export interface BookmarkOut {
      * @memberof BookmarkOut
      */
     publishedAt?: string | null;
-    /**
-     *
-     * @type {{ [key: string]: any; }}
-     * @memberof BookmarkOut
-     */
-    rssEntry?: {
-        [key: string]: any;
-    };
-    /**
-     *
-     * @type {string}
-     * @memberof BookmarkOut
-     */
-    rawHtmlContent?: string | null;
-    /**
-     *
-     * @type {{ [key: string]: any; }}
-     * @memberof BookmarkOut
-     */
-    publicationStatuses?: {
-        [key: string]: any;
-    };
-    /**
-     *
-     * @type {{ [key: string]: any; }}
-     * @memberof BookmarkOut
-     */
-    publicationFlags?: {
-        [key: string]: any;
-    };
 }
 /**
  * Check if a given object implements the BookmarkOut interface.

@@ -217,8 +217,8 @@ class CredentialsApi extends runtime.BaseAPI {
     /**
      * List Credentials
      */
-    listCredentialsCredentialsGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listCredentialsCredentialsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listCredentialsCredentialsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

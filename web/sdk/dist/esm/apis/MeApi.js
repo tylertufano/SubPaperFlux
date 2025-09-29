@@ -170,8 +170,8 @@ export class MeApi extends runtime.BaseAPI {
     /**
      * List API tokens
      */
-    listTokensV1MeTokensGet() {
-        return __awaiter(this, arguments, void 0, function* (requestParameters = {}, initOverrides) {
+    listTokensV1MeTokensGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listTokensV1MeTokensGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });

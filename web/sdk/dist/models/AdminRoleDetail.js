@@ -13,11 +13,7 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfAdminRoleDetail = instanceOfAdminRoleDetail;
-exports.AdminRoleDetailFromJSON = AdminRoleDetailFromJSON;
-exports.AdminRoleDetailFromJSONTyped = AdminRoleDetailFromJSONTyped;
-exports.AdminRoleDetailToJSON = AdminRoleDetailToJSON;
-exports.AdminRoleDetailToJSONTyped = AdminRoleDetailToJSONTyped;
+exports.AdminRoleDetailToJSONTyped = exports.AdminRoleDetailToJSON = exports.AdminRoleDetailFromJSONTyped = exports.AdminRoleDetailFromJSON = exports.instanceOfAdminRoleDetail = void 0;
 /**
  * Check if a given object implements the AdminRoleDetail interface.
  */
@@ -32,9 +28,11 @@ function instanceOfAdminRoleDetail(value) {
         return false;
     return true;
 }
+exports.instanceOfAdminRoleDetail = instanceOfAdminRoleDetail;
 function AdminRoleDetailFromJSON(json) {
     return AdminRoleDetailFromJSONTyped(json, false);
 }
+exports.AdminRoleDetailFromJSON = AdminRoleDetailFromJSON;
 function AdminRoleDetailFromJSONTyped(json, ignoreDiscriminator) {
     if (json == null) {
         return json;
@@ -50,9 +48,11 @@ function AdminRoleDetailFromJSONTyped(json, ignoreDiscriminator) {
         'metadata': json['metadata'] == null ? undefined : json['metadata'],
     };
 }
+exports.AdminRoleDetailFromJSONTyped = AdminRoleDetailFromJSONTyped;
 function AdminRoleDetailToJSON(json) {
     return AdminRoleDetailToJSONTyped(json, false);
 }
+exports.AdminRoleDetailToJSON = AdminRoleDetailToJSON;
 function AdminRoleDetailToJSONTyped(value, ignoreDiscriminator = false) {
     if (value == null) {
         return value;
@@ -68,3 +68,4 @@ function AdminRoleDetailToJSONTyped(value, ignoreDiscriminator = false) {
         'metadata': value['metadata'],
     };
 }
+exports.AdminRoleDetailToJSONTyped = AdminRoleDetailToJSONTyped;

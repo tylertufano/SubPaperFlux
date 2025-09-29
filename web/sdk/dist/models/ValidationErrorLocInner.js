@@ -13,26 +13,27 @@
  * Do not edit the class manually.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instanceOfValidationErrorLocInner = instanceOfValidationErrorLocInner;
-exports.ValidationErrorLocInnerFromJSON = ValidationErrorLocInnerFromJSON;
-exports.ValidationErrorLocInnerFromJSONTyped = ValidationErrorLocInnerFromJSONTyped;
-exports.ValidationErrorLocInnerToJSON = ValidationErrorLocInnerToJSON;
-exports.ValidationErrorLocInnerToJSONTyped = ValidationErrorLocInnerToJSONTyped;
+exports.ValidationErrorLocInnerToJSONTyped = exports.ValidationErrorLocInnerToJSON = exports.ValidationErrorLocInnerFromJSONTyped = exports.ValidationErrorLocInnerFromJSON = exports.instanceOfValidationErrorLocInner = void 0;
 /**
  * Check if a given object implements the ValidationErrorLocInner interface.
  */
 function instanceOfValidationErrorLocInner(value) {
     return true;
 }
+exports.instanceOfValidationErrorLocInner = instanceOfValidationErrorLocInner;
 function ValidationErrorLocInnerFromJSON(json) {
     return ValidationErrorLocInnerFromJSONTyped(json, false);
 }
+exports.ValidationErrorLocInnerFromJSON = ValidationErrorLocInnerFromJSON;
 function ValidationErrorLocInnerFromJSONTyped(json, ignoreDiscriminator) {
     return json;
 }
+exports.ValidationErrorLocInnerFromJSONTyped = ValidationErrorLocInnerFromJSONTyped;
 function ValidationErrorLocInnerToJSON(json) {
     return ValidationErrorLocInnerToJSONTyped(json, false);
 }
+exports.ValidationErrorLocInnerToJSON = ValidationErrorLocInnerToJSON;
 function ValidationErrorLocInnerToJSONTyped(value, ignoreDiscriminator = false) {
     return value;
 }
+exports.ValidationErrorLocInnerToJSONTyped = ValidationErrorLocInnerToJSONTyped;

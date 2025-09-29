@@ -19,7 +19,7 @@ import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './Sit
 
 /**
  * @type Body
- *
+ * 
  * @export
  */
 export type Body = { loginType: 'api' } & SiteConfigApi | { loginType: 'selenium' } & SiteConfigSelenium;
