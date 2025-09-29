@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useCallback, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, ErrorBoundary, Nav } from '../components'
@@ -20,6 +20,8 @@ type IntegrationStatusResponse = {
   details?: Record<string, IntegrationStatusDetail>
   [key: string]: any
 }
+
+type IntegrationParams = { instapaperCredId?: string; minifluxCredId?: string }
 
 function pickFirst<T>(source: Record<string, any> | undefined, keys: string[]): T | undefined {
   if (!source) return undefined
@@ -123,14 +125,19 @@ export default function Admin() {
   const { data: status, error: statusError, isLoading: statusLoading, mutate: refreshStatus } = useSWR(['/v1/status'], () => v1.getStatusV1StatusGet())
   const { data: db, error: dbError, isLoading: dbLoading, mutate: refreshDb } = useSWR(['/v1/status/db'], () => v1.dbStatusV1StatusDbGet())
   const [integrationInputs, setIntegrationInputs] = useState<{ instapaper: string; miniflux: string }>({ instapaper: '', miniflux: '' })
-  const [integrationParams, setIntegrationParams] = useState<{ instapaperCredId?: string; minifluxCredId?: string }>({})
+  const [integrationParams, setIntegrationParams] = useState<IntegrationParams>({})
+  const integrationFetcher = useCallback(
+    ([, params]: readonly [string, IntegrationParams]) => v1.integrationsStatusV1StatusIntegrationsGet(params),
+    [],
+  )
   const {
     data: integrations,
     error: integrationError,
     isLoading: integrationLoading,
     mutate: refreshIntegrations,
-  } = useSWR<IntegrationStatusResponse>(['/v1/status/integrations', integrationParams], ([, params]) =>
-    v1.integrationsStatusV1StatusIntegrationsGet(params),
+  } = useSWR<IntegrationStatusResponse, Error, readonly [string, IntegrationParams]>(
+    ['/v1/status/integrations', integrationParams] as const,
+    integrationFetcher,
   )
   const [retryingIntegration, setRetryingIntegration] = useState<string | null>(null)
   const integrationEntries = useMemo(() => Object.entries(integrations?.details ?? {}), [integrations])
@@ -167,7 +174,7 @@ export default function Admin() {
       pickFirst<string>(integrations?.details?.[integration], ['credential_id', 'credentialId']) ||
       undefined
     const tester = credentialId ? testers[integration] : undefined
-    if (!tester) {
+    if (!tester || !credentialId) {
       return
     }
     try {

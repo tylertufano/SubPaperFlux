@@ -18,6 +18,11 @@
  * 
  * @export
  */
+import type { SiteConfigApiOut } from './SiteConfigApiOut'
+import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut'
+import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from './SiteConfigSeleniumOut'
+
 export type SiteConfigsPageItemsInner = { loginType: 'api' } & SiteConfigApiOut | { loginType: 'selenium' } & SiteConfigSeleniumOut;
 
 export function SiteConfigsPageItemsInnerFromJSON(json: any): SiteConfigsPageItemsInner {
@@ -52,7 +57,7 @@ export function SiteConfigsPageItemsInnerToJSONTyped(value?: SiteConfigsPageItem
         case 'selenium':
             return Object.assign({}, SiteConfigSeleniumOutToJSON(value), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

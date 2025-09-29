@@ -1,4 +1,12 @@
 const { withSentryConfig } = require('@sentry/nextjs')
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+  analyzerMode: 'static',
+  reportFilename: ({ isServer }) => `../analyze/${isServer ? 'server' : 'client'}.html`,
+  generateStatsFile: true,
+  statsFilename: ({ isServer }) => `../analyze/${isServer ? 'server' : 'client'}-stats.json`,
+})
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -17,5 +25,5 @@ const sentryWebpackPluginOptions = {
   dryRun: !process.env.SENTRY_AUTH_TOKEN,
 }
 
-module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)
 
