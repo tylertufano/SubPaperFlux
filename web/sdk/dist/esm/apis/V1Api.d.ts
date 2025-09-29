@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, RoleGrantRequest, SiteConfigOut, SiteConfigsPage, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost, RoleGrantRequest, SiteConfigsPage, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: string;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -485,11 +485,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * Copy Site Config V1
      */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfigOut>>;
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost>>;
     /**
      * Copy Site Config V1
      */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteConfigOut>;
+    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost>;
     /**
      * Count Bookmarks
      */

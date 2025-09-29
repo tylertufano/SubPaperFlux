@@ -338,7 +338,7 @@ class V1Api extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteConfigOutFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON)(jsonValue));
         });
     }
     /**

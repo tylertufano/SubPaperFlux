@@ -11,6 +11,7 @@ src/apis/MeApi.ts
 src/apis/SiteConfigsApi.ts
 src/apis/SiteSettingsApi.ts
 src/apis/StatusApi.ts
+src/apis/TemplatesApi.ts
 src/apis/V1Api.ts
 src/apis/index.ts
 src/index.ts
@@ -83,6 +84,9 @@ src/models/SiteConfigSelenium.ts
 src/models/SiteConfigSeleniumOut.ts
 src/models/SiteConfigsPage.ts
 src/models/SiteConfigsPageItemsInner.ts
+src/models/SiteSetupStatus.ts
+src/models/SiteSetupStatusOut.ts
+src/models/SiteSetupStatusUpdate.ts
 src/models/SiteWelcomeContent.ts
 src/models/SiteWelcomeSettingOut.ts
 src/models/SiteWelcomeSettingUpdate.ts
@@ -90,6 +94,9 @@ src/models/StatusResponse.ts
 src/models/TagCreate.ts
 src/models/TagOut.ts
 src/models/TagUpdate.ts
+src/models/TemplateCategory.ts
+src/models/TemplateListResponse.ts
+src/models/TemplateMetadata.ts
 src/models/ValidationError.ts
 src/models/ValidationErrorLocInner.ts
 src/models/index.ts

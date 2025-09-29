@@ -9,4 +9,5 @@ export * from './MeApi';
 export * from './SiteConfigsApi';
 export * from './SiteSettingsApi';
 export * from './StatusApi';
+export * from './TemplatesApi';
 export * from './V1Api';

@@ -63,6 +63,12 @@ export interface FeedOut {
      * @memberof FeedOut
      */
     ownerUserId?: string | null;
+    /**
+     *
+     * @type {string}
+     * @memberof FeedOut
+     */
+    siteLoginCredentialId?: string | null;
 }
 /**
  * Check if a given object implements the FeedOut interface.

@@ -153,6 +153,7 @@ describe("Nav component", () => {
     expect(screen.getByRole("link", { name: "Jobs" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Schedules" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feeds" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Templates" })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Credentials" }),
     ).toBeInTheDocument();
@@ -161,6 +162,7 @@ describe("Nav component", () => {
     ).toBeInTheDocument();
 
     expectNavigationOrder([
+      "Templates",
       "Site Configs",
       "Credentials",
       "Feeds",
@@ -225,6 +227,7 @@ describe("Nav component", () => {
     expect(screen.queryByRole("link", { name: "Feeds" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Credentials" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Site Configs" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Templates" })).toBeInTheDocument();
   });
 
   it("shows partially privileged navigation when users hold specific permissions", () => {
@@ -250,5 +253,6 @@ describe("Nav component", () => {
       screen.getByRole("link", { name: "Credentials" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Site Configs" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Templates" })).toBeInTheDocument();
   });
 });
