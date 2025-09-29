@@ -85,7 +85,9 @@ export default function TemplatesGallery({
     }
     const selectedSet = new Set(selectedCategories)
     return templates.filter((template) =>
-      template.categories?.some((category) => selectedSet.has(category ?? '')),
+      template.categories?.some((category: string) =>
+        selectedSet.has(category ?? ''),
+      ) ?? false,
     )
   }, [templates, selectedCategories])
 
