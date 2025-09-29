@@ -12,16 +12,16 @@
  * Do not edit the class manually.
  */
 
+import type { SiteConfigApi } from './SiteConfigApi'
+import { SiteConfigApiFromJSONTyped, SiteConfigApiToJSON } from './SiteConfigApi'
+import type { SiteConfigSelenium } from './SiteConfigSelenium'
+import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './SiteConfigSelenium'
 
 /**
  * @type ResponseGetSiteConfigSiteConfigsConfigIdGet
  * 
  * @export
  */
-import type { SiteConfigApi } from './SiteConfigApi'
-import { SiteConfigApiFromJSONTyped, SiteConfigApiToJSON } from './SiteConfigApi'
-import type { SiteConfigSelenium } from './SiteConfigSelenium'
-import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './SiteConfigSelenium'
 
 export type ResponseGetSiteConfigSiteConfigsConfigIdGet = { loginType: 'api' } & SiteConfigApi | { loginType: 'selenium' } & SiteConfigSelenium;
 
@@ -53,9 +53,9 @@ export function ResponseGetSiteConfigSiteConfigsConfigIdGetToJSONTyped(value?: R
     }
     switch (value['loginType']) {
         case 'api':
-            return Object.assign({}, SiteConfigApiToJSON(value), { loginType: 'api' } as const);
+            return Object.assign({}, SiteConfigApiToJSON(value as SiteConfigApi), { loginType: 'api' } as const);
         case 'selenium':
-            return Object.assign({}, SiteConfigSeleniumToJSON(value), { loginType: 'selenium' } as const);
+            return Object.assign({}, SiteConfigSeleniumToJSON(value as SiteConfigSelenium), { loginType: 'selenium' } as const);
         default:
             return value;
     }

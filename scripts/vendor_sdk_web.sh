@@ -39,6 +39,8 @@ Update steps:
 
 The vendoring script removes a conflicting apis barrel and tweaks exports for Next.js builds.
 EOF
+
+  python3 "$(dirname "$0")/postprocess_site_config_models.py" "$OUT_DIR"
 }
 
 generate() {
