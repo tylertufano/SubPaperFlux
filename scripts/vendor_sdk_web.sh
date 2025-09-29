@@ -39,6 +39,8 @@ Update steps:
 
 The vendoring script removes a conflicting apis barrel and tweaks exports for Next.js builds.
 EOF
+
+  "$(dirname "$0")/patch_sdk_body.py" "$OUT_DIR"
 }
 
 generate() {
