@@ -11,7 +11,10 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-
+import type { SiteConfigApiOut } from './SiteConfigApiOut'
+import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut'
+import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from './SiteConfigSeleniumOut'
 
 /**
  * @type ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost
@@ -48,11 +51,11 @@ export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostToJSONTyped
     }
     switch (value['loginType']) {
         case 'api':
-            return Object.assign({}, SiteConfigApiOutToJSON(value), { loginType: 'api' } as const);
+            return Object.assign({}, SiteConfigApiOutToJSON(value as SiteConfigApiOut), { loginType: 'api' } as const);
         case 'selenium':
-            return Object.assign({}, SiteConfigSeleniumOutToJSON(value), { loginType: 'selenium' } as const);
+            return Object.assign({}, SiteConfigSeleniumOutToJSON(value as SiteConfigSeleniumOut), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

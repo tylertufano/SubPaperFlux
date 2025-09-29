@@ -11,8 +11,6 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-
-
 import type { SiteConfigApi } from './SiteConfigApi'
 import { SiteConfigApiFromJSONTyped, SiteConfigApiToJSON } from './SiteConfigApi'
 import type { SiteConfigSelenium } from './SiteConfigSelenium'
