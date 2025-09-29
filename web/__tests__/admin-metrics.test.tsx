@@ -20,8 +20,20 @@ vi.mock('../components', () => ({
 }))
 
 describe('AdminMetrics page', () => {
-  it('renders parsed histogram buckets for requests and jobs', () => {
-    const metricsText = `# HELP api_request_duration_seconds Request latency\n` +
+  it('renders aggregated counters and histogram buckets', () => {
+    const metricsText = `# HELP user_logins_total Login count\n` +
+      `# TYPE user_logins_total counter\n` +
+      `user_logins_total 42\n` +
+      `# HELP admin_actions_total Admin actions\n` +
+      `# TYPE admin_actions_total counter\n` +
+      `admin_actions_total{action="create_user"} 3\n` +
+      `admin_actions_total{action="delete_user"} 1\n` +
+      `# HELP jobs_processed_total Jobs processed\n` +
+      `# TYPE jobs_processed_total counter\n` +
+      `jobs_processed_total{type="ingest",status="done"} 10\n` +
+      `jobs_processed_total{type="ingest",status="failed"} 2\n` +
+      `jobs_processed_total{type="sync",status="done"} 5\n` +
+      `# HELP api_request_duration_seconds Request latency\n` +
       `# TYPE api_request_duration_seconds histogram\n` +
       `api_request_duration_seconds_bucket{le="0.10",method="GET",path="/v1/status"} 3\n` +
       `api_request_duration_seconds_bucket{le="0.25",method="GET",path="/v1/status"} 8\n` +
@@ -50,6 +62,27 @@ describe('AdminMetrics page', () => {
     })
 
     expect(screen.getByRole('heading', { name: 'Metrics' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Login activity' })).toBeInTheDocument()
+    expect(screen.getByText('Total logins recorded')).toBeInTheDocument()
+    const loginTable = screen.getByRole('table', { name: 'Login counters' })
+    expect(within(loginTable).getByText('Total')).toBeInTheDocument()
+    expect(within(loginTable).getByText('42')).toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { name: 'Admin actions' })).toBeInTheDocument()
+    const adminTable = screen.getByRole('table', { name: 'Administrative action counters' })
+    expect(within(adminTable).getByText('create_user')).toBeInTheDocument()
+    expect(within(adminTable).getByText('3')).toBeInTheDocument()
+    expect(within(adminTable).getByText('delete_user')).toBeInTheDocument()
+    expect(within(adminTable).getByText('1')).toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { name: 'Job execution status' })).toBeInTheDocument()
+    const statusTable = screen.getByRole('table', { name: 'Job status counters' })
+    expect(within(statusTable).getByText('ingest')).toBeInTheDocument()
+    expect(within(statusTable).getByText('10')).toBeInTheDocument()
+    expect(within(statusTable).getByText('2')).toBeInTheDocument()
+    expect(within(statusTable).getByText('sync')).toBeInTheDocument()
+    expect(within(statusTable).getByText('5')).toBeInTheDocument()
+
     expect(screen.getByRole('heading', { name: 'API request latency' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Job execution duration' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'GET /v1/status' })).toBeInTheDocument()

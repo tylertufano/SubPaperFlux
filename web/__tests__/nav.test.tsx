@@ -140,6 +140,11 @@ describe("Nav component", () => {
     ).toBe(true);
     expect(
       accountDropdowns.some((dropdown) =>
+        within(dropdown).queryByText("Metrics"),
+      ),
+    ).toBe(true);
+    expect(
+      accountDropdowns.some((dropdown) =>
         within(dropdown).queryByText("Audit Log"),
       ),
     ).toBe(true);
