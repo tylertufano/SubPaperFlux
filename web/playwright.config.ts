@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:3000'
+const defaultWebBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
+const defaultApiBaseURL =
+  process.env.NEXT_PUBLIC_API_BASE ?? process.env.API_BASE ?? 'http://127.0.0.1:8000'
+const baseURL = defaultWebBaseURL
+const apiBaseURL = defaultApiBaseURL
 const isCI = !!process.env.CI
 const oidcStubPort = Number(process.env.OIDC_STUB_PORT ?? 4455)
 const defaultOidcIssuer = `http://127.0.0.1:${oidcStubPort}/oidc`
@@ -15,6 +19,7 @@ process.env.OIDC_CLIENT_ID = oidcClientId
 process.env.OIDC_CLIENT_SECRET = oidcClientSecret
 process.env.OIDC_JWKS_URL = oidcJwksUrl
 process.env.NEXTAUTH_SECRET = nextAuthSecret
+process.env.NEXT_PUBLIC_API_BASE = apiBaseURL
 
 export default defineConfig({
   testDir: '../web/e2e',
@@ -37,7 +42,7 @@ export default defineConfig({
     reuseExistingServer: !isCI,
     env: {
       ...process.env,
-      NEXT_PUBLIC_API_BASE: baseURL,
+      NEXT_PUBLIC_API_BASE: apiBaseURL,
       OIDC_ISSUER: oidcIssuer,
       OIDC_CLIENT_ID: oidcClientId,
       OIDC_CLIENT_SECRET: oidcClientSecret,
