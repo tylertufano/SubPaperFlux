@@ -121,6 +121,7 @@ export default function Nav() {
         { href: '/admin/users', label: t('nav_users') },
         { href: '/admin/roles', label: t('nav_roles') },
         { href: '/admin/orgs', label: t('nav_orgs') },
+        { href: '/admin/metrics', label: t('nav_metrics') },
         { href: '/admin/audit', label: t('nav_audit') },
       ]
     : []

@@ -46,6 +46,24 @@ export type SiteSetupStatusOut = {
 
 export type SiteSetupStatusUpdatePayload = SiteSetupStatus
 
+export type PrometheusHistogramBucket = {
+  upperBound: number | null
+  rawUpperBound: string
+  cumulativeCount: number
+}
+
+export type PrometheusHistogramSeries = {
+  metric: string
+  labels: Record<string, string>
+  buckets: PrometheusHistogramBucket[]
+  count?: number
+  sum?: number
+}
+
+export type ParsedPrometheusMetrics = {
+  histograms: Record<string, PrometheusHistogramSeries[]>
+}
+
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
 
 export function parseEnvBoolean(value?: string | null): boolean {
@@ -1104,6 +1122,186 @@ async function downloadTemplateAsset(templateId: string): Promise<Blob> {
     throw new Error(message || 'Failed to download template')
   }
   return response.blob()
+}
+
+function unescapePrometheusValue(value: string): string {
+  return value.replace(/\\(.)/g, (_, ch: string) => {
+    switch (ch) {
+      case '\\':
+        return '\\'
+      case '"':
+        return '"'
+      case 'n':
+        return '\n'
+      case 't':
+        return '\t'
+      case 'r':
+        return '\r'
+      default:
+        return ch
+    }
+  })
+}
+
+function parsePrometheusLabels(input: string): Record<string, string> {
+  if (!input) return {}
+  const result: Record<string, string> = {}
+  const labelPattern = /([a-zA-Z_][a-zA-Z0-9_]*)="((?:\\.|[^"])*)"/g
+  let match: RegExpExecArray | null
+  while ((match = labelPattern.exec(input)) !== null) {
+    const [, key, rawValue] = match
+    result[key] = unescapePrometheusValue(rawValue)
+  }
+  return result
+}
+
+function serializePrometheusLabels(labels: Record<string, string>): string {
+  const keys = Object.keys(labels).sort()
+  return keys.map((key) => `${key}=${JSON.stringify(labels[key])}`).join(',')
+}
+
+type HistogramAccumulator = PrometheusHistogramSeries & {
+  buckets: PrometheusHistogramBucket[]
+}
+
+export function parsePrometheusMetrics(text: string): ParsedPrometheusMetrics {
+  const histogramSeries = new Map<string, HistogramAccumulator>()
+  const lines = text.split(/\r?\n/)
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+
+    const [metricPart, valuePart] = line.split(/\s+/, 2)
+    if (!metricPart || !valuePart) continue
+
+    const metricMatch = /^([a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{([^}]*)\})?$/.exec(metricPart)
+    if (!metricMatch) continue
+
+    const [, metricName, labelText = ''] = metricMatch
+    const value = Number(valuePart)
+    if (Number.isNaN(value)) {
+      continue
+    }
+
+    const labels = parsePrometheusLabels(labelText)
+
+    if (metricName.endsWith('_bucket')) {
+      const baseName = metricName.slice(0, -7)
+      const rawUpper = labels.le ?? '+Inf'
+      const labelsWithoutLe: Record<string, string> = {}
+      for (const [key, val] of Object.entries(labels)) {
+        if (key === 'le') continue
+        labelsWithoutLe[key] = val
+      }
+      const key = `${baseName}|${serializePrometheusLabels(labelsWithoutLe)}`
+      let series = histogramSeries.get(key)
+      if (!series) {
+        series = {
+          metric: baseName,
+          labels: labelsWithoutLe,
+          buckets: [],
+        }
+        histogramSeries.set(key, series)
+      }
+      const numericUpper = rawUpper === '+Inf' || rawUpper === 'Inf' ? null : Number(rawUpper)
+      series.buckets.push({
+        upperBound: Number.isNaN(numericUpper) ? null : numericUpper,
+        rawUpperBound: rawUpper,
+        cumulativeCount: value,
+      })
+      continue
+    }
+
+    if (metricName.endsWith('_sum')) {
+      const baseName = metricName.slice(0, -4)
+      const key = `${baseName}|${serializePrometheusLabels(labels)}`
+      let series = histogramSeries.get(key)
+      if (!series) {
+        series = { metric: baseName, labels, buckets: [] }
+        histogramSeries.set(key, series)
+      }
+      series.sum = value
+      continue
+    }
+
+    if (metricName.endsWith('_count')) {
+      const baseName = metricName.slice(0, -6)
+      const key = `${baseName}|${serializePrometheusLabels(labels)}`
+      let series = histogramSeries.get(key)
+      if (!series) {
+        series = { metric: baseName, labels, buckets: [] }
+        histogramSeries.set(key, series)
+      }
+      series.count = value
+    }
+  }
+
+  const histograms: Record<string, PrometheusHistogramSeries[]> = {}
+  for (const series of histogramSeries.values()) {
+    series.buckets.sort((a, b) => {
+      if (a.upperBound === null && b.upperBound === null) return 0
+      if (a.upperBound === null) return 1
+      if (b.upperBound === null) return -1
+      return a.upperBound - b.upperBound
+    })
+    const copy: PrometheusHistogramSeries = {
+      metric: series.metric,
+      labels: { ...series.labels },
+      buckets: series.buckets.map((bucket) => ({ ...bucket })),
+      count: series.count,
+      sum: series.sum,
+    }
+    if (!histograms[copy.metric]) {
+      histograms[copy.metric] = []
+    }
+    histograms[copy.metric].push(copy)
+  }
+
+  for (const value of Object.values(histograms)) {
+    value.sort((a, b) => {
+      const labelsA = serializePrometheusLabels(a.labels)
+      const labelsB = serializePrometheusLabels(b.labels)
+      return labelsA.localeCompare(labelsB)
+    })
+  }
+
+  return { histograms }
+}
+
+export async function fetchPrometheusMetrics(): Promise<ParsedPrometheusMetrics> {
+  const basePath = await resolveApiBase()
+  const session = await loadSession()
+  const token = resolveSessionToken(session)
+  const accessToken = resolveSessionAccessToken(session)
+  const headers: Record<string, string> = {
+    Accept: 'text/plain',
+    'X-CSRF-Token': CSRF,
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  applyAccessTokenHeader(headers, accessToken)
+
+  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
+  const response = await fetch(`${normalizedBase}/metrics`, {
+    headers,
+    credentials: 'include',
+  })
+
+  if (response.status === 401 && isOidcAutoLoginEnabled()) {
+    try {
+      await response.text()
+    } catch {}
+    return triggerOidcRedirect()
+  }
+
+  const body = await response.text()
+  if (!response.ok) {
+    const message = body.trim()
+    throw new Error(message || 'Failed to load metrics')
+  }
+
+  return parsePrometheusMetrics(body)
 }
 
 export const v1 = {
