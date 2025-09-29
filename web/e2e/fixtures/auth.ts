@@ -453,13 +453,30 @@ async function authenticatePage(page: Page, baseURL: string, oidc: OidcStub, red
   const signInUrl = new URL('/api/auth/signin/oidc', baseURL)
   signInUrl.searchParams.set('callbackUrl', callbackUrl)
   await page.goto(signInUrl.toString(), { waitUntil: 'networkidle' })
+  const canonicalizeHost = (hostname: string): string => {
+    const normalized = hostname.trim().toLowerCase()
+    if (normalized === 'localhost' || normalized === '::1' || normalized === '0:0:0:0:0:0:0:1') {
+      return 'loopback'
+    }
+    if (normalized.startsWith('127.')) {
+      return 'loopback'
+    }
+    return normalized
+  }
   const normalizePathname = (pathname: string) => {
     const normalized = pathname.replace(/\/+$/, '')
     return normalized === '' ? '/' : normalized
   }
   const expectedPath = normalizePathname(expectedUrl.pathname)
+  const expectedHost = canonicalizeHost(expectedUrl.hostname)
+  const expectedPort = expectedUrl.port || ''
+  const expectedProtocol = expectedUrl.protocol
   await page.waitForURL(
-    (url) => url.origin === expectedUrl.origin && normalizePathname(url.pathname) === expectedPath,
+    (url) =>
+      url.protocol === expectedProtocol &&
+      (url.port || '') === expectedPort &&
+      canonicalizeHost(url.hostname) === expectedHost &&
+      normalizePathname(url.pathname) === expectedPath,
     { waitUntil: 'domcontentloaded' },
   )
   return fetchSession(page)
