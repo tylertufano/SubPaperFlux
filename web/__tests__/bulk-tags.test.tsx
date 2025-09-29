@@ -60,12 +60,10 @@ vi.mock('../lib/openapi', () => ({
 }))
 
 vi.mock('../components', async () => {
-  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
-  const bulkTagModule = await vi.importActual('../components/BulkTagModal') as any
+  const actual = await vi.importActual<typeof import('../components')>('../components')
   return {
     __esModule: true,
-    BulkActionToolbar: toolbarModule.default,
-    BulkTagModal: bulkTagModule.default,
+    ...actual,
     BulkPublishModal: () => null,
     Alert: ({ kind, message }: { kind: string; message: React.ReactNode }) => (
       <div data-testid="alert" data-kind={kind}>

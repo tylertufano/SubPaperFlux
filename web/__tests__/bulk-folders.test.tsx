@@ -59,12 +59,10 @@ vi.mock('../lib/openapi', () => ({
 }))
 
 vi.mock('../components', async () => {
-  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
-  const bulkFolderModalModule = await vi.importActual('../components/BulkFolderModal') as any
+  const actual = await vi.importActual<typeof import('../components')>('../components')
   return {
     __esModule: true,
-    BulkActionToolbar: toolbarModule.default,
-    BulkFolderModal: bulkFolderModalModule.default,
+    ...actual,
     BulkPublishModal: () => null,
     BulkTagModal: () => null,
     ProgressModal: () => null,

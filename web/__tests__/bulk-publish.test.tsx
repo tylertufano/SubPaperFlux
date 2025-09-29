@@ -31,15 +31,13 @@ vi.mock('../lib/bulkPublish', () => ({
 }))
 
 vi.mock('../components', async () => {
-  const modalModule = await vi.importActual('../components/BulkPublishModal') as any
-  const progressModule = await vi.importActual('../components/ProgressModal') as any
-  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
+  const actual = await vi.importActual<typeof import('../components')>('../components')
   return {
     __esModule: true,
-    BulkPublishModal: modalModule.default,
-    BulkActionToolbar: toolbarModule.default,
+    ...actual,
     BulkTagModal: () => null,
-    ProgressModal: progressModule.default,
+    ProgressModal: actual.ProgressModal,
+    BulkPublishModal: actual.BulkPublishModal,
     Alert: ({ kind, message }: { kind: string; message: React.ReactNode }) => (
       <div data-testid="alert" data-kind={kind}>
         {message}

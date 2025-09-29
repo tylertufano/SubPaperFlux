@@ -46,12 +46,11 @@ vi.mock('next-auth/react', () => ({
 }))
 
 vi.mock('../components', async () => {
-  const previewModule = await vi.importActual('../components/PreviewPane') as any
-  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
+  const actual = await vi.importActual<typeof import('../components')>('../components')
   return {
     __esModule: true,
+    ...actual,
     BulkPublishModal: () => null,
-    BulkActionToolbar: toolbarModule.default,
     BulkTagModal: () => null,
     ProgressModal: () => null,
     Alert: ({ message }: { message: React.ReactNode }) => (
@@ -64,7 +63,6 @@ vi.mock('../components', async () => {
     Nav: () => <nav data-testid="nav">Nav</nav>,
     DropdownMenu: () => null,
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    PreviewPane: previewModule.default,
   }
 })
 

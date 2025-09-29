@@ -37,15 +37,13 @@ vi.mock('next/router', () => ({
 }))
 
 vi.mock('../components', async () => {
-  const previewModule = await vi.importActual('../components/PreviewPane') as any
-  const toolbarModule = await vi.importActual('../components/BulkActionToolbar') as any
+  const actual = await vi.importActual<typeof import('../components')>('../components')
   return {
     __esModule: true,
+    ...actual,
     Alert: ({ message }: { message: React.ReactNode }) => (
       <div role="alert">{message}</div>
     ),
-    Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
-    BulkActionToolbar: toolbarModule.default,
     BulkFolderModal: () => null,
     BulkPublishModal: () => null,
     BulkTagModal: () => null,
@@ -55,8 +53,8 @@ vi.mock('../components', async () => {
         {action}
       </div>
     ),
+    Breadcrumbs: () => <nav data-testid="breadcrumbs">Breadcrumbs</nav>,
     Nav: () => <nav data-testid="nav">Nav</nav>,
-    PreviewPane: previewModule.default,
   }
 })
 
