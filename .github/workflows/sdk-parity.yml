@@ -1,0 +1,84 @@
+name: SDK parity checks
+
+on:
+  pull_request:
+    paths:
+      - 'Makefile'
+      - 'openapi.json'
+      - 'scripts/**'
+      - 'sdk/**'
+      - 'web/**'
+      - '.github/workflows/sdk-parity.yml'
+  workflow_dispatch:
+
+jobs:
+  generate-and-validate:
+    name: ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mode: [sdk-ts-web, sdk-vendor-web]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Generate SDK via ${{ matrix.mode }}
+        env:
+          MODE: ${{ matrix.mode }}
+        run: make $MODE
+
+      - name: Run Next.js build to validate imports
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_BASE: http://localhost:8000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXTAUTH_SECRET: devsecret
+          NEXTAUTH_URL: http://localhost:3000
+          OIDC_ISSUER: http://localhost/oidc
+          OIDC_CLIENT_ID: local
+          OIDC_CLIENT_SECRET: local
+          SENTRY_AUTH_TOKEN: ''
+          SENTRY_ORG: ''
+          SENTRY_PROJECT: ''
+        run: npm run build
+
+      - name: Detect uncommitted changes
+        id: diff_check
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            diff_file="sdk-diff-${MODE}.patch"
+            git status -sb
+            git diff > "$diff_file"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "diff_path=$diff_file" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload SDK diff artifact
+        if: steps.diff_check.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-diff-${{ matrix.mode }}
+          path: ${{ steps.diff_check.outputs.diff_path }}
+
+      - name: Fail on SDK changes
+        if: steps.diff_check.outputs.changed == 'true'
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          echo "::error::Generated SDK via ${MODE} is out of date. Review the uploaded artifact for details."
+          exit 1
