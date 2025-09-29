@@ -472,11 +472,16 @@ async function authenticatePage(page: Page, baseURL: string, oidc: OidcStub, red
   const expectedPort = expectedUrl.port || ''
   const expectedProtocol = expectedUrl.protocol
   await page.waitForURL(
-    (url) =>
-      url.protocol === expectedProtocol &&
-      (url.port || '') === expectedPort &&
-      canonicalizeHost(url.hostname) === expectedHost &&
-      normalizePathname(url.pathname) === expectedPath,
+    (url) => {
+      const actualHost = canonicalizeHost(url.hostname)
+      const actualPort = url.port || ''
+      return (
+        url.protocol === expectedProtocol &&
+        actualHost === expectedHost &&
+        normalizePathname(url.pathname) === expectedPath &&
+        (actualPort === expectedPort || (actualHost === 'loopback' && expectedHost === 'loopback'))
+      )
+    },
     { waitUntil: 'domcontentloaded' },
   )
   return fetchSession(page)
