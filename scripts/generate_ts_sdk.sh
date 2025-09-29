@@ -25,5 +25,7 @@ docker run --rm \
   --additional-properties=supportsES6=true,typescriptThreePlus=true,npmName=@subpaperflux/sdk,npmVersion=0.1.0 \
   --skip-validate-spec
 
+python3 "$(dirname "$0")/postprocess_ts_sdk.py" "$OUT_DIR"
+
 echo "Done. You can now 'cd $OUT_DIR' and build/publish the SDK."
 

@@ -12,6 +12,10 @@
  * Do not edit the class manually.
  */
 
+import type { SiteConfigApi } from './SiteConfigApi';
+import type { SiteConfigSelenium } from './SiteConfigSelenium';
+import { SiteConfigApiFromJSONTyped, SiteConfigApiToJSON } from './SiteConfigApi';
+import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './SiteConfigSelenium';
 
 /**
  * @type ResponseUpdateSiteConfigSiteConfigsConfigIdPut
@@ -48,11 +52,11 @@ export function ResponseUpdateSiteConfigSiteConfigsConfigIdPutToJSONTyped(value?
     }
     switch (value['loginType']) {
         case 'api':
-            return Object.assign({}, SiteConfigApiToJSON(value), { loginType: 'api' } as const);
+            return Object.assign({}, SiteConfigApiToJSON(value as SiteConfigApi), { loginType: 'api' } as const);
         case 'selenium':
-            return Object.assign({}, SiteConfigSeleniumToJSON(value), { loginType: 'selenium' } as const);
+            return Object.assign({}, SiteConfigSeleniumToJSON(value as SiteConfigSelenium), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

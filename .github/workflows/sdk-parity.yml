@@ -1,0 +1,71 @@
+name: SDK parity
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mode: [sdk-ts-web, sdk-vendor-web]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Generate ${{ matrix.mode }}
+        run: make ${{ matrix.mode }}
+
+      - name: Build Next.js app
+        run: |
+          NEXT_PUBLIC_API_BASE=http://localhost:8000 \
+          NEXTAUTH_SECRET=ci \
+          OIDC_ISSUER=http://localhost/oidc \
+          OIDC_CLIENT_ID=ci \
+          OIDC_CLIENT_SECRET=ci \
+          npm run build
+        working-directory: web
+
+      - name: Check for SDK diffs
+        id: diff
+        run: |
+          status=$(git status --short)
+          if [ -n "$status" ]; then
+            echo "$status"
+            git add -A
+            git diff --cached --binary > sdk-diff.patch
+            git reset --hard
+            echo "diff=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "diff=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload SDK diff
+        if: steps.diff.outputs.diff == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-diff-${{ matrix.mode }}
+          path: sdk-diff.patch
+
+      - name: Fail when diff detected
+        if: steps.diff.outputs.diff == 'true'
+        run: |
+          echo "Generated SDK artifacts differ from the committed sources. See uploaded diff." >&2
+          exit 1

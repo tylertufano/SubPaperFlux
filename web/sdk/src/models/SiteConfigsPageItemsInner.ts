@@ -12,16 +12,16 @@
  * Do not edit the class manually.
  */
 
+import type { SiteConfigApiOut } from './SiteConfigApiOut';
+import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut';
+import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut';
+import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from './SiteConfigSeleniumOut';
 
 /**
  * @type SiteConfigsPageItemsInner
  * 
  * @export
  */
-import type { SiteConfigApiOut } from './SiteConfigApiOut'
-import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut'
-import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut'
-import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from './SiteConfigSeleniumOut'
 
 export type SiteConfigsPageItemsInner = { loginType: 'api' } & SiteConfigApiOut | { loginType: 'selenium' } & SiteConfigSeleniumOut;
 
@@ -53,9 +53,9 @@ export function SiteConfigsPageItemsInnerToJSONTyped(value?: SiteConfigsPageItem
     }
     switch (value['loginType']) {
         case 'api':
-            return Object.assign({}, SiteConfigApiOutToJSON(value), { loginType: 'api' } as const);
+            return Object.assign({}, SiteConfigApiOutToJSON(value as SiteConfigApiOut), { loginType: 'api' } as const);
         case 'selenium':
-            return Object.assign({}, SiteConfigSeleniumOutToJSON(value), { loginType: 'selenium' } as const);
+            return Object.assign({}, SiteConfigSeleniumOutToJSON(value as SiteConfigSeleniumOut), { loginType: 'selenium' } as const);
         default:
             return value;
     }
