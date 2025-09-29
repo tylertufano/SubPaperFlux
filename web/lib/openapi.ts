@@ -60,8 +60,16 @@ export type PrometheusHistogramSeries = {
   sum?: number
 }
 
+export type PrometheusSample = {
+  metric: string
+  labels: Record<string, string>
+  value: number
+}
+
 export type ParsedPrometheusMetrics = {
   histograms: Record<string, PrometheusHistogramSeries[]>
+  counters: Record<string, PrometheusSample[]>
+  gauges: Record<string, PrometheusSample[]>
 }
 
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
@@ -1166,10 +1174,32 @@ type HistogramAccumulator = PrometheusHistogramSeries & {
 
 export function parsePrometheusMetrics(text: string): ParsedPrometheusMetrics {
   const histogramSeries = new Map<string, HistogramAccumulator>()
+  const counters: Record<string, PrometheusSample[]> = {}
+  const gauges: Record<string, PrometheusSample[]> = {}
+  const metricTypes = new Map<string, string>()
+
+  const ensureSampleCollection = (
+    collection: Record<string, PrometheusSample[]>,
+    key: string,
+  ): PrometheusSample[] => {
+    if (!collection[key]) {
+      collection[key] = []
+    }
+    return collection[key]
+  }
+
   const lines = text.split(/\r?\n/)
   for (const rawLine of lines) {
     const line = rawLine.trim()
-    if (!line || line.startsWith('#')) continue
+    if (!line) continue
+    if (line.startsWith('#')) {
+      const typeMatch = /^#\s*TYPE\s+([a-zA-Z_:][a-zA-Z0-9_:]*)\s+([a-zA-Z_][a-zA-Z0-9_]*)/i.exec(line)
+      if (typeMatch) {
+        const [, metric, type] = typeMatch
+        metricTypes.set(metric, type.toLowerCase())
+      }
+      continue
+    }
 
     const [metricPart, valuePart] = line.split(/\s+/, 2)
     if (!metricPart || !valuePart) continue
@@ -1233,6 +1263,19 @@ export function parsePrometheusMetrics(text: string): ParsedPrometheusMetrics {
         histogramSeries.set(key, series)
       }
       series.count = value
+      continue
+    }
+
+    const metricType = metricTypes.get(metricName)
+    if (metricType === 'counter') {
+      const collection = ensureSampleCollection(counters, metricName)
+      collection.push({ metric: metricName, labels, value })
+      continue
+    }
+
+    if (metricType === 'gauge') {
+      const collection = ensureSampleCollection(gauges, metricName)
+      collection.push({ metric: metricName, labels, value })
     }
   }
 
@@ -1265,7 +1308,26 @@ export function parsePrometheusMetrics(text: string): ParsedPrometheusMetrics {
     })
   }
 
-  return { histograms }
+  const sortSamples = (values: PrometheusSample[]) => {
+    values.sort((a, b) => {
+      const labelsA = serializePrometheusLabels(a.labels)
+      const labelsB = serializePrometheusLabels(b.labels)
+      if (labelsA === labelsB) {
+        return a.metric.localeCompare(b.metric)
+      }
+      return labelsA.localeCompare(labelsB)
+    })
+  }
+
+  for (const sampleSet of Object.values(counters)) {
+    sortSamples(sampleSet)
+  }
+
+  for (const sampleSet of Object.values(gauges)) {
+    sortSamples(sampleSet)
+  }
+
+  return { histograms, counters, gauges }
 }
 
 export async function fetchPrometheusMetrics(): Promise<ParsedPrometheusMetrics> {
