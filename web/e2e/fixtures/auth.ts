@@ -449,11 +449,19 @@ async function fetchSession(page: Page): Promise<AuthSession> {
 async function authenticatePage(page: Page, baseURL: string, oidc: OidcStub, redirectPath = '/'): Promise<AuthSession> {
   await oidc.ensureStarted()
   const callbackUrl = new URL(redirectPath, baseURL).toString()
+  const expectedUrl = new URL(redirectPath || '/', baseURL)
   const signInUrl = new URL('/api/auth/signin/oidc', baseURL)
   signInUrl.searchParams.set('callbackUrl', callbackUrl)
   await page.goto(signInUrl.toString(), { waitUntil: 'networkidle' })
-  const expectedPath = redirectPath || '/'
-  await page.waitForURL((url) => url.pathname === expectedPath, { waitUntil: 'networkidle' })
+  const normalizePathname = (pathname: string) => {
+    const normalized = pathname.replace(/\/+$/, '')
+    return normalized === '' ? '/' : normalized
+  }
+  const expectedPath = normalizePathname(expectedUrl.pathname)
+  await page.waitForURL(
+    (url) => url.origin === expectedUrl.origin && normalizePathname(url.pathname) === expectedPath,
+    { waitUntil: 'domcontentloaded' },
+  )
   return fetchSession(page)
 }
 
