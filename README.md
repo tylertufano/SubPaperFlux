@@ -185,6 +185,21 @@ Templates
   - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
 - After copying `credentials.json`, run through the Instapaper onboarding flow in the UI so the referenced `instapaper_id` entries receive tokens automatically.
 
+## Observability
+
+### Sentry
+
+Both the API and the Next.js web application emit errors to Sentry when a DSN is provided. Configure the following environment variables for production deployments:
+
+- `SENTRY_DSN`: Server-side DSN used by the API and to bootstrap the web app during SSR.
+- `SENTRY_ENVIRONMENT`: Environment label shown in Sentry (for example `prod`, `staging`).
+- `SENTRY_RELEASE`: Optional release identifier attached to events.
+- `NEXT_PUBLIC_SENTRY_DSN`: Client-side DSN (defaults to `SENTRY_DSN` in the provided Docker Compose template).
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Client-side environment label (defaults to `SENTRY_ENVIRONMENT`).
+- `NEXT_PUBLIC_SENTRY_RELEASE`: Client-side release identifier (defaults to `SENTRY_RELEASE`).
+
+When building the web image with source map upload enabled, also provide `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` so the Next.js build can publish artifacts. The production Docker Compose template now exposes these variables for easy wiring.
+
 ## Web dashboard welcome page
 
 The `/` route now doubles as a public landing page. Signed-in users continue to see the operational dashboard, while anonymous visitors receive a configurable hero block with the product headline, description, and optional call-to-action.
