@@ -235,9 +235,9 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 ## Phase 4 — Onboarding & Guidance
 
-- [ ] Setup Wizard (UI-037)
-- [ ] Inline Tips (UI-038)
-- [ ] Templates Gallery (UI-039)
+- [x] Setup Wizard (UI-037)
+- [x] Inline Tips (UI-038)
+- [x] Templates Gallery (UI-039)
 
 ## Phase 5 — Observability & Operations
 
