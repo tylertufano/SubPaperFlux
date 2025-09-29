@@ -13,9 +13,14 @@
  */
 
 
+import type { SiteConfigApi } from './SiteConfigApi'
+import { SiteConfigApiFromJSONTyped, SiteConfigApiToJSON } from './SiteConfigApi'
+import type { SiteConfigSelenium } from './SiteConfigSelenium'
+import { SiteConfigSeleniumFromJSONTyped, SiteConfigSeleniumToJSON } from './SiteConfigSelenium'
+
 /**
  * @type Body
- * 
+ *
  * @export
  */
 export type Body = { loginType: 'api' } & SiteConfigApi | { loginType: 'selenium' } & SiteConfigSelenium;
@@ -52,7 +57,7 @@ export function BodyToJSONTyped(value?: Body | null, ignoreDiscriminator: boolea
         case 'selenium':
             return Object.assign({}, SiteConfigSeleniumToJSON(value), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

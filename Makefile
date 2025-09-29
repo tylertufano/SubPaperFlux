@@ -2,7 +2,7 @@ SHELL := /bin/sh
 
 export DATABASE_URL ?= sqlite:///./dev.db
 
-.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts sdk-ts-web sdk-vendor-web venv web-install dev-api dev-web dev test-e2e
+.PHONY: api worker db-up db-down db-rev db-prepare-pg bookmarks-count bookmarks-export seed openapi-export sdk-ts sdk-ts-web sdk-vendor-web venv web-install dev-api dev-web dev test-e2e test-api test-api-postgres
 
 api:
 	uvicorn app.main:app --reload --port 8000
@@ -134,9 +134,9 @@ dev: venv web-install
 	    npm run dev'
 
 test-e2e: venv web-install
-	E2E_ARGS="$(ARGS)" bash -c 'set -euo pipefail; API_PID=; cleanup() { set +e; if [ -n "$$API_PID" ]; then kill "$$API_PID" 2>/dev/null || true; wait "$$API_PID" 2>/dev/null || true; fi; }; trap cleanup EXIT; \
-	  DB_URL=$${DATABASE_URL:-sqlite:///./dev.db}; \
-	  USE_SQLMODEL=0; \
+        E2E_ARGS="$(ARGS)" bash -c 'set -euo pipefail; API_PID=; cleanup() { set +e; if [ -n "$$API_PID" ]; then kill "$$API_PID" 2>/dev/null || true; wait "$$API_PID" 2>/dev/null || true; fi; }; trap cleanup EXIT; \
+          DB_URL=$${DATABASE_URL:-sqlite:///./dev.db}; \
+          USE_SQLMODEL=0; \
 	  case "$$DB_URL" in \
 	    sqlite:*) \
 	      echo "[test-e2e] Skipping Alembic for SQLite database ($$DB_URL); relying on SQLModel metadata"; \
@@ -158,8 +158,15 @@ test-e2e: venv web-install
 	  cd web && \
 	    NEXT_PUBLIC_API_BASE=$${NEXT_PUBLIC_API_BASE:-http://localhost:3000} \
 	    API_BASE=$${API_BASE:-http://localhost:8000} \
-	    NEXTAUTH_SECRET=$${NEXTAUTH_SECRET:-devsecret} \
-	    OIDC_ISSUER=$${OIDC_ISSUER:-http://localhost/oidc} \
-	    OIDC_CLIENT_ID=$${OIDC_CLIENT_ID:-local} \
-	    OIDC_CLIENT_SECRET=$${OIDC_CLIENT_SECRET:-local} \
-	    npm run test:e2e$${E2E_ARGS:+ -- $$E2E_ARGS}'
+            NEXTAUTH_SECRET=$${NEXTAUTH_SECRET:-devsecret} \
+            OIDC_ISSUER=$${OIDC_ISSUER:-http://localhost/oidc} \
+            OIDC_CLIENT_ID=$${OIDC_CLIENT_ID:-local} \
+            OIDC_CLIENT_SECRET=$${OIDC_CLIENT_SECRET:-local} \
+            npm run test:e2e$${E2E_ARGS:+ -- $$E2E_ARGS}'
+
+test-api:
+	pytest $(ARGS)
+
+test-api-postgres:
+	@if [ -z "$(DATABASE_URL)" ]; then echo "DATABASE_URL must be set for Postgres tests"; exit 2; fi
+	pytest -m postgres $(ARGS)

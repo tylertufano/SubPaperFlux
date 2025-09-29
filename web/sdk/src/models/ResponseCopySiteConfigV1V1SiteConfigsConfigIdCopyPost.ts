@@ -18,6 +18,11 @@
  * 
  * @export
  */
+import type { SiteConfigApiOut } from './SiteConfigApiOut'
+import { SiteConfigApiOutFromJSONTyped, SiteConfigApiOutToJSON } from './SiteConfigApiOut'
+import type { SiteConfigSeleniumOut } from './SiteConfigSeleniumOut'
+import { SiteConfigSeleniumOutFromJSONTyped, SiteConfigSeleniumOutToJSON } from './SiteConfigSeleniumOut'
+
 export type ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost = { loginType: 'api' } & SiteConfigApiOut | { loginType: 'selenium' } & SiteConfigSeleniumOut;
 
 export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON(json: any): ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost {
@@ -52,7 +57,7 @@ export function ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostToJSONTyped
         case 'selenium':
             return Object.assign({}, SiteConfigSeleniumOutToJSON(value), { loginType: 'selenium' } as const);
         default:
-            return json;
+            return value;
     }
 }
 

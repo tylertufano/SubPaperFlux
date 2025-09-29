@@ -32,13 +32,18 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "pages/**/*",
+    "styles/**/*",
     "types/**/*.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "sdk/src/apis/index.ts"
+    "__tests__/**/*",
+    "e2e/**/*",
+    "sdk/**/*"
   ]
 }
