@@ -14,6 +14,10 @@ services:
       - DEBUG_LOGGING=0
       # Save a screenshot after successful login (useful for debugging)
       - ENABLE_SCREENSHOTS=0
+      # To reuse the profile-specific .env files, add an env_file and copy one of
+      # templates/env.{dev,stage,prod}.example to ./env/<profile>.env. Example:
+      # env_file:
+      #   - ./env/dev.env
       # Optional: set container timezone for logs
       # - TZ=UTC
 

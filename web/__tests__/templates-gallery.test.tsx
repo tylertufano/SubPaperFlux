@@ -7,6 +7,7 @@ const uiConfig = {
   apiBase: 'https://api.example.com',
   userMgmtCore: true,
   userMgmtUi: true,
+  profile: 'test',
 }
 
 vi.mock('../lib/openapi', () => ({
