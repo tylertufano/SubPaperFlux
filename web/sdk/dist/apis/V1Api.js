@@ -985,6 +985,35 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Download template asset
+     */
+    downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['templateId'] == null) {
+                throw new runtime.RequiredError('templateId', 'Required parameter "templateId" was null or undefined when calling downloadTemplateV1TemplatesTemplateIdDownloadGet().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            let urlPath = `/v1/templates/{template_id}/download`;
+            urlPath = urlPath.replace(`{${"template_id"}}`, encodeURIComponent(String(requestParameters['templateId'])));
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.VoidApiResponse(response);
+        });
+    }
+    /**
+     * Download template asset
+     */
+    downloadTemplateV1TemplatesTemplateIdDownloadGet(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters, initOverrides);
+        });
+    }
+    /**
      * Enqueue Job
      */
     enqueueJobV1JobsPostRaw(requestParameters, initOverrides) {
@@ -1401,6 +1430,39 @@ class V1Api extends runtime.BaseAPI {
     getRoleV1AdminRolesRoleIdGet(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.getRoleV1AdminRolesRoleIdGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Retrieve setup progress
+     */
+    getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/site-settings/setup-status`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteSetupStatusOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Retrieve setup progress
+     */
+    getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
             return yield response.value();
         });
     }
@@ -2551,6 +2613,32 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * List available templates
+     */
+    listTemplatesV1TemplatesGetRaw(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            const headerParameters = {};
+            let urlPath = `/v1/templates`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.TemplateListResponseFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * List available templates
+     */
+    listTemplatesV1TemplatesGet(initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listTemplatesV1TemplatesGetRaw(initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * List API tokens
      */
     listTokensV1MeTokensGetRaw(requestParameters, initOverrides) {
@@ -3425,6 +3513,44 @@ class V1Api extends runtime.BaseAPI {
     updateRoleV1AdminRolesRoleIdPatch(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * Create or replace setup progress
+     */
+    updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters['siteSetupStatusUpdate'] == null) {
+                throw new runtime.RequiredError('siteSetupStatusUpdate', 'Required parameter "siteSetupStatusUpdate" was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut().');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            headerParameters['Content-Type'] = 'application/json';
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            let urlPath = `/v1/site-settings/setup-status`;
+            const response = yield this.request({
+                path: urlPath,
+                method: 'PUT',
+                headers: headerParameters,
+                query: queryParameters,
+                body: (0, index_1.SiteSetupStatusUpdateToJSON)(requestParameters['siteSetupStatusUpdate']),
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteSetupStatusOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Create or replace setup progress
+     */
+    updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
