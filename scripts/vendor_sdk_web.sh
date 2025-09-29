@@ -18,8 +18,8 @@ postprocess() {
   if [ -f "$OUT_DIR/src/index.ts" ]; then
     # Comment out the apis barrel export if present
     # Handle both './apis/index' and './apis'
-    sed -i.bak "s|export \* from './apis/index';|// export * from './apis/index';|" "$OUT_DIR/src/index.ts" || true
-    sed -i.bak "s|export \* from './apis';|// export * from './apis';|" "$OUT_DIR/src/index.ts" || true
+    sed -i.bak -E "s|^([[:space:]]*)export \\* from './apis/index';|\\1// export * from './apis/index';|" "$OUT_DIR/src/index.ts" || true
+    sed -i.bak -E "s|^([[:space:]]*)export \\* from './apis';|\\1// export * from './apis';|" "$OUT_DIR/src/index.ts" || true
     rm -f "$OUT_DIR/src/index.ts.bak"
   fi
   # Ensure a README is present to document vendoring
