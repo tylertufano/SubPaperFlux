@@ -22,6 +22,7 @@ export type UiConfig = {
   apiBase: string
   userMgmtCore: boolean
   userMgmtUi: boolean
+  profile: string
 }
 
 export type SetupStepId = 'welcome' | 'credentials' | 'feeds' | 'complete'
@@ -84,6 +85,8 @@ export function parseEnvBoolean(value?: string | null): boolean {
 const BUILD_API_BASE = process.env.NEXT_PUBLIC_API_BASE || ''
 const BUILD_USER_MGMT_CORE = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_CORE)
 const BUILD_USER_MGMT_UI = parseEnvBoolean(process.env.NEXT_PUBLIC_USER_MGMT_UI)
+const BUILD_PROFILE =
+  process.env.NEXT_PUBLIC_SPF_PROFILE ?? process.env.SPF_PROFILE ?? ''
 const BUILD_OIDC_AUTO_LOGIN = parseEnvBoolean(
   process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN ?? process.env.OIDC_AUTO_LOGIN ?? 'false',
 )
@@ -94,6 +97,7 @@ type UiConfigWindow = Window & {
   __SPF_UI_CONFIG?: UiConfig
   __SPF_API_BASE?: string
   __SPF_OIDC_AUTO_LOGIN?: boolean
+  __SPF_PROFILE?: string
 }
 
 let uiConfigPromise: Promise<UiConfig> | null = null
@@ -114,6 +118,7 @@ export function readUiConfigFromEnv(): UiConfig {
     apiBase: process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || '',
     userMgmtCore: parseEnvBoolean(process.env.USER_MGMT_CORE),
     userMgmtUi: parseEnvBoolean(process.env.USER_MGMT_UI ?? process.env.NEXT_PUBLIC_USER_MGMT_UI),
+    profile: process.env.SPF_PROFILE || process.env.NEXT_PUBLIC_SPF_PROFILE || '',
   }
 }
 
@@ -121,6 +126,7 @@ const BUILD_UI_CONFIG: UiConfig = {
   apiBase: BUILD_API_BASE,
   userMgmtCore: BUILD_USER_MGMT_CORE,
   userMgmtUi: BUILD_USER_MGMT_UI,
+  profile: typeof BUILD_PROFILE === 'string' ? BUILD_PROFILE : '',
 }
 
 function normalizeUiConfig(candidate: unknown, fallback: UiConfig): UiConfig {
@@ -132,6 +138,7 @@ function normalizeUiConfig(candidate: unknown, fallback: UiConfig): UiConfig {
     apiBase: typeof value.apiBase === 'string' ? value.apiBase : fallback.apiBase,
     userMgmtCore: typeof value.userMgmtCore === 'boolean' ? value.userMgmtCore : fallback.userMgmtCore,
     userMgmtUi: typeof value.userMgmtUi === 'boolean' ? value.userMgmtUi : fallback.userMgmtUi,
+    profile: typeof value.profile === 'string' ? value.profile : fallback.profile,
   }
 }
 
@@ -141,6 +148,7 @@ function storeUiConfig(config: UiConfig) {
   const copy: UiConfig = { ...config }
   w.__SPF_UI_CONFIG = copy
   w.__SPF_API_BASE = copy.apiBase
+  w.__SPF_PROFILE = copy.profile
 }
 
 export async function getUiConfig(): Promise<UiConfig> {

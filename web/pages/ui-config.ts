@@ -11,8 +11,9 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   }
   const userMgmtCore = parseBoolean(process.env.USER_MGMT_CORE)
   const userMgmtUi = parseBoolean(process.env.USER_MGMT_UI ?? process.env.NEXT_PUBLIC_USER_MGMT_UI)
+  const profile = process.env.SPF_PROFILE || process.env.NEXT_PUBLIC_SPF_PROFILE || ''
   res.setHeader('Content-Type', 'application/json')
-  res.write(JSON.stringify({ apiBase, userMgmtCore, userMgmtUi }))
+  res.write(JSON.stringify({ apiBase, userMgmtCore, userMgmtUi, profile }))
   res.end()
   // Prevent rendering; response already sent
   return { props: {} as any }

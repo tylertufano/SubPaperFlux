@@ -17,6 +17,9 @@ services:
       context: .
       dockerfile: Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Load a profile exported from templates/env.dev.example (or stage/prod variants)
+    env_file:
+      - ./env/dev.env
     environment:
       DATABASE_URL: postgresql+psycopg2://app:app@db:5432/app
       OIDC_ISSUER: http://localhost/oidc
@@ -42,6 +45,9 @@ services:
       context: .
       dockerfile: Dockerfile
     command: python -m app.worker
+    # Reuse the same profile so feature flags match the API defaults
+    env_file:
+      - ./env/dev.env
     environment:
       DATABASE_URL: postgresql+psycopg2://app:app@db:5432/app
       CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}

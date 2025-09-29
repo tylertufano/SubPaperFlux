@@ -152,6 +152,7 @@ Notes
 Environment Variables
 - DEBUG_LOGGING: `1` or `true` for verbose logs and ChromeDriver logging.
 - ENABLE_SCREENSHOTS: `1` or `true` to save a screenshot after successful logins.
+- SPF_PROFILE: Optional label for the current deployment profile. When set, the UI exposes it via `/ui-config` so you can confirm whether you're on dev, stage, or prod.
 
 Running Locally
 - Install dependencies: `pip install -r requirements.txt`
@@ -163,6 +164,22 @@ Running with Docker
 - Run: `docker run --rm -e DEBUG_LOGGING=1 -v /absolute/path/to/config:/config subpaperflux`
   - The container runs `python ./subpaperflux.py /config` by default.
   - Ensure `credentials.json`, `site_configs.json`, and `instapaper_app_creds.json` exist under `/config`.
+
+Profile-based Docker Compose configuration
+- Copy one of the profile templates (`templates/env.dev.example`, `templates/env.stage.example`, or `templates/env.prod.example`) to `env/<profile>.env` and customize the values.
+- Each profile enumerates the OIDC issuer/client settings, `API_BASE`/`NEXT_PUBLIC_API_BASE`, and feature toggles such as `USER_MGMT_CORE`, `USER_MGMT_UI`, `USER_MGMT_OIDC_ONLY`, and the SCIM flags.
+- Reference the profile from Docker Compose via `env_file` (see the updated `templates/docker-compose.*` examples):
+  ```yaml
+  services:
+    api:
+      env_file:
+        - ./env/dev.env
+    web:
+      env_file:
+        - ./env/dev.env
+  ```
+- Set `SPF_PROFILE` (and optionally `NEXT_PUBLIC_SPF_PROFILE`) in each profile file to label the deployment (for example `dev`, `stage`, or `prod`). The UI reads this value through `/ui-config` and exposes it via `window.__SPF_UI_CONFIG.profile` so you can display the active profile.
+- Toggle feature flags by editing the boolean values in the profile; the API, worker, and web containers will inherit the same defaults when they share the `env_file` entry.
 
 Operational Details
 - Headless browser: Uses Chrome with `--headless=new`; no X server required.
@@ -183,6 +200,7 @@ Templates
   - `templates/credentials.example.json` → `credentials.json`
   - `templates/site_configs.example.json` → `site_configs.json`
   - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
+  - `templates/env.{dev,stage,prod}.example` → `env/<profile>.env` for Docker Compose profiles
 - After copying `credentials.json`, run through the Instapaper onboarding flow in the UI so the referenced `instapaper_id` entries receive tokens automatically.
 
 ## Observability
