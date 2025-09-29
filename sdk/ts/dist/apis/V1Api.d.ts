@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost, RoleGrantRequest, SiteConfigsPage, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate } from '../models/index';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderSummary, BookmarkFolderUpdate, BookmarkOut, BookmarkTagSummary, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost, RoleGrantRequest, SiteConfigsPage, SiteSetupStatusOut, SiteSetupStatusUpdate, SiteWelcomeSettingOut, SiteWelcomeSettingUpdate, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models/index';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: string;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -106,6 +106,9 @@ export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
 export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
     tagId: string;
     xCsrfToken?: string | null;
+}
+export interface DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest {
+    templateId: string;
 }
 export interface EnqueueJobV1JobsPostRequest {
     jobRequest: JobRequest;
@@ -398,6 +401,9 @@ export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: string;
     adminRoleUpdate: AdminRoleUpdate;
 }
+export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
+    siteSetupStatusUpdate: SiteSetupStatusUpdate;
+}
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
     tagId: string;
     tagUpdate: TagUpdate;
@@ -627,6 +633,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     deleteTagV1BookmarksTagsTagIdDelete(requestParameters: DeleteTagV1BookmarksTagsTagIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
+     * Download template asset
+     */
+    downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters: DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+    /**
+     * Download template asset
+     */
+    downloadTemplateV1TemplatesTemplateIdDownloadGet(requestParameters: DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
+    /**
      * Enqueue Job
      */
     enqueueJobV1JobsPostRaw(requestParameters: EnqueueJobV1JobsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
@@ -708,6 +722,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Get role details
      */
     getRoleV1AdminRolesRoleIdGet(requestParameters: GetRoleV1AdminRolesRoleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
+    /**
+     * Retrieve setup progress
+     */
+    getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>>;
+    /**
+     * Retrieve setup progress
+     */
+    getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
     /**
      * Get Status
      */
@@ -909,6 +931,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     listTagsV1BookmarksTagsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TagOut>>;
     /**
+     * List available templates
+     */
+    listTemplatesV1TemplatesGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TemplateListResponse>>;
+    /**
+     * List available templates
+     */
+    listTemplatesV1TemplatesGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TemplateListResponse>;
+    /**
      * List API tokens
      */
     listTokensV1MeTokensGetRaw(requestParameters: ListTokensV1MeTokensGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokensPage>>;
@@ -1098,6 +1128,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatch(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
+    /**
+     * Create or replace setup progress
+     */
+    updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>>;
+    /**
+     * Create or replace setup progress
+     */
+    updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
     /**
      * Update Tag
      */

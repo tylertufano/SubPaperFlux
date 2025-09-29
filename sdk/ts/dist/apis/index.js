@@ -25,4 +25,5 @@ __exportStar(require("./MeApi"), exports);
 __exportStar(require("./SiteConfigsApi"), exports);
 __exportStar(require("./SiteSettingsApi"), exports);
 __exportStar(require("./StatusApi"), exports);
+__exportStar(require("./TemplatesApi"), exports);
 __exportStar(require("./V1Api"), exports);
