@@ -10547,6 +10547,136 @@
           }
         ]
       }
+    },
+    "/v1/site-settings/setup-status": {
+      "get": {
+        "tags": [
+          "v1",
+          "site-settings"
+        ],
+        "summary": "Retrieve setup progress",
+        "operationId": "get_setup_status_v1_site_settings_setup_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSetupStatusOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "v1",
+          "site-settings"
+        ],
+        "summary": "Create or replace setup progress",
+        "operationId": "update_setup_status_v1_site_settings_setup_status_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSetupStatusUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSetupStatusOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/templates": {
+      "get": {
+        "tags": [
+          "v1",
+          "templates"
+        ],
+        "summary": "List available templates",
+        "operationId": "list_templates_v1_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/templates/{template_id}/download": {
+      "get": {
+        "tags": [
+          "v1",
+          "templates"
+        ],
+        "summary": "Download template asset",
+        "operationId": "download_template_v1_templates__template_id__download_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13662,6 +13792,194 @@
         ],
         "title": "SiteConfigsPage"
       },
+      "SiteSetupStatus": {
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Step"
+          },
+          "last_completed_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Completed Step"
+          },
+          "welcome_configured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Welcome Configured"
+          },
+          "credentials_created": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentials Created"
+          },
+          "feeds_imported": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feeds Imported"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "SiteSetupStatus"
+      },
+      "SiteSetupStatusOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "$ref": "#/components/schemas/SiteSetupStatus"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "SiteSetupStatusOut"
+      },
+      "SiteSetupStatusUpdate": {
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Step"
+          },
+          "last_completed_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Completed Step"
+          },
+          "welcome_configured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Welcome Configured"
+          },
+          "credentials_created": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credentials Created"
+          },
+          "feeds_imported": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feeds Imported"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "completed"
+        ],
+        "title": "SiteSetupStatusUpdate"
+      },
       "SiteWelcomeContent": {
         "properties": {
           "headline": {
@@ -13905,6 +14223,106 @@
         ],
         "title": "TagUpdate"
       },
+      "TemplateCategory": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Stable identifier for the category"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Human-friendly label for the category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "TemplateCategory"
+      },
+      "TemplateListResponse": {
+        "properties": {
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateMetadata"
+            },
+            "type": "array",
+            "title": "Templates",
+            "description": "Available template definitions"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateCategory"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "Filter categories for the templates"
+          }
+        },
+        "type": "object",
+        "title": "TemplateListResponse"
+      },
+      "TemplateMetadata": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Stable template identifier"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "Source filename within the templates directory"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Display title for the template"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Short description of the template contents"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "description": "Primary file format (derived from the extension)"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes",
+            "description": "File size in bytes"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "List of category identifiers that apply to the template"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url",
+            "description": "Relative URL to download the template asset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "title",
+          "description",
+          "format",
+          "size_bytes",
+          "download_url"
+        ],
+        "title": "TemplateMetadata"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -13982,6 +14400,10 @@
     {
       "name": "site-settings",
       "description": "Operator-configurable site settings"
+    },
+    {
+      "name": "templates",
+      "description": "Configuration and deployment templates"
     }
   ]
 }

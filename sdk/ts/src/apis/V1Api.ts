@@ -60,12 +60,15 @@ import type {
   ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPost,
   RoleGrantRequest,
   SiteConfigsPage,
+  SiteSetupStatusOut,
+  SiteSetupStatusUpdate,
   SiteWelcomeSettingOut,
   SiteWelcomeSettingUpdate,
   StatusResponse,
   TagCreate,
   TagOut,
   TagUpdate,
+  TemplateListResponse,
 } from '../models/index';
 import {
     AdminOrganizationCreateFromJSON,
@@ -158,6 +161,10 @@ import {
     RoleGrantRequestToJSON,
     SiteConfigsPageFromJSON,
     SiteConfigsPageToJSON,
+    SiteSetupStatusOutFromJSON,
+    SiteSetupStatusOutToJSON,
+    SiteSetupStatusUpdateFromJSON,
+    SiteSetupStatusUpdateToJSON,
     SiteWelcomeSettingOutFromJSON,
     SiteWelcomeSettingOutToJSON,
     SiteWelcomeSettingUpdateFromJSON,
@@ -170,6 +177,8 @@ import {
     TagOutToJSON,
     TagUpdateFromJSON,
     TagUpdateToJSON,
+    TemplateListResponseFromJSON,
+    TemplateListResponseToJSON,
 } from '../models/index';
 
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
@@ -285,6 +294,10 @@ export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
 export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
     tagId: string;
     xCsrfToken?: string | null;
+}
+
+export interface DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest {
+    templateId: string;
 }
 
 export interface EnqueueJobV1JobsPostRequest {
@@ -620,6 +633,10 @@ export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: string;
     adminRoleUpdate: AdminRoleUpdate;
+}
+
+export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
+    siteSetupStatusUpdate: SiteSetupStatusUpdate;
 }
 
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
@@ -1832,6 +1849,42 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Download template asset
+     */
+    async downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters: DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['templateId'] == null) {
+            throw new runtime.RequiredError(
+                'templateId',
+                'Required parameter "templateId" was null or undefined when calling downloadTemplateV1TemplatesTemplateIdDownloadGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/v1/templates/{template_id}/download`;
+        urlPath = urlPath.replace(`{${"template_id"}}`, encodeURIComponent(String(requestParameters['templateId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Download template asset
+     */
+    async downloadTemplateV1TemplatesTemplateIdDownloadGet(requestParameters: DownloadTemplateV1TemplatesTemplateIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.downloadTemplateV1TemplatesTemplateIdDownloadGetRaw(requestParameters, initOverrides);
+    }
+
+    /**
      * Enqueue Job
      */
     async enqueueJobV1JobsPostRaw(requestParameters: EnqueueJobV1JobsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
@@ -2334,6 +2387,43 @@ export class V1Api extends runtime.BaseAPI {
      */
     async getRoleV1AdminRolesRoleIdGet(requestParameters: GetRoleV1AdminRolesRoleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail> {
         const response = await this.getRoleV1AdminRolesRoleIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Retrieve setup progress
+     */
+    async getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/site-settings/setup-status`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SiteSetupStatusOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Retrieve setup progress
+     */
+    async getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
+        const response = await this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
         return await response.value();
     }
 
@@ -3705,6 +3795,35 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * List available templates
+     */
+    async listTemplatesV1TemplatesGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TemplateListResponse>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/v1/templates`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TemplateListResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * List available templates
+     */
+    async listTemplatesV1TemplatesGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TemplateListResponse> {
+        const response = await this.listTemplatesV1TemplatesGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * List API tokens
      */
     async listTokensV1MeTokensGetRaw(requestParameters: ListTokensV1MeTokensGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiTokensPage>> {
@@ -4794,6 +4913,53 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateRoleV1AdminRolesRoleIdPatch(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail> {
         const response = await this.updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create or replace setup progress
+     */
+    async updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>> {
+        if (requestParameters['siteSetupStatusUpdate'] == null) {
+            throw new runtime.RequiredError(
+                'siteSetupStatusUpdate',
+                'Required parameter "siteSetupStatusUpdate" was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/v1/site-settings/setup-status`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SiteSetupStatusUpdateToJSON(requestParameters['siteSetupStatusUpdate']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SiteSetupStatusOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create or replace setup progress
+     */
+    async updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
+        const response = await this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

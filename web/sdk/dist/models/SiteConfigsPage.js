@@ -18,7 +18,7 @@ exports.SiteConfigsPageFromJSON = SiteConfigsPageFromJSON;
 exports.SiteConfigsPageFromJSONTyped = SiteConfigsPageFromJSONTyped;
 exports.SiteConfigsPageToJSON = SiteConfigsPageToJSON;
 exports.SiteConfigsPageToJSONTyped = SiteConfigsPageToJSONTyped;
-const SiteConfigOut_1 = require("./SiteConfigOut");
+const SiteConfigsPageItemsInner_1 = require("./SiteConfigsPageItemsInner");
 /**
  * Check if a given object implements the SiteConfigsPage interface.
  */
@@ -41,7 +41,7 @@ function SiteConfigsPageFromJSONTyped(json, ignoreDiscriminator) {
         return json;
     }
     return {
-        'items': (json['items'].map(SiteConfigOut_1.SiteConfigOutFromJSON)),
+        'items': (json['items'].map(SiteConfigsPageItemsInner_1.SiteConfigsPageItemsInnerFromJSON)),
         'total': json['total'],
         'page': json['page'],
         'size': json['size'],
@@ -57,7 +57,7 @@ function SiteConfigsPageToJSONTyped(value, ignoreDiscriminator = false) {
         return value;
     }
     return {
-        'items': (value['items'].map(SiteConfigOut_1.SiteConfigOutToJSON)),
+        'items': (value['items'].map(SiteConfigsPageItemsInner_1.SiteConfigsPageItemsInnerToJSON)),
         'total': value['total'],
         'page': value['page'],
         'size': value['size'],

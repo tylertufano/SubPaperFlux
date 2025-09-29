@@ -34,8 +34,8 @@ class SiteConfigsApi extends runtime.BaseAPI {
      */
     createSiteConfigSiteConfigsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters['siteConfig'] == null) {
-                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling createSiteConfigSiteConfigsPost().');
+            if (requestParameters['body'] == null) {
+                throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling createSiteConfigSiteConfigsPost().');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -56,9 +56,9 @@ class SiteConfigsApi extends runtime.BaseAPI {
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.SiteConfigToJSON)(requestParameters['siteConfig']),
+                body: (0, index_1.BodyToJSON)(requestParameters['body']),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteConfigFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ResponseCreateSiteConfigSiteConfigsPostFromJSON)(jsonValue));
         });
     }
     /**
@@ -134,7 +134,7 @@ class SiteConfigsApi extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteConfigFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ResponseGetSiteConfigSiteConfigsConfigIdGetFromJSON)(jsonValue));
         });
     }
     /**
@@ -170,7 +170,7 @@ class SiteConfigsApi extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(index_1.SiteConfigFromJSON));
+            return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(index_1.ListSiteConfigsSiteConfigsGet200ResponseInnerFromJSON));
         });
     }
     /**
@@ -190,8 +190,8 @@ class SiteConfigsApi extends runtime.BaseAPI {
             if (requestParameters['configId'] == null) {
                 throw new runtime.RequiredError('configId', 'Required parameter "configId" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
             }
-            if (requestParameters['siteConfig'] == null) {
-                throw new runtime.RequiredError('siteConfig', 'Required parameter "siteConfig" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
+            if (requestParameters['body'] == null) {
+                throw new runtime.RequiredError('body', 'Required parameter "body" was null or undefined when calling updateSiteConfigSiteConfigsConfigIdPut().');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -213,9 +213,9 @@ class SiteConfigsApi extends runtime.BaseAPI {
                 method: 'PUT',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, index_1.SiteConfigToJSON)(requestParameters['siteConfig']),
+                body: (0, index_1.BodyToJSON)(requestParameters['body']),
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.SiteConfigFromJSON)(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, index_1.ResponseUpdateSiteConfigSiteConfigsConfigIdPutFromJSON)(jsonValue));
         });
     }
     /**

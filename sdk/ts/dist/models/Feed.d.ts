@@ -63,6 +63,12 @@ export interface Feed {
      * @memberof Feed
      */
     ownerUserId?: string | null;
+    /**
+     *
+     * @type {string}
+     * @memberof Feed
+     */
+    siteLoginCredentialId?: string | null;
 }
 /**
  * Check if a given object implements the Feed interface.

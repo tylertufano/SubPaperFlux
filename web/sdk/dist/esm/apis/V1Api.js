@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderSummaryFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagSummaryFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialFromJSON, CredentialsPageFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, JobOutFromJSON, JobRequestToJSON, JobScheduleCreateToJSON, JobScheduleOutFromJSON, JobScheduleUpdateToJSON, JobSchedulesPageFromJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, RoleGrantRequestToJSON, SiteConfigOutFromJSON, SiteConfigsPageFromJSON, SiteWelcomeSettingOutFromJSON, SiteWelcomeSettingUpdateToJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models/index';
+import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderSummaryFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagSummaryFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialFromJSON, CredentialsPageFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, JobOutFromJSON, JobRequestToJSON, JobScheduleCreateToJSON, JobScheduleOutFromJSON, JobScheduleUpdateToJSON, JobSchedulesPageFromJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON, RoleGrantRequestToJSON, SiteConfigsPageFromJSON, SiteWelcomeSettingOutFromJSON, SiteWelcomeSettingUpdateToJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, } from '../models/index';
 /**
  *
  */
@@ -335,7 +335,7 @@ export class V1Api extends runtime.BaseAPI {
                 headers: headerParameters,
                 query: queryParameters,
             }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => SiteConfigOutFromJSON(jsonValue));
+            return new runtime.JSONApiResponse(response, (jsonValue) => ResponseCopySiteConfigV1V1SiteConfigsConfigIdCopyPostFromJSON(jsonValue));
         });
     }
     /**
