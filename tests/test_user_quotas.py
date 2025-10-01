@@ -75,7 +75,7 @@ def test_credential_quota_enforced(quota_client):
     _seed_user(quota_credentials=1)
 
     resp_ok = quota_client.post(
-        "/credentials",
+        "/v1/credentials",
         json={
             "kind": "instapaper",
             "description": "First credential",
@@ -85,7 +85,7 @@ def test_credential_quota_enforced(quota_client):
     assert resp_ok.status_code == 201
 
     resp_blocked = quota_client.post(
-        "/credentials",
+        "/v1/credentials",
         json={
             "kind": "instapaper",
             "description": "Second credential",
@@ -116,10 +116,10 @@ def test_site_config_quota_enforced(quota_client):
         "owner_user_id": "quota-user",
     }
 
-    resp_ok = quota_client.post("/site-configs", json=payload)
+    resp_ok = quota_client.post("/v1/site-configs", json=payload)
     assert resp_ok.status_code == 201
 
-    resp_blocked = quota_client.post("/site-configs", json=payload)
+    resp_blocked = quota_client.post("/v1/site-configs", json=payload)
     assert resp_blocked.status_code == 403
 
     api_payload = {
@@ -137,7 +137,7 @@ def test_site_config_quota_enforced(quota_client):
         "owner_user_id": "quota-user",
     }
 
-    resp_api = quota_client.post("/site-configs", json=api_payload)
+    resp_api = quota_client.post("/v1/site-configs", json=api_payload)
     assert resp_api.status_code == 403
 
 
@@ -145,13 +145,13 @@ def test_feed_quota_enforced(quota_client):
     _seed_user(quota_feeds=1)
 
     resp_ok = quota_client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={"url": "https://example.com/feed", "poll_frequency": "1h"},
     )
     assert resp_ok.status_code == 201
 
     resp_blocked = quota_client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={"url": "https://example.org/feed", "poll_frequency": "1h"},
     )
     assert resp_blocked.status_code == 403

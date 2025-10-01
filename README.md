@@ -267,8 +267,8 @@ PY
   )`
 - Run API: `uvicorn app.main:app --reload --port 8000`
 - Run worker (job processor): `python -m app.worker`
-- Endpoints: `/status`, `/site-configs`, `/credentials`, `/feeds`, `/jobs` (Bearer token required except `/status`)
- - Bookmarks: `/bookmarks` (list with filters/pagination, delete with optional Instapaper removal)
+- Endpoints: `/v1/status`, `/v1/site-configs`, `/v1/credentials`, `/v1/feeds`, `/v1/jobs` (Bearer token required except `/v1/status`)
+ - Bookmarks: `/v1/bookmarks` (list with filters/pagination, delete with optional Instapaper removal)
 
 ## OIDC Configuration
 
@@ -389,10 +389,10 @@ End-to-End Tests
 - Browser-based Playwright smoke coverage is temporarily on hold pending GitHub Actions service-container support. Track the re-enablement effort via [ROADMAP.md](ROADMAP.md#release--distribution).
 
 Credentials (DB-backed)
-- Store user secrets in the DB via `/credentials` with `kind` and `data`:
+- Store user secrets in the DB via `/v1/credentials` with `kind` and `data`:
   - `site_login`: `{ "username": "...", "password": "..." }`
   - `miniflux`: `{ "miniflux_url": "...", "api_key": "..." }`
-- `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }` (populate via the `/credentials/instapaper/login` onboarding flow that collects a description plus username/password; see `docs/instapaper-onboarding.md`)
+- `instapaper`: `{ "oauth_token": "...", "oauth_token_secret": "..." }` (populate via the `/v1/credentials/instapaper/login` onboarding flow that collects a description plus username/password; see `docs/instapaper-onboarding.md`)
   - `instapaper_app` (global or user): `{ "consumer_key": "...", "consumer_secret": "..." }`
 - Handlers prefer DB credentials by `id` (or by `kind` for `instapaper_app`), and fall back to file templates if not found.
 - API responses mask sensitive values (e.g., tokens, passwords). Stored values are encrypted at rest using AES‑GCM with `CREDENTIALS_ENC_KEY`.

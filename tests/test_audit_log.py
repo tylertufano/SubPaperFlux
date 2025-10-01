@@ -97,7 +97,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
         "owner_user_id": "admin",
         "site_config_id": site_config_id,
     }
-    created = admin_client.post("/credentials", json=create_payload)
+    created = admin_client.post("/v1/credentials", json=create_payload)
     assert created.status_code == 201
     cred = created.json()
 
@@ -116,7 +116,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
         "owner_user_id": "admin",
         "site_config_id": site_config_id,
     }
-    updated = admin_client.put(f"/credentials/{cred['id']}", json=update_payload)
+    updated = admin_client.put(f"/v1/credentials/{cred['id']}", json=update_payload)
     assert updated.status_code == 200
 
     logs_after_update = fetch_audit(
@@ -128,7 +128,7 @@ def test_audit_log_tracks_credential_crud(admin_client: TestClient):
         "create",
     ]
 
-    deleted = admin_client.delete(f"/credentials/{cred['id']}")
+    deleted = admin_client.delete(f"/v1/credentials/{cred['id']}")
     assert deleted.status_code == 204
 
     final_logs = fetch_audit(
@@ -160,7 +160,7 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
         "expected_success_text": "Demo success",
         "required_cookies": ["session"],
     }
-    created = admin_client.post("/site-configs", json=create_payload)
+    created = admin_client.post("/v1/site-configs", json=create_payload)
     assert created.status_code == 201
     site_config = created.json()
 
@@ -173,7 +173,7 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
     updated_payload = dict(site_config)
     updated_payload["name"] = "Demo Site Updated"
     updated = admin_client.put(
-        f"/site-configs/{site_config['id']}",
+        f"/v1/site-configs/{site_config['id']}",
         json=updated_payload,
     )
     assert updated.status_code == 200
@@ -187,7 +187,7 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
         "create",
     ]
 
-    deleted = admin_client.delete(f"/site-configs/{site_config['id']}")
+    deleted = admin_client.delete(f"/v1/site-configs/{site_config['id']}")
     assert deleted.status_code == 204
 
     final_logs = fetch_audit(
@@ -221,7 +221,7 @@ def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient)
         bookmark_id = bookmark.id
 
     update_response = admin_client.put(
-        f"/bookmarks/{bookmark_id}/tags",
+        f"/v1/bookmarks/{bookmark_id}/tags",
         json={"tags": ["alpha", "beta"]},
     )
     assert update_response.status_code == 200
@@ -238,7 +238,7 @@ def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient)
     assert logs_after_update["items"][0]["details"]["tags"] == ["alpha", "beta"]
 
     delete_response = admin_client.delete(
-        f"/bookmarks/{bookmark_id}",
+        f"/v1/bookmarks/{bookmark_id}",
         params={"delete_remote": "false"},
     )
     assert delete_response.status_code == 204

@@ -4,11 +4,7 @@ README.md
 package.json
 src/apis/AdminApi.ts
 src/apis/BookmarksApi.ts
-src/apis/CredentialsApi.ts
-src/apis/FeedsApi.ts
-src/apis/JobsApi.ts
 src/apis/MeApi.ts
-src/apis/SiteConfigsApi.ts
 src/apis/SiteSettingsApi.ts
 src/apis/StatusApi.ts
 src/apis/TemplatesApi.ts
