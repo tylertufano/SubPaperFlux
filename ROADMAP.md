@@ -259,18 +259,20 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 ### Release & Distribution
 
-- [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
-  - Playwright smoke is currently paused in CI due to GitHub Actions limits; revisit tooling once research concludes (`web/package.json:6-12`, `Makefile:136-165`).
-- [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
+- [~] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
+  - Linting, type checks, Vitest unit suites, and bundle analysis now run in CI; Playwright smoke coverage remains paused pending GitHub Actions research (`.github/workflows/docker_image.yml:1-160`, `web/package.json:6-15`).
+- [x] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
   - [x] Runtime API base resolution via `/ui-config` (UI-084)
-- [ ] CI job matrix: validate both SDK generation modes (regen from OpenAPI vs copy vendored) (UI-083)
-- [ ] Publish `@subpaperflux/sdk` to npm and consume from package (UI-082)
-- [ ] API Compatibility: Use `/v1` endpoints only; track deprecations (UI-054)
+  - Evidence: `templates/env.dev.example:1-120`, `templates/env.stage.example:1-120`, `templates/env.prod.example:1-120`, `README.md:172-202`
+- [x] CI job matrix: validate both SDK generation modes (regen from OpenAPI vs copy vendored) (UI-083)
+- [ ] Publish `@subpaperflux/sdk` to npm and consume from package (UI-082) — deferred; optional once release cadence resumes
+- [x] API Compatibility: Use `/v1` endpoints only; track deprecations (UI-054)
 - [ ] SDK Versioning: Lock SDK version per UI release; changelog/upgrade notes (UI-055)
 
 ### Error Handling & Reliability
 
-- [ ] Uniform error responses (`application/problem+json`) (UI-036)
+- [x] Uniform error responses (`application/problem+json`) (UI-036)
+  - Evidence: `app/errors.py:1-80`, `app/main.py:42-180`
 
 ## Phase 6 — Experience Polish & Adoption
 
