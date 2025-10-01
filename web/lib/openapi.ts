@@ -1379,18 +1379,21 @@ export async function fetchPrometheusMetrics(): Promise<ParsedPrometheusMetrics>
 export const v1 = {
   listTemplates: async () => listTemplates(),
   downloadTemplate: async ({ templateId }: { templateId: string }) => downloadTemplateAsset(templateId),
-  listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).bookmarks.listBookmarksBookmarksGet(p),
+  listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).bookmarks.listBookmarksV1BookmarksGet(p),
   bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).bookmarks.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
   countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).bookmarks.countBookmarksV1BookmarksCountGet(p),
-  listTagsBookmarksTagsGet: async () => (await getClients()).bookmarks.listTagsBookmarksTagsGet(),
-  createTagBookmarksTagsPost: async ({ tagCreate }: { tagCreate: any }) => (await getClients()).bookmarks.createTagBookmarksTagsPost({ tagCreate, xCsrfToken: CSRF }),
-  updateTagBookmarksTagsTagIdPut: async ({ tagId, tagUpdate }: { tagId: string; tagUpdate: any }) => (await getClients()).bookmarks.updateTagBookmarksTagsTagIdPut({ tagId, tagUpdate, xCsrfToken: CSRF }),
-  deleteTagBookmarksTagsTagIdDelete: async ({ tagId }: { tagId: string }) => (await getClients()).bookmarks.deleteTagBookmarksTagsTagIdDelete({ tagId, xCsrfToken: CSRF }),
-  getBookmarkTagsBookmarksBookmarkIdTagsGet: async ({ bookmarkId }: { bookmarkId: string }) => (await getClients()).bookmarks.getBookmarkTagsBookmarksBookmarkIdTagsGet({ bookmarkId }),
+  listTagsBookmarksTagsGet: async () => (await getClients()).bookmarks.listTagsV1BookmarksTagsGet(),
+  createTagBookmarksTagsPost: async ({ tagCreate }: { tagCreate: any }) => (await getClients()).bookmarks.createTagV1BookmarksTagsPost({ tagCreate, xCsrfToken: CSRF }),
+  updateTagBookmarksTagsTagIdPut: async ({ tagId, tagUpdate }: { tagId: string; tagUpdate: any }) =>
+    (await getClients()).bookmarks.updateTagV1BookmarksTagsTagIdPut({ tagId, tagUpdate, xCsrfToken: CSRF }),
+  deleteTagBookmarksTagsTagIdDelete: async ({ tagId }: { tagId: string }) =>
+    (await getClients()).bookmarks.deleteTagV1BookmarksTagsTagIdDelete({ tagId, xCsrfToken: CSRF }),
+  getBookmarkTagsBookmarksBookmarkIdTagsGet: async ({ bookmarkId }: { bookmarkId: string }) =>
+    (await getClients()).bookmarks.getBookmarkTagsV1BookmarksBookmarkIdTagsGet({ bookmarkId }),
   updateBookmarkTagsBookmarksBookmarkIdTagsPut: async ({ bookmarkId, bookmarkTagsUpdate }: { bookmarkId: string; bookmarkTagsUpdate: any }) =>
-    (await getClients()).bookmarks.updateBookmarkTagsBookmarksBookmarkIdTagsPut({ bookmarkId, bookmarkTagsUpdate, xCsrfToken: CSRF }),
+    (await getClients()).bookmarks.updateBookmarkTagsV1BookmarksBookmarkIdTagsPut({ bookmarkId, bookmarkTagsUpdate, xCsrfToken: CSRF }),
   bulkUpdateBookmarkTagsBookmarksBulkTagsPost: async ({ bulkBookmarkTagUpdate }: { bulkBookmarkTagUpdate: any }) =>
-    (await getClients()).bookmarks.bulkUpdateBookmarkTagsBookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
+    (await getClients()).bookmarks.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
   bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost: async ({ bulkBookmarkTagUpdate }: { bulkBookmarkTagUpdate: any }) =>
     (await getClients()).bookmarks.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost({ bulkBookmarkTagUpdate, xCsrfToken: CSRF }),
   bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost: async ({
@@ -1398,7 +1401,7 @@ export const v1 = {
   }: {
     bulkBookmarkFolderUpdate: any
   }) =>
-    (await getClients()).bookmarks.bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost({
+    (await getClients()).bookmarks.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost({
       bulkBookmarkFolderUpdate,
       xCsrfToken: CSRF,
     }),
@@ -1411,17 +1414,19 @@ export const v1 = {
       bulkBookmarkFolderUpdate,
       xCsrfToken: CSRF,
     }),
-  listFoldersBookmarksFoldersGet: async () => (await getClients()).bookmarks.listFoldersBookmarksFoldersGet(),
-  createFolderBookmarksFoldersPost: async ({ folderCreate }: { folderCreate: any }) => (await getClients()).bookmarks.createFolderBookmarksFoldersPost({ folderCreate, xCsrfToken: CSRF }),
+  listFoldersBookmarksFoldersGet: async () => (await getClients()).bookmarks.listFoldersV1BookmarksFoldersGet(),
+  createFolderBookmarksFoldersPost: async ({ folderCreate }: { folderCreate: any }) =>
+    (await getClients()).bookmarks.createFolderV1BookmarksFoldersPost({ folderCreate, xCsrfToken: CSRF }),
   updateFolderBookmarksFoldersFolderIdPut: async ({ folderId, folderUpdate }: { folderId: string; folderUpdate: any }) =>
-    (await getClients()).bookmarks.updateFolderBookmarksFoldersFolderIdPut({ folderId, folderUpdate, xCsrfToken: CSRF }),
+    (await getClients()).bookmarks.updateFolderV1BookmarksFoldersFolderIdPut({ folderId, folderUpdate, xCsrfToken: CSRF }),
   deleteFolderBookmarksFoldersFolderIdDelete: async ({ folderId }: { folderId: string }) =>
-    (await getClients()).bookmarks.deleteFolderBookmarksFoldersFolderIdDelete({ folderId, xCsrfToken: CSRF }),
-  getBookmarkFolderBookmarksBookmarkIdFolderGet: async ({ bookmarkId }: { bookmarkId: string }) => (await getClients()).bookmarks.getBookmarkFolderBookmarksBookmarkIdFolderGet({ bookmarkId }),
+    (await getClients()).bookmarks.deleteFolderV1BookmarksFoldersFolderIdDelete({ folderId, xCsrfToken: CSRF }),
+  getBookmarkFolderBookmarksBookmarkIdFolderGet: async ({ bookmarkId }: { bookmarkId: string }) =>
+    (await getClients()).bookmarks.getBookmarkFolderV1BookmarksBookmarkIdFolderGet({ bookmarkId }),
   updateBookmarkFolderBookmarksBookmarkIdFolderPut: async ({ bookmarkId, bookmarkFolderUpdate }: { bookmarkId: string; bookmarkFolderUpdate: any }) =>
-    (await getClients()).bookmarks.updateBookmarkFolderBookmarksBookmarkIdFolderPut({ bookmarkId, bookmarkFolderUpdate, xCsrfToken: CSRF }),
+    (await getClients()).bookmarks.updateBookmarkFolderV1BookmarksBookmarkIdFolderPut({ bookmarkId, bookmarkFolderUpdate, xCsrfToken: CSRF }),
   deleteBookmarkFolderBookmarksBookmarkIdFolderDelete: async ({ bookmarkId }: { bookmarkId: string }) =>
-    (await getClients()).bookmarks.deleteBookmarkFolderBookmarksBookmarkIdFolderDelete({ bookmarkId, xCsrfToken: CSRF }),
+    (await getClients()).bookmarks.deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete({ bookmarkId, xCsrfToken: CSRF }),
   previewBookmarkV1BookmarksBookmarkIdPreviewGet: async ({ bookmarkId }: { bookmarkId: string }) => {
     const basePath = await resolveApiBase()
     const session = await loadSession()
@@ -1659,9 +1664,10 @@ export const v1 = {
       minifluxCredId: minifluxCredId ?? undefined,
     }),
 
-  postgresPrepareV1AdminPostgresPreparePost: async () => (await getClients()).admin.postgresPrepareAdminPostgresPreparePost(),
+  postgresPrepareV1AdminPostgresPreparePost: async () =>
+    (await getClients()).admin.postgresPrepareV1AdminPostgresPreparePost(),
   postgresEnableRlsV1AdminPostgresEnableRlsPost: async () =>
-    (await getClients()).admin.postgresEnableRlsAdminPostgresEnableRlsPost(),
+    (await getClients()).admin.postgresEnableRlsV1AdminPostgresEnableRlsPost(),
 
   listMeTokensV1MeTokensGet: async (p: ApiTokensQuery = {}) => listApiTokens(p),
   createMeTokenV1MeTokensPost: async ({ apiTokenCreate }: { apiTokenCreate: ApiTokenCreate }) =>
