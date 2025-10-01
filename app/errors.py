@@ -27,7 +27,12 @@ def _problem(
     }
     if details:
         body["details"] = details
-    return JSONResponse(body, status_code=status, headers={"X-Trace-Id": trace_id})
+    return JSONResponse(
+        content=body,
+        status_code=status,
+        headers={"X-Trace-Id": trace_id},
+        media_type="application/problem+json",
+    )
 
 
 def register_error_handlers(app: FastAPI) -> None:

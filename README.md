@@ -187,6 +187,9 @@ Operational Details
 - Cookies: Captured cookies are filtered by `cookies_to_store` and cached in the database-backed cookie store keyed by the site login/site config pair, along with timestamps.
 - State: The `.ctrl` file tracks last poll times and a local bookmark cache for sync/purge.
 - Error handling: Network and parsing errors are logged; the service continues polling.
+- API error responses follow [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807) and are returned as
+  `application/problem+json` objects that include a trace identifier header (`X-Trace-Id`), the
+  machine-readable error code, HTTP status, and optional `details` payload when available.
 
 Security & Tips
 - Treat `credentials.json` and `instapaper_app_creds.json` as secrets. Do not commit them.
