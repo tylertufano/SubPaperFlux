@@ -127,9 +127,8 @@ make sdk-ts
   - Evidence: `web/__tests__/bulk-tags.test.tsx:1-200`
 - [x] Vitest coverage for bulk folder modal flows (UI-027)
   - Evidence: `web/__tests__/bulk-folders.test.tsx:1-220`
-- [x] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
-  - Evidence: `web/playwright.config.ts:1-56`, `web/e2e/smoke.spec.ts:73-199`
-  - Run via: `npm run test:e2e`, `npm run test:e2e:ci`, or `make test-e2e` (`web/package.json:6-12`, `Makefile:136-165`)
+- [ ] Minimal E2E: login → create credential → test → list bookmarks → bulk delete (dry-run) (UI-014)
+  - Playwright smoke coverage is paused due to GitHub Actions limitations and will be revisited once the current research wraps.
 
 ### Queue/Idempotency UX
 
@@ -257,7 +256,7 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 ### Release & Distribution
 
 - [ ] Builds: Lint, type-check, unit tests, E2E smoke; bundle analysis (UI-052)
-  - Playwright smoke can run via `npm run test:e2e:ci` or `make test-e2e` for CI wiring (`web/package.json:6-12`, `Makefile:136-165`)
+  - Playwright smoke is currently paused in CI due to GitHub Actions limits; revisit tooling once research concludes (`web/package.json:6-12`, `Makefile:136-165`).
 - [ ] Envs: Dev/Stage/Prod with distinct OIDC + API base; feature flags (UI-053)
   - [x] Runtime API base resolution via `/ui-config` (UI-084)
 - [ ] CI job matrix: validate both SDK generation modes (regen from OpenAPI vs copy vendored) (UI-083)
@@ -295,9 +294,8 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 - [ ] Unit: Component tests for filters, pagination, modals (UI-014)
 - [ ] Integration: Mock SDK to simulate API; test flows (UI-050)
-- [x] E2E: Playwright smoke for login, credential creation/test, bookmark preview, and bulk delete dry-run (UI-014)
-  - Evidence: `web/playwright.config.ts:1-56`, `web/e2e/smoke.spec.ts:73-199`
-  - Run via: `npm run test:e2e`, `npm run test:e2e:ci`, or `make test-e2e` (`web/package.json:6-12`, `Makefile:136-165`)
+- [ ] E2E: Playwright smoke for login, credential creation/test, bookmark preview, and bulk delete dry-run (UI-014)
+  - Coverage deferred until Playwright automation can return post–GitHub Actions research.
 - [ ] Accessibility: Axe audits in CI; color contrast testing (UI-051)
 
 ## Rollout Plan
