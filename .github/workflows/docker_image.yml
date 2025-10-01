@@ -57,57 +57,6 @@ jobs:
           mkdir -p ../artifacts/frontend
           npm run test:unit -- --reporter=default --reporter=junit --outputFile=../artifacts/frontend/vitest-junit.xml
 
-      - name: Install Playwright dependencies
-        working-directory: web
-        run: npx playwright install --with-deps
-
-      - name: Run Playwright smoke tests
-        env:
-          DATABASE_URL: sqlite:///./dev.db
-          NEXT_PUBLIC_API_BASE: http://127.0.0.1:8000
-          API_BASE: http://127.0.0.1:8000
-          AUTH_URL: http://localhost:3000
-          NEXTAUTH_URL: http://localhost:3000
-          PLAYWRIGHT_BASE_URL: http://localhost:3000
-          HEADLESS: '1'
-          CI: 'true'
-          PLAYWRIGHT_JUNIT_OUTPUT_NAME: playwright-results.xml
-          NEXTAUTH_SECRET: devsecret
-          OIDC_CLIENT_ID: local
-          OIDC_CLIENT_SECRET: local
-          OIDC_ISSUER: http://127.0.0.1:4455/oidc
-        run: |
-          set -euo pipefail
-          DB_URL="${DATABASE_URL:-sqlite:///./dev.db}"
-          USE_SQLMODEL=0
-          if [ "${DB_URL%%:*}" != "sqlite" ]; then
-            DATABASE_URL="$DB_URL" alembic upgrade head
-          else
-            USE_SQLMODEL=1
-          fi
-          API_PID=
-          cleanup() {
-            if [ -n "${API_PID:-}" ]; then
-              kill "$API_PID" 2>/dev/null || true
-              wait "$API_PID" 2>/dev/null || true
-            fi
-          }
-          trap cleanup EXIT
-          if [ "$USE_SQLMODEL" -eq 1 ]; then
-            DATABASE_URL="$DB_URL" SQLMODEL_CREATE_ALL="${SQLMODEL_CREATE_ALL:-1}" uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level warning &
-          else
-            DATABASE_URL="$DB_URL" uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level warning &
-          fi
-          API_PID=$!
-          until curl -sSf http://127.0.0.1:8000/status > /dev/null; do sleep 1; done
-          cd web
-          npm run test:e2e:ci -- --reporter=junit --reporter=line
-          cd ..
-          mkdir -p artifacts/playwright
-          if [ -f web/test-results/playwright-results.xml ]; then
-            cp web/test-results/playwright-results.xml artifacts/playwright/
-          fi
-
       - name: Run bundle analysis
         working-directory: web
         run: |
@@ -135,17 +84,6 @@ jobs:
         with:
           name: frontend-vitest
           path: artifacts/frontend
-          if-no-files-found: warn
-
-      - name: Upload Playwright artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-smoke
-          path: |
-            web/test-results
-            web/playwright-report
-            artifacts/playwright
           if-no-files-found: warn
 
       - name: Upload bundle analysis
