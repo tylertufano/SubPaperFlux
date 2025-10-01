@@ -218,6 +218,10 @@ Both the API and the Next.js web application emit errors to Sentry when a DSN is
 
 When building the web image with source map upload enabled, also provide `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` so the Next.js build can publish artifacts. The production Docker Compose template now exposes these variables for easy wiring.
 
+## Release notes
+
+Track UI releases in [docs/ui-release-notes.md](docs/ui-release-notes.md). Corresponding SDK updates are documented in [sdk/CHANGELOG.md](sdk/CHANGELOG.md).
+
 ## Web dashboard welcome page
 
 The `/` route now doubles as a public landing page. Signed-in users continue to see the operational dashboard, while anonymous visitors receive a configurable hero block with the product headline, description, and optional call-to-action.

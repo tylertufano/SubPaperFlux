@@ -43,16 +43,18 @@ sdk-ts:
 
 # Generate SDK directly into web/sdk (vendored)
 sdk-ts-web:
-	OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
-	OUT_DIR=$${OUT_DIR:-./web/sdk}; \
-	bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR; \
-	bash scripts/vendor_sdk_web.sh postprocess
+        OPENAPI_SPEC=$${OPENAPI_SPEC:-./openapi.json}; \
+        OUT_DIR=$${OUT_DIR:-./web/sdk}; \
+        bash scripts/generate_ts_sdk.sh $$OPENAPI_SPEC $$OUT_DIR; \
+        bash scripts/vendor_sdk_web.sh postprocess; \
+        python3 scripts/update_web_sdk_dependency.py
 
 # Copy existing generated SDK (sdk/ts) into web/sdk and postprocess for Next build
 sdk-vendor-web:
-	rm -rf web/sdk && mkdir -p web; \
-	cp -R sdk/ts web/sdk; \
-	bash scripts/vendor_sdk_web.sh postprocess
+        rm -rf web/sdk && mkdir -p web; \
+        cp -R sdk/ts web/sdk; \
+        bash scripts/vendor_sdk_web.sh postprocess; \
+        python3 scripts/update_web_sdk_dependency.py
 
 # ---- API helpers ----
 # Required: API_BASE, TOKEN
