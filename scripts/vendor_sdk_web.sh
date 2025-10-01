@@ -22,6 +22,18 @@ postprocess() {
     sed -i.bak "s|^export \* from './apis';$|// export * from './apis';|" "$OUT_DIR/src/index.ts" || true
     rm -f "$OUT_DIR/src/index.ts.bak"
   fi
+  if [ -f "$OUT_DIR/dist/index.js" ]; then
+    # Prevent the compiled barrel from re-exporting APIs, matching the src tweak
+    sed -i.bak "s|^__exportStar(require(\"./apis\"), exports);$|// export * from './apis';|" "$OUT_DIR/dist/index.js" || true
+    sed -i.bak "s|^__exportStar(require('./apis'), exports);$|// export * from './apis';|" "$OUT_DIR/dist/index.js" || true
+    sed -i.bak "s|^__exportStar(require(\"./apis/index\"), exports);$|// export * from './apis/index';|" "$OUT_DIR/dist/index.js" || true
+    sed -i.bak "s|^__exportStar(require('./apis/index'), exports);$|// export * from './apis/index';|" "$OUT_DIR/dist/index.js" || true
+    rm -f "$OUT_DIR/dist/index.js.bak"
+  fi
+  if [ -f "$OUT_DIR/dist/index.d.ts" ]; then
+    sed -i.bak "/^export \* from '\.\/apis\(\/index\)\?';$/d" "$OUT_DIR/dist/index.d.ts" || true
+    rm -f "$OUT_DIR/dist/index.d.ts.bak"
+  fi
   python3 "$(dirname "$0")/postprocess_ts_sdk.py" "$OUT_DIR"
   # Ensure a README is present to document vendoring
   cat > "$OUT_DIR/README.md" << 'EOF'
