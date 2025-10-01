@@ -11,8 +11,6 @@
     "test": "vitest",
     "test:unit": "vitest run",
     "test:a11y": "vitest run __tests__/a11y",
-    "test:e2e": "node ./e2e/run-tests.mjs",
-    "test:e2e:ci": "node ./e2e/run-tests.mjs --headless",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
@@ -27,7 +25,6 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^14.2.5",
-    "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/jest-axe": "^3.5.9",
