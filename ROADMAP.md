@@ -242,16 +242,20 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 ### Monitoring & Telemetry
 
-- [ ] Per-endpoint histograms and job durations surfaced in UI (UI-045)
-- [ ] Sentry client for UI and better grouping (UI-011)
+- [x] Per-endpoint histograms and job durations surfaced in UI (UI-045)
+  - Evidence: `web/pages/admin/metrics.tsx:160-520`, `web/lib/openapi.ts:1343-1372`, `app/observability/metrics.py:1-80`
+- [x] Sentry client for UI and better grouping (UI-011)
+  - Evidence: `web/pages/_app.tsx:1-20`, `web/lib/sentry.ts:1-36`, `web/sentry.config.ts:1-60`, `web/next.config.js:1-40`
 - [x] Prometheus counters for logins, admin actions, and API token issuance exposed via `/metrics`
   - Evidence: `app/observability/metrics.py:1`, `app/main.py:1`, `app/routers/admin_users_v1.py:1`, `app/routers/me_tokens_v1.py:1`
 
 ### Operational Consoles
 
-- [ ] Metrics View (Prometheus in UI) (UI-043)
+- [x] Metrics View (Prometheus in UI) (UI-043)
+  - Evidence: `web/pages/admin/metrics.tsx:160-520`, `web/__tests__/admin-metrics.test.tsx:1-120`
 - [ ] Health Console (integration checks, rate-limit insights) (UI-044)
-- [ ] System View: OpenAPI doc link, metrics endpoint, version (UI-015)
+- [x] System View: OpenAPI doc link, metrics endpoint, version (UI-015)
+  - Evidence: `web/pages/admin.tsx:200-240`, `app/main.py:260-300`, `app/schemas.py:130-150`
 
 ### Release & Distribution
 
