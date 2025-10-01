@@ -246,7 +246,8 @@ To run the web workspace tests locally:
 1. `cd web`
 2. Install dependencies if you have not already: `npm install`
 3. Execute the Vitest component and accessibility suites once: `npm run test -- --run`
-4. Point Playwright at a running API (for example, `export API_BASE=http://localhost:8000`) and launch the smoke test: `npm run test:e2e` (add `-- --headless` to mirror CI).
+
+> Browser-based Playwright smoke coverage is temporarily paused while we wait for GitHub Actions service-container support. Track the follow-up in [ROADMAP.md](ROADMAP.md#release--distribution).
 
 To verify Postgres row-level security policies:
 
@@ -347,14 +348,12 @@ Frontend (Next.js) API Base Resolution
 - To proxy the API under the same domain with a subpath (recommended): set `API_BASE=/api` on the web container and configure your reverse proxy to route `/api/*` to the backend.
 
 Testing
-- **Local end-to-end loop**
+- **Local component loop**
   1. Start the API: `make dev-api` (bootstraps a virtualenv, runs Alembic migrations for non-SQLite databases, and serves FastAPI on port 8000).
   2. In a second terminal start the web app: `cd web && npm install && npm run dev`. The dev server reads defaults for `NEXT_PUBLIC_API_BASE`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `NEXTAUTH_SECRET`, so no extra exports are needed for the happy path.
-  3. With both services running, execute Playwright tests from `web/`: `npm run test:e2e`. Add `--headed` for interactive debugging or `--headless` to mirror CI.
-- **CI pointers**
-  - Use `make test-e2e` to mirror the GitHub Actions workflow. It provisions the virtualenv, ensures the database schema is ready (skipping Alembic when `DATABASE_URL` is SQLite), launches the API, and runs `npm run test:e2e` with `API_BASE`/`NEXT_PUBLIC_API_BASE` wired to the local services.
-  - Set `CI=1` or `HEADLESS=1` in automated runs to force Chromium headless mode. Provide any custom secrets (`NEXTAUTH_SECRET`, OIDC issuer/client values, `NEXT_PUBLIC_CSRF_TOKEN`, etc.) through the environment before invoking the target.
-  - Artifacts for failures (traces, videos, screenshots) are written under `web/test-results/`, and the HTML report lives in `web/playwright-report/`. Open traces locally with `npx playwright show-trace web/test-results/<test>/trace.zip`.
+  3. With both services running, execute the Vitest component and accessibility suites: `npm run test -- --run` (or `npm run test:a11y -- --run` to focus on accessibility).
+- **Browser E2E status**
+  - Playwright smoke coverage is temporarily paused while we wait for GitHub Actions service-container support. Follow the roadmap item in [ROADMAP.md](ROADMAP.md#release--distribution) for progress on restoring these tests.
 - **Additional guidance**
   - Reference [`docs/testing-guidelines.md`](docs/testing-guidelines.md) for expected coverage and tips on extending the suite.
   - If you need the worker for background jobs, run it in another shell via `python -m app.worker` before kicking off the tests.
@@ -387,10 +386,7 @@ Local Dev via Make
 - Web uses placeholders for OIDC; set real `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `NEXTAUTH_SECRET` for actual sign-in.
 
 End-to-End Tests
-- Quick commands (see the Testing section above for prerequisites):
-  - `npm run test:e2e` runs the Playwright suite (headed by default unless `CI`/`HEADLESS` is set).
-  - `npm run test:e2e:ci` forces headless mode.
-  - `make test-e2e ARGS=--headless` mirrors CI orchestration and stops services when complete.
+- Browser-based Playwright smoke coverage is temporarily on hold pending GitHub Actions service-container support. Track the re-enablement effort via [ROADMAP.md](ROADMAP.md#release--distribution).
 
 Credentials (DB-backed)
 - Store user secrets in the DB via `/credentials` with `kind` and `data`:
