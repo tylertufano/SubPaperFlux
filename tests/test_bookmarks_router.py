@@ -63,33 +63,33 @@ def test_bookmarks_list_filters():
         session.commit()
 
     client = TestClient(app)
-    r = client.get("/bookmarks?since=2024-01-15T00:00:00+00:00")
+    r = client.get("/v1/bookmarks?since=2024-01-15T00:00:00+00:00")
     assert r.status_code == 200
     data = r.json()
     assert data["total"] >= 1
     assert data["items"][0]["instapaper_bookmark_id"] == "2"
 
-    r2 = client.get("/bookmarks?search=alp")
+    r2 = client.get("/v1/bookmarks?search=alp")
     assert r2.status_code == 200
     assert any(b["title"] == "Alpha" for b in r2.json()["items"])
 
-    r3 = client.get("/bookmarks?title_query=Alp")
+    r3 = client.get("/v1/bookmarks?title_query=Alp")
     assert r3.status_code == 200
     assert all("Alp" in (b["title"] or "") for b in r3.json()["items"])
 
-    r4 = client.get("/bookmarks?url_query=https://b")
+    r4 = client.get("/v1/bookmarks?url_query=https://b")
     assert r4.status_code == 200
     assert all(b["url"] == "https://b" for b in r4.json()["items"])
 
-    r5 = client.get("/bookmarks?regex=/Al.*/i")
+    r5 = client.get("/v1/bookmarks?regex=/Al.*/i")
     assert r5.status_code == 200
     assert any(b["title"] == "Alpha" for b in r5.json()["items"])
 
-    r6 = client.get("/bookmarks?regex=/https:\\/\\/b/&regex_target=url")
+    r6 = client.get("/v1/bookmarks?regex=/https:\\/\\/b/&regex_target=url")
     assert r6.status_code == 200
     assert len(r6.json()["items"]) == 1 and r6.json()["items"][0]["title"] == "Beta"
 
-    bad = client.get("/bookmarks?regex=/[unclosed")
+    bad = client.get("/v1/bookmarks?regex=/[unclosed")
     assert bad.status_code == 400
 
 
@@ -159,22 +159,22 @@ def test_bookmark_tags_and_folders_endpoints():
     client = TestClient(app)
 
     # Tag CRUD + bookmark association
-    resp = client.post("/bookmarks/tags", json={"name": "Work"})
+    resp = client.post("/v1/bookmarks/tags", json={"name": "Work"})
     assert resp.status_code == 201
     tag_payload = resp.json()
     assert tag_payload["name"] == "Work"
     tag_id = tag_payload["id"]
 
-    list_resp = client.get("/bookmarks/tags")
+    list_resp = client.get("/v1/bookmarks/tags")
     assert list_resp.status_code == 200
     tags_list = list_resp.json()
     assert any(item["id"] == tag_id and item["bookmark_count"] == 0 for item in tags_list)
 
-    resp = client.put(f"/bookmarks/tags/{tag_id}", json={"name": "Work+"})
+    resp = client.put(f"/v1/bookmarks/tags/{tag_id}", json={"name": "Work+"})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Work+"
 
-    resp = client.put(f"/bookmarks/{bookmark_id}/tags", json={"tags": ["Work+", "Personal"]})
+    resp = client.put(f"/v1/bookmarks/{bookmark_id}/tags", json={"tags": ["Work+", "Personal"]})
     assert resp.status_code == 200
     returned_tags = resp.json()
     assert [t["name"] for t in returned_tags] == ["Work+", "Personal"]
@@ -182,28 +182,28 @@ def test_bookmark_tags_and_folders_endpoints():
     assert all(t["bookmark_count"] == 1 for t in returned_tags)
 
     # Tag filter should only return the tagged bookmark
-    resp = client.get(f"/bookmarks?tag_id={personal_id}")
+    resp = client.get(f"/v1/bookmarks?tag_id={personal_id}")
     assert resp.status_code == 200
     filtered = resp.json()
     assert filtered["total"] == 1
     assert [item["id"] for item in filtered["items"]] == [bookmark_id]
 
-    resp = client.get(f"/bookmarks/{bookmark_id}/tags")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/tags")
     assert resp.status_code == 200
     bookmark_tags = resp.json()
     assert sorted(t["name"] for t in bookmark_tags) == ["Personal", "Work+"]
     assert all(t["bookmark_count"] == 1 for t in bookmark_tags)
 
-    resp = client.delete(f"/bookmarks/tags/{personal_id}")
+    resp = client.delete(f"/v1/bookmarks/tags/{personal_id}")
     assert resp.status_code == 204
 
-    resp = client.get(f"/bookmarks/{bookmark_id}/tags")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/tags")
     assert resp.status_code == 200
     updated_tags = resp.json()
     assert [t["name"] for t in updated_tags] == ["Work+"]
     assert updated_tags[0]["bookmark_count"] == 1
 
-    resp = client.get("/bookmarks/tags")
+    resp = client.get("/v1/bookmarks/tags")
     assert resp.status_code == 200
     remaining_tags = resp.json()
     assert all(t["name"] != "Personal" for t in remaining_tags)
@@ -211,7 +211,7 @@ def test_bookmark_tags_and_folders_endpoints():
 
     # Folder CRUD + bookmark association
     resp = client.post(
-        "/bookmarks/folders",
+        "/v1/bookmarks/folders",
         json={"name": "Read Later", "instapaper_folder_id": "123"},
     )
     assert resp.status_code == 201
@@ -220,46 +220,46 @@ def test_bookmark_tags_and_folders_endpoints():
     assert folder_payload["instapaper_folder_id"] == "123"
     folder_id = folder_payload["id"]
 
-    folder_list = client.get("/bookmarks/folders")
+    folder_list = client.get("/v1/bookmarks/folders")
     assert folder_list.status_code == 200
     folders_data = folder_list.json()
     assert any(f["id"] == folder_id and f["bookmark_count"] == 0 for f in folders_data)
 
-    resp = client.put(f"/bookmarks/folders/{folder_id}", json={"name": "Read Now"})
+    resp = client.put(f"/v1/bookmarks/folders/{folder_id}", json={"name": "Read Now"})
     assert resp.status_code == 200
     assert resp.json()["name"] == "Read Now"
 
-    resp = client.put(f"/bookmarks/{bookmark_id}/folder", json={"folder_id": folder_id})
+    resp = client.put(f"/v1/bookmarks/{bookmark_id}/folder", json={"folder_id": folder_id})
     assert resp.status_code == 200
     folder_assignment = resp.json()
     assert folder_assignment["name"] == "Read Now"
     assert folder_assignment["bookmark_count"] == 1
 
     # Folder filter should only return the assigned bookmark
-    resp = client.get(f"/bookmarks?folder_id={folder_id}")
+    resp = client.get(f"/v1/bookmarks?folder_id={folder_id}")
     assert resp.status_code == 200
     folder_filtered = resp.json()
     assert folder_filtered["total"] == 1
     assert [item["id"] for item in folder_filtered["items"]] == [bookmark_id]
 
-    resp = client.get(f"/bookmarks/{bookmark_id}/folder")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 200
     assert resp.json()["id"] == folder_id
 
-    resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
+    resp = client.delete(f"/v1/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 204
 
-    resp = client.get("/bookmarks/folders")
+    resp = client.get("/v1/bookmarks/folders")
     assert resp.status_code == 200
     cleared_folders = resp.json()
     assert any(f["id"] == folder_id and f["bookmark_count"] == 0 for f in cleared_folders)
 
-    resp = client.get(f"/bookmarks/{bookmark_id}/folder")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 200
     assert resp.json() is None
 
     resp = client.put(
-        f"/bookmarks/{bookmark_id}/folder",
+        f"/v1/bookmarks/{bookmark_id}/folder",
         json={"folder_name": "Fresh", "instapaper_folder_id": "987"},
     )
     assert resp.status_code == 200
@@ -269,23 +269,23 @@ def test_bookmark_tags_and_folders_endpoints():
     new_folder_id = new_folder["id"]
     assert new_folder["bookmark_count"] == 1
 
-    resp = client.get("/bookmarks/folders")
+    resp = client.get("/v1/bookmarks/folders")
     assert resp.status_code == 200
     names = [f["name"] for f in resp.json()]
     assert "Fresh" in names
 
-    resp = client.delete(f"/bookmarks/folders/{folder_id}")
+    resp = client.delete(f"/v1/bookmarks/folders/{folder_id}")
     assert resp.status_code == 204
 
-    resp = client.get("/bookmarks/folders")
+    resp = client.get("/v1/bookmarks/folders")
     assert resp.status_code == 200
     assert all(f["id"] != folder_id for f in resp.json())
 
     # Cleanup: ensure folder assignment can be removed again
-    resp = client.delete(f"/bookmarks/{bookmark_id}/folder")
+    resp = client.delete(f"/v1/bookmarks/{bookmark_id}/folder")
     assert resp.status_code == 204
 
-    resp = client.get("/bookmarks/folders")
+    resp = client.get("/v1/bookmarks/folders")
     assert resp.status_code == 200
     post_clear = resp.json()
     assert any(f["id"] == new_folder_id and f["bookmark_count"] == 0 for f in post_clear)
@@ -324,7 +324,7 @@ def test_bulk_tags_success_and_audit_logging():
 
     client = TestClient(app)
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": bookmark_ids, "tags": ["  Work  ", "Focus"], "clear": False},
     )
     assert resp.status_code == 200
@@ -348,7 +348,7 @@ def test_bulk_tags_success_and_audit_logging():
     assert all(log.details.get("tags") == ["Work", "Focus"] for log in logs)
 
     clear_resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": bookmark_ids, "tags": [], "clear": True},
     )
     assert clear_resp.status_code == 200
@@ -388,7 +388,7 @@ def test_bulk_tags_rejects_foreign_bookmarks():
 
     client = TestClient(app)
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={
             "bookmark_ids": [owned_id, foreign_id],
             "tags": ["Mixed"],
@@ -419,27 +419,27 @@ def test_bulk_tags_validation_errors():
     client = TestClient(app)
 
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": [], "tags": ["One"], "clear": False},
     )
     assert resp.status_code == 422
 
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": [bookmark_id], "tags": [], "clear": False},
     )
     assert resp.status_code == 400
     assert resp.json()["title"] == "At least one tag is required unless clear is true"
 
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": [bookmark_id], "tags": ["   "], "clear": False},
     )
     assert resp.status_code == 400
     assert resp.json()["title"] == "Tag names must be non-empty"
 
     resp = client.post(
-        "/bookmarks/bulk-tags",
+        "/v1/bookmarks/bulk-tags",
         json={"bookmark_ids": [bookmark_id], "tags": ["One"], "clear": True},
     )
     assert resp.status_code == 400
@@ -487,7 +487,7 @@ def test_bulk_folders_assigns_and_syncs_instapaper(monkeypatch):
 
     client = TestClient(app)
     resp = client.post(
-        "/bookmarks/bulk-folders",
+        "/v1/bookmarks/bulk-folders",
         json={
             "bookmark_ids": bookmark_ids,
             "folder_id": folder_id,
@@ -544,7 +544,7 @@ def test_bulk_folders_returns_404_for_missing_folder():
 
     client = TestClient(app)
     resp = client.post(
-        "/bookmarks/bulk-folders",
+        "/v1/bookmarks/bulk-folders",
         json={"bookmark_ids": [bookmark_id], "folder_id": folder_id},
     )
     assert resp.status_code == 404
@@ -575,7 +575,7 @@ def test_bulk_folders_rejects_foreign_bookmarks():
 
     client = TestClient(app)
     resp = client.post(
-        "/bookmarks/bulk-folders",
+        "/v1/bookmarks/bulk-folders",
         json={"bookmark_ids": [owned_id, foreign_id], "folder_id": folder_id},
     )
     assert resp.status_code == 403
@@ -631,7 +631,7 @@ def test_bulk_folders_audit_entries(monkeypatch):
 
     client = TestClient(app)
     move_resp = client.post(
-        "/bookmarks/bulk-folders",
+        "/v1/bookmarks/bulk-folders",
         json={
             "bookmark_ids": [bookmark_id],
             "folder_id": folder_two_id,
@@ -640,7 +640,7 @@ def test_bulk_folders_audit_entries(monkeypatch):
     )
     assert move_resp.status_code == 200
     clear_resp = client.post(
-        "/bookmarks/bulk-folders",
+        "/v1/bookmarks/bulk-folders",
         json={"bookmark_ids": [bookmark_id]},
     )
     assert clear_resp.status_code == 200
@@ -694,7 +694,7 @@ def test_bulk_publish_stream_success(monkeypatch):
         ],
     }
 
-    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+    with client.stream("POST", "/v1/bookmarks/bulk-publish", json=body) as response:
         assert response.status_code == 200
         raw_events = []
         for chunk in response.iter_lines():
@@ -744,7 +744,7 @@ def test_bulk_publish_stream_failure(monkeypatch):
         ],
     }
 
-    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+    with client.stream("POST", "/v1/bookmarks/bulk-publish", json=body) as response:
         assert response.status_code == 200
         events = []
         for chunk in response.iter_lines():
@@ -790,7 +790,7 @@ def test_bulk_publish_stream_cancellation(monkeypatch):
         ],
     }
 
-    with client.stream("POST", "/bookmarks/bulk-publish", json=body) as response:
+    with client.stream("POST", "/v1/bookmarks/bulk-publish", json=body) as response:
         assert response.status_code == 200
         iterator = response.iter_lines()
         for _ in range(3):
@@ -837,7 +837,7 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
         bookmark_id = bm.id
 
     client = TestClient(app)
-    resp = client.get(f"/bookmarks/{bookmark_id}/preview")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
     assert resp.status_code == 200
     body = resp.text
     assert "<script" not in body.lower()
@@ -888,7 +888,7 @@ def test_bookmark_preview_uses_url_when_content_location_missing(monkeypatch):
         bookmark_id = bm.id
 
     client = TestClient(app)
-    resp = client.get(f"/bookmarks/{bookmark_id}/preview")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
     assert resp.status_code == 200
     assert calls == ["https://fallback.test/article"]
     assert "OK" in resp.text
@@ -911,7 +911,7 @@ def test_bookmark_preview_handles_missing_content():
         bookmark_id = bm.id
 
     client = TestClient(app)
-    resp = client.get(f"/bookmarks/{bookmark_id}/preview")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
     assert resp.status_code == 404
 
 
@@ -942,5 +942,5 @@ def test_bookmark_preview_fetch_error(monkeypatch):
         bookmark_id = bm.id
 
     client = TestClient(app)
-    resp = client.get(f"/bookmarks/{bookmark_id}/preview")
+    resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
     assert resp.status_code == 502

@@ -2,9 +2,6 @@ import { Configuration, Middleware, ResponseError, FetchError } from '../sdk/src
 import { V1Api } from '../sdk/src/apis/V1Api'
 import { AdminApi } from '../sdk/src/apis/AdminApi'
 import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
-import { CredentialsApi } from '../sdk/src/apis/CredentialsApi'
-import { SiteConfigsApi } from '../sdk/src/apis/SiteConfigsApi'
-import { FeedsApi } from '../sdk/src/apis/FeedsApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigApi } from '../sdk/src/models/SiteConfigApi'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
@@ -196,9 +193,6 @@ let clientsPromise: Promise<{
   v1: V1Api
   admin: AdminApi
   bookmarks: BookmarksApi
-  creds: CredentialsApi
-  sites: SiteConfigsApi
-  feeds: FeedsApi
 }> | null = null
 
 type AuthorizedRequestOptions = Omit<RequestInit, 'headers'> & {
@@ -397,9 +391,6 @@ async function getClients() {
         v1: new V1Api(cfg),
         admin: new AdminApi(cfg),
         bookmarks: new BookmarksApi(cfg),
-        creds: new CredentialsApi(cfg),
-        sites: new SiteConfigsApi(cfg),
-        feeds: new FeedsApi(cfg),
       }
     })()
   }
@@ -456,7 +447,7 @@ export type InstapaperOnboardingRequest = {
 }
 
 export async function createInstapaperCredentialFromLogin(payload: InstapaperOnboardingRequest) {
-  return authorizedRequest('/credentials/instapaper/login', {
+  return authorizedRequest('/v1/credentials/instapaper/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -1462,10 +1453,10 @@ export const v1 = {
 
   listFeedsV1V1FeedsGet: async (p: any = {}) => (await getClients()).v1.listFeedsV1V1FeedsGet(p),
   createFeedFeedsPost: async ({ feed }: { feed: any }) =>
-    (await getClients()).feeds.createFeedFeedsPost({ feed }),
+    (await getClients()).v1.createFeedV1V1FeedsPost({ feed, xCsrfToken: CSRF }),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
   createCredentialCredentialsPost: async ({ credential }: { credential: any }) =>
-    (await getClients()).creds.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
+    (await getClients()).v1.createCredentialV1V1CredentialsPost({ credential, xCsrfToken: CSRF }),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
   listJobSchedulesV1JobSchedulesGet: async (p: any = {}) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(p),
   createJobScheduleV1JobSchedulesPost: async ({
@@ -1684,21 +1675,25 @@ export const me = {
 }
 
 export const creds = {
-  createCredentialCredentialsPost: async ({ credential }: { credential: any }) => (await getClients()).creds.createCredentialCredentialsPost({ credential, xCsrfToken: CSRF }),
-  deleteCredentialCredentialsCredIdDelete: async ({ credId }: { credId: string }) => (await getClients()).creds.deleteCredentialCredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
-  getCredentialCredentialsCredIdGet: async ({ credId }: { credId: string }) => (await getClients()).creds.getCredentialCredentialsCredIdGet({ credId }),
-  updateCredentialCredentialsCredIdPut: async ({ credId, credential }: { credId: string; credential: any }) => (await getClients()).creds.updateCredentialCredentialsCredIdPut({ credId, credential, xCsrfToken: CSRF }),
+  createCredentialCredentialsPost: async ({ credential }: { credential: any }) =>
+    (await getClients()).v1.createCredentialV1V1CredentialsPost({ credential, xCsrfToken: CSRF }),
+  deleteCredentialCredentialsCredIdDelete: async ({ credId }: { credId: string }) =>
+    (await getClients()).v1.deleteCredentialV1V1CredentialsCredIdDelete({ credId, xCsrfToken: CSRF }),
+  getCredentialCredentialsCredIdGet: async ({ credId }: { credId: string }) =>
+    (await getClients()).v1.getCredentialV1V1CredentialsCredIdGet({ credId }),
+  updateCredentialCredentialsCredIdPut: async ({ credId, credential }: { credId: string; credential: any }) =>
+    (await getClients()).v1.updateCredentialV1V1CredentialsCredIdPut({ credId, credential, xCsrfToken: CSRF }),
   copyCredentialToUser: async ({ credId }: { credId: string }): Promise<Credential> =>
     (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
 }
 
 export const siteConfigs = {
   createSiteConfigSiteConfigsPost: async ({ body }: { body: SiteConfigRequest }) =>
-    (await getClients()).sites.createSiteConfigSiteConfigsPost({ body, xCsrfToken: CSRF }),
+    (await getClients()).v1.createSiteConfigV1V1SiteConfigsPost({ body, xCsrfToken: CSRF }),
   deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) =>
-    (await getClients()).sites.deleteSiteConfigSiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
+    (await getClients()).v1.deleteSiteConfigV1V1SiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
   updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, body }: { configId: string; body: SiteConfigRequest }) =>
-    (await getClients()).sites.updateSiteConfigSiteConfigsConfigIdPut({ configId, body, xCsrfToken: CSRF }),
+    (await getClients()).v1.updateSiteConfigV1V1SiteConfigsConfigIdPut({ configId, body, xCsrfToken: CSRF }),
   copySiteConfigToUser: async ({
     configId,
   }: {
@@ -1708,7 +1703,10 @@ export const siteConfigs = {
 }
 
 export const feeds = {
-  createFeedFeedsPost: async ({ feed }: { feed: any }) => (await getClients()).feeds.createFeedFeedsPost({ feed }),
-  deleteFeedFeedsFeedIdDelete: async ({ feedId }: { feedId: string }) => (await getClients()).feeds.deleteFeedFeedsFeedIdDelete({ feedId }),
-  updateFeedFeedsFeedIdPut: async ({ feedId, feed }: { feedId: string; feed: any }) => (await getClients()).feeds.updateFeedFeedsFeedIdPut({ feedId, feed }),
+  createFeedFeedsPost: async ({ feed }: { feed: any }) =>
+    (await getClients()).v1.createFeedV1V1FeedsPost({ feed, xCsrfToken: CSRF }),
+  deleteFeedFeedsFeedIdDelete: async ({ feedId }: { feedId: string }) =>
+    (await getClients()).v1.deleteFeedV1V1FeedsFeedIdDelete({ feedId, xCsrfToken: CSRF }),
+  updateFeedFeedsFeedIdPut: async ({ feedId, feed }: { feedId: string; feed: any }) =>
+    (await getClients()).v1.updateFeedV1V1FeedsFeedIdPut({ feedId, feed, xCsrfToken: CSRF }),
 }

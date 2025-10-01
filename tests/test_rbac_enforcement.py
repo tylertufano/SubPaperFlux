@@ -200,7 +200,7 @@ def test_site_config_access_controls(api_context):
     owner_resp = context.request_as(
         context.owner,
         "GET",
-        f"/site-configs/{context.owner_site_config_id}",
+        f"/v1/site-configs/{context.owner_site_config_id}",
     )
     assert owner_resp.status_code == 200
     assert owner_resp.json()["owner_user_id"] == context.owner["sub"]
@@ -208,7 +208,7 @@ def test_site_config_access_controls(api_context):
     admin_global = context.request_as(
         context.admin,
         "GET",
-        f"/site-configs/{context.global_site_config_id}",
+        f"/v1/site-configs/{context.global_site_config_id}",
     )
     assert admin_global.status_code == 200
     assert admin_global.json()["owner_user_id"] is None
@@ -216,7 +216,7 @@ def test_site_config_access_controls(api_context):
     guest_resp = context.request_as(
         context.guest,
         "GET",
-        f"/site-configs/{context.owner_site_config_id}",
+        f"/v1/site-configs/{context.owner_site_config_id}",
     )
     assert guest_resp.status_code == 404
 
@@ -227,7 +227,7 @@ def test_credential_access_controls(api_context):
     owner_cred = context.request_as(
         context.owner,
         "GET",
-        f"/credentials/{context.owner_credential_id}",
+        f"/v1/credentials/{context.owner_credential_id}",
     )
     assert owner_cred.status_code == 200
     assert owner_cred.json()["owner_user_id"] == context.owner["sub"]
@@ -235,7 +235,7 @@ def test_credential_access_controls(api_context):
     admin_global = context.request_as(
         context.admin,
         "GET",
-        f"/credentials/{context.global_credential_id}",
+        f"/v1/credentials/{context.global_credential_id}",
     )
     assert admin_global.status_code == 200
     assert admin_global.json()["owner_user_id"] is None
@@ -264,7 +264,7 @@ def test_feed_creation_enforcement(api_context):
         "owner_user_id": context.owner["sub"],
     }
     owner_resp = context.request_as(
-        context.owner, "POST", "/feeds/", json=owner_payload
+        context.owner, "POST", "/v1/feeds/", json=owner_payload
     )
     assert owner_resp.status_code == 201
     assert owner_resp.json()["owner_user_id"] == context.owner["sub"]
@@ -275,7 +275,7 @@ def test_feed_creation_enforcement(api_context):
         "owner_user_id": context.owner["sub"],
     }
     admin_resp = context.request_as(
-        context.admin, "POST", "/feeds/", json=admin_payload
+        context.admin, "POST", "/v1/feeds/", json=admin_payload
     )
     assert admin_resp.status_code == 201
     assert admin_resp.json()["owner_user_id"] == context.owner["sub"]
@@ -286,7 +286,7 @@ def test_feed_creation_enforcement(api_context):
         "owner_user_id": context.owner["sub"],
     }
     guest_resp = context.request_as(
-        context.guest, "POST", "/feeds/", json=guest_payload
+        context.guest, "POST", "/v1/feeds/", json=guest_payload
     )
     if context.enforce:
         assert guest_resp.status_code == 403
@@ -301,7 +301,7 @@ def test_bookmark_tag_update_enforcement(api_context):
     owner_update = context.request_as(
         context.owner,
         "PUT",
-        f"/bookmarks/tags/{context.owner_tag_id}",
+        f"/v1/bookmarks/tags/{context.owner_tag_id}",
         json={"name": "Owner Updated Tag"},
     )
     assert owner_update.status_code == 200
@@ -310,7 +310,7 @@ def test_bookmark_tag_update_enforcement(api_context):
     admin_update = context.request_as(
         context.admin,
         "PUT",
-        f"/bookmarks/tags/{context.owner_tag_id}",
+        f"/v1/bookmarks/tags/{context.owner_tag_id}",
         json={"name": "Admin Updated Tag"},
     )
     if context.enforce:
@@ -322,7 +322,7 @@ def test_bookmark_tag_update_enforcement(api_context):
     guest_update = context.request_as(
         context.guest,
         "PUT",
-        f"/bookmarks/tags/{context.owner_tag_id}",
+        f"/v1/bookmarks/tags/{context.owner_tag_id}",
         json={"name": "Guest Attempt Tag"},
     )
     if context.enforce:
@@ -360,7 +360,7 @@ def _create_feed_with_owner_site_config(context: SimpleNamespace):
     create_resp = context.request_as(
         context.owner,
         "POST",
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/feeds/owned.xml",
             "site_config_id": context.owner_site_config_id,
@@ -398,7 +398,7 @@ def test_feed_creation_rejects_foreign_site_config(api_context):
     create_resp = context.request_as(
         context.owner,
         "POST",
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/feeds/other-config.xml",
             "site_config_id": other_config_id,
@@ -420,7 +420,7 @@ def test_feed_update_rejects_foreign_site_config(api_context):
     update_resp = context.request_as(
         context.owner,
         "PUT",
-        f"/feeds/{feed['id']}",
+        f"/v1/feeds/{feed['id']}",
         json=update_payload,
     )
 
@@ -436,7 +436,7 @@ def test_feed_creation_rejects_global_site_config_without_permission(api_context
     create_resp = context.request_as(
         context.owner,
         "POST",
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/feeds/global-config.xml",
             "site_config_id": context.global_site_config_id,
@@ -461,7 +461,7 @@ def test_feed_update_rejects_global_site_config_without_permission(api_context):
     update_resp = context.request_as(
         context.owner,
         "PUT",
-        f"/feeds/{feed['id']}",
+        f"/v1/feeds/{feed['id']}",
         json=update_payload,
     )
 

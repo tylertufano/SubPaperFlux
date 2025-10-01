@@ -55,6 +55,19 @@ def client():
     return client
 
 
+def test_unversioned_routes_removed(client):
+    legacy_paths = [
+        ("GET", "/site-configs"),
+        ("GET", "/credentials"),
+        ("GET", "/feeds"),
+        ("GET", "/status"),
+    ]
+
+    for method, path in legacy_paths:
+        response = client.request(method, path)
+        assert response.status_code == 404, f"Expected 404 for legacy path {path}, got {response.status_code}"
+
+
 def test_credentials_and_siteconfigs(client):
     from app.db import get_session
     from app.models import SiteConfig, SiteLoginType
@@ -114,7 +127,7 @@ def test_credentials_and_siteconfigs(client):
 
     # Create a credential (site_login)
     r = client.post(
-        "/credentials",
+        "/v1/credentials",
         json={
             "kind": "site_login",
             "description": "User credential",
@@ -130,7 +143,7 @@ def test_credentials_and_siteconfigs(client):
 
     # Update credential
     r_update = client.put(
-        f"/credentials/{cred['id']}",
+        f"/v1/credentials/{cred['id']}",
         json={
             "id": cred["id"],
             "kind": "site_login",
@@ -150,7 +163,7 @@ def test_credentials_and_siteconfigs(client):
     assert any(item["description"] == "Updated credential" for item in data["items"])
 
     # Delete credential
-    r_delete = client.delete(f"/credentials/{cred['id']}")
+    r_delete = client.delete(f"/v1/credentials/{cred['id']}")
     assert r_delete.status_code == 204
 
     r2_after = client.get("/v1/credentials")
@@ -159,7 +172,7 @@ def test_credentials_and_siteconfigs(client):
 
     # Creating a global credential that isn't instapaper_app should fail
     r_global_create = client.post(
-        "/credentials",
+        "/v1/credentials",
         json={
             "kind": "site_login",
             "description": "Global credential",
@@ -175,7 +188,7 @@ def test_credentials_and_siteconfigs(client):
 
     # Admins can create global Instapaper app credentials
     r_global_create = client.post(
-        "/credentials",
+        "/v1/credentials",
         json={
             "kind": "instapaper_app",
             "description": "Global Instapaper app",
@@ -198,20 +211,20 @@ def test_credentials_and_siteconfigs(client):
             "sub": "u2",
             "groups": [],
         }
-        r_forbidden_delete = client.delete(f"/credentials/{global_cred['id']}")
+        r_forbidden_delete = client.delete(f"/v1/credentials/{global_cred['id']}")
         assert r_forbidden_delete.status_code == 403
     finally:
         client.app.dependency_overrides[get_current_user] = original_override
 
     # Ensure the credential still exists and admin can delete it
-    r_global_detail = client.get(f"/credentials/{global_cred['id']}")
+    r_global_detail = client.get(f"/v1/credentials/{global_cred['id']}")
     assert r_global_detail.status_code == 200
     assert r_global_detail.json()["description"] == "Global Instapaper app"
 
-    r_global_delete = client.delete(f"/credentials/{global_cred['id']}")
+    r_global_delete = client.delete(f"/v1/credentials/{global_cred['id']}")
     assert r_global_delete.status_code == 204
 
-    r_global_missing = client.get(f"/credentials/{global_cred['id']}")
+    r_global_missing = client.get(f"/v1/credentials/{global_cred['id']}")
     assert r_global_missing.status_code == 404
 
     # Create a site config
@@ -229,7 +242,7 @@ def test_credentials_and_siteconfigs(client):
         "expected_success_text": "Signed in as Demo",
         "required_cookies": ["sid", "csrf"],
     }
-    r3 = client.post("/site-configs", json=payload)
+    r3 = client.post("/v1/site-configs", json=payload)
     assert r3.status_code == 201
     sc = r3.json()
     assert sc["name"] == "Demo"
@@ -250,7 +263,7 @@ def test_credentials_and_siteconfigs(client):
         "expected_success_text": "You are logged in",
         "required_cookies": ["sid"],
     }
-    r_update_sc = client.put(f"/site-configs/{sc['id']}", json=updated_payload)
+    r_update_sc = client.put(f"/v1/site-configs/{sc['id']}", json=updated_payload)
     assert r_update_sc.status_code == 200
     updated_response = r_update_sc.json()
     assert updated_response["name"] == "Demo Updated"
@@ -260,7 +273,7 @@ def test_credentials_and_siteconfigs(client):
     assert updated_response["required_cookies"] == ["sid"]
 
     # Delete site config
-    r_delete_sc = client.delete(f"/site-configs/{sc['id']}")
+    r_delete_sc = client.delete(f"/v1/site-configs/{sc['id']}")
     assert r_delete_sc.status_code == 204
 
     # Create an API site config
@@ -278,7 +291,7 @@ def test_credentials_and_siteconfigs(client):
         "expected_success_text": "API login ok",
         "required_cookies": ["sid"],
     }
-    r_api = client.post("/site-configs", json=api_payload)
+    r_api = client.post("/v1/site-configs", json=api_payload)
     assert r_api.status_code == 201
     api_sc = r_api.json()
     assert api_sc["api_config"]["endpoint"] == "https://api.example.com/login"
@@ -297,14 +310,14 @@ def test_credentials_and_siteconfigs(client):
         "success_text_class": "toast toast-info",
         "required_cookies": ["sid", "refresh"],
     }
-    r_api_update = client.put(f"/site-configs/{api_sc['id']}", json=api_update_payload)
+    r_api_update = client.put(f"/v1/site-configs/{api_sc['id']}", json=api_update_payload)
     assert r_api_update.status_code == 200
     assert r_api_update.json()["api_config"]["method"] == "PUT"
     assert r_api_update.json()["expected_success_text"] == "API login updated"
     assert r_api_update.json()["success_text_class"] == "toast toast-info"
     assert r_api_update.json()["required_cookies"] == ["sid", "refresh"]
 
-    r_api_delete = client.delete(f"/site-configs/{api_sc['id']}")
+    r_api_delete = client.delete(f"/v1/site-configs/{api_sc['id']}")
     assert r_api_delete.status_code == 204
 
     # List v1 site-configs
@@ -360,7 +373,7 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
     client.app.state.cache_user_mgmt_flags()
     try:
         cred_resp = client.post(
-            "/credentials",
+            "/v1/credentials",
             json={
                 "kind": "instapaper_app",
                 "description": "Global Instapaper app",
@@ -392,10 +405,10 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
             r_site_configs = client.get("/v1/site-configs")
             assert r_site_configs.status_code == 403
 
-            r_cred_detail = client.get(f"/credentials/{global_cred['id']}")
+            r_cred_detail = client.get(f"/v1/credentials/{global_cred['id']}")
             assert r_cred_detail.status_code == 403
 
-            r_sc_detail = client.get(f"/site-configs/{global_sc['id']}")
+            r_sc_detail = client.get(f"/v1/site-configs/{global_sc['id']}")
             assert r_sc_detail.status_code == 403
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
@@ -418,7 +431,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         )
 
         cred_resp = client.post(
-            "/credentials",
+            "/v1/credentials",
             json={
                 "kind": "site_login",
                 "description": "Owned credential",
@@ -446,14 +459,14 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
                 "site_config_id": owned_sc["id"],
             }
             r_cred_update = client.put(
-                f"/credentials/{owned_cred['id']}", json=cred_update_payload
+                f"/v1/credentials/{owned_cred['id']}", json=cred_update_payload
             )
             assert r_cred_update.status_code == 404
 
             sc_update_payload = dict(owned_sc)
             sc_update_payload["name"] = "Unauthorized"
             r_sc_update = client.put(
-                f"/site-configs/{owned_sc['id']}", json=sc_update_payload
+                f"/v1/site-configs/{owned_sc['id']}", json=sc_update_payload
             )
             assert r_sc_update.status_code == 403
         finally:
@@ -466,7 +479,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
             site_url="https://example.com/tenant",
         )
         other_cred_resp = client.post(
-            "/credentials",
+            "/v1/credentials",
             json={
                 "kind": "site_login",
                 "description": "Tenant credential",
@@ -485,13 +498,13 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
             "site_config_id": tenant_sc["id"],
         }
         r_admin_cred_update = client.put(
-            f"/credentials/{tenant_cred['id']}", json=cred_update_payload
+            f"/v1/credentials/{tenant_cred['id']}", json=cred_update_payload
         )
         assert r_admin_cred_update.status_code == 200
         sc_update_payload = dict(tenant_sc)
         sc_update_payload["name"] = "Admin updated"
         r_admin_sc_update = client.put(
-            f"/site-configs/{tenant_sc['id']}", json=sc_update_payload
+            f"/v1/site-configs/{tenant_sc['id']}", json=sc_update_payload
         )
         assert r_admin_sc_update.status_code == 200
     finally:
@@ -500,7 +513,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
 
 def test_admin_feed_creation_defaults_to_requester(client):
     resp = client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={"url": "https://example.com/feed"},
     )
     assert resp.status_code == 201
@@ -538,7 +551,7 @@ def _create_site_config(
         "required_cookies": ["sid"],
         "owner_user_id": owner,
     }
-    resp = client.post("/site-configs", json=payload)
+    resp = client.post("/v1/site-configs", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -553,7 +566,7 @@ def _create_site_login_credential(
         "owner_user_id": owner,
         "site_config_id": site_config_id,
     }
-    resp = client.post("/credentials", json=payload)
+    resp = client.post("/v1/credentials", json=payload)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -563,7 +576,7 @@ def test_feed_creation_with_site_login_credential(client):
     credential = _create_site_login_credential(client, site_config_id=site_config["id"])
 
     resp = client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/paywalled.xml",
             "site_login_credential_id": credential["id"],
@@ -592,7 +605,7 @@ def test_feed_update_allows_switching_site_login_credential(client):
     )
 
     create_resp = client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/primary.xml",
             "site_login_credential_id": first_cred["id"],
@@ -602,7 +615,7 @@ def test_feed_update_allows_switching_site_login_credential(client):
     feed = create_resp.json()
 
     update_resp = client.put(
-        f"/feeds/{feed['id']}",
+        f"/v1/feeds/{feed['id']}",
         json={
             "id": feed["id"],
             "url": str(feed["url"]),
@@ -633,7 +646,7 @@ def test_feed_creation_rejects_mismatched_site_login_configuration(client):
     credential = _create_site_login_credential(client, site_config_id=site_config["id"])
 
     resp = client.post(
-        "/feeds/",
+        "/v1/feeds/",
         json={
             "url": "https://example.com/invalid.xml",
             "site_login_credential_id": credential["id"],
@@ -649,7 +662,7 @@ def test_instapaper_login_success(monkeypatch, client):
     from app.models import AuditLog, Credential
     from app.security.crypto import encrypt_dict, decrypt_dict
     import app.integrations.instapaper as instapaper
-    import app.routers.credentials as credentials_router
+    import app.routers.credentials_v1 as credentials_router
 
     def fake_get_tokens(consumer_key, consumer_secret, username, password):
         assert consumer_key == "ckey"
@@ -676,7 +689,7 @@ def test_instapaper_login_success(monkeypatch, client):
         session.commit()
 
     resp = client.post(
-        "/credentials/instapaper/login",
+        "/v1/credentials/instapaper/login",
         json={
             "description": "My Instapaper",
             "username": "reader@example.com",
@@ -713,7 +726,7 @@ def test_instapaper_login_cannot_be_global(monkeypatch, client):
     from app.models import Credential
     from app.security.crypto import encrypt_dict
     import app.integrations.instapaper as instapaper
-    import app.routers.credentials as credentials_router
+    import app.routers.credentials_v1 as credentials_router
 
     with next(get_session()) as session:
         session.add(
@@ -743,7 +756,7 @@ def test_instapaper_login_cannot_be_global(monkeypatch, client):
     monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fail)
 
     resp = client.post(
-        "/credentials/instapaper/login",
+        "/v1/credentials/instapaper/login",
         json={
             "description": "Instapaper",
             "username": "reader@example.com",
@@ -766,7 +779,7 @@ def test_instapaper_login_cannot_be_global(monkeypatch, client):
 
 def test_instapaper_login_missing_app_creds(monkeypatch, client):
     import app.integrations.instapaper as instapaper
-    import app.routers.credentials as credentials_router
+    import app.routers.credentials_v1 as credentials_router
 
     def fail(*args, **kwargs):  # pragma: no cover - should not be called
         raise AssertionError(
@@ -776,7 +789,7 @@ def test_instapaper_login_missing_app_creds(monkeypatch, client):
     monkeypatch.setattr(credentials_router, "get_instapaper_tokens", fail)
 
     resp = client.post(
-        "/credentials/instapaper/login",
+        "/v1/credentials/instapaper/login",
         json={
             "description": "Instapaper",
             "username": "reader@example.com",
@@ -794,7 +807,7 @@ def test_instapaper_login_bad_password(monkeypatch, client):
     from app.models import Credential
     from app.security.crypto import encrypt_dict
     import app.integrations.instapaper as instapaper
-    import app.routers.credentials as credentials_router
+    import app.routers.credentials_v1 as credentials_router
 
     with next(get_session()) as session:
         session.add(
@@ -820,7 +833,7 @@ def test_instapaper_login_bad_password(monkeypatch, client):
     )
 
     resp = client.post(
-        "/credentials/instapaper/login",
+        "/v1/credentials/instapaper/login",
         json={
             "description": "Instapaper",
             "username": "reader@example.com",

@@ -75,7 +75,7 @@ def test_postgres_prepare_records_audit_log(admin_client, monkeypatch):
 
     monkeypatch.setattr(admin_module, "prepare_postgres_search", lambda session: stub_details)
 
-    response = admin_client.post("/admin/postgres/prepare")
+    response = admin_client.post("/v1/admin/postgres/prepare")
     assert response.status_code == 200
     payload = response.json()
     assert payload["ok"] is True
@@ -107,7 +107,7 @@ def test_postgres_enable_rls_records_audit_log(admin_client, monkeypatch):
 
     monkeypatch.setattr(admin_module, "enable_rls", lambda session: stub_details)
 
-    response = admin_client.post("/admin/postgres/enable-rls")
+    response = admin_client.post("/v1/admin/postgres/enable-rls")
     assert response.status_code == 200
     payload = response.json()
     assert payload["ok"] is False

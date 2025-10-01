@@ -41,11 +41,14 @@ import type {
   BulkBookmarkTagUpdate,
   Credential,
   CredentialsPage,
+  Feed,
+  FeedOut,
   FeedsPage,
   FolderCreate,
   FolderOut,
   FolderUpdate,
   HTTPValidationError,
+  InstapaperLoginRequest,
   JobOut,
   JobRequest,
   JobScheduleCreate,
@@ -119,6 +122,10 @@ import {
     CredentialToJSON,
     CredentialsPageFromJSON,
     CredentialsPageToJSON,
+    FeedFromJSON,
+    FeedToJSON,
+    FeedOutFromJSON,
+    FeedOutToJSON,
     FeedsPageFromJSON,
     FeedsPageToJSON,
     FolderCreateFromJSON,
@@ -129,6 +136,8 @@ import {
     FolderUpdateToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
+    InstapaperLoginRequestFromJSON,
+    InstapaperLoginRequestToJSON,
     JobOutFromJSON,
     JobOutToJSON,
     JobRequestFromJSON,
@@ -221,8 +230,23 @@ export interface CountBookmarksV1BookmarksCountGetRequest {
     size?: any;
 }
 
+export interface CreateCredentialV1V1CredentialsPostRequest {
+    credential: Credential;
+    xCsrfToken?: any;
+}
+
+export interface CreateFeedV1V1FeedsPostRequest {
+    feed: Feed;
+    xCsrfToken?: any;
+}
+
 export interface CreateFolderV1BookmarksFoldersPostRequest {
     folderCreate: FolderCreate;
+    xCsrfToken?: any;
+}
+
+export interface CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest {
+    instapaperLoginRequest: InstapaperLoginRequest;
     xCsrfToken?: any;
 }
 
@@ -240,6 +264,11 @@ export interface CreateOrganizationV1AdminOrgsPostRequest {
 
 export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
+}
+
+export interface CreateSiteConfigV1V1SiteConfigsPostRequest {
+    body: any | null;
+    xCsrfToken?: any;
 }
 
 export interface CreateTagV1BookmarksTagsPostRequest {
@@ -262,6 +291,16 @@ export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
     xCsrfToken?: any;
 }
 
+export interface DeleteCredentialV1V1CredentialsCredIdDeleteRequest {
+    credId: any;
+    xCsrfToken?: any;
+}
+
+export interface DeleteFeedV1V1FeedsFeedIdDeleteRequest {
+    feedId: any;
+    xCsrfToken?: any;
+}
+
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
     folderId: any;
     xCsrfToken?: any;
@@ -277,6 +316,11 @@ export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
 
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
     roleId: any;
+}
+
+export interface DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest {
+    configId: any;
+    xCsrfToken?: any;
 }
 
 export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
@@ -322,6 +366,14 @@ export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: any;
 }
 
+export interface GetCredentialV1V1CredentialsCredIdGetRequest {
+    credId: any;
+}
+
+export interface GetFeedV1V1FeedsFeedIdGetRequest {
+    feedId: any;
+}
+
 export interface GetJobScheduleV1JobSchedulesScheduleIdGetRequest {
     scheduleId: any;
 }
@@ -336,6 +388,10 @@ export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
 
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
     roleId: any;
+}
+
+export interface GetSiteConfigV1V1SiteConfigsConfigIdGetRequest {
+    configId: any;
 }
 
 export interface GetTokenV1MeTokensTokenIdGetRequest {
@@ -397,6 +453,18 @@ export interface ListAuditLogsV1AdminAuditGetRequest {
     until?: any;
 }
 
+export interface ListAuditLogsV1AdminAuditGet0Request {
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
+}
+
 export interface ListBookmarksV1BookmarksGetRequest {
     page?: any;
     size?: any;
@@ -442,20 +510,7 @@ export interface ListCredentialsV1V1CredentialsGetRequest {
     size?: any;
 }
 
-export interface ListCredentialsV1V1CredentialsGet0Request {
-    includeGlobal?: any;
-    kind?: any;
-    page?: any;
-    size?: any;
-}
-
 export interface ListFeedsV1V1FeedsGetRequest {
-    ownerUserIds?: any;
-    page?: any;
-    size?: any;
-}
-
-export interface ListFeedsV1V1FeedsGet0Request {
     ownerUserIds?: any;
     page?: any;
     size?: any;
@@ -598,6 +653,18 @@ export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
     xCsrfToken?: any;
 }
 
+export interface UpdateCredentialV1V1CredentialsCredIdPutRequest {
+    credId: any;
+    credential: Credential;
+    xCsrfToken?: any;
+}
+
+export interface UpdateFeedV1V1FeedsFeedIdPutRequest {
+    feedId: any;
+    feed: Feed;
+    xCsrfToken?: any;
+}
+
 export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
     folderId: any;
     folderUpdate: FolderUpdate;
@@ -625,6 +692,12 @@ export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
 
 export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
     requestBody: { [key: string]: any; } | null;
+}
+
+export interface UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest {
+    configId: any;
+    body: any | null;
+    xCsrfToken?: any;
 }
 
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
@@ -1097,6 +1170,96 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Create credential
+     */
+    async createCredentialV1V1CredentialsPostRaw(requestParameters: CreateCredentialV1V1CredentialsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
+        if (requestParameters.credential === null || requestParameters.credential === undefined) {
+            throw new runtime.RequiredError('credential','Required parameter requestParameters.credential was null or undefined when calling createCredentialV1V1CredentialsPost.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/credentials`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CredentialToJSON(requestParameters.credential),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
+    }
+
+    /**
+     * Create credential
+     */
+    async createCredentialV1V1CredentialsPost(requestParameters: CreateCredentialV1V1CredentialsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential> {
+        const response = await this.createCredentialV1V1CredentialsPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create feed
+     */
+    async createFeedV1V1FeedsPostRaw(requestParameters: CreateFeedV1V1FeedsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>> {
+        if (requestParameters.feed === null || requestParameters.feed === undefined) {
+            throw new runtime.RequiredError('feed','Required parameter requestParameters.feed was null or undefined when calling createFeedV1V1FeedsPost.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/feeds`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FeedToJSON(requestParameters.feed),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Create feed
+     */
+    async createFeedV1V1FeedsPost(requestParameters: CreateFeedV1V1FeedsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut> {
+        const response = await this.createFeedV1V1FeedsPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Create Folder
      */
     async createFolderV1BookmarksFoldersPostRaw(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
@@ -1138,6 +1301,51 @@ export class V1Api extends runtime.BaseAPI {
      */
     async createFolderV1BookmarksFoldersPost(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
         const response = await this.createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create Instapaper credential via login
+     */
+    async createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRaw(requestParameters: CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
+        if (requestParameters.instapaperLoginRequest === null || requestParameters.instapaperLoginRequest === undefined) {
+            throw new runtime.RequiredError('instapaperLoginRequest','Required parameter requestParameters.instapaperLoginRequest was null or undefined when calling createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPost.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/credentials/instapaper/login`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: InstapaperLoginRequestToJSON(requestParameters.instapaperLoginRequest),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
+    }
+
+    /**
+     * Create Instapaper credential via login
+     */
+    async createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPost(requestParameters: CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential> {
+        const response = await this.createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1302,6 +1510,55 @@ export class V1Api extends runtime.BaseAPI {
      */
     async createRoleV1AdminRolesPost(requestParameters: CreateRoleV1AdminRolesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail> {
         const response = await this.createRoleV1AdminRolesPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Create a site config
+     */
+    async createSiteConfigV1V1SiteConfigsPostRaw(requestParameters: CreateSiteConfigV1V1SiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters.body === null || requestParameters.body === undefined) {
+            throw new runtime.RequiredError('body','Required parameter requestParameters.body was null or undefined when calling createSiteConfigV1V1SiteConfigsPost.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/site-configs`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters.body as any,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Create a site config
+     */
+    async createSiteConfigV1V1SiteConfigsPost(requestParameters: CreateSiteConfigV1V1SiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.createSiteConfigV1V1SiteConfigsPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1504,6 +1761,88 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Delete credential
+     */
+    async deleteCredentialV1V1CredentialsCredIdDeleteRaw(requestParameters: DeleteCredentialV1V1CredentialsCredIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling deleteCredentialV1V1CredentialsCredIdDelete.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete credential
+     */
+    async deleteCredentialV1V1CredentialsCredIdDelete(requestParameters: DeleteCredentialV1V1CredentialsCredIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteCredentialV1V1CredentialsCredIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Delete feed
+     */
+    async deleteFeedV1V1FeedsFeedIdDeleteRaw(requestParameters: DeleteFeedV1V1FeedsFeedIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
+            throw new runtime.RequiredError('feedId','Required parameter requestParameters.feedId was null or undefined when calling deleteFeedV1V1FeedsFeedIdDelete.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete feed
+     */
+    async deleteFeedV1V1FeedsFeedIdDelete(requestParameters: DeleteFeedV1V1FeedsFeedIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteFeedV1V1FeedsFeedIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
      * Delete Folder
      */
     async deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -1653,6 +1992,47 @@ export class V1Api extends runtime.BaseAPI {
      */
     async deleteRoleV1AdminRolesRoleIdDelete(requestParameters: DeleteRoleV1AdminRolesRoleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteRoleV1AdminRolesRoleIdDeleteRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Delete a site config
+     */
+    async deleteSiteConfigV1V1SiteConfigsConfigIdDeleteRaw(requestParameters: DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling deleteSiteConfigV1V1SiteConfigsConfigIdDelete.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete a site config
+     */
+    async deleteSiteConfigV1V1SiteConfigsConfigIdDelete(requestParameters: DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteSiteConfigV1V1SiteConfigsConfigIdDeleteRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -1991,6 +2371,82 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Get credential
+     */
+    async getCredentialV1V1CredentialsCredIdGetRaw(requestParameters: GetCredentialV1V1CredentialsCredIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling getCredentialV1V1CredentialsCredIdGet.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
+    }
+
+    /**
+     * Get credential
+     */
+    async getCredentialV1V1CredentialsCredIdGet(requestParameters: GetCredentialV1V1CredentialsCredIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential> {
+        const response = await this.getCredentialV1V1CredentialsCredIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get feed
+     */
+    async getFeedV1V1FeedsFeedIdGetRaw(requestParameters: GetFeedV1V1FeedsFeedIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>> {
+        if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
+            throw new runtime.RequiredError('feedId','Required parameter requestParameters.feedId was null or undefined when calling getFeedV1V1FeedsFeedIdGet.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Get feed
+     */
+    async getFeedV1V1FeedsFeedIdGet(requestParameters: GetFeedV1V1FeedsFeedIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut> {
+        const response = await this.getFeedV1V1FeedsFeedIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get a job schedule
      */
     async getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>> {
@@ -2209,6 +2665,48 @@ export class V1Api extends runtime.BaseAPI {
      */
     async getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
         const response = await this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Retrieve a site config
+     */
+    async getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigV1V1SiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling getSiteConfigV1V1SiteConfigsConfigIdGet.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Retrieve a site config
+     */
+    async getSiteConfigV1V1SiteConfigsConfigIdGet(requestParameters: GetSiteConfigV1V1SiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2644,7 +3142,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v1/admin/audit`,
+            path: `/v1/admin/audit/`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2658,6 +3156,76 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listAuditLogsV1AdminAuditGet(requestParameters: ListAuditLogsV1AdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
         const response = await this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet_3Raw(requestParameters: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters.page !== undefined) {
+            queryParameters['page'] = requestParameters.page;
+        }
+
+        if (requestParameters.size !== undefined) {
+            queryParameters['size'] = requestParameters.size;
+        }
+
+        if (requestParameters.entityType !== undefined) {
+            queryParameters['entity_type'] = requestParameters.entityType;
+        }
+
+        if (requestParameters.entityId !== undefined) {
+            queryParameters['entity_id'] = requestParameters.entityId;
+        }
+
+        if (requestParameters.action !== undefined) {
+            queryParameters['action'] = requestParameters.action;
+        }
+
+        if (requestParameters.ownerUserId !== undefined) {
+            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
+        }
+
+        if (requestParameters.actorUserId !== undefined) {
+            queryParameters['actor_user_id'] = requestParameters.actorUserId;
+        }
+
+        if (requestParameters.since !== undefined) {
+            queryParameters['since'] = requestParameters.since;
+        }
+
+        if (requestParameters.until !== undefined) {
+            queryParameters['until'] = requestParameters.until;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/admin/audit`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet_3(requestParameters: ListAuditLogsV1AdminAuditGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGet_3Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2762,7 +3330,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_3Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
+    async listBookmarksV1BookmarksGet_4Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.page !== undefined) {
@@ -2852,8 +3420,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    async listBookmarksV1BookmarksGet_3(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
-        const response = await this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
+    async listBookmarksV1BookmarksGet_4(requestParameters: ListBookmarksV1BookmarksGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage> {
+        const response = await this.listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2861,56 +3429,6 @@ export class V1Api extends runtime.BaseAPI {
      * List credentials
      */
     async listCredentialsV1V1CredentialsGetRaw(requestParameters: ListCredentialsV1V1CredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
-        const queryParameters: any = {};
-
-        if (requestParameters.includeGlobal !== undefined) {
-            queryParameters['include_global'] = requestParameters.includeGlobal;
-        }
-
-        if (requestParameters.kind !== undefined) {
-            queryParameters['kind'] = requestParameters.kind;
-        }
-
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
-        }
-
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/credentials/`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialsPageFromJSON(jsonValue));
-    }
-
-    /**
-     * List credentials
-     */
-    async listCredentialsV1V1CredentialsGet(requestParameters: ListCredentialsV1V1CredentialsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
-        const response = await this.listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * List credentials
-     */
-    async listCredentialsV1V1CredentialsGet_4Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.includeGlobal !== undefined) {
@@ -2952,8 +3470,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    async listCredentialsV1V1CredentialsGet_4(requestParameters: ListCredentialsV1V1CredentialsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
-        const response = await this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
+    async listCredentialsV1V1CredentialsGet(requestParameters: ListCredentialsV1V1CredentialsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage> {
+        const response = await this.listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2961,52 +3479,6 @@ export class V1Api extends runtime.BaseAPI {
      * List feeds
      */
     async listFeedsV1V1FeedsGetRaw(requestParameters: ListFeedsV1V1FeedsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
-        const queryParameters: any = {};
-
-        if (requestParameters.ownerUserIds !== undefined) {
-            queryParameters['owner_user_ids'] = requestParameters.ownerUserIds;
-        }
-
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
-        }
-
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/feeds/`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => FeedsPageFromJSON(jsonValue));
-    }
-
-    /**
-     * List feeds
-     */
-    async listFeedsV1V1FeedsGet(requestParameters: ListFeedsV1V1FeedsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
-        const response = await this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * List feeds
-     */
-    async listFeedsV1V1FeedsGet_5Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.ownerUserIds !== undefined) {
@@ -3044,8 +3516,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    async listFeedsV1V1FeedsGet_5(requestParameters: ListFeedsV1V1FeedsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
-        const response = await this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
+    async listFeedsV1V1FeedsGet(requestParameters: ListFeedsV1V1FeedsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage> {
+        const response = await this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3144,7 +3616,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    async listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>> {
+    async listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.ownerUserId !== undefined) {
@@ -3190,8 +3662,8 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    async listJobSchedulesV1JobSchedulesGet_6(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage> {
-        const response = await this.listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides);
+    async listJobSchedulesV1JobSchedulesGet_5(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage> {
+        const response = await this.listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3259,7 +3731,7 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_7Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
+    async listJobsV1JobsGet_6Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.status !== undefined) {
@@ -3310,8 +3782,8 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    async listJobsV1JobsGet_7(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
-        const response = await this.listJobsV1JobsGet_7Raw(requestParameters, initOverrides);
+    async listJobsV1JobsGet_6(requestParameters: ListJobsV1JobsGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage> {
+        const response = await this.listJobsV1JobsGet_6Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3444,7 +3916,7 @@ export class V1Api extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v1/site-configs/`,
+            path: `/v1/site-configs`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3626,6 +4098,74 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listUsersV1AdminUsersGet(requestParameters: ListUsersV1AdminUsersGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUsersPage> {
         const response = await this.listUsersV1AdminUsersGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Postgres Enable Rls
+     */
+    async postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/admin/postgres/enable-rls`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse<any>(response);
+    }
+
+    /**
+     * Postgres Enable Rls
+     */
+    async postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
+        const response = await this.postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Postgres Prepare
+     */
+    async postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/admin/postgres/prepare`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse<any>(response);
+    }
+
+    /**
+     * Postgres Prepare
+     */
+    async postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
+        const response = await this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
         return await response.value();
     }
 
@@ -4241,6 +4781,104 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
+     * Update credential
+     */
+    async updateCredentialV1V1CredentialsCredIdPutRaw(requestParameters: UpdateCredentialV1V1CredentialsCredIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>> {
+        if (requestParameters.credId === null || requestParameters.credId === undefined) {
+            throw new runtime.RequiredError('credId','Required parameter requestParameters.credId was null or undefined when calling updateCredentialV1V1CredentialsCredIdPut.');
+        }
+
+        if (requestParameters.credential === null || requestParameters.credential === undefined) {
+            throw new runtime.RequiredError('credential','Required parameter requestParameters.credential was null or undefined when calling updateCredentialV1V1CredentialsCredIdPut.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CredentialToJSON(requestParameters.credential),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
+    }
+
+    /**
+     * Update credential
+     */
+    async updateCredentialV1V1CredentialsCredIdPut(requestParameters: UpdateCredentialV1V1CredentialsCredIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential> {
+        const response = await this.updateCredentialV1V1CredentialsCredIdPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update feed
+     */
+    async updateFeedV1V1FeedsFeedIdPutRaw(requestParameters: UpdateFeedV1V1FeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>> {
+        if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
+            throw new runtime.RequiredError('feedId','Required parameter requestParameters.feedId was null or undefined when calling updateFeedV1V1FeedsFeedIdPut.');
+        }
+
+        if (requestParameters.feed === null || requestParameters.feed === undefined) {
+            throw new runtime.RequiredError('feed','Required parameter requestParameters.feed was null or undefined when calling updateFeedV1V1FeedsFeedIdPut.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FeedToJSON(requestParameters.feed),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
+    }
+
+    /**
+     * Update feed
+     */
+    async updateFeedV1V1FeedsFeedIdPut(requestParameters: UpdateFeedV1V1FeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut> {
+        const response = await this.updateFeedV1V1FeedsFeedIdPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Update Folder
      */
     async updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
@@ -4503,6 +5141,59 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
         const response = await this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update a site config
+     */
+    async updateSiteConfigV1V1SiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters.configId === null || requestParameters.configId === undefined) {
+            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling updateSiteConfigV1V1SiteConfigsConfigIdPut.');
+        }
+
+        if (requestParameters.body === null || requestParameters.body === undefined) {
+            throw new runtime.RequiredError('body','Required parameter requestParameters.body was null or undefined when calling updateSiteConfigV1V1SiteConfigsConfigIdPut.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
+            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters.body as any,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Update a site config
+     */
+    async updateSiteConfigV1V1SiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.updateSiteConfigV1V1SiteConfigsConfigIdPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

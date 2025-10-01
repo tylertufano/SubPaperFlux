@@ -24,7 +24,7 @@ from .db import (
     set_current_user_id,
 )
 from .db_admin import enable_rls
-from .routers import status, site_configs, feeds, jobs, credentials, bookmarks, admin
+from .routers import status, bookmarks, jobs, admin
 from .routers.admin_audit_v1 import router as admin_audit_v1_router
 from .routers.admin_orgs_v1 import router as admin_orgs_v1_router
 from .routers.admin_roles_v1 import router as admin_roles_v1_router
@@ -283,13 +283,7 @@ def create_app() -> FastAPI:
                 reset_current_user_id(ctx_token)
 
     # Routers
-    app.include_router(status.router)
-    app.include_router(site_configs.router, prefix="/site-configs", tags=["site-configs"])
-    app.include_router(credentials.router, prefix="/credentials", tags=["credentials"])
-    app.include_router(feeds.router, prefix="/feeds", tags=["feeds"])
-    app.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
-    app.include_router(bookmarks.router)
-    app.include_router(admin.router)
+    # Legacy unversioned routers have been removed in favor of explicit versioning.
     # Prometheus metrics
     app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
 
@@ -303,6 +297,7 @@ def create_app() -> FastAPI:
     app.include_router(job_schedules_v1_router)
     app.include_router(bookmarks.router, prefix="/v1", tags=["v1"])  # /v1/bookmarks, etc.
     app.include_router(status.router, prefix="/v1", tags=["v1"])  # v1 status
+    app.include_router(admin.router, prefix="/v1", tags=["v1"])
     app.include_router(admin_audit_v1_router)
     app.include_router(admin_orgs_v1_router)
     app.include_router(admin_roles_v1_router)

@@ -107,31 +107,19 @@ export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
     body?: any | null;
 }
 
-export interface ListAuditLogsAdminAuditGetRequest {
-    page?: any;
-    size?: any;
-    entityType?: any;
-    entityId?: any;
-    action?: any;
-    ownerUserId?: any;
-    actorUserId?: any;
-    since?: any;
-    until?: any;
-}
-
-export interface ListAuditLogsAdminAuditGet0Request {
-    page?: any;
-    size?: any;
-    entityType?: any;
-    entityId?: any;
-    action?: any;
-    ownerUserId?: any;
-    actorUserId?: any;
-    since?: any;
-    until?: any;
-}
-
 export interface ListAuditLogsV1AdminAuditGetRequest {
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
+}
+
+export interface ListAuditLogsV1AdminAuditGet0Request {
     page?: any;
     size?: any;
     entityType?: any;
@@ -602,147 +590,77 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    async listAuditLogsAdminAuditGetRaw(requestParameters: ListAuditLogsAdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
-        const queryParameters: any = {};
-
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
-        }
-
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
-        }
-
-        if (requestParameters.entityType !== undefined) {
-            queryParameters['entity_type'] = requestParameters.entityType;
-        }
-
-        if (requestParameters.entityId !== undefined) {
-            queryParameters['entity_id'] = requestParameters.entityId;
-        }
-
-        if (requestParameters.action !== undefined) {
-            queryParameters['action'] = requestParameters.action;
-        }
-
-        if (requestParameters.ownerUserId !== undefined) {
-            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-        }
-
-        if (requestParameters.actorUserId !== undefined) {
-            queryParameters['actor_user_id'] = requestParameters.actorUserId;
-        }
-
-        if (requestParameters.since !== undefined) {
-            queryParameters['since'] = requestParameters.since;
-        }
-
-        if (requestParameters.until !== undefined) {
-            queryParameters['until'] = requestParameters.until;
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/admin/audit/`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
-    }
-
-    /**
-     * List audit log entries
-     */
-    async listAuditLogsAdminAuditGet(requestParameters: ListAuditLogsAdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
-        const response = await this.listAuditLogsAdminAuditGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * List audit log entries
-     */
-    async listAuditLogsAdminAuditGet_1Raw(requestParameters: ListAuditLogsAdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
-        const queryParameters: any = {};
-
-        if (requestParameters.page !== undefined) {
-            queryParameters['page'] = requestParameters.page;
-        }
-
-        if (requestParameters.size !== undefined) {
-            queryParameters['size'] = requestParameters.size;
-        }
-
-        if (requestParameters.entityType !== undefined) {
-            queryParameters['entity_type'] = requestParameters.entityType;
-        }
-
-        if (requestParameters.entityId !== undefined) {
-            queryParameters['entity_id'] = requestParameters.entityId;
-        }
-
-        if (requestParameters.action !== undefined) {
-            queryParameters['action'] = requestParameters.action;
-        }
-
-        if (requestParameters.ownerUserId !== undefined) {
-            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-        }
-
-        if (requestParameters.actorUserId !== undefined) {
-            queryParameters['actor_user_id'] = requestParameters.actorUserId;
-        }
-
-        if (requestParameters.since !== undefined) {
-            queryParameters['since'] = requestParameters.since;
-        }
-
-        if (requestParameters.until !== undefined) {
-            queryParameters['until'] = requestParameters.until;
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/admin/audit`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
-    }
-
-    /**
-     * List audit log entries
-     */
-    async listAuditLogsAdminAuditGet_1(requestParameters: ListAuditLogsAdminAuditGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
-        const response = await this.listAuditLogsAdminAuditGet_1Raw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * List audit log entries
-     */
     async listAuditLogsV1AdminAuditGetRaw(requestParameters: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
+        const queryParameters: any = {};
+
+        if (requestParameters.page !== undefined) {
+            queryParameters['page'] = requestParameters.page;
+        }
+
+        if (requestParameters.size !== undefined) {
+            queryParameters['size'] = requestParameters.size;
+        }
+
+        if (requestParameters.entityType !== undefined) {
+            queryParameters['entity_type'] = requestParameters.entityType;
+        }
+
+        if (requestParameters.entityId !== undefined) {
+            queryParameters['entity_id'] = requestParameters.entityId;
+        }
+
+        if (requestParameters.action !== undefined) {
+            queryParameters['action'] = requestParameters.action;
+        }
+
+        if (requestParameters.ownerUserId !== undefined) {
+            queryParameters['owner_user_id'] = requestParameters.ownerUserId;
+        }
+
+        if (requestParameters.actorUserId !== undefined) {
+            queryParameters['actor_user_id'] = requestParameters.actorUserId;
+        }
+
+        if (requestParameters.since !== undefined) {
+            queryParameters['since'] = requestParameters.since;
+        }
+
+        if (requestParameters.until !== undefined) {
+            queryParameters['until'] = requestParameters.until;
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/admin/audit/`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet(requestParameters: ListAuditLogsV1AdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List audit log entries
+     */
+    async listAuditLogsV1AdminAuditGet_1Raw(requestParameters: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>> {
         const queryParameters: any = {};
 
         if (requestParameters.page !== undefined) {
@@ -804,8 +722,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    async listAuditLogsV1AdminAuditGet(requestParameters: ListAuditLogsV1AdminAuditGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
-        const response = await this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+    async listAuditLogsV1AdminAuditGet_1(requestParameters: ListAuditLogsV1AdminAuditGet0Request = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage> {
+        const response = await this.listAuditLogsV1AdminAuditGet_1Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -966,7 +884,7 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Enable Rls
      */
-    async postgresEnableRlsAdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+    async postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -980,7 +898,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/admin/postgres/enable-rls`,
+            path: `/v1/admin/postgres/enable-rls`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -992,15 +910,15 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Enable Rls
      */
-    async postgresEnableRlsAdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.postgresEnableRlsAdminPostgresEnableRlsPostRaw(initOverrides);
+    async postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
+        const response = await this.postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides);
         return await response.value();
     }
 
     /**
      * Postgres Prepare
      */
-    async postgresPrepareAdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
+    async postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1014,7 +932,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/admin/postgres/prepare`,
+            path: `/v1/admin/postgres/prepare`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -1026,8 +944,8 @@ export class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Prepare
      */
-    async postgresPrepareAdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.postgresPrepareAdminPostgresPreparePostRaw(initOverrides);
+    async postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
+        const response = await this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
         return await response.value();
     }
 
