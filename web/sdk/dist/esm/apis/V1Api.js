@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as runtime from '../runtime';
-import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialFromJSON, CredentialToJSON, CredentialsPageFromJSON, FeedToJSON, FeedOutFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, InstapaperLoginRequestToJSON, JobOutFromJSON, JobRequestToJSON, JobScheduleCreateToJSON, JobScheduleOutFromJSON, JobScheduleUpdateToJSON, JobSchedulesPageFromJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, SiteConfigsPageFromJSON, SiteSetupStatusOutFromJSON, SiteWelcomeSettingOutFromJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, TemplateListResponseFromJSON, } from '../models';
+import { AdminOrganizationCreateToJSON, AdminOrganizationDetailFromJSON, AdminOrganizationMembershipChangeToJSON, AdminOrganizationUpdateToJSON, AdminOrganizationsPageFromJSON, AdminRoleCreateToJSON, AdminRoleDetailFromJSON, AdminRoleUpdateToJSON, AdminRolesPageFromJSON, AdminUserOutFromJSON, AdminUserRoleOverridesUpdateToJSON, AdminUserUpdateToJSON, AdminUsersPageFromJSON, ApiTokenCreateToJSON, ApiTokenOutFromJSON, ApiTokenWithSecretFromJSON, ApiTokensPageFromJSON, AuditLogsPageFromJSON, BookmarkFolderUpdateToJSON, BookmarkOutFromJSON, BookmarkTagsUpdateToJSON, BookmarksPageFromJSON, BulkBookmarkFolderUpdateToJSON, BulkBookmarkTagUpdateToJSON, CredentialFromJSON, CredentialsPageFromJSON, FeedsPageFromJSON, FolderCreateToJSON, FolderOutFromJSON, FolderUpdateToJSON, JobOutFromJSON, JobRequestToJSON, JobScheduleCreateToJSON, JobScheduleOutFromJSON, JobScheduleUpdateToJSON, JobSchedulesPageFromJSON, JobsPageFromJSON, MeOutFromJSON, MeUpdateToJSON, SiteConfigsPageFromJSON, SiteSetupStatusOutFromJSON, SiteWelcomeSettingOutFromJSON, StatusResponseFromJSON, TagCreateToJSON, TagOutFromJSON, TagUpdateToJSON, TemplateListResponseFromJSON, } from '../models';
 /**
  *
  */
@@ -419,86 +419,6 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Create credential
-     */
-    createCredentialV1V1CredentialsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.credential === null || requestParameters.credential === undefined) {
-                throw new runtime.RequiredError('credential', 'Required parameter requestParameters.credential was null or undefined when calling createCredentialV1V1CredentialsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/credentials`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: CredentialToJSON(requestParameters.credential),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Create credential
-     */
-    createCredentialV1V1CredentialsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createCredentialV1V1CredentialsPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create feed
-     */
-    createFeedV1V1FeedsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.feed === null || requestParameters.feed === undefined) {
-                throw new runtime.RequiredError('feed', 'Required parameter requestParameters.feed was null or undefined when calling createFeedV1V1FeedsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/feeds`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: FeedToJSON(requestParameters.feed),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Create feed
-     */
-    createFeedV1V1FeedsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createFeedV1V1FeedsPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Create Folder
      */
     createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides) {
@@ -535,46 +455,6 @@ export class V1Api extends runtime.BaseAPI {
     createFolderV1BookmarksFoldersPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create Instapaper credential via login
-     */
-    createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.instapaperLoginRequest === null || requestParameters.instapaperLoginRequest === undefined) {
-                throw new runtime.RequiredError('instapaperLoginRequest', 'Required parameter requestParameters.instapaperLoginRequest was null or undefined when calling createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/credentials/instapaper/login`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: InstapaperLoginRequestToJSON(requestParameters.instapaperLoginRequest),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Create Instapaper credential via login
-     */
-    createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -723,51 +603,6 @@ export class V1Api extends runtime.BaseAPI {
     createRoleV1AdminRolesPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.createRoleV1AdminRolesPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create a site config
-     */
-    createSiteConfigV1V1SiteConfigsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.body === null || requestParameters.body === undefined) {
-                throw new runtime.RequiredError('body', 'Required parameter requestParameters.body was null or undefined when calling createSiteConfigV1V1SiteConfigsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-configs`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: requestParameters.body,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Create a site config
-     */
-    createSiteConfigV1V1SiteConfigsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createSiteConfigV1V1SiteConfigsPostRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -951,80 +786,6 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Delete credential
-     */
-    deleteCredentialV1V1CredentialsCredIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.credId === null || requestParameters.credId === undefined) {
-                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling deleteCredentialV1V1CredentialsCredIdDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete credential
-     */
-    deleteCredentialV1V1CredentialsCredIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteCredentialV1V1CredentialsCredIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Delete feed
-     */
-    deleteFeedV1V1FeedsFeedIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
-                throw new runtime.RequiredError('feedId', 'Required parameter requestParameters.feedId was null or undefined when calling deleteFeedV1V1FeedsFeedIdDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete feed
-     */
-    deleteFeedV1V1FeedsFeedIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteFeedV1V1FeedsFeedIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
      * Delete Folder
      */
     deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides) {
@@ -1161,43 +922,6 @@ export class V1Api extends runtime.BaseAPI {
     deleteRoleV1AdminRolesRoleIdDelete(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.deleteRoleV1AdminRolesRoleIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Delete a site config
-     */
-    deleteSiteConfigV1V1SiteConfigsConfigIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.configId === null || requestParameters.configId === undefined) {
-                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling deleteSiteConfigV1V1SiteConfigsConfigIdDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete a site config
-     */
-    deleteSiteConfigV1V1SiteConfigsConfigIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteSiteConfigV1V1SiteConfigsConfigIdDeleteRaw(requestParameters, initOverrides);
         });
     }
     /**
@@ -1504,76 +1228,6 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Get credential
-     */
-    getCredentialV1V1CredentialsCredIdGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.credId === null || requestParameters.credId === undefined) {
-                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling getCredentialV1V1CredentialsCredIdGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Get credential
-     */
-    getCredentialV1V1CredentialsCredIdGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getCredentialV1V1CredentialsCredIdGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get feed
-     */
-    getFeedV1V1FeedsFeedIdGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
-                throw new runtime.RequiredError('feedId', 'Required parameter requestParameters.feedId was null or undefined when calling getFeedV1V1FeedsFeedIdGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Get feed
-     */
-    getFeedV1V1FeedsFeedIdGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getFeedV1V1FeedsFeedIdGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Get a job schedule
      */
     getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters, initOverrides) {
@@ -1776,46 +1430,6 @@ export class V1Api extends runtime.BaseAPI {
     getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Retrieve a site config
-     */
-    getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.configId === null || requestParameters.configId === undefined) {
-                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling getSiteConfigV1V1SiteConfigsConfigIdGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Retrieve a site config
-     */
-    getSiteConfigV1V1SiteConfigsConfigIdGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2199,7 +1813,7 @@ export class V1Api extends runtime.BaseAPI {
                 }
             }
             const response = yield this.request({
-                path: `/v1/admin/audit/`,
+                path: `/v1/admin/audit`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -2213,65 +1827,6 @@ export class V1Api extends runtime.BaseAPI {
     listAuditLogsV1AdminAuditGet(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_3Raw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.page !== undefined) {
-                queryParameters['page'] = requestParameters.page;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            if (requestParameters.entityType !== undefined) {
-                queryParameters['entity_type'] = requestParameters.entityType;
-            }
-            if (requestParameters.entityId !== undefined) {
-                queryParameters['entity_id'] = requestParameters.entityId;
-            }
-            if (requestParameters.action !== undefined) {
-                queryParameters['action'] = requestParameters.action;
-            }
-            if (requestParameters.ownerUserId !== undefined) {
-                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-            }
-            if (requestParameters.actorUserId !== undefined) {
-                queryParameters['actor_user_id'] = requestParameters.actorUserId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/admin/audit`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => AuditLogsPageFromJSON(jsonValue));
-        });
-    }
-    /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_3(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listAuditLogsV1AdminAuditGet_3Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2358,7 +1913,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides) {
+    listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.page !== undefined) {
@@ -2429,9 +1984,9 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4(requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet_3(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides);
+            const response = yield this.listBookmarksV1BookmarksGet_3Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2439,6 +1994,50 @@ export class V1Api extends runtime.BaseAPI {
      * List credentials
      */
     listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters.includeGlobal !== undefined) {
+                queryParameters['include_global'] = requestParameters.includeGlobal;
+            }
+            if (requestParameters.kind !== undefined) {
+                queryParameters['kind'] = requestParameters.kind;
+            }
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
+            }
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            const response = yield this.request({
+                path: `/v1/credentials/`,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialsPageFromJSON(jsonValue));
+        });
+    }
+    /**
+     * List credentials
+     */
+    listCredentialsV1V1CredentialsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * List credentials
+     */
+    listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.includeGlobal !== undefined) {
@@ -2473,9 +2072,9 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List credentials
      */
-    listCredentialsV1V1CredentialsGet(requestParameters = {}, initOverrides) {
+    listCredentialsV1V1CredentialsGet_4(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides);
+            const response = yield this.listCredentialsV1V1CredentialsGet_4Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2483,6 +2082,47 @@ export class V1Api extends runtime.BaseAPI {
      * List feeds
      */
     listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters.ownerUserIds !== undefined) {
+                queryParameters['owner_user_ids'] = requestParameters.ownerUserIds;
+            }
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
+            }
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            const response = yield this.request({
+                path: `/v1/feeds/`,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => FeedsPageFromJSON(jsonValue));
+        });
+    }
+    /**
+     * List feeds
+     */
+    listFeedsV1V1FeedsGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * List feeds
+     */
+    listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.ownerUserIds !== undefined) {
@@ -2514,9 +2154,9 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List feeds
      */
-    listFeedsV1V1FeedsGet(requestParameters = {}, initOverrides) {
+    listFeedsV1V1FeedsGet_5(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listFeedsV1V1FeedsGetRaw(requestParameters, initOverrides);
+            const response = yield this.listFeedsV1V1FeedsGet_5Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2607,7 +2247,7 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters, initOverrides) {
+    listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.ownerUserId !== undefined) {
@@ -2645,9 +2285,9 @@ export class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet_5(requestParameters = {}, initOverrides) {
+    listJobSchedulesV1JobSchedulesGet_6(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters, initOverrides);
+            const response = yield this.listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2707,7 +2347,7 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_6Raw(requestParameters, initOverrides) {
+    listJobsV1JobsGet_7Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.status !== undefined) {
@@ -2749,9 +2389,9 @@ export class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_6(requestParameters = {}, initOverrides) {
+    listJobsV1JobsGet_7(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listJobsV1JobsGet_6Raw(requestParameters, initOverrides);
+            const response = yield this.listJobsV1JobsGet_7Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2867,7 +2507,7 @@ export class V1Api extends runtime.BaseAPI {
                 }
             }
             const response = yield this.request({
-                path: `/v1/site-configs`,
+                path: `/v1/site-configs/`,
                 method: 'GET',
                 headers: headerParameters,
                 query: queryParameters,
@@ -3034,70 +2674,6 @@ export class V1Api extends runtime.BaseAPI {
     listUsersV1AdminUsersGet(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listUsersV1AdminUsersGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Postgres Enable Rls
-     */
-    postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/admin/postgres/enable-rls`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response);
-        });
-    }
-    /**
-     * Postgres Enable Rls
-     */
-    postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Postgres Prepare
-     */
-    postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/admin/postgres/prepare`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response);
-        });
-    }
-    /**
-     * Postgres Prepare
-     */
-    postgresPrepareV1AdminPostgresPreparePost(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
             return yield response.value();
         });
     }
@@ -3657,92 +3233,6 @@ export class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Update credential
-     */
-    updateCredentialV1V1CredentialsCredIdPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.credId === null || requestParameters.credId === undefined) {
-                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling updateCredentialV1V1CredentialsCredIdPut.');
-            }
-            if (requestParameters.credential === null || requestParameters.credential === undefined) {
-                throw new runtime.RequiredError('credential', 'Required parameter requestParameters.credential was null or undefined when calling updateCredentialV1V1CredentialsCredIdPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/credentials/{cred_id}`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: CredentialToJSON(requestParameters.credential),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => CredentialFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Update credential
-     */
-    updateCredentialV1V1CredentialsCredIdPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateCredentialV1V1CredentialsCredIdPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update feed
-     */
-    updateFeedV1V1FeedsFeedIdPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.feedId === null || requestParameters.feedId === undefined) {
-                throw new runtime.RequiredError('feedId', 'Required parameter requestParameters.feedId was null or undefined when calling updateFeedV1V1FeedsFeedIdPut.');
-            }
-            if (requestParameters.feed === null || requestParameters.feed === undefined) {
-                throw new runtime.RequiredError('feed', 'Required parameter requestParameters.feed was null or undefined when calling updateFeedV1V1FeedsFeedIdPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/feeds/{feed_id}`.replace(`{${"feed_id"}}`, encodeURIComponent(String(requestParameters.feedId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: FeedToJSON(requestParameters.feed),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => FeedOutFromJSON(jsonValue));
-        });
-    }
-    /**
-     * Update feed
-     */
-    updateFeedV1V1FeedsFeedIdPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateFeedV1V1FeedsFeedIdPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Update Folder
      */
     updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides) {
@@ -3976,54 +3466,6 @@ export class V1Api extends runtime.BaseAPI {
     updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update a site config
-     */
-    updateSiteConfigV1V1SiteConfigsConfigIdPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.configId === null || requestParameters.configId === undefined) {
-                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling updateSiteConfigV1V1SiteConfigsConfigIdPut.');
-            }
-            if (requestParameters.body === null || requestParameters.body === undefined) {
-                throw new runtime.RequiredError('body', 'Required parameter requestParameters.body was null or undefined when calling updateSiteConfigV1V1SiteConfigsConfigIdPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-configs/{config_id}`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: requestParameters.body,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Update a site config
-     */
-    updateSiteConfigV1V1SiteConfigsConfigIdPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateSiteConfigV1V1SiteConfigsConfigIdPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
