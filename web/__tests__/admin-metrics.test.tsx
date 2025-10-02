@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
 import { renderWithSWR, makeSWRSuccess } from './helpers/renderWithSWR'
 import { parsePrometheusMetrics } from '../lib/openapi'
@@ -20,6 +20,10 @@ vi.mock('../components', () => ({
 }))
 
 describe('AdminMetrics page', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('renders aggregated counters and histogram buckets', () => {
     const metricsText = `# HELP user_logins_total Login count\n` +
       `# TYPE user_logins_total counter\n` +
@@ -102,5 +106,57 @@ describe('AdminMetrics page', () => {
     expect(within(jobTable).getByText('6')).toBeInTheDocument()
     expect(screen.getByText('Samples recorded: 6')).toBeInTheDocument()
     expect(screen.getByText('Total duration: 2.500s')).toBeInTheDocument()
+  })
+
+  it('localizes metrics when using a non-English locale', () => {
+    const metricsText = `# HELP user_logins_total Login count\n` +
+      `# TYPE user_logins_total counter\n` +
+      `user_logins_total 1234\n` +
+      `# HELP admin_actions_total Admin actions\n` +
+      `# TYPE admin_actions_total counter\n` +
+      `admin_actions_total{action="create_user"} 9876\n` +
+      `# HELP jobs_processed_total Jobs processed\n` +
+      `# TYPE jobs_processed_total counter\n` +
+      `jobs_processed_total{type="ingest",status="done"} 4321\n` +
+      `jobs_processed_total{type="ingest",status="failed"} 210\n` +
+      `# HELP api_request_duration_seconds Request latency\n` +
+      `# TYPE api_request_duration_seconds histogram\n` +
+      `api_request_duration_seconds_bucket{le="1.00",method="GET",path="/v1/status"} 1000\n` +
+      `api_request_duration_seconds_bucket{le="2.00",method="GET",path="/v1/status"} 2000\n` +
+      `api_request_duration_seconds_bucket{le="+Inf",method="GET",path="/v1/status"} 3000\n` +
+      `api_request_duration_seconds_sum{method="GET",path="/v1/status"} 123.456\n` +
+      `api_request_duration_seconds_count{method="GET",path="/v1/status"} 3000\n`
+
+    const parsed = parsePrometheusMetrics(metricsText)
+
+    renderWithSWR(<AdminMetrics />, {
+      locale: 'de',
+      swr: {
+        handlers: [
+          {
+            matcher: (key: any) => Array.isArray(key) && key[0] === 'admin-metrics',
+            value: makeSWRSuccess(parsed),
+          },
+        ],
+      },
+    })
+
+    const loginTable = screen.getByRole('table', { name: 'Login counters' })
+    expect(within(loginTable).getByText('1.234')).toBeInTheDocument()
+
+    const adminTable = screen.getByRole('table', { name: 'Administrative action counters' })
+    expect(within(adminTable).getByText('9.876')).toBeInTheDocument()
+
+    const statusTable = screen.getByRole('table', { name: 'Job status counters' })
+    expect(within(statusTable).getByText('4.321')).toBeInTheDocument()
+    expect(within(statusTable).getByText('210')).toBeInTheDocument()
+
+    const requestTable = screen.getByRole('table', { name: 'Request latency buckets' })
+    expect(within(requestTable).getByText('1.000')).toBeInTheDocument()
+    expect(within(requestTable).getByText('2.000')).toBeInTheDocument()
+    expect(within(requestTable).getByText('3.000')).toBeInTheDocument()
+
+    expect(screen.getByText('Samples recorded: 3.000')).toBeInTheDocument()
+    expect(screen.getByText('Total duration: 123,456s')).toBeInTheDocument()
   })
 })

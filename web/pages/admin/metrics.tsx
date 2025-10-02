@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from 'react'
+import { useCallback, useMemo, type ReactNode } from 'react'
 import useSWR from 'swr'
 import { useRouter } from 'next/router'
 import { Alert, Breadcrumbs, ErrorBoundary, Nav } from '../../components'
 import { buildBreadcrumbs } from '../../lib/breadcrumbs'
 import { useI18n } from '../../lib/i18n'
+import { formatNumberValue, useNumberFormatter } from '../../lib/format'
 import type {
   PrometheusHistogramBucket,
   PrometheusHistogramSeries,
@@ -48,14 +49,11 @@ function formatBucketLabel(bucket: PrometheusHistogramBucket, formatter: (value:
   return formatter(bucket.rawUpperBound)
 }
 
-function formatCount(value: number): string {
+function formatCount(value: number, formatter: Intl.NumberFormat): string {
   if (!Number.isFinite(value)) {
     return '0'
   }
-  if (Number.isInteger(value)) {
-    return value.toLocaleString()
-  }
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  return formatNumberValue(value, formatter, '0')
 }
 
 function formatLabelEntries(labels: Record<string, string>, omitKeys: string[] = []): string {
@@ -118,6 +116,7 @@ type TrendCardProps = {
   columns: TrendColumn[]
   rows: TrendRow[]
   footer?: ReactNode
+  countFormatter: Intl.NumberFormat
 }
 
 function TrendCard({
@@ -130,8 +129,13 @@ function TrendCard({
   columns,
   rows,
   footer,
+  countFormatter,
 }: TrendCardProps) {
-  const formattedTotal = formatCount(totalValue)
+  const formatTrendValue = useCallback(
+    (value: number) => formatCount(value, countFormatter),
+    [countFormatter],
+  )
+  const formattedTotal = formatTrendValue(totalValue)
   return (
     <section className="card p-4 space-y-4">
       <header className="space-y-1">
@@ -166,7 +170,7 @@ function TrendCard({
                   const alignment = column?.numeric ? 'text-right' : 'text-left'
                   const content =
                     typeof value === 'number' && Number.isFinite(value)
-                      ? formatCount(value)
+                      ? formatTrendValue(value)
                       : value
                   return (
                     <td key={`${row.id}-${valueIndex}`} className={`td ${alignment}`}>
@@ -194,8 +198,10 @@ type HistogramSectionProps = {
   series: PrometheusHistogramSeries[]
   resolveLabel: (series: PrometheusHistogramSeries) => string
   formatBucket: (bucket: PrometheusHistogramBucket) => string
-  totalLabel: (series: PrometheusHistogramSeries) => string
-  sumLabel: (series: PrometheusHistogramSeries) => string | null
+  totalLabel: (series: PrometheusHistogramSeries, countFormatter: Intl.NumberFormat) => string
+  sumLabel: (series: PrometheusHistogramSeries, sumFormatter: Intl.NumberFormat) => string | null
+  countFormatter: Intl.NumberFormat
+  sumFormatter: Intl.NumberFormat
 }
 
 function HistogramSection({
@@ -210,6 +216,8 @@ function HistogramSection({
   formatBucket,
   totalLabel,
   sumLabel,
+  countFormatter,
+  sumFormatter,
 }: HistogramSectionProps) {
   return (
     <section className="card p-4 space-y-4">
@@ -223,6 +231,7 @@ function HistogramSection({
         <div className="space-y-6">
           {series.map((item) => {
             const label = resolveLabel(item)
+            const sumText = sumLabel(item, sumFormatter)
             return (
               <div key={label} className="space-y-3">
                 <h4 className="font-semibold text-gray-800">{label}</h4>
@@ -237,14 +246,14 @@ function HistogramSection({
                     {item.buckets.map((bucket) => (
                       <tr key={bucket.rawUpperBound} className="odd:bg-white even:bg-gray-50">
                         <td className="td">{formatBucket(bucket)}</td>
-                        <td className="td text-right">{bucket.cumulativeCount}</td>
+                        <td className="td text-right">{formatCount(bucket.cumulativeCount, countFormatter)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 <div className="text-sm text-gray-700">
-                  <p>{totalLabel(item)}</p>
-                  {sumLabel(item) ? <p>{sumLabel(item)}</p> : null}
+                  <p>{totalLabel(item, countFormatter)}</p>
+                  {sumText ? <p>{sumText}</p> : null}
                 </div>
               </div>
             )
@@ -260,6 +269,13 @@ export default function AdminMetrics() {
   const router = useRouter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const { data, error, isLoading, mutate } = useSWR(['admin-metrics'], () => fetchPrometheusMetrics())
+
+  const countFormatter = useNumberFormatter({ maximumFractionDigits: 2, minimumFractionDigits: 0 })
+  const sumFormatter = useNumberFormatter({ maximumFractionDigits: 3, minimumFractionDigits: 3 })
+  const formatCountValue = useCallback(
+    (value: number) => formatCount(value, countFormatter),
+    [countFormatter],
+  )
 
   const counters = data?.counters ?? {}
   const requestSeries = data?.histograms['api_request_duration_seconds'] ?? []
@@ -355,7 +371,7 @@ export default function AdminMetrics() {
       ? t('admin_metrics_jobs_status_other_note', {
           statuses: Array.from(additionalStatusTotals.entries())
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([status, count]) => `${status}: ${formatCount(count)}`)
+            .map(([status, count]) => `${status}: ${formatCountValue(count)}`)
             .join(', '),
         })
       : null
@@ -397,6 +413,7 @@ export default function AdminMetrics() {
                 { header: t('admin_metrics_logins_column_count'), numeric: true },
               ]}
               rows={loginRows}
+              countFormatter={countFormatter}
             />
             <TrendCard
               title={t('admin_metrics_actions_heading')}
@@ -410,6 +427,7 @@ export default function AdminMetrics() {
                 { header: t('admin_metrics_actions_column_count'), numeric: true },
               ]}
               rows={adminRows}
+              countFormatter={countFormatter}
             />
             <TrendCard
               title={t('admin_metrics_jobs_status_heading')}
@@ -425,6 +443,7 @@ export default function AdminMetrics() {
               ]}
               rows={jobRows}
               footer={jobAdditionalStatusesText}
+              countFormatter={countFormatter}
             />
           </section>
           <HistogramSection
@@ -439,16 +458,21 @@ export default function AdminMetrics() {
             formatBucket={(bucket) =>
               formatBucketLabel(bucket, requestBucketFormatter, t('admin_metrics_bucket_plus_inf'))
             }
-            totalLabel={(series) =>
+            totalLabel={(series, formatter) =>
               t('admin_metrics_total_count', {
-                count: series.count != null ? series.count : series.buckets.at(-1)?.cumulativeCount ?? 0,
+                count: formatCount(
+                  series.count != null ? series.count : series.buckets.at(-1)?.cumulativeCount ?? 0,
+                  formatter,
+                ),
               })
             }
-            sumLabel={(series) =>
+            sumLabel={(series, formatter) =>
               series.sum != null
-                ? t('admin_metrics_total_sum', { sum: series.sum.toFixed(3) })
+                ? t('admin_metrics_total_sum', { sum: formatNumberValue(series.sum, formatter, '0') })
                 : null
             }
+            countFormatter={countFormatter}
+            sumFormatter={sumFormatter}
           />
           <HistogramSection
             title={t('admin_metrics_jobs_heading')}
@@ -462,14 +486,21 @@ export default function AdminMetrics() {
             formatBucket={(bucket) =>
               formatBucketLabel(bucket, jobBucketFormatter, t('admin_metrics_bucket_plus_inf'))
             }
-            totalLabel={(series) =>
+            totalLabel={(series, formatter) =>
               t('admin_metrics_total_count', {
-                count: series.count != null ? series.count : series.buckets.at(-1)?.cumulativeCount ?? 0,
+                count: formatCount(
+                  series.count != null ? series.count : series.buckets.at(-1)?.cumulativeCount ?? 0,
+                  formatter,
+                ),
               })
             }
-            sumLabel={(series) =>
-              series.sum != null ? t('admin_metrics_total_sum', { sum: series.sum.toFixed(3) }) : null
+            sumLabel={(series, formatter) =>
+              series.sum != null
+                ? t('admin_metrics_total_sum', { sum: formatNumberValue(series.sum, formatter, '0') })
+                : null
             }
+            countFormatter={countFormatter}
+            sumFormatter={sumFormatter}
           />
         </main>
       </div>

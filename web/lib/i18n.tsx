@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import enMessages from '../locales/en/common.json'
 import pseudoMessages from '../locales/pseudo/common.json'
+import deMessages from '../locales/de/common.json'
 
 type Messages = Record<string, string>
 type Catalog = Record<string, Messages>
@@ -8,6 +9,7 @@ type Catalog = Record<string, Messages>
 const catalog: Catalog = {
   en: enMessages as Messages,
   pseudo: pseudoMessages as Messages,
+  de: deMessages as Messages,
 }
 
 const supportedLocales = Object.keys(catalog)
