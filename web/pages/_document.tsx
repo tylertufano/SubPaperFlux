@@ -8,22 +8,25 @@ import Document, {
 } from 'next/document'
 import { getCachedFeatureFlags, type FeatureFlags } from '../lib/featureFlags'
 import { getInlineThemeScript } from '../lib/theme'
+import { DEFAULT_LOCALE, getLocaleFromAcceptLanguage } from '../lib/i18n'
 
 type DocumentProps = DocumentInitialProps & {
   featureFlags?: FeatureFlags | null
+  defaultLocale: string
 }
 
 class MyDocument extends Document<DocumentProps> {
   static async getInitialProps(ctx: DocumentContext): Promise<DocumentProps> {
     const initialProps = await Document.getInitialProps(ctx)
     const featureFlags = getCachedFeatureFlags()
-    return { ...initialProps, featureFlags }
+    const defaultLocale = getLocaleFromAcceptLanguage(ctx.req?.headers['accept-language'], DEFAULT_LOCALE)
+    return { ...initialProps, featureFlags, defaultLocale }
   }
 
   render() {
-    const { featureFlags } = this.props
+    const { featureFlags, defaultLocale } = this.props
     return (
-      <Html lang="en">
+      <Html lang={defaultLocale}>
         <Head>
           <script
             id="__spf_theme"
