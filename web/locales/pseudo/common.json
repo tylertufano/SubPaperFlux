@@ -243,6 +243,7 @@
   "job_schedules_empty_title": "Sin programaciones ✨",
   "job_schedules_empty_desc": "Ajusta filtros o crea una programación ✨",
   "job_schedules_empty_action": "Limpiar filtros ✨",
+  "job_schedules_icon_calendar": "Icono de calendario que indica lista vacía ✨",
   "job_schedules_metadata_heading": "Metadatos ✨",
   "job_schedules_payload_heading": "Payload ✨",
   "job_type_login": "Login ✨",

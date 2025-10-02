@@ -253,6 +253,28 @@ describe("JobSchedulesPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders localized calendar label for the empty state icon", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [],
+        total: 0,
+        totalPages: 0,
+      },
+    });
+
+    expect(
+      await screen.findByRole(
+        "img",
+        {
+          name: "Calendar icon representing an empty schedule list",
+          hidden: true,
+        },
+        { timeout: 2000 },
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("renders a fallback label when a schedule job type is missing", async () => {
     renderPage({
       schedules: {

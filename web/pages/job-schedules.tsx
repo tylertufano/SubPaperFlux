@@ -1629,7 +1629,7 @@ export default function JobSchedulesPage() {
             <div className="p-4">
               <EmptyState
                 icon={
-                  <span role="img" aria-label="calendar">
+                  <span role="img" aria-label={t("job_schedules_icon_calendar")}>
                     🗓️
                   </span>
                 }

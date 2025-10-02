@@ -343,6 +343,7 @@
   "job_schedules_empty_title": "No schedules yet",
   "job_schedules_empty_desc": "Adjust the filters or create a new schedule to see it here.",
   "job_schedules_empty_action": "Clear filters",
+  "job_schedules_icon_calendar": "Calendar icon representing an empty schedule list",
   "job_schedules_metadata_heading": "Metadata",
   "job_schedules_payload_heading": "Payload",
   "job_type_login": "Login",
