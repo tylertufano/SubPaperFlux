@@ -153,13 +153,6 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
-        <Link
-          href="/templates"
-          className={linkClass('/templates')}
-          aria-current={pathname === '/templates' ? 'page' : undefined}
-        >
-          {t('nav_templates')}
-        </Link>
         {shouldShowSetupLink ? (
           <Link
             href="/setup"
