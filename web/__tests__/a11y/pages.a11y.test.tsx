@@ -15,6 +15,7 @@ import Feeds from "../../pages/feeds";
 import Bookmarks from "../../pages/bookmarks";
 import JobSchedules from "../../pages/job-schedules";
 import { I18nProvider } from "../../lib/i18n";
+import { ThemeProvider } from "../../lib/theme";
 
 const { routerMock } = vi.hoisted(() => ({ routerMock: { pathname: "/" } }));
 const { useSWRMock } = vi.hoisted(() => ({ useSWRMock: vi.fn() }));
@@ -130,7 +131,9 @@ describe("Critical page accessibility", () => {
 
     const { container } = render(
       <I18nProvider>
-        <Home />
+        <ThemeProvider>
+          <Home />
+        </ThemeProvider>
       </I18nProvider>,
     );
 
@@ -165,7 +168,9 @@ describe("Critical page accessibility", () => {
 
     const { container } = render(
       <I18nProvider>
-        <Feeds />
+        <ThemeProvider>
+          <Feeds />
+        </ThemeProvider>
       </I18nProvider>,
     );
 
@@ -208,7 +213,9 @@ describe("Critical page accessibility", () => {
 
     const { container } = render(
       <I18nProvider>
-        <Bookmarks />
+        <ThemeProvider>
+          <Bookmarks />
+        </ThemeProvider>
       </I18nProvider>,
     );
 
@@ -304,7 +311,9 @@ describe("Critical page accessibility", () => {
 
     const { container } = render(
       <I18nProvider>
-        <JobSchedules />
+        <ThemeProvider>
+          <JobSchedules />
+        </ThemeProvider>
       </I18nProvider>,
     );
 

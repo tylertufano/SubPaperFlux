@@ -1,6 +1,10 @@
 {
   "nav_brand": "SubPaperFlux ✨",
   "nav_locale_label": "Idioma",
+  "theme_toggle_dark": "Cambiar a tema oscuro ✨",
+  "theme_toggle_light": "Cambiar a tema claro ✨",
+  "theme_announcement_dark": "Tema oscuro activado ✨",
+  "theme_announcement_light": "Tema claro activado ✨",
   "locale_en": "Inglés",
   "locale_pseudo": "Pseudo (demo)",
   "inline_tip_dismiss": "Ocultar consejo ✨",
