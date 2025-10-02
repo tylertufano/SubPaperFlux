@@ -163,7 +163,7 @@ export default function Credentials() {
             description: trimmedDescription,
             data: parsed.data,
             ownerUserId: allowGlobalScope && scopeGlobal ? null : undefined,
-            site_config_id: kind === 'site_login' ? trimmedSiteConfigId : undefined,
+            siteConfigId: kind === 'site_login' ? trimmedSiteConfigId : undefined,
           },
         })
       }
@@ -288,7 +288,7 @@ export default function Credentials() {
           kind: editing.kind,
           description: trimmedDescription,
           data,
-          site_config_id: editing.kind === 'site_login' ? trimmedSiteConfigId : undefined,
+          siteConfigId: editing.kind === 'site_login' ? trimmedSiteConfigId : undefined,
         },
       })
       setEditing(null)
