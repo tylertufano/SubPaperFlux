@@ -11,29 +11,33 @@ export default function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   const { t } = useI18n()
   if (!items || items.length === 0) return null
 
-  const containerClass = className ?? 'border-b border-gray-200 bg-gray-50'
+  const containerClass =
+    className ?? 'border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900'
 
   return (
     <nav aria-label={t('breadcrumb_navigation_label')} className={containerClass}>
-      <ol className="container flex flex-wrap items-center gap-2 py-2 text-sm text-gray-600">
+      <ol className="container flex flex-wrap items-center gap-2 py-2 text-sm text-gray-600 dark:text-gray-300">
         {items.map((item, index) => {
           const isLast = index === items.length - 1
           const content = isLast ? (
-            <span aria-current="page" className="font-medium text-gray-900">
+            <span aria-current="page" className="font-medium text-gray-900 dark:text-gray-100">
               {item.label}
             </span>
           ) : item.href ? (
-            <Link href={item.href} className="text-blue-600 hover:underline">
+            <Link
+              href={item.href}
+              className="text-blue-600 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+            >
               {item.label}
             </Link>
           ) : (
-            <span className="text-gray-700">{item.label}</span>
+            <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
           )
           return (
             <li key={`${item.label}-${index}`} className="flex items-center gap-2">
               {content}
               {!isLast && (
-                <span className="text-gray-400" aria-hidden>
+                <span className="text-gray-500 dark:text-gray-400" aria-hidden>
                   /
                 </span>
               )}
