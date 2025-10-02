@@ -93,6 +93,29 @@ const defaultSchedulesPage = {
   totalPages: 1,
 };
 
+function makePublishSchedule({
+  id,
+  feedId,
+}: {
+  id: string;
+  feedId?: string | null;
+}) {
+  return {
+    id,
+    jobType: "publish",
+    payload: {
+      instapaper_id: "cred-publish",
+      ...(feedId ? { feed_id: feedId } : {}),
+    },
+    frequency: "15m",
+    nextRunAt: new Date("2024-02-02T10:00:00Z"),
+    lastRunAt: null,
+    lastJobId: null,
+    isActive: true,
+    ownerUserId: "user-123",
+  };
+}
+
 const defaultCredentials = {
   items: [
     {
@@ -484,5 +507,172 @@ describe("JobSchedulesPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Schedule updated.",
     );
+  });
+
+  it("creates publish schedules without a feed when no conflicts exist", async () => {
+    renderPage();
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form") as HTMLFormElement;
+
+    const jobTypeSelect = within(createForm).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const instapaperSelect = await within(createForm).findByLabelText(
+      "Instapaper credential",
+    );
+    fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
+
+    const feedSelect = within(createForm).getByLabelText(
+      "Attach to feed (optional)",
+    ) as HTMLSelectElement;
+    expect(feedSelect.value).toBe("");
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).toHaveBeenCalledTimes(1),
+    );
+
+    const createdPayload =
+      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.instapaper_id).toBe("cred-publish");
+    expect(createdPayload.feed_id).toBeUndefined();
+  });
+
+  it("blocks wildcard publish schedules when one already exists", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [makePublishSchedule({ id: "publish-existing" })],
+      },
+    });
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form") as HTMLFormElement;
+
+    const jobTypeSelect = within(createForm).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const instapaperSelect = await within(createForm).findByLabelText(
+      "Instapaper credential",
+    );
+    fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
+
+    expect(
+      within(createForm).getByText(
+        "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).not.toHaveBeenCalled(),
+    );
+
+    const wildcardConflicts = await within(createForm).findAllByText(
+      "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+    );
+    expect(wildcardConflicts.length).toBeGreaterThan(0);
+    await expect(
+      within(createForm).findByRole("alert"),
+    ).resolves.toHaveTextContent(
+      "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+    );
+  });
+
+  it("requires a feed when targeted publish schedules already exist", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [makePublishSchedule({ id: "publish-targeted", feedId: "feed-1" })],
+      },
+    });
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form") as HTMLFormElement;
+
+    const jobTypeSelect = within(createForm).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const instapaperSelect = await within(createForm).findByLabelText(
+      "Instapaper credential",
+    );
+    fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
+
+    expect(
+      within(createForm).getByText(
+        "Targeted schedules already exist for this Instapaper credential. Select a feed to create another schedule.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).not.toHaveBeenCalled(),
+    );
+
+    const targetedErrors = await within(createForm).findAllByText(
+      "Select a feed because targeted schedules already exist for this Instapaper credential.",
+    );
+    expect(targetedErrors.length).toBeGreaterThan(0);
+    await expect(
+      within(createForm).findByRole("alert"),
+    ).resolves.toHaveTextContent(
+      "Select a feed because targeted schedules already exist for this Instapaper credential.",
+    );
+  });
+
+  it("allows targeted publish schedules when conflicts are resolved", async () => {
+    renderPage({
+      schedules: {
+        ...defaultSchedulesPage,
+        items: [makePublishSchedule({ id: "publish-targeted", feedId: "feed-1" })],
+      },
+    });
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form") as HTMLFormElement;
+
+    const jobTypeSelect = within(createForm).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const instapaperSelect = await within(createForm).findByLabelText(
+      "Instapaper credential",
+    );
+    fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
+
+    const feedSelect = within(createForm).getByLabelText(
+      "Attach to feed (optional)",
+    ) as HTMLSelectElement;
+    fireEvent.change(feedSelect, { target: { value: "feed-2" } });
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).toHaveBeenCalledTimes(1),
+    );
+
+    const createdPayload =
+      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.instapaper_id).toBe("cred-publish");
+    expect(createdPayload.feed_id).toBe("feed-2");
   });
 });

@@ -56,6 +56,7 @@ type ScheduleFormProps = {
   credentials: Credential[];
   siteConfigs: SiteConfigRecord[];
   feeds: FeedOut[];
+  schedules: ExtendedJobSchedule[];
   onSubmit: (values: ScheduleFormResult) => Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
@@ -210,6 +211,58 @@ function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   };
 }
 
+function extractPublishCredentialId(
+  payload?: Record<string, any> | null,
+): string {
+  if (!payload) return "";
+  const candidate =
+    payload.instapaper_id ??
+    payload.instapaperId ??
+    payload.instapaper_credential_id ??
+    payload.instapaperCredentialId ??
+    payload.credential_id ??
+    payload.credentialId;
+  if (candidate == null) return "";
+  return String(candidate).trim();
+}
+
+function extractPublishFeedId(payload?: Record<string, any> | null): string {
+  if (!payload) return "";
+  const candidate = payload.feed_id ?? payload.feedId ?? payload.feed;
+  if (candidate == null) return "";
+  return String(candidate).trim();
+}
+
+type PublishScheduleGroup = {
+  wildcardCount: number;
+  targetedCount: number;
+};
+
+function groupPublishSchedulesByCredential(
+  schedules: ExtendedJobSchedule[],
+  ignoreScheduleId?: string | null,
+): Map<string, PublishScheduleGroup> {
+  const groups = new Map<string, PublishScheduleGroup>();
+  schedules.forEach((schedule) => {
+    if (schedule.jobType !== "publish") return;
+    if (ignoreScheduleId && schedule.id === ignoreScheduleId) return;
+    const credentialId = extractPublishCredentialId(schedule.payload);
+    if (!credentialId) return;
+    const feedId = extractPublishFeedId(schedule.payload);
+    const group = groups.get(credentialId) ?? {
+      wildcardCount: 0,
+      targetedCount: 0,
+    };
+    if (feedId) {
+      group.targetedCount += 1;
+    } else {
+      group.wildcardCount += 1;
+    }
+    groups.set(credentialId, group);
+  });
+  return groups;
+}
+
 function initPayloadState(
   jobType: JobType,
   payload?: Record<string, any> | null,
@@ -278,6 +331,7 @@ function ScheduleForm({
   credentials,
   siteConfigs,
   feeds,
+  schedules,
   onSubmit,
   onCancel,
   isSubmitting,
@@ -305,6 +359,15 @@ function ScheduleForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  const publishScheduleGroups = useMemo(
+    () =>
+      groupPublishSchedulesByCredential(
+        schedules,
+        initialSchedule?.id ?? null,
+      ),
+    [schedules, initialSchedule?.id],
+  );
 
   useEffect(() => {
     const nextType = (initialSchedule?.jobType as JobType) ?? DEFAULT_JOB_TYPE;
@@ -386,6 +449,7 @@ function ScheduleForm({
     }
 
     const payload: Record<string, any> = {};
+    let conflictMessage: string | null = null;
 
     if (jobType === "login") {
       const siteLoginValue = (payloadState.site_login_pair || "")
@@ -450,16 +514,28 @@ function ScheduleForm({
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedId = (payloadState.feed_id || "").toString().trim();
+      const isWildcardSelection = feedId === "";
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
           "job_schedules_error_instapaper",
         );
-      payload.instapaper_id = instapaperId;
-      if (!feedId)
+      if (instapaperId) {
+        payload.instapaper_id = instapaperId;
+      }
+      if (feedId) {
+        payload.feed_id = feedId;
+      }
+      const publishGroup = instapaperId
+        ? publishScheduleGroups.get(instapaperId)
+        : undefined;
+      if (isWildcardSelection && publishGroup?.wildcardCount) {
+        conflictMessage = t("job_schedules_error_publish_wildcard_exists");
+      } else if (isWildcardSelection && publishGroup?.targetedCount) {
         nextErrors["payload.feed_id"] = t(
-          "job_schedules_error_feed_selection",
+          "job_schedules_error_publish_feed_required",
         );
-      if (feedId) payload.feed_id = feedId;
+        conflictMessage = t("job_schedules_error_publish_feed_required");
+      }
     } else if (jobType === "retention") {
       const instapaperId = (
         payloadState.instapaper_credential_id ||
@@ -485,8 +561,12 @@ function ScheduleForm({
       }
     }
 
-    if (Object.keys(nextErrors).length > 0) {
-      return { ok: false, errors: nextErrors };
+    if (Object.keys(nextErrors).length > 0 || conflictMessage) {
+      return {
+        ok: false,
+        errors: nextErrors,
+        message: conflictMessage ?? undefined,
+      };
     }
 
     const result: ScheduleFormResult = {
@@ -506,7 +586,7 @@ function ScheduleForm({
     const result = buildPayload();
     if (!result.ok) {
       setErrors(result.errors);
-      if (result.message) setFormError(result.message);
+      setFormError(result.message ?? null);
       return;
     }
     setErrors({});
@@ -849,6 +929,40 @@ function ScheduleForm({
           </div>
         );
       case "publish":
+        {
+          const selectedInstapaperId = (payloadState.instapaper_id || "")
+            .toString()
+            .trim();
+          const selectedFeedId = (payloadState.feed_id || "")
+            .toString()
+            .trim();
+          const publishGroup = selectedInstapaperId
+            ? publishScheduleGroups.get(selectedInstapaperId)
+            : undefined;
+          const hasExistingWildcard = Boolean(publishGroup?.wildcardCount);
+          const hasTargetedSchedules = Boolean(publishGroup?.targetedCount);
+          const isWildcardSelection = selectedFeedId === "";
+          const showWildcardConflict =
+            isWildcardSelection && hasExistingWildcard;
+          const showTargetedHint =
+            isWildcardSelection &&
+            hasTargetedSchedules &&
+            !hasExistingWildcard;
+          const feedDescribedByIds: string[] = [];
+          if (errors["payload.feed_id"]) {
+            feedDescribedByIds.push("schedule-publish-feed-error");
+          }
+          feedDescribedByIds.push("schedule-publish-feed-help");
+          if (showTargetedHint) {
+            feedDescribedByIds.push("schedule-publish-feed-targeted");
+          }
+          if (showWildcardConflict) {
+            feedDescribedByIds.push("schedule-publish-feed-conflict");
+          }
+          const feedDescribedBy =
+            feedDescribedByIds.length > 0
+              ? feedDescribedByIds.join(" ")
+              : undefined;
         return (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
@@ -898,14 +1012,14 @@ function ScheduleForm({
                 className="input"
                 value={payloadState.feed_id || ""}
                 onChange={(e) => updatePayload("feed_id", e.target.value)}
-                aria-invalid={Boolean(errors["payload.feed_id"])}
-                aria-describedby={
-                  errors["payload.feed_id"]
-                    ? "schedule-publish-feed-error"
-                    : undefined
+                aria-invalid={
+                  Boolean(errors["payload.feed_id"] || showWildcardConflict)
                 }
+                aria-describedby={feedDescribedBy}
               >
-                <option value="">{t("job_schedules_option_select")}</option>
+                <option value="">
+                  {t("job_schedules_option_feed_any")}
+                </option>
                 {feeds.map((feed) => (
                   <option key={feed.id} value={feed.id}>
                     {feed.url}
@@ -920,9 +1034,32 @@ function ScheduleForm({
                   {errors["payload.feed_id"]}
                 </p>
               )}
+              <p
+                id="schedule-publish-feed-help"
+                className="text-sm text-gray-600 mt-1"
+              >
+                {t("job_schedules_field_publish_feed_help")}
+              </p>
+              {showTargetedHint && (
+                <p
+                  id="schedule-publish-feed-targeted"
+                  className="text-sm text-amber-600"
+                >
+                  {t("job_schedules_hint_publish_feed_required")}
+                </p>
+              )}
+              {showWildcardConflict && (
+                <p
+                  id="schedule-publish-feed-conflict"
+                  className="text-sm text-red-600"
+                >
+                  {t("job_schedules_error_publish_wildcard_exists")}
+                </p>
+              )}
             </div>
           </div>
         );
+        }
       case "retention":
         return (
           <div className="grid gap-4 md:grid-cols-2">
@@ -1595,6 +1732,7 @@ export default function JobSchedulesPage() {
               credentials={credentials}
               siteConfigs={siteConfigs}
               feeds={feeds}
+              schedules={schedules}
               onSubmit={handleCreate}
               isSubmitting={isCreating}
               allowOwnerSelection={canManageSchedules}
@@ -1613,6 +1751,7 @@ export default function JobSchedulesPage() {
               credentials={credentials}
               siteConfigs={siteConfigs}
               feeds={feeds}
+              schedules={schedules}
               onSubmit={handleUpdate}
               onCancel={() => setEditingSchedule(null)}
               isSubmitting={isEditing}
