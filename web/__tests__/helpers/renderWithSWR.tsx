@@ -2,6 +2,7 @@ import React, { type ComponentType, type ReactElement, type ReactNode } from 're
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react'
 import { vi } from 'vitest'
 import { I18nProvider } from '../../lib/i18n'
+import { ThemeProvider } from '../../lib/theme'
 import { SessionProvider } from 'next-auth/react'
 import type { Session } from 'next-auth'
 
@@ -72,7 +73,9 @@ function buildWrapper(session: Session | null, userWrapper?: ComponentType<{ chi
     const content = userWrapper ? React.createElement(userWrapper, null, children) : children
     return (
       <SessionProvider session={session}>
-        <I18nProvider>{content}</I18nProvider>
+        <I18nProvider>
+          <ThemeProvider>{content}</ThemeProvider>
+        </I18nProvider>
       </SessionProvider>
     )
   }

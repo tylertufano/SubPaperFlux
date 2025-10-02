@@ -1,6 +1,6 @@
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, screen, within } from '@testing-library/react'
 import { renderWithSWR, makeSWRSuccess } from './helpers/renderWithSWR'
 import { parsePrometheusMetrics } from '../lib/openapi'
 import AdminMetrics from '../pages/admin/metrics'
@@ -20,6 +20,10 @@ vi.mock('../components', () => ({
 }))
 
 describe('AdminMetrics page', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   beforeEach(() => {
     localStorage.clear()
   })
