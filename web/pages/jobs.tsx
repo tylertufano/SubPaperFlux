@@ -10,6 +10,8 @@ import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 
+const ORDER_BY = 'run_at' as const
+
 export default function Jobs() {
   const { t } = useI18n()
   const router = useRouter()
@@ -19,8 +21,7 @@ export default function Jobs() {
   const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
-  const ORDER_BY = 'run_at'
-  const ORDER_DIR = 'desc'
+  const [orderDir, setOrderDir] = useState<'asc' | 'desc'>('desc')
   const permissions = extractPermissionList(session?.user)
   const isAuthenticated = sessionStatus === 'authenticated'
   const canViewJobs = Boolean(
@@ -29,8 +30,9 @@ export default function Jobs() {
         hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
   )
   const { data, error, isLoading, mutate } = useSWR(
-    canViewJobs ? [`/v1/jobs`, page, status, ORDER_BY, ORDER_DIR] : null,
-    ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s, orderBy: ORDER_BY, orderDir: ORDER_DIR }),
+    canViewJobs ? [`/v1/jobs`, page, status, orderDir] : null,
+    ([, p, s, dir]) =>
+      v1.listJobsV1JobsGet({ page: p, status: s, orderBy: ORDER_BY, orderDir: dir as 'asc' | 'desc' }),
   )
   const [now, setNow] = useState<number>(Date.now() / 1000)
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function Jobs() {
     if (!canViewJobs) {
       return
     }
-    const params = new URLSearchParams({ page: String(page), size: "20", order_by: ORDER_BY, order_dir: ORDER_DIR })
+    const params = new URLSearchParams({ page: String(page), size: "20", order_by: ORDER_BY, order_dir: orderDir })
     if (status) params.set('status', status)
     const apiBase = process.env.NEXT_PUBLIC_API_BASE || ''
     const url = `${apiBase}/v1/jobs/stream?${params.toString()}`
@@ -60,7 +62,7 @@ export default function Jobs() {
     return () => {
       es.close()
     }
-  }, [page, status, mutate, canViewJobs, ORDER_BY, ORDER_DIR])
+  }, [page, status, mutate, canViewJobs, orderDir])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
@@ -68,6 +70,7 @@ export default function Jobs() {
   function clearFilters() {
     setStatus('')
     setPage(1)
+    setOrderDir('desc')
     mutate()
   }
 
@@ -127,6 +130,20 @@ export default function Jobs() {
             <option value="done">{t('jobs_status_done')}</option>
             <option value="failed">{t('jobs_status_failed')}</option>
             <option value="dead">{t('jobs_status_dead')}</option>
+          </select>
+          <label className="text-gray-700" htmlFor="jobs-order-direction">{t('jobs_order_label')}:</label>
+          <select
+            id="jobs-order-direction"
+            className="input"
+            value={orderDir}
+            onChange={(e) => {
+              const nextDir = e.target.value === 'asc' ? 'asc' : 'desc'
+              setOrderDir(nextDir)
+              setPage(1)
+            }}
+          >
+            <option value="desc">{t('jobs_order_desc')}</option>
+            <option value="asc">{t('jobs_order_asc')}</option>
           </select>
           <button type="submit" className="btn">{t('btn_search')}</button>
           <button type="button" className="btn" onClick={clearFilters}>{t('btn_clear')}</button>
