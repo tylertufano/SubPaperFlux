@@ -1,10 +1,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signIn, signOut, useSession } from 'next-auth/react'
-import useSWR from 'swr'
 import { useI18n } from '../lib/i18n'
 import { useFeatureFlags } from '../lib/featureFlags'
-import { v1 } from '../lib/openapi'
 import { userHasAdminAccess } from '../lib/adminAccess'
 import { useTheme } from '../lib/theme'
 import DropdownMenu from './DropdownMenu'
@@ -107,12 +105,6 @@ export default function Nav() {
   const shouldShowJobSchedulesLink = Boolean(
     isAuthenticated && (isAdminUser || canManageBookmarksPermission),
   )
-  const { data: setupStatus } = useSWR(
-    hasAdminAccess ? ['/v1/site-settings/setup-status', 'nav'] : null,
-    () => v1.getSiteSetupStatus(),
-  )
-  const shouldShowSetupLink = Boolean(hasAdminAccess && setupStatus?.value?.completed !== true)
-
   const defaultFeedsLabel = t('nav_feeds_all')
   const feedsMenuItems = [{ href: '/feeds', label: defaultFeedsLabel }]
   const hasOnlyDefaultFeedsItem =
@@ -153,15 +145,6 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
-        {shouldShowSetupLink ? (
-          <Link
-            href="/setup"
-            className={linkClass('/setup')}
-            aria-current={pathname === '/setup' ? 'page' : undefined}
-          >
-            {t('nav_setup')}
-          </Link>
-        ) : null}
         {canManageSiteConfigs ? (
           <Link
             href="/site-configs"
