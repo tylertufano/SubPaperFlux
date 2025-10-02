@@ -48,6 +48,7 @@ from .observability.metrics import (
     increment_user_login,
 )
 from .observability.sentry import init_sentry
+from .schemas import StatusResponse
 
 
 logger = logging.getLogger(__name__)
@@ -286,6 +287,12 @@ def create_app() -> FastAPI:
     # Legacy unversioned routers have been removed in favor of explicit versioning.
     # Prometheus metrics
     app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
+
+    @app.get("/status", response_model=StatusResponse, include_in_schema=False)
+    async def status_root() -> StatusResponse:
+        """Lightweight health probe compatible with legacy checks."""
+
+        return StatusResponse()
 
     # Versioned routers (v1): reuse existing for backward compatibility now
     # v1: enhanced list endpoints with pagination/search

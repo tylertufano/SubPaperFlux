@@ -60,12 +60,19 @@ def test_unversioned_routes_removed(client):
         ("GET", "/site-configs"),
         ("GET", "/credentials"),
         ("GET", "/feeds"),
-        ("GET", "/status"),
     ]
 
     for method, path in legacy_paths:
         response = client.request(method, path)
         assert response.status_code == 404, f"Expected 404 for legacy path {path}, got {response.status_code}"
+
+
+def test_root_status_health_check(client):
+    response = client.get("/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["version"] == "0.1.0"
 
 
 def test_credentials_and_siteconfigs(client):
