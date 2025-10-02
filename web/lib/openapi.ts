@@ -9,9 +9,6 @@ import type { SiteConfigSelenium } from '../sdk/src/models/SiteConfigSelenium'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
-import type { TemplateCategory } from '../sdk/src/models/TemplateCategory'
-import type { TemplateListResponse } from '../sdk/src/models/TemplateListResponse'
-import type { TemplateMetadata } from '../sdk/src/models/TemplateMetadata'
 import { auth, signIn } from '../auth'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
@@ -1104,44 +1101,6 @@ export async function bulkPublishBookmarksStream({ requestBody, signal }: { requ
   })
 }
 
-export type TemplatesResponse = TemplateListResponse
-export type TemplatesMetadata = TemplateMetadata
-export type TemplatesCategory = TemplateCategory
-
-async function listTemplates(): Promise<TemplateListResponse> {
-  return authorizedRequest<TemplateListResponse>('/v1/templates', {
-    errorMessage: 'Failed to load templates',
-  })
-}
-
-async function downloadTemplateAsset(templateId: string): Promise<Blob> {
-  const basePath = await resolveApiBase()
-  const session = await loadSession()
-  const token = resolveSessionToken(session)
-  const accessToken = resolveSessionAccessToken(session)
-  const headers: Record<string, string> = {
-    'X-CSRF-Token': CSRF,
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
-  applyAccessTokenHeader(headers, accessToken)
-  const normalizedBase = basePath ? basePath.replace(/\/$/, '') : ''
-  const response = await fetch(
-    `${normalizedBase}/v1/templates/${encodeURIComponent(templateId)}/download`,
-    {
-      method: 'GET',
-      headers,
-      credentials: 'include',
-    },
-  )
-  if (!response.ok) {
-    const message = (await response.text())?.trim()
-    throw new Error(message || 'Failed to download template')
-  }
-  return response.blob()
-}
-
 function unescapePrometheusValue(value: string): string {
   return value.replace(/\\(.)/g, (_, ch: string) => {
     switch (ch) {
@@ -1377,8 +1336,6 @@ export async function fetchPrometheusMetrics(): Promise<ParsedPrometheusMetrics>
 }
 
 export const v1 = {
-  listTemplates: async () => listTemplates(),
-  downloadTemplate: async ({ templateId }: { templateId: string }) => downloadTemplateAsset(templateId),
   listBookmarksV1BookmarksGet: async (p: any = {}) => (await getClients()).bookmarks.listBookmarksV1BookmarksGet(p),
   bulkDeleteBookmarksV1BookmarksBulkDeletePost: async ({ requestBody }: { requestBody: any }) => (await getClients()).bookmarks.bulkDeleteBookmarksV1BookmarksBulkDeletePost({ requestBody, xCsrfToken: CSRF }),
   countBookmarksV1BookmarksCountGet: async (p: any = {}) => (await getClients()).bookmarks.countBookmarksV1BookmarksCountGet(p),
