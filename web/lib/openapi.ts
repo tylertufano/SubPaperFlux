@@ -20,28 +20,6 @@ export type UiConfig = {
   profile: string
 }
 
-export type SetupStepId = 'welcome' | 'credentials' | 'feeds' | 'complete'
-
-export type SiteSetupStatus = {
-  completed: boolean
-  current_step?: SetupStepId | null
-  last_completed_step?: SetupStepId | null
-  welcome_configured?: boolean | null
-  credentials_created?: boolean | null
-  feeds_imported?: boolean | null
-  [key: string]: unknown
-}
-
-export type SiteSetupStatusOut = {
-  key: string
-  value: SiteSetupStatus
-  created_at?: string | null
-  updated_at?: string | null
-  updated_by_user_id?: string | null
-}
-
-export type SiteSetupStatusUpdatePayload = SiteSetupStatus
-
 export type SiteConfigRecord =
   | ({ loginType: 'api' } & SiteConfigApiOut)
   | ({ loginType: 'selenium' } & SiteConfigSeleniumOut)
@@ -970,23 +948,6 @@ async function updateSiteWelcomeSettingRequest(
   })
 }
 
-async function fetchSiteSetupStatus(): Promise<SiteSetupStatusOut> {
-  return authorizedRequest<SiteSetupStatusOut>('/v1/site-settings/setup-status', {
-    errorMessage: 'Failed to load setup status',
-  })
-}
-
-async function updateSiteSetupStatusRequest(
-  payload: SiteSetupStatusUpdatePayload,
-): Promise<SiteSetupStatusOut> {
-  return authorizedRequest<SiteSetupStatusOut>('/v1/site-settings/setup-status', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload ?? {}),
-    errorMessage: 'Failed to save setup status',
-  })
-}
-
 async function fetchAdminRoles(params: AdminRolesQuery = {}): Promise<AdminRolesPage> {
   const query = new URLSearchParams()
   if (params.page !== undefined) query.set('page', String(params.page))
@@ -1479,12 +1440,6 @@ export const v1 = {
   }: {
     siteWelcomeSettingUpdate: SiteWelcomeSettingUpdate
   }) => updateSiteWelcomeSettingRequest(siteWelcomeSettingUpdate),
-  getSiteSetupStatus: async () => fetchSiteSetupStatus(),
-  updateSiteSetupStatus: async ({
-    siteSetupStatusUpdate,
-  }: {
-    siteSetupStatusUpdate: SiteSetupStatusUpdatePayload
-  }) => updateSiteSetupStatusRequest(siteSetupStatusUpdate),
 
   listAuditLogsV1AdminAuditGet: async (p: AuditLogQuery = {}) => listAuditLogs(p),
   listAdminUsersV1AdminUsersGet: async (p: AdminUsersQuery = {}) => listAdminUsers(p),

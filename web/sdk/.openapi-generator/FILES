@@ -73,9 +73,6 @@ src/models/SiteConfigApiOut.ts
 src/models/SiteConfigSelenium.ts
 src/models/SiteConfigSeleniumOut.ts
 src/models/SiteConfigsPage.ts
-src/models/SiteSetupStatus.ts
-src/models/SiteSetupStatusOut.ts
-src/models/SiteSetupStatusUpdate.ts
 src/models/SiteWelcomeContent.ts
 src/models/SiteWelcomeSettingOut.ts
 src/models/SiteWelcomeSettingUpdate.ts
