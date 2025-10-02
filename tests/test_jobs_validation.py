@@ -13,17 +13,16 @@ def test_rss_poll_requires_feed_id():
     assert "feed_id" in result["missing"]
 
 
-def test_publish_requires_feed_and_instapaper():
-    missing_feed = validate_job("publish", {"instapaper_id": "insta-1"})
-    assert missing_feed["ok"] is False
-    assert "feed_id" in missing_feed["missing"]
-
+def test_publish_requires_instapaper_allows_missing_feed():
     missing_instapaper = validate_job("publish", {"feed_id": "feed-1"})
     assert missing_instapaper["ok"] is False
     assert "instapaper_id" in missing_instapaper["missing"]
 
-    valid = validate_job(
+    instapaper_only = validate_job("publish", {"instapaper_id": "insta-1"})
+    assert instapaper_only["ok"] is True
+
+    blank_feed = validate_job(
         "publish",
-        {"feed_id": "feed-1", "instapaper_id": "insta-1"},
+        {"feed_id": "", "instapaper_id": "insta-1"},
     )
-    assert valid["ok"] is True
+    assert blank_feed["ok"] is True

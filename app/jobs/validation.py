@@ -8,7 +8,7 @@ REQUIRED_FIELDS: Dict[str, List[RequiredField]] = {
     "login": ["site_login_pair"],
     "miniflux_refresh": ["miniflux_id", "feed_ids", "site_login_pair"],
     "rss_poll": ["feed_id"],
-    "publish": ["instapaper_id", "feed_id"],
+    "publish": ["instapaper_id"],
     "retention": ["older_than", "instapaper_credential_id"],
 }
 

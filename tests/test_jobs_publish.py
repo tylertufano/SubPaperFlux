@@ -1,7 +1,7 @@
 import base64
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pytest
 from sqlmodel import select
@@ -142,6 +142,184 @@ def test_handle_publish_publishes_pending_bookmarks(monkeypatch):
     assert published_rows["https://example.com/two"].publication_statuses["instapaper"]["status"] == "published"
     assert published_rows["https://example.com/three"].publication_statuses["instapaper"]["status"] == "published"
 
+
+def test_handle_publish_publishes_across_all_feeds_when_unscoped(monkeypatch):
+    from app.db import get_session, init_db
+    from app.jobs import publish as publish_module
+
+    init_db()
+
+    base = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    with next(get_session()) as session:
+        feed_a = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss-a.xml",
+            poll_frequency="1h",
+        )
+        feed_b = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss-b.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed_a)
+        session.add(feed_b)
+        session.commit()
+        session.refresh(feed_a)
+        session.refresh(feed_b)
+
+        def add_bookmark(feed_id: str, slug: str, created_offset: int, ingested_offset: int):
+            created = (base + timedelta(hours=created_offset)).isoformat()
+            ingested = (base + timedelta(hours=ingested_offset)).isoformat()
+            bookmark = Bookmark(
+                owner_user_id="user-1",
+                url=f"https://example.com/{slug}",
+                title=slug.replace("-", " ").title(),
+                feed_id=feed_id,
+                rss_entry={"ingested_at": ingested},
+                publication_flags={
+                    "instapaper": {
+                        "should_publish": True,
+                        "credential_id": "",
+                        "created_at": created,
+                        "last_seen_at": created,
+                    }
+                },
+                publication_statuses={"instapaper": {"status": "pending"}},
+            )
+            session.add(bookmark)
+            session.flush()
+            session.refresh(bookmark)
+            return bookmark
+
+        a_one = add_bookmark(feed_a.id, "a-one", 0, 0)
+        b_one = add_bookmark(feed_b.id, "b-one", 0, 2)
+        a_two = add_bookmark(feed_a.id, "a-two", 1, 1)
+        session.commit()
+
+    published_calls: list[str] = []
+
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        published_calls.append(url)
+        return {
+            "bookmark_id": f"ip-{url.rsplit('/', 1)[-1]}",
+            "content_location": f"https://instapaper.example/{url.rsplit('/', 1)[-1]}",
+        }
+
+    monkeypatch.setattr(publish_module, "publish_url", fake_publish)
+
+    result = publish_module.handle_publish(
+        job_id="job-all",
+        owner_user_id="user-1",
+        payload={"instapaper_id": "insta-1"},
+    )
+
+    assert result["attempted"] == 3
+    assert result["failed"] == []
+    assert result["remaining"] == 0
+    assert published_calls == [
+        "https://example.com/a-one",
+        "https://example.com/b-one",
+        "https://example.com/a-two",
+    ]
+
+    with next(get_session()) as session:
+        rows = session.exec(select(Bookmark).order_by(Bookmark.url)).all()
+        assert all(
+            (row.publication_statuses or {}).get("instapaper", {}).get("status")
+            == "published"
+            for row in rows
+        )
+
+
+def test_handle_publish_scopes_to_requested_feed(monkeypatch):
+    from app.db import get_session, init_db
+    from app.jobs import publish as publish_module
+
+    init_db()
+
+    base = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    with next(get_session()) as session:
+        feed_a = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss-a.xml",
+            poll_frequency="1h",
+        )
+        feed_b = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss-b.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed_a)
+        session.add(feed_b)
+        session.commit()
+        session.refresh(feed_a)
+        session.refresh(feed_b)
+
+        def add_bookmark(feed_id: str, slug: str):
+            created = base.isoformat()
+            bookmark = Bookmark(
+                owner_user_id="user-1",
+                url=f"https://example.com/{slug}",
+                title=slug.replace("-", " ").title(),
+                feed_id=feed_id,
+                rss_entry={"ingested_at": created},
+                publication_flags={
+                    "instapaper": {
+                        "should_publish": True,
+                        "credential_id": "",
+                        "created_at": created,
+                        "last_seen_at": created,
+                    }
+                },
+                publication_statuses={"instapaper": {"status": "pending"}},
+            )
+            session.add(bookmark)
+            session.flush()
+            session.refresh(bookmark)
+            return bookmark
+
+        a_one = add_bookmark(feed_a.id, "a-one")
+        b_one = add_bookmark(feed_b.id, "b-one")
+        session.commit()
+
+        a_one_id = a_one.id
+        b_one_id = b_one.id
+        feed_a_id = feed_a.id
+
+    published_calls: list[str] = []
+
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        published_calls.append(url)
+        return {
+            "bookmark_id": f"ip-{url.rsplit('/', 1)[-1]}",
+            "content_location": f"https://instapaper.example/{url.rsplit('/', 1)[-1]}",
+        }
+
+    monkeypatch.setattr(publish_module, "publish_url", fake_publish)
+
+    result = publish_module.handle_publish(
+        job_id="job-feed-a",
+        owner_user_id="user-1",
+        payload={"instapaper_id": "insta-1", "feed_id": feed_a_id},
+    )
+
+    assert result["attempted"] == 1
+    assert result["failed"] == []
+    assert result["remaining"] == 0
+    assert published_calls == ["https://example.com/a-one"]
+
+    with next(get_session()) as session:
+        bookmark_a = session.get(Bookmark, a_one_id)
+        assert bookmark_a is not None
+        status_a = (bookmark_a.publication_statuses or {}).get("instapaper", {})
+        assert status_a.get("status") == "published"
+
+        bookmark_b = session.get(Bookmark, b_one_id)
+        assert bookmark_b is not None
+        status_b = (bookmark_b.publication_statuses or {}).get("instapaper", {})
+        assert status_b.get("status") == "pending"
 
 def test_handle_publish_handles_failures(monkeypatch):
     from app.db import get_session, init_db
