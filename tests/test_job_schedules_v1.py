@@ -412,6 +412,141 @@ def test_retention_schedule_rejects_legacy_instapaper_id(client: TestClient):
     assert create_resp.status_code == 422
 
 
+def test_create_publish_wildcard_schedule(client: TestClient):
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-wild"},
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+    assert created["payload"]["instapaper_id"] == "insta-wild"
+    assert created["payload"].get("feed_id") in (None, "")
+
+
+def test_publish_targeted_conflicts_with_existing_wildcard(client: TestClient):
+    wildcard_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-conflict"},
+            "frequency": "1h",
+        },
+    )
+    assert wildcard_resp.status_code == 201, wildcard_resp.text
+
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.com/targeted.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    targeted_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-conflict", "feed_id": feed_id},
+            "frequency": "1h",
+        },
+    )
+    assert targeted_resp.status_code == 400
+    targeted_error = targeted_resp.json()
+    assert targeted_error["details"]["error"] == "publish_schedule_conflict"
+
+    update_targeted_schedule = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert update_targeted_schedule.status_code == 201, update_targeted_schedule.text
+    schedule_id = update_targeted_schedule.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-conflict", "feed_id": feed_id},
+        },
+    )
+    assert update_resp.status_code == 400
+    update_error = update_resp.json()
+    assert update_error["details"]["error"] == "publish_schedule_conflict"
+
+
+def test_publish_wildcard_conflicts_with_existing_targeted(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.com/conflict.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    targeted_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-targeted", "feed_id": feed_id},
+            "frequency": "1h",
+        },
+    )
+    assert targeted_resp.status_code == 201, targeted_resp.text
+
+    wildcard_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-targeted"},
+            "frequency": "1h",
+        },
+    )
+    assert wildcard_resp.status_code == 400
+    wildcard_error = wildcard_resp.json()
+    assert wildcard_error["details"]["error"] == "publish_schedule_conflict"
+
+    update_schedule = client.post(
+        "/v1/job-schedules",
+        json={
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert update_schedule.status_code == 201, update_schedule.text
+    update_id = update_schedule.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{update_id}",
+        json={
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-targeted"},
+        },
+    )
+    assert update_resp.status_code == 400
+    update_error = update_resp.json()
+    assert update_error["details"]["error"] == "publish_schedule_conflict"
+
+
 def test_rbac_enforcement(client: TestClient):
     from app.auth import ADMIN_ROLE_NAME, grant_role
     from app.db import get_session

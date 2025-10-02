@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Set
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_
@@ -105,6 +105,61 @@ def _compute_next_run_at(frequency: str, *, now: Optional[datetime] = None) -> d
     else:
         effective_now = effective_now.astimezone(timezone.utc)
     return effective_now + interval
+
+
+def _ensure_publish_schedule_exclusivity(
+    session,
+    *,
+    instapaper_id: Optional[str],
+    feed_id: Optional[Any],
+    exclude_schedule_id: Optional[str] = None,
+) -> None:
+    if not instapaper_id:
+        return
+
+    stmt = select(JobSchedule).where(JobSchedule.job_type == "publish")
+    rows = session.exec(stmt).all()
+
+    has_wildcard = False
+    targeted_feeds: Set[str] = set()
+
+    for existing in rows:
+        if exclude_schedule_id and existing.id == exclude_schedule_id:
+            continue
+        payload = existing.payload or {}
+        if payload.get("instapaper_id") != instapaper_id:
+            continue
+        existing_feed = payload.get("feed_id")
+        if existing_feed in (None, ""):
+            has_wildcard = True
+        else:
+            targeted_feeds.add(str(existing_feed))
+
+    is_wildcard_request = feed_id in (None, "")
+
+    if is_wildcard_request:
+        if targeted_feeds:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "publish_schedule_conflict",
+                    "message": "A wildcard publish schedule cannot coexist with targeted publish schedules for this Instapaper credential.",
+                    "instapaper_id": instapaper_id,
+                    "conflicting_feeds": sorted(targeted_feeds),
+                },
+            )
+        return
+
+    if has_wildcard:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "publish_schedule_conflict",
+                "message": "A targeted publish schedule cannot coexist with a wildcard publish schedule for this Instapaper credential.",
+                "instapaper_id": instapaper_id,
+                "feed_id": str(feed_id),
+            },
+        )
 
 
 def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
@@ -259,6 +314,14 @@ def create_job_schedule(
     owner_id = body.owner_user_id if body.owner_user_id is not None else user_id
     _ensure_manage_permission(session, current_user, owner_id=owner_id)
 
+    if body.job_type == "publish":
+        payload = dict(body.payload or {})
+        _ensure_publish_schedule_exclusivity(
+            session,
+            instapaper_id=payload.get("instapaper_id"),
+            feed_id=payload.get("feed_id"),
+        )
+
     next_run_at = body.next_run_at
     if next_run_at is None:
         next_run_at = _compute_next_run_at(body.frequency)
@@ -300,6 +363,23 @@ def update_job_schedule(
     updates = body.model_dump(exclude_unset=True)
     if "job_type" in updates:
         _validate_job_type_or_400(updates["job_type"])
+
+    prospective_job_type = updates.get("job_type", schedule.job_type)
+    prospective_payload = (
+        dict(updates["payload"] or {})
+        if "payload" in updates
+        else dict(schedule.payload or {})
+    )
+
+    if prospective_job_type == "publish":
+        _ensure_publish_schedule_exclusivity(
+            session,
+            instapaper_id=prospective_payload.get("instapaper_id"),
+            feed_id=prospective_payload.get("feed_id"),
+            exclude_schedule_id=schedule.id,
+        )
+
+    if "job_type" in updates:
         schedule.job_type = updates["job_type"]
     if "payload" in updates:
         schedule.payload = dict(updates["payload"] or {})
