@@ -37,7 +37,7 @@ describe('TemplatesGallery', () => {
       filename: 'docker-compose.api.example.yml',
       downloadUrl: '/v1/templates/docker-compose-api/download',
       format: 'yml',
-      sizeBytes: 2048,
+      sizeBytes: 1536,
       categories: ['docker'],
     },
     {
@@ -68,6 +68,7 @@ describe('TemplatesGallery', () => {
 
     expect(await screen.findByRole('heading', { name: 'Docker Compose (API)' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Worker configuration' })).toBeInTheDocument()
+    expect(screen.getByText('1.5 KB')).toBeInTheDocument()
 
     const dockerFilter = screen.getByRole('button', { name: 'Docker' })
     fireEvent.click(dockerFilter)
@@ -102,5 +103,19 @@ describe('TemplatesGallery', () => {
     const retryButton = screen.getByRole('button', { name: 'Try again' })
     fireEvent.click(retryButton)
     expect(retry).toHaveBeenCalledTimes(1)
+  })
+
+  it('formats size using localized units', async () => {
+    try {
+      localStorage.setItem('locale', 'pseudo')
+    } catch {}
+
+    renderGallery({ templates, categories })
+
+    expect(await screen.findByText('1.5 KB ✨')).toBeInTheDocument()
+
+    try {
+      localStorage.setItem('locale', 'en')
+    } catch {}
   })
 })
