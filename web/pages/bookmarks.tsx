@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, InlineTip, Nav, PreviewPane } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, InlineTip, Nav, PreviewSlideOver } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -113,6 +113,7 @@ export default function Bookmarks() {
   const [tagModal, setTagModal] = useState<TagModalState | null>(null)
   const [folderModal, setFolderModal] = useState<FolderModalState | null>(null)
   const [previewBookmarkId, setPreviewBookmarkId] = useState<string | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const permissions = extractPermissionList(session?.user)
   const isAuthenticated = status === 'authenticated'
   const canViewBookmarks = Boolean(
@@ -199,7 +200,7 @@ export default function Bookmarks() {
   const selectedCount = selectedIds.length
   const bookmarkItems = data?.items ?? []
   const previewHeadingId = 'bookmark-preview-heading'
-  const previewPaneId = 'bookmark-preview-pane'
+  const previewDialogId = 'bookmark-preview-dialog'
   const previewSelectionIndex = previewBookmarkId
     ? bookmarkItems.findIndex((item: any) => item.id === previewBookmarkId)
     : -1
@@ -244,8 +245,15 @@ export default function Bookmarks() {
   useEffect(() => {
     if (previewBookmarkId && previewSelectionIndex === -1) {
       setPreviewBookmarkId(null)
+      setIsPreviewOpen(false)
     }
   }, [previewBookmarkId, previewSelectionIndex])
+
+  useEffect(() => {
+    if (!previewBookmarkId) {
+      setIsPreviewOpen(false)
+    }
+  }, [previewBookmarkId])
 
   useEffect(() => {
     rowRefs.current.length = bookmarkItems.length
@@ -285,7 +293,9 @@ export default function Bookmarks() {
     if (target && target.closest('button, a, input, select, textarea, label')) {
       return
     }
+    const wasActive = previewBookmarkId === bookmarkId
     setPreviewBookmarkId(bookmarkId)
+    setIsPreviewOpen(prev => (wasActive ? !prev : true))
   }
 
   const handleRowKeyDown = (
@@ -299,6 +309,7 @@ export default function Bookmarks() {
       const nextIndex = Math.min(index + 1, bookmarkItems.length - 1)
       if (nextIndex !== index && bookmarkItems[nextIndex]) {
         setPreviewBookmarkId(bookmarkItems[nextIndex].id)
+        setIsPreviewOpen(true)
         focusRow(nextIndex)
       }
     } else if (event.key === 'ArrowUp') {
@@ -306,11 +317,14 @@ export default function Bookmarks() {
       const prevIndex = Math.max(index - 1, 0)
       if (prevIndex !== index && bookmarkItems[prevIndex]) {
         setPreviewBookmarkId(bookmarkItems[prevIndex].id)
+        setIsPreviewOpen(true)
         focusRow(prevIndex)
       }
     } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space') {
       event.preventDefault()
+      const wasActive = previewBookmarkId === bookmarkId
       setPreviewBookmarkId(bookmarkId)
+      setIsPreviewOpen(prev => (wasActive ? !prev : true))
     }
   }
 
@@ -1283,9 +1297,8 @@ export default function Bookmarks() {
                 </div>
               ) : (
                 <div className="border-t border-gray-200">
-                  <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-start">
-                    <div className="overflow-x-auto lg:flex-[2]">
-                      <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
+                  <div className="overflow-x-auto p-4">
+                    <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
                       <thead className="bg-gray-100">
                         <tr>
                           <th className="th" scope="col">
@@ -1341,27 +1354,51 @@ export default function Bookmarks() {
                       <tbody>
                         {bookmarkItems.map((b: any, index: number) => {
                           const isActive = previewBookmarkId === b.id
+                          const bookmarkLabel = getBookmarkLabel(b)
                           return (
                             <tr
                               key={b.id}
                               ref={(el) => { rowRefs.current[index] = el }}
                               tabIndex={0}
                               aria-selected={isActive}
-                              aria-controls={previewPaneId}
+                              aria-controls={previewDialogId}
+                              aria-expanded={isActive && isPreviewOpen}
                               onClick={(event) => handleRowClick(event, b.id)}
                               onKeyDown={(event) => handleRowKeyDown(event, index, b.id)}
                               className={`odd:bg-white even:bg-gray-50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isActive ? 'bg-blue-50 dark:bg-blue-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                             >
                               <td className="td">
                                 <input
-                                  aria-label={t('bookmarks_select_row', { value: b.title || b.url || t('bookmarks_select_row_unknown') })}
+                                  aria-label={t('bookmarks_select_row', { value: bookmarkLabel })}
                                   type="checkbox"
                                   checked={selected[b.id] || false}
                                   onChange={(e) => toggleOne(b.id, e.target.checked)}
                                   onClick={(event) => event.stopPropagation()}
                                 />
                               </td>
-                              <td className="td">{b.title}</td>
+                              <td className="td">
+                                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                                    onClick={(event) => {
+                                      event.stopPropagation()
+                                      const wasActive = previewBookmarkId === b.id
+                                      setPreviewBookmarkId(b.id)
+                                      setIsPreviewOpen(prev => (wasActive ? !prev : true))
+                                    }}
+                                    aria-haspopup="dialog"
+                                    aria-controls={previewDialogId}
+                                    aria-expanded={isActive && isPreviewOpen}
+                                    aria-label={t('bookmarks_open_preview_aria', { title: bookmarkLabel })}
+                                  >
+                                    {t('bookmarks_open_preview')}
+                                  </button>
+                                  <span className="text-left text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {b.title}
+                                  </span>
+                                </div>
+                              </td>
                               <td className="td">
                                 <a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">
                                   {b.url}
@@ -1392,19 +1429,7 @@ export default function Bookmarks() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="lg:flex-1" id={previewPaneId}>
-                    <h2 id={previewHeadingId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {t('bookmarks_preview_heading')}
-                    </h2>
-                    <PreviewPane
-                      snippet={previewSnippet}
-                      emptyState={previewEmptyState}
-                      labelledBy={previewHeadingId}
-                      className="mt-2"
-                    />
-                  </div>
                 </div>
-              </div>
               )}
             </div>
             <div className="mt-3 flex items-center gap-2">
@@ -1449,6 +1474,17 @@ export default function Bookmarks() {
           onClose={closeBulkFolderModal}
           onSubmit={submitBulkFolderModal}
           onSuccess={handleBulkFolderSuccess}
+        />
+      )}
+      {previewBookmarkId && (
+        <PreviewSlideOver
+          id={previewDialogId}
+          open={isPreviewOpen}
+          heading={t('bookmarks_preview_heading')}
+          labelledBy={previewHeadingId}
+          snippet={previewSnippet}
+          emptyState={previewEmptyState}
+          onClose={() => setIsPreviewOpen(false)}
         />
       )}
       {tagModal && (
