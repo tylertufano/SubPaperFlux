@@ -9,7 +9,7 @@ import type { SiteConfigSelenium } from '../sdk/src/models/SiteConfigSelenium'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
-import { auth, signIn } from '../auth'
+import { auth, signIn, signOut } from '../auth'
 import type { Session } from 'next-auth'
 import { getSession } from 'next-auth/react'
 
@@ -214,6 +214,41 @@ async function triggerOidcRedirect(): Promise<never> {
   throw new AuthorizationRedirectError('Authentication required. Redirecting to sign-in.')
 }
 
+function resolveSignOutRedirectUrl(): string {
+  if (typeof window !== 'undefined') {
+    const { location } = window
+    if (location) {
+      const origin = (location as Location & { origin?: string }).origin
+      if (origin && origin !== 'null') {
+        try {
+          return new URL('/', origin).toString()
+        } catch {
+          const normalized = origin.endsWith('/') ? origin : `${origin}/`
+          return normalized
+        }
+      }
+      const protocol = location.protocol
+      const host = location.host
+      if (protocol && host) {
+        return `${protocol}//${host}/`
+      }
+    }
+  }
+
+  if (typeof process !== 'undefined') {
+    const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL
+    if (base && base.length > 0) {
+      try {
+        return new URL('/', base).toString()
+      } catch {
+        return base.endsWith('/') ? base : `${base}/`
+      }
+    }
+  }
+
+  return '/'
+}
+
 async function loadSession(): Promise<Session | null> {
   if (typeof window === 'undefined') {
     return auth()
@@ -398,8 +433,23 @@ async function authorizedRequest<T = any>(path: string, options: AuthorizedReque
     credentials: 'include',
   })
 
-  if (response.status === 401 && isOidcAutoLoginEnabled()) {
-    return triggerOidcRedirect()
+  if (response.status === 401) {
+    if (isOidcAutoLoginEnabled()) {
+      return triggerOidcRedirect()
+    }
+
+    if (typeof window !== 'undefined') {
+      const callbackUrl = resolveSignOutRedirectUrl()
+      try {
+        await signOut({ callbackUrl, redirect: true })
+      } catch (error) {
+        if (typeof console !== 'undefined' && typeof console.error === 'function') {
+          console.error('Failed to sign out after 401 response.', error)
+        }
+      }
+    }
+
+    throw new AuthorizationRedirectError('Authentication required. Redirecting to sign-in.')
   }
 
   if (!response.ok) {
