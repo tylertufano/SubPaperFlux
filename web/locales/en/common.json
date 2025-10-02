@@ -187,6 +187,8 @@
   "bookmarks_preview_empty": "No preview available for this bookmark.",
   "bookmarks_preview_error": "Unable to load preview.",
   "bookmarks_preview_error_detail": "Unable to load preview: {reason}",
+  "bookmarks_open_preview": "Open preview",
+  "bookmarks_open_preview_aria": "Open preview for {title}",
   "jobs_title": "Jobs",
   "job_schedules_title": "Schedules",
   "job_schedules_filters_label": "Schedule filters",
