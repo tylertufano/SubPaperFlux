@@ -1751,38 +1751,6 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Retrieve setup progress
-     */
-    getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-settings/setup-status`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.SiteSetupStatusOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Retrieve setup progress
-     */
-    getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Retrieve a site config
      */
     getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters, initOverrides) {
@@ -3942,43 +3910,6 @@ class V1Api extends runtime.BaseAPI {
     updateRoleV1AdminRolesRoleIdPatch(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create or replace setup progress
-     */
-    updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-settings/setup-status`,
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: requestParameters.requestBody,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.SiteSetupStatusOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Create or replace setup progress
-     */
-    updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

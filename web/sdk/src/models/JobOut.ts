@@ -74,13 +74,13 @@ export interface JobOut {
      */
     details?: { [key: string]: any; } | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobOut
      */
     createdAt: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobOut
      */
