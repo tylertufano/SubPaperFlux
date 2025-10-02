@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { TemplateCategory } from '../sdk/src/models/TemplateCategory'
 import type { TemplateMetadata } from '../sdk/src/models/TemplateMetadata'
 import { getUiConfig, readUiConfigFromEnv } from '../lib/openapi'
 import { useI18n } from '../lib/i18n'
+import { useFormatNumber } from '../lib/format'
 
 export type TemplatesGalleryProps = {
   templates: TemplateMetadata[]
@@ -10,20 +11,6 @@ export type TemplatesGalleryProps = {
   isLoading?: boolean
   error?: string | null
   onRetry?: () => void
-}
-
-function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) {
-    return '0 B'
-  }
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let index = 0
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024
-    index += 1
-  }
-  return `${size % 1 === 0 ? size.toFixed(0) : size.toFixed(1)} ${units[index]}`
 }
 
 function buildDownloadHref(apiBase: string, path: string): string {
@@ -42,6 +29,7 @@ export default function TemplatesGallery({
   onRetry,
 }: TemplatesGalleryProps) {
   const { t } = useI18n()
+  const formatNumber = useFormatNumber({ maximumFractionDigits: 1, minimumFractionDigits: 0 })
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [apiBase, setApiBase] = useState<string>(() => {
     if (typeof window === 'undefined') {
@@ -49,6 +37,37 @@ export default function TemplatesGallery({
     }
     return ''
   })
+
+  const unitLabels = useMemo(
+    () => [
+      t('templates_size_unit_b'),
+      t('templates_size_unit_kb'),
+      t('templates_size_unit_mb'),
+      t('templates_size_unit_gb'),
+    ],
+    [t],
+  )
+
+  const formatBytes = useCallback(
+    (bytes: number): string => {
+      if (!Number.isFinite(bytes) || bytes <= 0) {
+        return `${formatNumber(0)} ${unitLabels[0]}`
+      }
+
+      let size = bytes
+      let index = 0
+      while (size >= 1024 && index < unitLabels.length - 1) {
+        size /= 1024
+        index += 1
+      }
+
+      const isWholeNumber = Math.abs(size - Math.round(size)) < 1e-6
+      const roundedValue = Number(size.toFixed(isWholeNumber ? 0 : 1))
+      const formattedValue = formatNumber(roundedValue)
+      return `${formattedValue} ${unitLabels[index]}`
+    },
+    [formatNumber, unitLabels],
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined' || apiBase) {
