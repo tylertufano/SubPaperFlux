@@ -19,14 +19,21 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
   const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const menuId = React.useId()
   const isActive = (href: string) => currentPath === href
-  const baseLinkStyles = 'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
+  const baseLinkStyles =
+    'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:focus-visible:outline-blue-300'
   const linkClass = (href: string) =>
-    `${baseLinkStyles} ${isActive(href) ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
+    `${baseLinkStyles} ${
+      isActive(href)
+        ? 'text-blue-600 font-semibold dark:text-blue-400'
+        : 'text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-gray-50'
+    }`
   const baseMenuItemClass =
-    'block px-3 py-2 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
+    'block px-3 py-2 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800'
   const menuLinkClass = (href: string) =>
-    `${baseMenuItemClass} ${isActive(href) ? 'text-blue-600 font-semibold' : 'text-gray-700'}`
-  const menuButtonClass = `${baseMenuItemClass} w-full text-left text-gray-700`
+    `${baseMenuItemClass} ${
+      isActive(href) ? 'text-blue-600 font-semibold dark:text-blue-300' : 'text-gray-700 dark:text-gray-200'
+    }`
+  const menuButtonClass = `${baseMenuItemClass} w-full text-left text-gray-700 dark:text-gray-200`
 
   const clearCloseTimeout = React.useCallback(() => {
     if (closeTimeoutRef.current) {
@@ -124,12 +131,15 @@ export default function DropdownMenu({ label, baseHref, items, currentPath = '' 
         }}
       >
         {label}
-        <span className="ml-1 text-gray-500">▾</span>
+        <span className="ml-1 text-gray-500 dark:text-gray-400">▾</span>
       </Link>
       <div
         id={menuId}
         ref={menuRef}
-        className={(open ? 'block ' : 'hidden ') + 'absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow z-20 min-w-[180px]'}
+        className={
+          (open ? 'block ' : 'hidden ') +
+          'absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow z-20 min-w-[180px] dark:bg-gray-900 dark:border-gray-700'
+        }
         role="menu"
         aria-label={t('dropdown_submenu_label', { label })}
         onMouseEnter={openMenu}

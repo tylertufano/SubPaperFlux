@@ -7,6 +7,7 @@ import Document, {
   NextScript,
 } from 'next/document'
 import { getCachedFeatureFlags, type FeatureFlags } from '../lib/featureFlags'
+import { getInlineThemeScript } from '../lib/theme'
 
 type DocumentProps = DocumentInitialProps & {
   featureFlags?: FeatureFlags | null
@@ -23,7 +24,14 @@ class MyDocument extends Document<DocumentProps> {
     const { featureFlags } = this.props
     return (
       <Html lang="en">
-        <Head />
+        <Head>
+          <script
+            id="__spf_theme"
+            dangerouslySetInnerHTML={{
+              __html: getInlineThemeScript(),
+            }}
+          />
+        </Head>
         <body>
           <Main />
           {featureFlags ? (

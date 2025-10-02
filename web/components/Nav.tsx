@@ -6,6 +6,7 @@ import { useI18n } from '../lib/i18n'
 import { useFeatureFlags } from '../lib/featureFlags'
 import { v1 } from '../lib/openapi'
 import { userHasAdminAccess } from '../lib/adminAccess'
+import { useTheme } from '../lib/theme'
 import DropdownMenu from './DropdownMenu'
 import {
   PERMISSION_MANAGE_BOOKMARKS,
@@ -64,10 +65,15 @@ export default function Nav() {
   const { t } = useI18n()
   const { pathname } = useRouter()
   const { userMgmtUi } = useFeatureFlags()
+  const { theme, toggleTheme } = useTheme()
   const baseLinkStyles =
-    'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500'
+    'px-2 py-1 rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:focus-visible:outline-blue-300'
   const linkClass = (href: string) =>
-    `${baseLinkStyles} ${pathname === href ? 'text-blue-600 font-semibold' : 'text-gray-700 hover:text-gray-900'}`
+    `${baseLinkStyles} ${
+      pathname === href
+        ? 'text-blue-600 font-semibold dark:text-blue-400'
+        : 'text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-gray-50'
+    }`
   const permissions = extractPermissionList(session?.user)
   const userMgmtUiEnabled = Boolean(userMgmtUi)
   const isAuthenticated = status === 'authenticated'
@@ -135,8 +141,14 @@ export default function Nav() {
 
   const accountLabel = accountLabelFromUser(session?.user) ?? t('nav_account_fallback')
 
+  const themeToggleLabel = theme === 'dark' ? t('theme_toggle_light') : t('theme_toggle_dark')
+
   return (
-    <nav className="bg-white border-b border-gray-200" role="navigation" aria-label={t('nav_main_label')}>
+    <nav
+      className="bg-white border-b border-gray-200 dark:bg-gray-950 dark:border-gray-800"
+      role="navigation"
+      aria-label={t('nav_main_label')}
+    >
       <div className="container py-3 flex items-center gap-4">
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
@@ -217,6 +229,22 @@ export default function Nav() {
           </Link>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            className={`${baseLinkStyles} flex items-center justify-center text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-gray-50`}
+            onClick={toggleTheme}
+            aria-label={themeToggleLabel}
+            title={themeToggleLabel}
+            aria-pressed={theme === 'dark'}
+            suppressHydrationWarning
+          >
+            <span aria-hidden="true" className="text-lg leading-none" suppressHydrationWarning>
+              {theme === 'dark' ? '🌙' : '☀️'}
+            </span>
+            <span className="sr-only" suppressHydrationWarning>
+              {themeToggleLabel}
+            </span>
+          </button>
           {status === 'authenticated' ? (
             <DropdownMenu
               label={accountLabel}
@@ -227,7 +255,7 @@ export default function Nav() {
           ) : (
             <button
               type="button"
-              className={`${baseLinkStyles} text-gray-700 hover:text-gray-900`}
+              className={`${baseLinkStyles} text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-gray-50`}
               onClick={() => signIn('oidc')}
             >
               {t('btn_sign_in')}
