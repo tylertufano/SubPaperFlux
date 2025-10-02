@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { authMock, signInMock, getSessionMock } = vi.hoisted(() => ({
+const { authMock, signInMock, signOutMock, getSessionMock } = vi.hoisted(() => ({
   authMock: vi.fn(async () => null),
   signInMock: vi.fn(async () => undefined),
+  signOutMock: vi.fn(async () => undefined),
   getSessionMock: vi.fn(async () => null),
 }))
 
 vi.mock('../auth', () => ({
   auth: () => authMock(),
   signIn: (...args: any[]) => signInMock(...args),
+  signOut: (...args: any[]) => signOutMock(...args),
 }))
 
 vi.mock('next-auth/react', () => ({
@@ -23,6 +25,7 @@ describe('authorizedRequest', () => {
     vi.restoreAllMocks()
     authMock.mockReset()
     signInMock.mockReset()
+    signOutMock.mockReset()
     getSessionMock.mockReset()
     if (originalFetch) {
       global.fetch = originalFetch
@@ -46,6 +49,7 @@ describe('authorizedRequest', () => {
     vi.resetModules()
     authMock.mockImplementation(async () => null)
     signInMock.mockImplementation(async () => undefined)
+    signOutMock.mockImplementation(async () => undefined)
     getSessionMock.mockImplementation(async () => null)
   })
 
@@ -117,6 +121,21 @@ describe('authorizedRequest', () => {
   })
 
   it('does not trigger automatic sign-in when auto-login is disabled', async () => {
+    const windowMock: any = {
+      location: {
+        origin: 'https://app.example.com',
+        href: 'https://app.example.com/dashboard',
+        protocol: 'https:',
+        host: 'app.example.com',
+      },
+    }
+    windowMock.__SPF_UI_CONFIG = {
+      apiBase: 'https://api.example.com',
+      userMgmtCore: true,
+      userMgmtUi: true,
+    }
+    ;(globalThis as any).window = windowMock
+
     const fetchMock = vi.fn(async () => ({
       ok: false,
       status: 401,
@@ -124,14 +143,38 @@ describe('authorizedRequest', () => {
     }))
     global.fetch = fetchMock as unknown as typeof fetch
 
-    const { createInstapaperCredentialFromLogin } = await import('../lib/openapi')
+    const { createInstapaperCredentialFromLogin, AuthorizationRedirectError } = await import(
+      '../lib/openapi',
+    )
 
     await expect(
       createInstapaperCredentialFromLogin({ description: 'd', username: 'u', password: 'p' }),
-    ).rejects.toThrowError('Unauthorized')
+    ).rejects.toBeInstanceOf(AuthorizationRedirectError)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(signInMock).not.toHaveBeenCalled()
+    expect(signOutMock).toHaveBeenCalledWith({ callbackUrl: 'https://app.example.com/', redirect: true })
+  })
+
+  it('falls back to relative redirect when window is unavailable and auto-login is disabled', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: vi.fn(async () => 'Unauthorized'),
+    }))
+    global.fetch = fetchMock as unknown as typeof fetch
+
+    const { createInstapaperCredentialFromLogin, AuthorizationRedirectError } = await import(
+      '../lib/openapi',
+    )
+
+    await expect(
+      createInstapaperCredentialFromLogin({ description: 'd', username: 'u', password: 'p' }),
+    ).rejects.toBeInstanceOf(AuthorizationRedirectError)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(signInMock).not.toHaveBeenCalled()
+    expect(signOutMock).not.toHaveBeenCalled()
   })
 })
 
