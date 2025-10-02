@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteSetupStatusOut, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, FeedsPage, FolderCreate, FolderOut, FolderUpdate, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteSetupStatusOut, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -58,20 +58,8 @@ export interface CountBookmarksV1BookmarksCountGetRequest {
     regexFlags?: any;
     size?: any;
 }
-export interface CreateCredentialV1V1CredentialsPostRequest {
-    credential: Credential;
-    xCsrfToken?: any;
-}
-export interface CreateFeedV1V1FeedsPostRequest {
-    feed: Feed;
-    xCsrfToken?: any;
-}
 export interface CreateFolderV1BookmarksFoldersPostRequest {
     folderCreate: FolderCreate;
-    xCsrfToken?: any;
-}
-export interface CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest {
-    instapaperLoginRequest: InstapaperLoginRequest;
     xCsrfToken?: any;
 }
 export interface CreateJobScheduleV1JobSchedulesPostRequest {
@@ -85,10 +73,6 @@ export interface CreateOrganizationV1AdminOrgsPostRequest {
 }
 export interface CreateRoleV1AdminRolesPostRequest {
     adminRoleCreate: AdminRoleCreate;
-}
-export interface CreateSiteConfigV1V1SiteConfigsPostRequest {
-    body: any | null;
-    xCsrfToken?: any;
 }
 export interface CreateTagV1BookmarksTagsPostRequest {
     tagCreate: TagCreate;
@@ -106,14 +90,6 @@ export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
     deleteRemote?: any;
     xCsrfToken?: any;
 }
-export interface DeleteCredentialV1V1CredentialsCredIdDeleteRequest {
-    credId: any;
-    xCsrfToken?: any;
-}
-export interface DeleteFeedV1V1FeedsFeedIdDeleteRequest {
-    feedId: any;
-    xCsrfToken?: any;
-}
 export interface DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest {
     folderId: any;
     xCsrfToken?: any;
@@ -126,10 +102,6 @@ export interface DeleteOrganizationV1AdminOrgsOrganizationIdDeleteRequest {
 }
 export interface DeleteRoleV1AdminRolesRoleIdDeleteRequest {
     roleId: any;
-}
-export interface DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest {
-    configId: any;
-    xCsrfToken?: any;
 }
 export interface DeleteTagV1BookmarksTagsTagIdDeleteRequest {
     tagId: any;
@@ -167,12 +139,6 @@ export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: any;
 }
-export interface GetCredentialV1V1CredentialsCredIdGetRequest {
-    credId: any;
-}
-export interface GetFeedV1V1FeedsFeedIdGetRequest {
-    feedId: any;
-}
 export interface GetJobScheduleV1JobSchedulesScheduleIdGetRequest {
     scheduleId: any;
 }
@@ -184,9 +150,6 @@ export interface GetOrganizationV1AdminOrgsOrganizationIdGetRequest {
 }
 export interface GetRoleV1AdminRolesRoleIdGetRequest {
     roleId: any;
-}
-export interface GetSiteConfigV1V1SiteConfigsConfigIdGetRequest {
-    configId: any;
 }
 export interface GetTokenV1MeTokensTokenIdGetRequest {
     tokenId: any;
@@ -240,17 +203,6 @@ export interface ListAuditLogsV1AdminAuditGetRequest {
     since?: any;
     until?: any;
 }
-export interface ListAuditLogsV1AdminAuditGet0Request {
-    page?: any;
-    size?: any;
-    entityType?: any;
-    entityId?: any;
-    action?: any;
-    ownerUserId?: any;
-    actorUserId?: any;
-    since?: any;
-    until?: any;
-}
 export interface ListBookmarksV1BookmarksGetRequest {
     page?: any;
     size?: any;
@@ -293,7 +245,18 @@ export interface ListCredentialsV1V1CredentialsGetRequest {
     page?: any;
     size?: any;
 }
+export interface ListCredentialsV1V1CredentialsGet0Request {
+    includeGlobal?: any;
+    kind?: any;
+    page?: any;
+    size?: any;
+}
 export interface ListFeedsV1V1FeedsGetRequest {
+    ownerUserIds?: any;
+    page?: any;
+    size?: any;
+}
+export interface ListFeedsV1V1FeedsGet0Request {
     ownerUserIds?: any;
     page?: any;
     size?: any;
@@ -418,16 +381,6 @@ export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
     bookmarkTagsUpdate: BookmarkTagsUpdate;
     xCsrfToken?: any;
 }
-export interface UpdateCredentialV1V1CredentialsCredIdPutRequest {
-    credId: any;
-    credential: Credential;
-    xCsrfToken?: any;
-}
-export interface UpdateFeedV1V1FeedsFeedIdPutRequest {
-    feedId: any;
-    feed: Feed;
-    xCsrfToken?: any;
-}
 export interface UpdateFolderV1BookmarksFoldersFolderIdPutRequest {
     folderId: any;
     folderUpdate: FolderUpdate;
@@ -452,11 +405,6 @@ export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
     requestBody: {
         [key: string]: any;
     } | null;
-}
-export interface UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest {
-    configId: any;
-    body: any | null;
-    xCsrfToken?: any;
 }
 export interface UpdateTagV1BookmarksTagsTagIdPutRequest {
     tagId: any;
@@ -567,22 +515,6 @@ export declare class V1Api extends runtime.BaseAPI {
         [key: string]: any;
     }>;
     /**
-     * Create credential
-     */
-    createCredentialV1V1CredentialsPostRaw(requestParameters: CreateCredentialV1V1CredentialsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
-    /**
-     * Create credential
-     */
-    createCredentialV1V1CredentialsPost(requestParameters: CreateCredentialV1V1CredentialsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
-    /**
-     * Create feed
-     */
-    createFeedV1V1FeedsPostRaw(requestParameters: CreateFeedV1V1FeedsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>>;
-    /**
-     * Create feed
-     */
-    createFeedV1V1FeedsPost(requestParameters: CreateFeedV1V1FeedsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut>;
-    /**
      * Create Folder
      */
     createFolderV1BookmarksFoldersPostRaw(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>>;
@@ -590,14 +522,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Create Folder
      */
     createFolderV1BookmarksFoldersPost(requestParameters: CreateFolderV1BookmarksFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
-    /**
-     * Create Instapaper credential via login
-     */
-    createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRaw(requestParameters: CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
-    /**
-     * Create Instapaper credential via login
-     */
-    createInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPost(requestParameters: CreateInstapaperCredentialFromLoginV1V1CredentialsInstapaperLoginPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
     /**
      * Create a job schedule
      */
@@ -630,14 +554,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Create a role
      */
     createRoleV1AdminRolesPost(requestParameters: CreateRoleV1AdminRolesPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
-    /**
-     * Create a site config
-     */
-    createSiteConfigV1V1SiteConfigsPostRaw(requestParameters: CreateSiteConfigV1V1SiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Create a site config
-     */
-    createSiteConfigV1V1SiteConfigsPost(requestParameters: CreateSiteConfigV1V1SiteConfigsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Create Tag
      */
@@ -683,22 +599,6 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     deleteBookmarkV1BookmarksBookmarkIdDelete(requestParameters: DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
-     * Delete credential
-     */
-    deleteCredentialV1V1CredentialsCredIdDeleteRaw(requestParameters: DeleteCredentialV1V1CredentialsCredIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
-    /**
-     * Delete credential
-     */
-    deleteCredentialV1V1CredentialsCredIdDelete(requestParameters: DeleteCredentialV1V1CredentialsCredIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
-    /**
-     * Delete feed
-     */
-    deleteFeedV1V1FeedsFeedIdDeleteRaw(requestParameters: DeleteFeedV1V1FeedsFeedIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
-    /**
-     * Delete feed
-     */
-    deleteFeedV1V1FeedsFeedIdDelete(requestParameters: DeleteFeedV1V1FeedsFeedIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
-    /**
      * Delete Folder
      */
     deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters: DeleteFolderV1BookmarksFoldersFolderIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
@@ -730,14 +630,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Delete a role
      */
     deleteRoleV1AdminRolesRoleIdDelete(requestParameters: DeleteRoleV1AdminRolesRoleIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
-    /**
-     * Delete a site config
-     */
-    deleteSiteConfigV1V1SiteConfigsConfigIdDeleteRaw(requestParameters: DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
-    /**
-     * Delete a site config
-     */
-    deleteSiteConfigV1V1SiteConfigsConfigIdDelete(requestParameters: DeleteSiteConfigV1V1SiteConfigsConfigIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
     /**
      * Delete Tag
      */
@@ -795,22 +687,6 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     getBookmarkV1BookmarksBookmarkIdGet(requestParameters: GetBookmarkV1BookmarksBookmarkIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarkOut>;
     /**
-     * Get credential
-     */
-    getCredentialV1V1CredentialsCredIdGetRaw(requestParameters: GetCredentialV1V1CredentialsCredIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
-    /**
-     * Get credential
-     */
-    getCredentialV1V1CredentialsCredIdGet(requestParameters: GetCredentialV1V1CredentialsCredIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
-    /**
-     * Get feed
-     */
-    getFeedV1V1FeedsFeedIdGetRaw(requestParameters: GetFeedV1V1FeedsFeedIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>>;
-    /**
-     * Get feed
-     */
-    getFeedV1V1FeedsFeedIdGet(requestParameters: GetFeedV1V1FeedsFeedIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut>;
-    /**
      * Get a job schedule
      */
     getJobScheduleV1JobSchedulesScheduleIdGetRaw(requestParameters: GetJobScheduleV1JobSchedulesScheduleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobScheduleOut>>;
@@ -860,14 +736,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Retrieve setup progress
      */
     getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
-    /**
-     * Retrieve a site config
-     */
-    getSiteConfigV1V1SiteConfigsConfigIdGetRaw(requestParameters: GetSiteConfigV1V1SiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Retrieve a site config
-     */
-    getSiteConfigV1V1SiteConfigsConfigIdGet(requestParameters: GetSiteConfigV1V1SiteConfigsConfigIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Get Status
      */
@@ -945,14 +813,6 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     listAuditLogsV1AdminAuditGet(requestParameters?: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
     /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_3Raw(requestParameters: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>>;
-    /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_3(requestParameters?: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
-    /**
      * List Bookmarks
      */
     listBookmarksV1BookmarksGetRaw(requestParameters: ListBookmarksV1BookmarksGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>>;
@@ -963,11 +823,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>>;
+    listBookmarksV1BookmarksGet_3Raw(requestParameters: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookmarksPage>>;
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4(requestParameters?: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage>;
+    listBookmarksV1BookmarksGet_3(requestParameters?: ListBookmarksV1BookmarksGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarksPage>;
     /**
      * List credentials
      */
@@ -977,6 +837,14 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     listCredentialsV1V1CredentialsGet(requestParameters?: ListCredentialsV1V1CredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage>;
     /**
+     * List credentials
+     */
+    listCredentialsV1V1CredentialsGet_4Raw(requestParameters: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>>;
+    /**
+     * List credentials
+     */
+    listCredentialsV1V1CredentialsGet_4(requestParameters?: ListCredentialsV1V1CredentialsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CredentialsPage>;
+    /**
      * List feeds
      */
     listFeedsV1V1FeedsGetRaw(requestParameters: ListFeedsV1V1FeedsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>>;
@@ -984,6 +852,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * List feeds
      */
     listFeedsV1V1FeedsGet(requestParameters?: ListFeedsV1V1FeedsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage>;
+    /**
+     * List feeds
+     */
+    listFeedsV1V1FeedsGet_5Raw(requestParameters: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedsPage>>;
+    /**
+     * List feeds
+     */
+    listFeedsV1V1FeedsGet_5(requestParameters?: ListFeedsV1V1FeedsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedsPage>;
     /**
      * List Folders
      */
@@ -1003,11 +879,11 @@ export declare class V1Api extends runtime.BaseAPI {
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>>;
+    listJobSchedulesV1JobSchedulesGet_6Raw(requestParameters: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobSchedulesPage>>;
     /**
      * List job schedules
      */
-    listJobSchedulesV1JobSchedulesGet_5(requestParameters?: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage>;
+    listJobSchedulesV1JobSchedulesGet_6(requestParameters?: ListJobSchedulesV1JobSchedulesGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobSchedulesPage>;
     /**
      * List jobs with filters, pagination, and sorting.
      * List jobs
@@ -1022,12 +898,12 @@ export declare class V1Api extends runtime.BaseAPI {
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_6Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>>;
+    listJobsV1JobsGet_7Raw(requestParameters: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<JobsPage>>;
     /**
      * List jobs with filters, pagination, and sorting.
      * List jobs
      */
-    listJobsV1JobsGet_6(requestParameters?: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage>;
+    listJobsV1JobsGet_7(requestParameters?: ListJobsV1JobsGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobsPage>;
     /**
      * List organizations
      */
@@ -1084,30 +960,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * List users
      */
     listUsersV1AdminUsersGet(requestParameters?: ListUsersV1AdminUsersGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminUsersPage>;
-    /**
-     * Postgres Enable Rls
-     */
-    postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
-        [key: string]: any;
-    }>>;
-    /**
-     * Postgres Enable Rls
-     */
-    postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
-        [key: string]: any;
-    }>;
-    /**
-     * Postgres Prepare
-     */
-    postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
-        [key: string]: any;
-    }>>;
-    /**
-     * Postgres Prepare
-     */
-    postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
-        [key: string]: any;
-    }>;
     /**
      * Preview Bookmark
      */
@@ -1243,22 +1095,6 @@ export declare class V1Api extends runtime.BaseAPI {
      */
     updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
-     * Update credential
-     */
-    updateCredentialV1V1CredentialsCredIdPutRaw(requestParameters: UpdateCredentialV1V1CredentialsCredIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Credential>>;
-    /**
-     * Update credential
-     */
-    updateCredentialV1V1CredentialsCredIdPut(requestParameters: UpdateCredentialV1V1CredentialsCredIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
-    /**
-     * Update feed
-     */
-    updateFeedV1V1FeedsFeedIdPutRaw(requestParameters: UpdateFeedV1V1FeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedOut>>;
-    /**
-     * Update feed
-     */
-    updateFeedV1V1FeedsFeedIdPut(requestParameters: UpdateFeedV1V1FeedsFeedIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedOut>;
-    /**
      * Update Folder
      */
     updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters: UpdateFolderV1BookmarksFoldersFolderIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>>;
@@ -1306,14 +1142,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Create or replace setup progress
      */
     updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
-    /**
-     * Update a site config
-     */
-    updateSiteConfigV1V1SiteConfigsConfigIdPutRaw(requestParameters: UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Update a site config
-     */
-    updateSiteConfigV1V1SiteConfigsConfigIdPut(requestParameters: UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Update Tag
      */
