@@ -222,7 +222,9 @@ export default function TemplatesGallery({
               </dl>
             </div>
             <div className="mt-4 flex items-center justify-between">
-              <span className="text-xs text-gray-400">{template.filename}</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                {template.filename}
+              </span>
               <a
                 className="inline-flex items-center rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                 href={buildDownloadHref(apiBase, template.downloadUrl)}
