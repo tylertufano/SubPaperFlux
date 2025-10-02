@@ -528,8 +528,13 @@ function ScheduleForm({
       const publishGroup = instapaperId
         ? publishScheduleGroups.get(instapaperId)
         : undefined;
-      if (isWildcardSelection && publishGroup?.wildcardCount) {
+      if (publishGroup?.wildcardCount) {
         conflictMessage = t("job_schedules_error_publish_wildcard_exists");
+        if (feedId) {
+          nextErrors["payload.feed_id"] = t(
+            "job_schedules_error_publish_wildcard_exists",
+          );
+        }
       } else if (isWildcardSelection && publishGroup?.targetedCount) {
         nextErrors["payload.feed_id"] = t(
           "job_schedules_error_publish_feed_required",
@@ -942,8 +947,7 @@ function ScheduleForm({
           const hasExistingWildcard = Boolean(publishGroup?.wildcardCount);
           const hasTargetedSchedules = Boolean(publishGroup?.targetedCount);
           const isWildcardSelection = selectedFeedId === "";
-          const showWildcardConflict =
-            isWildcardSelection && hasExistingWildcard;
+          const showWildcardConflict = hasExistingWildcard;
           const showTargetedHint =
             isWildcardSelection &&
             hasTargetedSchedules &&
