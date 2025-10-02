@@ -404,7 +404,7 @@ Job Types (preview)
 - `login`: payload `{ "site_login_pair": "<credId>::<siteId>" }`
 - `miniflux_refresh`: payload `{ "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "site_login_pair": "<credId>::<siteId>" }`
 - `rss_poll`: payload `{ "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }` (collects matching entries and stores them as bookmarks in the local cache)
-- `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "<DB_FEED_ID>", "folder": "Optional" }` (consumes stored bookmarks for the feed and sends them to Instapaper; requires the Instapaper credential plus feed reference rather than individual URLs)
+- `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "Optional <DB_FEED_ID>", "folder": "Optional" }` (consumes stored bookmarks and sends them to Instapaper; omit `feed_id` to publish across all feeds, or include it to restrict the run to a single feed)
 - `retention`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "older_than": "30d", "feed_id": "Optional" }` (requires an Instapaper credential and can optionally scope to a specific feed when pruning)
 
 Notes: Handlers dispatch real work using the existing subpaperflux functions. Publish persists bookmark metadata (including published timestamps when available); retention deletes old bookmarks in Instapaper and removes them from the DB. Jobs retry up to `WORKER_MAX_ATTEMPTS` with last error tracked on the job.

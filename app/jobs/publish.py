@@ -23,9 +23,15 @@ def _normalise_limit(value: Any) -> Optional[int]:
 
 def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     instapaper_id = payload.get("instapaper_id")
-    feed_id = payload.get("feed_id")
-    if not instapaper_id or not feed_id:
-        raise ValueError("instapaper_id and feed_id are required")
+    if not instapaper_id:
+        raise ValueError("instapaper_id is required")
+
+    raw_feed_id = payload.get("feed_id")
+    feed_id: Optional[str]
+    if raw_feed_id in (None, ""):
+        feed_id = None
+    else:
+        feed_id = str(raw_feed_id)
 
     limit = _normalise_limit(
         payload.get("limit")
@@ -40,12 +46,14 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
         include_paywalled = None
     config_dir = payload.get("config_dir")
 
+    feed_for_log = feed_id or "all feeds"
+
     logging.info(
         "[job:%s] Publish pending bookmarks user=%s instapaper=%s feed=%s limit=%s",
         job_id,
         owner_user_id,
         instapaper_id,
-        feed_id,
+        feed_for_log,
         limit,
     )
 
@@ -56,7 +64,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
             session,
             owner_user_id=owner_user_id,
             instapaper_id=str(instapaper_id),
-            feed_id=str(feed_id),
+            feed_id=feed_id,
             limit=limit,
             include_paywalled=include_paywalled,
         )
@@ -65,7 +73,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                 "[job:%s] No pending bookmarks for instapaper=%s feed=%s",
                 job_id,
                 instapaper_id,
-                feed_id,
+                feed_for_log,
             )
             return {**result, "remaining": 0}
 
@@ -178,7 +186,7 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
             session,
             owner_user_id=owner_user_id,
             instapaper_id=str(instapaper_id),
-            feed_id=str(feed_id),
+            feed_id=feed_id,
         )
 
     result["published"] = published_entries

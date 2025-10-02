@@ -1012,12 +1012,13 @@ def iter_pending_instapaper_bookmarks(
     *,
     owner_user_id: Optional[str],
     instapaper_id: str,
-    feed_id: str,
+    feed_id: Optional[str],
     limit: Optional[int] = None,
     include_paywalled: Optional[bool] = None,
 ) -> List[BookmarkModel]:
     stmt = select(BookmarkModel).where(BookmarkModel.owner_user_id == owner_user_id)
-    stmt = stmt.where(BookmarkModel.feed_id == feed_id)
+    if feed_id is not None:
+        stmt = stmt.where(BookmarkModel.feed_id == feed_id)
     rows = session.exec(stmt).all()
     pending: List[BookmarkModel] = []
     for bookmark in rows:
