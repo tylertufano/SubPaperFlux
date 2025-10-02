@@ -4,8 +4,10 @@ import { AdminApi } from '../sdk/src/apis/AdminApi'
 import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigApi } from '../sdk/src/models/SiteConfigApi'
+import { SiteConfigApiToJSON } from '../sdk/src/models/SiteConfigApi'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSelenium } from '../sdk/src/models/SiteConfigSelenium'
+import { SiteConfigSeleniumToJSON } from '../sdk/src/models/SiteConfigSelenium'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
@@ -27,6 +29,19 @@ export type SiteConfigRecord =
 export type SiteConfigRequest =
   | ({ loginType: 'api' } & SiteConfigApi)
   | ({ loginType: 'selenium' } & SiteConfigSelenium)
+
+export function serializeSiteConfigRequest(body: SiteConfigRequest) {
+  if ('apiConfig' in body) {
+    return SiteConfigApiToJSON(body as SiteConfigApi)
+  }
+  if ('seleniumConfig' in body) {
+    return SiteConfigSeleniumToJSON(body as SiteConfigSelenium)
+  }
+  if ((body as Partial<SiteConfigRequest>).loginType === 'api') {
+    return SiteConfigApiToJSON(body as SiteConfigApi)
+  }
+  return SiteConfigSeleniumToJSON(body as SiteConfigSelenium)
+}
 
 export type SiteConfigCopyResponse = SiteConfigRecord
 
@@ -1657,11 +1672,18 @@ export const creds = {
 
 export const siteConfigs = {
   createSiteConfigSiteConfigsPost: async ({ body }: { body: SiteConfigRequest }) =>
-    (await getClients()).v1.createSiteConfigV1V1SiteConfigsPost({ body, xCsrfToken: CSRF }),
+    (await getClients()).v1.createSiteConfigV1V1SiteConfigsPost({
+      body: serializeSiteConfigRequest(body),
+      xCsrfToken: CSRF,
+    }),
   deleteSiteConfigSiteConfigsConfigIdDelete: async ({ configId }: { configId: string }) =>
     (await getClients()).v1.deleteSiteConfigV1V1SiteConfigsConfigIdDelete({ configId, xCsrfToken: CSRF }),
   updateSiteConfigSiteConfigsConfigIdPut: async ({ configId, body }: { configId: string; body: SiteConfigRequest }) =>
-    (await getClients()).v1.updateSiteConfigV1V1SiteConfigsConfigIdPut({ configId, body, xCsrfToken: CSRF }),
+    (await getClients()).v1.updateSiteConfigV1V1SiteConfigsConfigIdPut({
+      configId,
+      body: serializeSiteConfigRequest(body),
+      xCsrfToken: CSRF,
+    }),
   copySiteConfigToUser: async ({
     configId,
   }: {
