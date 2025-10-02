@@ -4,7 +4,7 @@ import { v1 } from '../lib/openapi'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import Link from 'next/link'
-import { formatNumberValue, useNumberFormatter } from '../lib/format'
+import { formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
@@ -16,8 +16,11 @@ export default function Jobs() {
   const { data: session, status: sessionStatus } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
+  const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
   const [status, setStatus] = useState<string>('')
   const [page, setPage] = useState(1)
+  const ORDER_BY = 'run_at'
+  const ORDER_DIR = 'desc'
   const permissions = extractPermissionList(session?.user)
   const isAuthenticated = sessionStatus === 'authenticated'
   const canViewJobs = Boolean(
@@ -26,8 +29,8 @@ export default function Jobs() {
         hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS)),
   )
   const { data, error, isLoading, mutate } = useSWR(
-    canViewJobs ? [`/v1/jobs`, page, status] : null,
-    ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s }),
+    canViewJobs ? [`/v1/jobs`, page, status, ORDER_BY, ORDER_DIR] : null,
+    ([, p, s]) => v1.listJobsV1JobsGet({ page: p, status: s, orderBy: ORDER_BY, orderDir: ORDER_DIR }),
   )
   const [now, setNow] = useState<number>(Date.now() / 1000)
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function Jobs() {
     if (!canViewJobs) {
       return
     }
-    const params = new URLSearchParams({ page: String(page), size: "20" })
+    const params = new URLSearchParams({ page: String(page), size: "20", order_by: ORDER_BY, order_dir: ORDER_DIR })
     if (status) params.set('status', status)
     const apiBase = process.env.NEXT_PUBLIC_API_BASE || ''
     const url = `${apiBase}/v1/jobs/stream?${params.toString()}`
@@ -57,7 +60,7 @@ export default function Jobs() {
     return () => {
       es.close()
     }
-  }, [page, status, mutate, canViewJobs])
+  }, [page, status, mutate, canViewJobs, ORDER_BY, ORDER_DIR])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [detailsCache, setDetailsCache] = useState<Record<string, any>>({})
@@ -173,6 +176,7 @@ export default function Jobs() {
                     <th className="th" scope="col">{t('id_label')}</th>
                     <th className="th" scope="col">{t('type_label')}</th>
                     <th className="th" scope="col">{t('status_label')}</th>
+                    <th className="th" scope="col">{t('jobs_run_at_label')}</th>
                     <th className="th" scope="col">{t('attempts_label')}</th>
                     <th className="th" scope="col">{t('last_error_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
@@ -194,6 +198,13 @@ export default function Jobs() {
                           })
                         : ''
 
+                    const rawRunAt = j.run_at ?? j.runAt
+                    const parsedRunAt = rawRunAt ? new Date(rawRunAt) : null
+                    const formattedRunAt =
+                      parsedRunAt && !Number.isNaN(parsedRunAt.getTime())
+                        ? dateTimeFormatter.format(parsedRunAt)
+                        : t('jobs_run_at_never')
+
                     return (
                       <React.Fragment key={j.id}>
                         <tr key={j.id} className="odd:bg-white even:bg-gray-50">
@@ -214,48 +225,64 @@ export default function Jobs() {
                               </span>
                             )}
                           </td>
-                        <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
-                        <td className="td">
-                          {j.last_error || ''}
-                          {(j.status === 'queued' && j.available_at && j.available_at > now) && (
-                            <span className="ml-2 text-gray-600">
-                              {t('jobs_retry_in', {
-                                seconds: formatNumberValue(
-                                  Math.max(0, Math.floor(j.available_at - now)),
-                                  numberFormatter,
-                                  '0',
-                                ),
-                              })}
-                            </span>
-                          )}
-                        </td>
-                        <td className="td flex gap-2">
-                          <button
-                            type="button"
-                            className="btn"
-                            aria-expanded={Boolean(expanded[j.id])}
-                            aria-controls={expanded[j.id] ? `job-row-details-${j.id}` : undefined}
-                            onClick={async () => {
-                              const next = { ...expanded, [j.id]: !expanded[j.id] }
-                              setExpanded(next)
-                              if (!detailsCache[j.id]) {
-                                try {
-                                  const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
-                                  setDetailsCache({ ...detailsCache, [j.id]: full })
-                                } catch (e) {
-                                  // ignore errors here; banner not necessary for details
+                          <td className="td">{formattedRunAt}</td>
+                          <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
+                          <td className="td">
+                            {j.last_error || ''}
+                            {(j.status === 'queued' && j.available_at && j.available_at > now) && (
+                              <span className="ml-2 text-gray-600">
+                                {t('jobs_retry_in', {
+                                  seconds: formatNumberValue(
+                                    Math.max(0, Math.floor(j.available_at - now)),
+                                    numberFormatter,
+                                    '0',
+                                  ),
+                                })}
+                              </span>
+                            )}
+                          </td>
+                          <td className="td flex gap-2">
+                            <button
+                              type="button"
+                              className="btn"
+                              aria-expanded={Boolean(expanded[j.id])}
+                              aria-controls={expanded[j.id] ? `job-row-details-${j.id}` : undefined}
+                              onClick={async () => {
+                                const next = { ...expanded, [j.id]: !expanded[j.id] }
+                                setExpanded(next)
+                                if (!detailsCache[j.id]) {
+                                  try {
+                                    const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
+                                    setDetailsCache({ ...detailsCache, [j.id]: full })
+                                  } catch (e) {
+                                    // ignore errors here; banner not necessary for details
+                                  }
                                 }
-                              }
-                            }}
-                          >{t('jobs_details')}</button>
-                          {(j.status === 'failed' || j.status === 'dead') && (
-                            <button type="button" className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('btn_retry') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
-                          )}
-                        </td>
-                      </tr>
+                              }}
+                            >{t('jobs_details')}</button>
+                            {(j.status === 'failed' || j.status === 'dead') && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  try {
+                                    await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id })
+                                    setBanner({ kind: 'success', message: t('btn_retry') })
+                                    mutate()
+                                  } catch (e: any) {
+                                    setBanner({
+                                      kind: 'error',
+                                      message: t('jobs_retry_failed', { reason: e.message || String(e) }),
+                                    })
+                                  }
+                                }}
+                              >{t('btn_retry')}</button>
+                            )}
+                          </td>
+                        </tr>
                       {expanded[j.id] && (
                         <tr key={`${j.id}-details`} id={`job-row-details-${j.id}`} className="bg-gray-50">
-                          <td className="td" colSpan={6}>
+                          <td className="td" colSpan={7}>
                             <div className="p-3">
                               <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
                               <pre className="text-sm bg-white p-3 rounded border overflow-auto">

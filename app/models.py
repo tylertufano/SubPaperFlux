@@ -416,6 +416,14 @@ class Job(SQLModel, table=True):
     available_at: Optional[float] = Field(default=None, index=True)
     dead_at: Optional[float] = Field(default=None, index=True)
     details: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
+    )
+    run_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True, index=True),
+    )
 
 
 class JobSchedule(SQLModel, table=True):

@@ -134,6 +134,8 @@ def _job_to_schema(job: Job) -> JobOut:
         owner_user_id=job.owner_user_id,
         payload=dict(job.payload or {}),
         details=dict(job.details or {}),
+        created_at=job.created_at,
+        run_at=job.run_at,
     )
 
 

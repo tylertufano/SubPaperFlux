@@ -73,6 +73,18 @@ export interface JobOut {
      * @memberof JobOut
      */
     details?: { [key: string]: any; } | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    createdAt: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    runAt?: any | null;
 }
 
 /**
@@ -85,6 +97,7 @@ export function instanceOfJobOut(value: object): boolean {
     isInstance = isInstance && "status" in value;
     isInstance = isInstance && "attempts" in value;
     isInstance = isInstance && "payload" in value;
+    isInstance = isInstance && "createdAt" in value;
 
     return isInstance;
 }
@@ -108,6 +121,8 @@ export function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Jo
         'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
         'details': !exists(json, 'details') ? undefined : json['details'],
+        'createdAt': json['created_at'],
+        'runAt': !exists(json, 'run_at') ? undefined : json['run_at'],
     };
 }
 
@@ -129,6 +144,8 @@ export function JobOutToJSON(value?: JobOut | null): any {
         'owner_user_id': value.ownerUserId,
         'payload': value.payload,
         'details': value.details,
+        'created_at': value.createdAt,
+        'run_at': value.runAt,
     };
 }
 

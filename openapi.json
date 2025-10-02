@@ -1497,11 +1497,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "Sort key: attempts|available_at|id",
-              "default": "created",
+              "description": "Sort key: attempts|available_at|id|run_at|created|created_at",
+              "default": "run_at",
               "title": "Order By"
             },
-            "description": "Sort key: attempts|available_at|id"
+            "description": "Sort key: attempts|available_at|id|run_at|created|created_at"
           },
           {
             "name": "order_dir",
@@ -1619,11 +1619,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "Sort key: attempts|available_at|id",
-              "default": "created",
+              "description": "Sort key: attempts|available_at|id|run_at|created|created_at",
+              "default": "run_at",
               "title": "Order By"
             },
-            "description": "Sort key: attempts|available_at|id"
+            "description": "Sort key: attempts|available_at|id|run_at|created|created_at"
           },
           {
             "name": "order_dir",
@@ -1741,11 +1741,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "Sort key: attempts|available_at|id",
-              "default": "created",
+              "description": "Sort key: attempts|available_at|id|run_at|created|created_at",
+              "default": "run_at",
               "title": "Order By"
             },
-            "description": "Sort key: attempts|available_at|id"
+            "description": "Sort key: attempts|available_at|id|run_at|created|created_at"
           },
           {
             "name": "order_dir",
@@ -9735,6 +9735,23 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Details"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run At"
           }
         },
         "type": "object",
@@ -9743,7 +9760,8 @@
           "type",
           "status",
           "attempts",
-          "payload"
+          "payload",
+          "created_at"
         ],
         "title": "JobOut"
       },

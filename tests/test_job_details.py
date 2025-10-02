@@ -3,6 +3,7 @@ import base64
 import json
 import os
 from contextlib import suppress
+from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
@@ -36,6 +37,8 @@ def test_job_details_and_retry_all(monkeypatch):
     with next(get_session()) as session:
         dbj = session.get(Job, job_id)
         assert dbj.details["foo"] == "bar"
+        assert dbj.run_at is not None
+        assert dbj.created_at is not None
 
         # create failed and dead jobs
         j1 = Job(type="dummy", payload={}, owner_user_id="u", status="failed")
@@ -89,7 +92,7 @@ def test_stream_jobs_respects_rls(monkeypatch):
         type=None,
         page=1,
         size=20,
-        order_by="created",
+        order_by="run_at",
         order_dir="desc",
     ):
         captured_calls.append(
@@ -102,6 +105,7 @@ def test_stream_jobs_respects_rls(monkeypatch):
                 "order_dir": order_dir,
             }
         )
+        now = datetime.now(timezone.utc)
         other_job = JobOut(
             id="other-job",
             type="dummy",
@@ -112,6 +116,8 @@ def test_stream_jobs_respects_rls(monkeypatch):
             owner_user_id="other-user",
             payload={},
             details={},
+            created_at=now,
+            run_at=None,
         )
         own_job = JobOut(
             id="own-job",
@@ -123,6 +129,8 @@ def test_stream_jobs_respects_rls(monkeypatch):
             owner_user_id=getattr(session, "app_user_id", None) or current_user["sub"],
             payload={},
             details={},
+            created_at=now,
+            run_at=None,
         )
         if getattr(session, "app_user_id", None):
             items = [job for job in (other_job, own_job) if job.owner_user_id == session.app_user_id]

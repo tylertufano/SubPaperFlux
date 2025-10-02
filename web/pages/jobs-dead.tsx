@@ -4,7 +4,7 @@ import { v1 } from '../lib/openapi'
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useI18n } from '../lib/i18n'
-import { formatNumberValue, useNumberFormatter } from '../lib/format'
+import { formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 
@@ -13,8 +13,14 @@ export default function JobsDead() {
   const router = useRouter()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
+  const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
   const [page, setPage] = useState(1)
-  const { data, error, isLoading, mutate } = useSWR([`/v1/jobs`, page, 'dead'], ([, p]) => v1.listJobsV1JobsGet({ page: p, status: 'dead' }))
+  const ORDER_BY = 'run_at'
+  const ORDER_DIR = 'desc'
+  const { data, error, isLoading, mutate } = useSWR(
+    [`/v1/jobs`, page, 'dead', ORDER_BY, ORDER_DIR],
+    ([, p]) => v1.listJobsV1JobsGet({ page: p, status: 'dead', orderBy: ORDER_BY, orderDir: ORDER_DIR }),
+  )
   const [now, setNow] = useState<number>(Date.now() / 1000)
   useEffect(() => { const id = setInterval(() => setNow(Date.now() / 1000), 1000); return () => clearInterval(id) }, [])
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
@@ -70,43 +76,68 @@ export default function JobsDead() {
                     <th className="th" scope="col">{t('id_label')}</th>
                     <th className="th" scope="col">{t('type_label')}</th>
                     <th className="th" scope="col">{t('status_label')}</th>
+                    <th className="th" scope="col">{t('jobs_run_at_label')}</th>
                     <th className="th" scope="col">{t('attempts_label')}</th>
                     <th className="th" scope="col">{t('last_error_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((j: any) => (
-                    <React.Fragment key={j.id}>
-                      <tr key={j.id} className="odd:bg-white even:bg-gray-50">
-                        <td className="td">{j.id}</td>
-                        <td className="td">{j.type}</td>
-                        <td className="td">{j.status}</td>
-                        <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
-                        <td className="td">{j.last_error || ''}</td>
-                        <td className="td flex gap-2">
-                          <button
-                            type="button"
-                            className="btn"
-                            aria-expanded={Boolean(expanded[j.id])}
-                            aria-controls={expanded[j.id] ? `dead-job-details-${j.id}` : undefined}
-                            onClick={async () => {
-                              const next = { ...expanded, [j.id]: !expanded[j.id] }
-                              setExpanded(next)
-                              if (!detailsCache[j.id]) {
+                  {data.items.map((j: any) => {
+                    const rawRunAt = j.run_at ?? j.runAt
+                    const parsedRunAt = rawRunAt ? new Date(rawRunAt) : null
+                    const formattedRunAt =
+                      parsedRunAt && !Number.isNaN(parsedRunAt.getTime())
+                        ? dateTimeFormatter.format(parsedRunAt)
+                        : t('jobs_run_at_never')
+
+                    return (
+                      <React.Fragment key={j.id}>
+                        <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                          <td className="td">{j.id}</td>
+                          <td className="td">{j.type}</td>
+                          <td className="td">{j.status}</td>
+                          <td className="td">{formattedRunAt}</td>
+                          <td className="td">{formatNumberValue(j.attempts, numberFormatter, '—')}</td>
+                          <td className="td">{j.last_error || ''}</td>
+                          <td className="td flex gap-2">
+                            <button
+                              type="button"
+                              className="btn"
+                              aria-expanded={Boolean(expanded[j.id])}
+                              aria-controls={expanded[j.id] ? `dead-job-details-${j.id}` : undefined}
+                              onClick={async () => {
+                                const next = { ...expanded, [j.id]: !expanded[j.id] }
+                                setExpanded(next)
+                                if (!detailsCache[j.id]) {
+                                  try {
+                                    const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
+                                    setDetailsCache({ ...detailsCache, [j.id]: full })
+                                  } catch {}
+                                }
+                              }}
+                            >{t('jobs_details')}</button>
+                            <button
+                              type="button"
+                              className="btn"
+                              onClick={async () => {
                                 try {
-                                  const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
-                                  setDetailsCache({ ...detailsCache, [j.id]: full })
-                                } catch {}
-                              }
-                            }}
-                          >{t('jobs_details')}</button>
-                          <button type="button" className="btn" onClick={async () => { try { await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id }); setBanner({ kind: 'success', message: t('jobs_dead_retry_success') }); mutate() } catch (e: any) { setBanner({ kind: 'error', message: t('jobs_retry_failed', { reason: e.message || String(e) }) }) } }}>{t('btn_retry')}</button>
-                        </td>
-                      </tr>
+                                  await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id })
+                                  setBanner({ kind: 'success', message: t('jobs_dead_retry_success') })
+                                  mutate()
+                                } catch (e: any) {
+                                  setBanner({
+                                    kind: 'error',
+                                    message: t('jobs_retry_failed', { reason: e.message || String(e) }),
+                                  })
+                                }
+                              }}
+                            >{t('btn_retry')}</button>
+                          </td>
+                        </tr>
                       {expanded[j.id] && (
                         <tr key={`${j.id}-details`} id={`dead-job-details-${j.id}`} className="bg-gray-50">
-                          <td className="td" colSpan={6}>
+                          <td className="td" colSpan={7}>
                             <div className="p-3">
                               <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
                               <pre className="text-sm bg-white p-3 rounded border overflow-auto">
@@ -120,8 +151,9 @@ export default function JobsDead() {
                           </td>
                         </tr>
                       )}
-                    </React.Fragment>
-                  ))}
+                      </React.Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
               )}
