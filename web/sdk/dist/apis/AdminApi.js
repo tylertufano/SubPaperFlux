@@ -394,125 +394,66 @@ class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsAdminAuditGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.page !== undefined) {
-                queryParameters['page'] = requestParameters.page;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            if (requestParameters.entityType !== undefined) {
-                queryParameters['entity_type'] = requestParameters.entityType;
-            }
-            if (requestParameters.entityId !== undefined) {
-                queryParameters['entity_id'] = requestParameters.entityId;
-            }
-            if (requestParameters.action !== undefined) {
-                queryParameters['action'] = requestParameters.action;
-            }
-            if (requestParameters.ownerUserId !== undefined) {
-                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-            }
-            if (requestParameters.actorUserId !== undefined) {
-                queryParameters['actor_user_id'] = requestParameters.actorUserId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/admin/audit/`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.AuditLogsPageFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * List audit log entries
-     */
-    listAuditLogsAdminAuditGet(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listAuditLogsAdminAuditGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List audit log entries
-     */
-    listAuditLogsAdminAuditGet_1Raw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.page !== undefined) {
-                queryParameters['page'] = requestParameters.page;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            if (requestParameters.entityType !== undefined) {
-                queryParameters['entity_type'] = requestParameters.entityType;
-            }
-            if (requestParameters.entityId !== undefined) {
-                queryParameters['entity_id'] = requestParameters.entityId;
-            }
-            if (requestParameters.action !== undefined) {
-                queryParameters['action'] = requestParameters.action;
-            }
-            if (requestParameters.ownerUserId !== undefined) {
-                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-            }
-            if (requestParameters.actorUserId !== undefined) {
-                queryParameters['actor_user_id'] = requestParameters.actorUserId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/admin/audit`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.AuditLogsPageFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * List audit log entries
-     */
-    listAuditLogsAdminAuditGet_1(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listAuditLogsAdminAuditGet_1Raw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List audit log entries
-     */
     listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryParameters = {};
+            if (requestParameters.page !== undefined) {
+                queryParameters['page'] = requestParameters.page;
+            }
+            if (requestParameters.size !== undefined) {
+                queryParameters['size'] = requestParameters.size;
+            }
+            if (requestParameters.entityType !== undefined) {
+                queryParameters['entity_type'] = requestParameters.entityType;
+            }
+            if (requestParameters.entityId !== undefined) {
+                queryParameters['entity_id'] = requestParameters.entityId;
+            }
+            if (requestParameters.action !== undefined) {
+                queryParameters['action'] = requestParameters.action;
+            }
+            if (requestParameters.ownerUserId !== undefined) {
+                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
+            }
+            if (requestParameters.actorUserId !== undefined) {
+                queryParameters['actor_user_id'] = requestParameters.actorUserId;
+            }
+            if (requestParameters.since !== undefined) {
+                queryParameters['since'] = requestParameters.since;
+            }
+            if (requestParameters.until !== undefined) {
+                queryParameters['until'] = requestParameters.until;
+            }
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            const response = yield this.request({
+                path: `/v1/admin/audit/`,
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.AuditLogsPageFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * List audit log entries
+     */
+    listAuditLogsV1AdminAuditGet(requestParameters = {}, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
+     * List audit log entries
+     */
+    listAuditLogsV1AdminAuditGet_1Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.page !== undefined) {
@@ -562,9 +503,9 @@ class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
-    listAuditLogsV1AdminAuditGet(requestParameters = {}, initOverrides) {
+    listAuditLogsV1AdminAuditGet_1(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listAuditLogsV1AdminAuditGetRaw(requestParameters, initOverrides);
+            const response = yield this.listAuditLogsV1AdminAuditGet_1Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -706,7 +647,7 @@ class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Enable Rls
      */
-    postgresEnableRlsAdminPostgresEnableRlsPostRaw(initOverrides) {
+    postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             const headerParameters = {};
@@ -718,7 +659,7 @@ class AdminApi extends runtime.BaseAPI {
                 }
             }
             const response = yield this.request({
-                path: `/admin/postgres/enable-rls`,
+                path: `/v1/admin/postgres/enable-rls`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
@@ -729,16 +670,16 @@ class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Enable Rls
      */
-    postgresEnableRlsAdminPostgresEnableRlsPost(initOverrides) {
+    postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.postgresEnableRlsAdminPostgresEnableRlsPostRaw(initOverrides);
+            const response = yield this.postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides);
             return yield response.value();
         });
     }
     /**
      * Postgres Prepare
      */
-    postgresPrepareAdminPostgresPreparePostRaw(initOverrides) {
+    postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             const headerParameters = {};
@@ -750,7 +691,7 @@ class AdminApi extends runtime.BaseAPI {
                 }
             }
             const response = yield this.request({
-                path: `/admin/postgres/prepare`,
+                path: `/v1/admin/postgres/prepare`,
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
@@ -761,9 +702,9 @@ class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Prepare
      */
-    postgresPrepareAdminPostgresPreparePost(initOverrides) {
+    postgresPrepareV1AdminPostgresPreparePost(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.postgresPrepareAdminPostgresPreparePostRaw(initOverrides);
+            const response = yield this.postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides);
             return yield response.value();
         });
     }

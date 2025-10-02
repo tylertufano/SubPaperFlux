@@ -32,45 +32,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Bulk Delete Bookmarks
      */
-    bulkDeleteBookmarksBookmarksBulkDeletePostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkDeleteBookmarksBookmarksBulkDeletePost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/bulk-delete`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: requestParameters.requestBody,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Bulk Delete Bookmarks
-     */
-    bulkDeleteBookmarksBookmarksBulkDeletePost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.bulkDeleteBookmarksBookmarksBulkDeletePostRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Bulk Delete Bookmarks
-     */
     bulkDeleteBookmarksV1BookmarksBulkDeletePostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
@@ -105,51 +66,6 @@ class BookmarksApi extends runtime.BaseAPI {
     bulkDeleteBookmarksV1BookmarksBulkDeletePost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.bulkDeleteBookmarksV1BookmarksBulkDeletePostRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Bulk Publish Bookmarks
-     */
-    bulkPublishBookmarksBookmarksBulkPublishPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
-                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling bulkPublishBookmarksBookmarksBulkPublishPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/bulk-publish`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: requestParameters.requestBody,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Bulk Publish Bookmarks
-     */
-    bulkPublishBookmarksBookmarksBulkPublishPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.bulkPublishBookmarksBookmarksBulkPublishPostRaw(requestParameters, initOverrides);
-            return yield response.value();
         });
     }
     /**
@@ -194,51 +110,6 @@ class BookmarksApi extends runtime.BaseAPI {
     bulkPublishBookmarksV1BookmarksBulkPublishPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.bulkPublishBookmarksV1BookmarksBulkPublishPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersBookmarksBulkFoldersPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bulkBookmarkFolderUpdate === null || requestParameters.bulkBookmarkFolderUpdate === undefined) {
-                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter requestParameters.bulkBookmarkFolderUpdate was null or undefined when calling bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/bulk-folders`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BulkBookmarkFolderUpdateToJSON)(requestParameters.bulkBookmarkFolderUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersBookmarksBulkFoldersPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.bulkUpdateBookmarkFoldersBookmarksBulkFoldersPostRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -290,51 +161,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Bulk Update Bookmark Tags
      */
-    bulkUpdateBookmarkTagsBookmarksBulkTagsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
-                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter requestParameters.bulkBookmarkTagUpdate was null or undefined when calling bulkUpdateBookmarkTagsBookmarksBulkTagsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/bulk-tags`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BulkBookmarkTagUpdateToJSON)(requestParameters.bulkBookmarkTagUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    bulkUpdateBookmarkTagsBookmarksBulkTagsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.bulkUpdateBookmarkTagsBookmarksBulkTagsPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Bulk Update Bookmark Tags
-     */
     bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
@@ -374,74 +200,6 @@ class BookmarksApi extends runtime.BaseAPI {
     bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Count Bookmarks
-     */
-    countBookmarksBookmarksCountGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/count`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response);
-        });
-    }
-    /**
-     * Count Bookmarks
-     */
-    countBookmarksBookmarksCountGet(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.countBookmarksBookmarksCountGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -516,46 +274,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Create Folder
      */
-    createFolderBookmarksFoldersPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.folderCreate === null || requestParameters.folderCreate === undefined) {
-                throw new runtime.RequiredError('folderCreate', 'Required parameter requestParameters.folderCreate was null or undefined when calling createFolderBookmarksFoldersPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/folders`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.FolderCreateToJSON)(requestParameters.folderCreate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.FolderOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Create Folder
-     */
-    createFolderBookmarksFoldersPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createFolderBookmarksFoldersPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create Folder
-     */
     createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.folderCreate === null || requestParameters.folderCreate === undefined) {
@@ -590,46 +308,6 @@ class BookmarksApi extends runtime.BaseAPI {
     createFolderV1BookmarksFoldersPost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.createFolderV1BookmarksFoldersPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Create Tag
-     */
-    createTagBookmarksTagsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.tagCreate === null || requestParameters.tagCreate === undefined) {
-                throw new runtime.RequiredError('tagCreate', 'Required parameter requestParameters.tagCreate was null or undefined when calling createTagBookmarksTagsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/tags`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.TagCreateToJSON)(requestParameters.tagCreate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.TagOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Create Tag
-     */
-    createTagBookmarksTagsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.createTagBookmarksTagsPostRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -671,83 +349,6 @@ class BookmarksApi extends runtime.BaseAPI {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.createTagV1BookmarksTagsPostRaw(requestParameters, initOverrides);
             return yield response.value();
-        });
-    }
-    /**
-     * Delete Bookmark
-     */
-    deleteBookmarkBookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkBookmarksBookmarkIdDelete.');
-            }
-            const queryParameters = {};
-            if (requestParameters.deleteRemote !== undefined) {
-                queryParameters['delete_remote'] = requestParameters.deleteRemote;
-            }
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete Bookmark
-     */
-    deleteBookmarkBookmarksBookmarkIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteBookmarkBookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderBookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkFolderBookmarksBookmarkIdFolderDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderBookmarksBookmarkIdFolderDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteBookmarkFolderBookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides);
         });
     }
     /**
@@ -830,43 +431,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Delete Folder
      */
-    deleteFolderBookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
-                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling deleteFolderBookmarksFoldersFolderIdDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete Folder
-     */
-    deleteFolderBookmarksFoldersFolderIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteFolderBookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Delete Folder
-     */
     deleteFolderV1BookmarksFoldersFolderIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
@@ -904,43 +468,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Delete Tag
      */
-    deleteTagBookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
-                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling deleteTagBookmarksTagsTagIdDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete Tag
-     */
-    deleteTagBookmarksTagsTagIdDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteTagBookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Delete Tag
-     */
     deleteTagV1BookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
@@ -973,88 +500,6 @@ class BookmarksApi extends runtime.BaseAPI {
     deleteTagV1BookmarksTagsTagIdDelete(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.deleteTagV1BookmarksTagsTagIdDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
-     * Export Bookmarks
-     */
-    exportBookmarksBookmarksExportGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.format !== undefined) {
-                queryParameters['format'] = requestParameters.format;
-            }
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.fuzzy !== undefined) {
-                queryParameters['fuzzy'] = requestParameters.fuzzy;
-            }
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.sortBy !== undefined) {
-                queryParameters['sort_by'] = requestParameters.sortBy;
-            }
-            if (requestParameters.sortDir !== undefined) {
-                queryParameters['sort_dir'] = requestParameters.sortDir;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/export`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Export Bookmarks
-     */
-    exportBookmarksBookmarksExportGet(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.exportBookmarksBookmarksExportGetRaw(requestParameters, initOverrides);
-            return yield response.value();
         });
     }
     /**
@@ -1140,81 +585,6 @@ class BookmarksApi extends runtime.BaseAPI {
         });
     }
     /**
-     * Get Bookmark
-     */
-    getBookmarkBookmarksBookmarkIdGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkBookmarksBookmarkIdGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.BookmarkOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Get Bookmark
-     */
-    getBookmarkBookmarksBookmarkIdGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getBookmarkBookmarksBookmarkIdGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderBookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkFolderBookmarksBookmarkIdFolderGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderBookmarksBookmarkIdFolderGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getBookmarkFolderBookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Get Bookmark Folder
      */
     getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides) {
@@ -1251,46 +621,6 @@ class BookmarksApi extends runtime.BaseAPI {
     getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsBookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkTagsBookmarksBookmarkIdTagsGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsBookmarksBookmarkIdTagsGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getBookmarkTagsBookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1372,146 +702,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksBookmarksHeadRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/`,
-                method: 'HEAD',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Head Bookmarks
-     */
-    headBookmarksBookmarksHead(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.headBookmarksBookmarksHeadRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Head Bookmarks
-     */
-    headBookmarksBookmarksHead_1Raw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks`,
-                method: 'HEAD',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Head Bookmarks
-     */
-    headBookmarksBookmarksHead_1(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.headBookmarksBookmarksHead_1Raw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Head Bookmarks
-     */
     headBookmarksV1BookmarksHeadRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
@@ -1582,7 +772,7 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides) {
+    headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.search !== undefined) {
@@ -1643,169 +833,9 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Head Bookmarks
      */
-    headBookmarksV1BookmarksHead_2(requestParameters = {}, initOverrides) {
+    headBookmarksV1BookmarksHead_1(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.headBookmarksV1BookmarksHead_2Raw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List Bookmarks
-     */
-    listBookmarksBookmarksGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.page !== undefined) {
-                queryParameters['page'] = requestParameters.page;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.fuzzy !== undefined) {
-                queryParameters['fuzzy'] = requestParameters.fuzzy;
-            }
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.sortBy !== undefined) {
-                queryParameters['sort_by'] = requestParameters.sortBy;
-            }
-            if (requestParameters.sortDir !== undefined) {
-                queryParameters['sort_dir'] = requestParameters.sortDir;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.BookmarksPageFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * List Bookmarks
-     */
-    listBookmarksBookmarksGet(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listBookmarksBookmarksGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List Bookmarks
-     */
-    listBookmarksBookmarksGet_3Raw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.page !== undefined) {
-                queryParameters['page'] = requestParameters.page;
-            }
-            if (requestParameters.size !== undefined) {
-                queryParameters['size'] = requestParameters.size;
-            }
-            if (requestParameters.search !== undefined) {
-                queryParameters['search'] = requestParameters.search;
-            }
-            if (requestParameters.fuzzy !== undefined) {
-                queryParameters['fuzzy'] = requestParameters.fuzzy;
-            }
-            if (requestParameters.feedId !== undefined) {
-                queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
-            if (requestParameters.since !== undefined) {
-                queryParameters['since'] = requestParameters.since;
-            }
-            if (requestParameters.until !== undefined) {
-                queryParameters['until'] = requestParameters.until;
-            }
-            if (requestParameters.sortBy !== undefined) {
-                queryParameters['sort_by'] = requestParameters.sortBy;
-            }
-            if (requestParameters.sortDir !== undefined) {
-                queryParameters['sort_dir'] = requestParameters.sortDir;
-            }
-            if (requestParameters.titleQuery !== undefined) {
-                queryParameters['title_query'] = requestParameters.titleQuery;
-            }
-            if (requestParameters.urlQuery !== undefined) {
-                queryParameters['url_query'] = requestParameters.urlQuery;
-            }
-            if (requestParameters.regex !== undefined) {
-                queryParameters['regex'] = requestParameters.regex;
-            }
-            if (requestParameters.regexTarget !== undefined) {
-                queryParameters['regex_target'] = requestParameters.regexTarget;
-            }
-            if (requestParameters.regexFlags !== undefined) {
-                queryParameters['regex_flags'] = requestParameters.regexFlags;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.BookmarksPageFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * List Bookmarks
-     */
-    listBookmarksBookmarksGet_3(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listBookmarksBookmarksGet_3Raw(requestParameters, initOverrides);
+            const response = yield this.headBookmarksV1BookmarksHead_1Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1892,7 +922,7 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides) {
+    listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
             if (requestParameters.page !== undefined) {
@@ -1963,46 +993,9 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Bookmarks
      */
-    listBookmarksV1BookmarksGet_4(requestParameters = {}, initOverrides) {
+    listBookmarksV1BookmarksGet_2(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listBookmarksV1BookmarksGet_4Raw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List Folders
-     */
-    listFoldersBookmarksFoldersGetRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/folders`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * List Folders
-     */
-    listFoldersBookmarksFoldersGet(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listFoldersBookmarksFoldersGetRaw(initOverrides);
+            const response = yield this.listBookmarksV1BookmarksGet_2Raw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2046,43 +1039,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * List Tags
      */
-    listTagsBookmarksTagsGetRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/tags`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * List Tags
-     */
-    listTagsBookmarksTagsGet(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.listTagsBookmarksTagsGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * List Tags
-     */
     listTagsV1BookmarksTagsGetRaw(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
@@ -2114,46 +1070,6 @@ class BookmarksApi extends runtime.BaseAPI {
     listTagsV1BookmarksTagsGet(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.listTagsV1BookmarksTagsGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Preview Bookmark
-     */
-    previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling previewBookmarkBookmarksBookmarkIdPreviewGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/preview`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Preview Bookmark
-     */
-    previewBookmarkBookmarksBookmarkIdPreviewGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.previewBookmarkBookmarksBookmarkIdPreviewGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2200,49 +1116,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Update Bookmark Folder
      */
-    updateBookmarkFolderBookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut.');
-            }
-            if (requestParameters.bookmarkFolderUpdate === null || requestParameters.bookmarkFolderUpdate === undefined) {
-                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter requestParameters.bookmarkFolderUpdate was null or undefined when calling updateBookmarkFolderBookmarksBookmarkIdFolderPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BookmarkFolderUpdateToJSON)(requestParameters.bookmarkFolderUpdate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.FolderOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Update Bookmark Folder
-     */
-    updateBookmarkFolderBookmarksBookmarkIdFolderPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateBookmarkFolderBookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Bookmark Folder
-     */
     updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
@@ -2280,54 +1153,6 @@ class BookmarksApi extends runtime.BaseAPI {
     updateBookmarkFolderV1BookmarksBookmarkIdFolderPut(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsBookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut.');
-            }
-            if (requestParameters.bookmarkTagsUpdate === null || requestParameters.bookmarkTagsUpdate === undefined) {
-                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter requestParameters.bookmarkTagsUpdate was null or undefined when calling updateBookmarkTagsBookmarksBookmarkIdTagsPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BookmarkTagsUpdateToJSON)(requestParameters.bookmarkTagsUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsBookmarksBookmarkIdTagsPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateBookmarkTagsBookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -2382,49 +1207,6 @@ class BookmarksApi extends runtime.BaseAPI {
     /**
      * Update Folder
      */
-    updateFolderBookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
-                throw new runtime.RequiredError('folderId', 'Required parameter requestParameters.folderId was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut.');
-            }
-            if (requestParameters.folderUpdate === null || requestParameters.folderUpdate === undefined) {
-                throw new runtime.RequiredError('folderUpdate', 'Required parameter requestParameters.folderUpdate was null or undefined when calling updateFolderBookmarksFoldersFolderIdPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/folders/{folder_id}`.replace(`{${"folder_id"}}`, encodeURIComponent(String(requestParameters.folderId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.FolderUpdateToJSON)(requestParameters.folderUpdate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.FolderOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Update Folder
-     */
-    updateFolderBookmarksFoldersFolderIdPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateFolderBookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Folder
-     */
     updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             if (requestParameters.folderId === null || requestParameters.folderId === undefined) {
@@ -2462,49 +1244,6 @@ class BookmarksApi extends runtime.BaseAPI {
     updateFolderV1BookmarksFoldersFolderIdPut(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.updateFolderV1BookmarksFoldersFolderIdPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Tag
-     */
-    updateTagBookmarksTagsTagIdPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.tagId === null || requestParameters.tagId === undefined) {
-                throw new runtime.RequiredError('tagId', 'Required parameter requestParameters.tagId was null or undefined when calling updateTagBookmarksTagsTagIdPut.');
-            }
-            if (requestParameters.tagUpdate === null || requestParameters.tagUpdate === undefined) {
-                throw new runtime.RequiredError('tagUpdate', 'Required parameter requestParameters.tagUpdate was null or undefined when calling updateTagBookmarksTagsTagIdPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/bookmarks/tags/{tag_id}`.replace(`{${"tag_id"}}`, encodeURIComponent(String(requestParameters.tagId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.TagUpdateToJSON)(requestParameters.tagUpdate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.TagOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Update Tag
-     */
-    updateTagBookmarksTagsTagIdPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateTagBookmarksTagsTagIdPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

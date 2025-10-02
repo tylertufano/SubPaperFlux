@@ -59,8 +59,6 @@ import type {
   MeOut,
   MeUpdate,
   SiteConfigsPage,
-  SiteSetupStatusOut,
-  SiteSetupStatusUpdate,
   SiteWelcomeSettingOut,
   SiteWelcomeSettingUpdate,
   StatusResponse,
@@ -158,10 +156,6 @@ import {
     MeUpdateToJSON,
     SiteConfigsPageFromJSON,
     SiteConfigsPageToJSON,
-    SiteSetupStatusOutFromJSON,
-    SiteSetupStatusOutToJSON,
-    SiteSetupStatusUpdateFromJSON,
-    SiteSetupStatusUpdateToJSON,
     SiteWelcomeSettingOutFromJSON,
     SiteWelcomeSettingOutToJSON,
     SiteWelcomeSettingUpdateFromJSON,
@@ -688,10 +682,6 @@ export interface UpdateOrganizationV1AdminOrgsOrganizationIdPatchRequest {
 export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: any;
     adminRoleUpdate: AdminRoleUpdate;
-}
-
-export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
-    requestBody: { [key: string]: any; } | null;
 }
 
 export interface UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest {
@@ -2631,40 +2621,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async getRoleV1AdminRolesRoleIdGet(requestParameters: GetRoleV1AdminRolesRoleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail> {
         const response = await this.getRoleV1AdminRolesRoleIdGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Retrieve setup progress
-     */
-    async getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/site-settings/setup-status`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteSetupStatusOutFromJSON(jsonValue));
-    }
-
-    /**
-     * Retrieve setup progress
-     */
-    async getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
-        const response = await this.getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides);
         return await response.value();
     }
 
@@ -5100,47 +5056,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async updateRoleV1AdminRolesRoleIdPatch(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail> {
         const response = await this.updateRoleV1AdminRolesRoleIdPatchRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Create or replace setup progress
-     */
-    async updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>> {
-        if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
-            throw new runtime.RequiredError('requestBody','Required parameter requestParameters.requestBody was null or undefined when calling updateSetupStatusV1SiteSettingsSetupStatusPut.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/site-settings/setup-status`,
-            method: 'PUT',
-            headers: headerParameters,
-            query: queryParameters,
-            body: requestParameters.requestBody,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SiteSetupStatusOutFromJSON(jsonValue));
-    }
-
-    /**
-     * Create or replace setup progress
-     */
-    async updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut> {
-        const response = await this.updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
