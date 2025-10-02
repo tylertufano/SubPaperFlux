@@ -40,6 +40,7 @@ type PreviewPaneProps = {
   emptyState?: ReactNode
   labelledBy?: string
   ariaLabel?: string
+  tabIndex?: number
 }
 
 export default function PreviewPane({
@@ -48,6 +49,7 @@ export default function PreviewPane({
   emptyState,
   labelledBy,
   ariaLabel,
+  tabIndex = 0,
 }: PreviewPaneProps) {
   const { t } = useI18n()
   const sanitized = useMemo(() => {
@@ -91,7 +93,7 @@ export default function PreviewPane({
     <section
       role="region"
       aria-live="polite"
-      tabIndex={0}
+      tabIndex={tabIndex}
       className={containerClasses.join(' ')}
       {...labelProps}
     >

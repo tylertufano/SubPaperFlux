@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, InlineTip, Nav, PreviewSlideOver } from '../components'
+import { Alert, Breadcrumbs, BulkActionToolbar, BulkFolderModal, BulkPublishModal, BulkTagModal, EmptyState, InlineTip, Nav, PreviewPane, PreviewSlideOver } from '../components'
 import type { BulkPublishResult } from '../components/BulkPublishModal'
 import { v1 } from '../lib/openapi'
 import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -114,6 +114,9 @@ export default function Bookmarks() {
   const [folderModal, setFolderModal] = useState<FolderModalState | null>(null)
   const [previewBookmarkId, setPreviewBookmarkId] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [shouldAutoFocusPreview, setShouldAutoFocusPreview] = useState(true)
+  const hasAdvancedFilters = Boolean(titleQuery || urlQuery || regexPattern)
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(hasAdvancedFilters)
   const permissions = extractPermissionList(session?.user)
   const isAuthenticated = status === 'authenticated'
   const canViewBookmarks = Boolean(
@@ -200,6 +203,7 @@ export default function Bookmarks() {
   const selectedCount = selectedIds.length
   const bookmarkItems = data?.items ?? []
   const previewHeadingId = 'bookmark-preview-heading'
+  const previewScreenReaderHeadingId = 'bookmark-preview-sr-heading'
   const previewDialogId = 'bookmark-preview-dialog'
   const previewSelectionIndex = previewBookmarkId
     ? bookmarkItems.findIndex((item: any) => item.id === previewBookmarkId)
@@ -243,6 +247,12 @@ export default function Bookmarks() {
       : undefined
 
   useEffect(() => {
+    if (hasAdvancedFilters) {
+      setIsAdvancedFiltersOpen(true)
+    }
+  }, [hasAdvancedFilters])
+
+  useEffect(() => {
     if (previewBookmarkId && previewSelectionIndex === -1) {
       setPreviewBookmarkId(null)
       setIsPreviewOpen(false)
@@ -254,6 +264,12 @@ export default function Bookmarks() {
       setIsPreviewOpen(false)
     }
   }, [previewBookmarkId])
+
+  useEffect(() => {
+    if (!isPreviewOpen) {
+      setShouldAutoFocusPreview(true)
+    }
+  }, [isPreviewOpen])
 
   useEffect(() => {
     rowRefs.current.length = bookmarkItems.length
@@ -277,14 +293,18 @@ export default function Bookmarks() {
     setSortDir('desc')
     setPage(1)
     mutate()
+    setIsAdvancedFiltersOpen(false)
   }
 
   const focusRow = (index: number) => {
     const row = rowRefs.current[index]
     if (row) {
-      setTimeout(() => {
-        row.focus()
-      }, 0)
+      row.focus({ preventScroll: true })
+      window.setTimeout(() => {
+        if (document.activeElement !== row) {
+          row.focus({ preventScroll: true })
+        }
+      }, 50)
     }
   }
 
@@ -294,6 +314,7 @@ export default function Bookmarks() {
       return
     }
     const wasActive = previewBookmarkId === bookmarkId
+    setShouldAutoFocusPreview(false)
     setPreviewBookmarkId(bookmarkId)
     setIsPreviewOpen(prev => (wasActive ? !prev : true))
   }
@@ -308,6 +329,7 @@ export default function Bookmarks() {
       event.preventDefault()
       const nextIndex = Math.min(index + 1, bookmarkItems.length - 1)
       if (nextIndex !== index && bookmarkItems[nextIndex]) {
+        setShouldAutoFocusPreview(false)
         setPreviewBookmarkId(bookmarkItems[nextIndex].id)
         setIsPreviewOpen(true)
         focusRow(nextIndex)
@@ -316,6 +338,7 @@ export default function Bookmarks() {
       event.preventDefault()
       const prevIndex = Math.max(index - 1, 0)
       if (prevIndex !== index && bookmarkItems[prevIndex]) {
+        setShouldAutoFocusPreview(false)
         setPreviewBookmarkId(bookmarkItems[prevIndex].id)
         setIsPreviewOpen(true)
         focusRow(prevIndex)
@@ -323,6 +346,7 @@ export default function Bookmarks() {
     } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space') {
       event.preventDefault()
       const wasActive = previewBookmarkId === bookmarkId
+      setShouldAutoFocusPreview(false)
       setPreviewBookmarkId(bookmarkId)
       setIsPreviewOpen(prev => (wasActive ? !prev : true))
     }
@@ -992,7 +1016,8 @@ export default function Bookmarks() {
           </div>
           <details
             className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3"
-            {...({ defaultOpen: Boolean(titleQuery || urlQuery || regexPattern) } as any)}
+            open={isAdvancedFiltersOpen}
+            onToggle={(event) => setIsAdvancedFiltersOpen(event.currentTarget.open)}
           >
             <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-200">{t('bookmarks_advanced')}</summary>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1384,6 +1409,7 @@ export default function Bookmarks() {
                                     onClick={(event) => {
                                       event.stopPropagation()
                                       const wasActive = previewBookmarkId === b.id
+                                      setShouldAutoFocusPreview(true)
                                       setPreviewBookmarkId(b.id)
                                       setIsPreviewOpen(prev => (wasActive ? !prev : true))
                                     }}
@@ -1445,6 +1471,15 @@ export default function Bookmarks() {
           </>
         )}
       </main>
+      <div className="sr-only" data-testid="bookmark-preview-live-region">
+        <h2 id={previewScreenReaderHeadingId}>{t('bookmarks_preview_heading')}</h2>
+        <PreviewPane
+          snippet={previewSnippet}
+          emptyState={previewEmptyState}
+          labelledBy={previewScreenReaderHeadingId}
+          tabIndex={-1}
+        />
+      </div>
       {publishPlan && (
         <BulkPublishModal
           open
@@ -1484,6 +1519,7 @@ export default function Bookmarks() {
           labelledBy={previewHeadingId}
           snippet={previewSnippet}
           emptyState={previewEmptyState}
+          autoFocus={shouldAutoFocusPreview}
           onClose={() => setIsPreviewOpen(false)}
         />
       )}

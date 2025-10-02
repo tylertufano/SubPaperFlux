@@ -10,6 +10,7 @@ type PreviewSlideOverProps = {
   snippet?: string | null
   emptyState?: ReactNode
   onClose: () => void
+  autoFocus?: boolean
 }
 
 const FOCUSABLE_SELECTOR =
@@ -23,6 +24,7 @@ export default function PreviewSlideOver({
   snippet,
   emptyState,
   onClose,
+  autoFocus = true,
 }: PreviewSlideOverProps) {
   const { t } = useI18n()
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -30,7 +32,7 @@ export default function PreviewSlideOver({
   const lastActiveElementRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    if (!open || typeof document === 'undefined') {
+    if (!open || !autoFocus || typeof document === 'undefined') {
       return
     }
 
@@ -47,10 +49,10 @@ export default function PreviewSlideOver({
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [open])
+  }, [autoFocus, open])
 
   useEffect(() => {
-    if (open || typeof document === 'undefined') {
+    if (open || !autoFocus || typeof document === 'undefined') {
       return
     }
 
@@ -59,7 +61,7 @@ export default function PreviewSlideOver({
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [open])
+  }, [autoFocus, open])
 
   useEffect(() => {
     if (!open || typeof document === 'undefined') {
@@ -72,6 +74,10 @@ export default function PreviewSlideOver({
       if (event.key === 'Escape') {
         event.preventDefault()
         onClose()
+        return
+      }
+
+      if (!autoFocus) {
         return
       }
 
@@ -104,7 +110,7 @@ export default function PreviewSlideOver({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  }, [autoFocus, open, onClose])
 
   if (!open) {
     return null
