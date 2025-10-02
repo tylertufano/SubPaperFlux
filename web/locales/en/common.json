@@ -256,7 +256,7 @@
   "job_schedules_error_feed_ids": "Provide one or more numeric feed IDs",
   "job_schedules_error_site_login_pair": "Select a site login credential.",
   "job_schedules_error_feed_selection": "Select a saved feed.",
-  "job_schedules_error_publish_wildcard_exists": "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+  "job_schedules_error_publish_wildcard_exists": "A wildcard publish schedule already exists for this Instapaper credential. No additional publish schedules can be created.",
   "job_schedules_error_publish_feed_required": "Select a feed because targeted schedules already exist for this Instapaper credential.",
   "job_schedules_error_miniflux_cookie": "Enter a cookie key or select both a site config and login credential",
   "job_schedules_error_instapaper": "Choose an Instapaper credential",

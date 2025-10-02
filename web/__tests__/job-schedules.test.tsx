@@ -567,9 +567,20 @@ describe("JobSchedulesPage", () => {
     );
     fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
 
+    const feedSelect = within(createForm).getByLabelText(
+      "Attach to feed (optional)",
+    ) as HTMLSelectElement;
     expect(
       within(createForm).getByText(
-        "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+        "A wildcard publish schedule already exists for this Instapaper credential. No additional publish schedules can be created.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.change(feedSelect, { target: { value: "feed-1" } });
+    expect(feedSelect.value).toBe("feed-1");
+    expect(
+      within(createForm).getByText(
+        "A wildcard publish schedule already exists for this Instapaper credential. No additional publish schedules can be created.",
       ),
     ).toBeInTheDocument();
 
@@ -580,13 +591,13 @@ describe("JobSchedulesPage", () => {
     );
 
     const wildcardConflicts = await within(createForm).findAllByText(
-      "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+      "A wildcard publish schedule already exists for this Instapaper credential. No additional publish schedules can be created.",
     );
     expect(wildcardConflicts.length).toBeGreaterThan(0);
     await expect(
       within(createForm).findByRole("alert"),
     ).resolves.toHaveTextContent(
-      "A wildcard publish schedule already exists for this Instapaper credential. Select a feed or edit the existing schedule.",
+      "A wildcard publish schedule already exists for this Instapaper credential. No additional publish schedules can be created.",
     );
   });
 
