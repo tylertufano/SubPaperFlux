@@ -193,6 +193,8 @@ class JobOut(BaseModel):
     owner_user_id: Optional[str] = None
     payload: dict
     details: dict = Field(default_factory=dict)
+    created_at: datetime
+    run_at: Optional[datetime] = None
 
 
 class JobsPage(BaseModel):

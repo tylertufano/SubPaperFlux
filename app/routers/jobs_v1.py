@@ -26,7 +26,10 @@ def list_jobs(
     type: Optional[str] = Query(None, alias="job_type", description="Filter by job type"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),
-    order_by: str = Query("created", description="Sort key: attempts|available_at|id"),
+    order_by: str = Query(
+        "run_at",
+        description="Sort key: attempts|available_at|id|run_at|created|created_at",
+    ),
     order_dir: str = Query("desc", description="asc|desc"),
 ):
     user_id = current_user["sub"]
@@ -43,12 +46,18 @@ def list_jobs(
     total = session.exec(stmt.count()).one() if hasattr(stmt, "count") else len(session.exec(stmt).all())
 
     # Sorting
-    if order_by == "attempts":
-        stmt = stmt.order_by(Job.attempts.desc() if order_dir == "desc" else Job.attempts)
-    elif order_by == "available_at":
-        stmt = stmt.order_by(Job.available_at.desc() if order_dir == "desc" else Job.available_at)
-    else:
-        stmt = stmt.order_by(Job.id.desc() if order_dir == "desc" else Job.id)
+    order_fields = {
+        "attempts": Job.attempts,
+        "available_at": Job.available_at,
+        "id": Job.id,
+        "run_at": Job.run_at,
+        "created": Job.created_at,
+        "created_at": Job.created_at,
+    }
+    order_column = order_fields.get(order_by, Job.run_at)
+    primary_order = order_column.desc() if order_dir == "desc" else order_column.asc()
+    secondary_order = Job.id.desc() if order_dir == "desc" else Job.id.asc()
+    stmt = stmt.order_by(primary_order, secondary_order)
 
     stmt = stmt.offset((page - 1) * size).limit(size)
     rows = session.exec(stmt).all()
@@ -64,6 +73,8 @@ def list_jobs(
             owner_user_id=r.owner_user_id,
             payload=r.payload or {},
             details=r.details or {},
+            created_at=r.created_at,
+            run_at=r.run_at,
         )
         for r in rows
     ]
@@ -79,7 +90,10 @@ async def stream_jobs(
     type: Optional[str] = Query(None, alias="job_type", description="Filter by job type"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),
-    order_by: str = Query("created", description="Sort key: attempts|available_at|id"),
+    order_by: str = Query(
+        "run_at",
+        description="Sort key: attempts|available_at|id|run_at|created|created_at",
+    ),
     order_dir: str = Query("desc", description="asc|desc"),
 ):
     async def event_generator():
@@ -119,6 +133,8 @@ def get_job(job_id: str, current_user=Depends(get_current_user), session=Depends
         owner_user_id=job.owner_user_id,
         payload=job.payload or {},
         details=job.details or {},
+        created_at=job.created_at,
+        run_at=job.run_at,
     )
 
 
@@ -157,6 +173,8 @@ def retry_job(job_id: str, current_user=Depends(get_current_user), session=Depen
         owner_user_id=job.owner_user_id,
         payload=job.payload or {},
         details=job.details or {},
+        created_at=job.created_at,
+        run_at=job.run_at,
     )
 
 

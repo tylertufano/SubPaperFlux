@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteSetupStatusOut, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -448,11 +448,6 @@ export interface UpdateRoleV1AdminRolesRoleIdPatchRequest {
     roleId: any;
     adminRoleUpdate: AdminRoleUpdate;
 }
-export interface UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest {
-    requestBody: {
-        [key: string]: any;
-    } | null;
-}
 export interface UpdateSiteConfigV1V1SiteConfigsConfigIdPutRequest {
     configId: any;
     body: any | null;
@@ -852,14 +847,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Get role details
      */
     getRoleV1AdminRolesRoleIdGet(requestParameters: GetRoleV1AdminRolesRoleIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
-    /**
-     * Retrieve setup progress
-     */
-    getSetupStatusV1SiteSettingsSetupStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>>;
-    /**
-     * Retrieve setup progress
-     */
-    getSetupStatusV1SiteSettingsSetupStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
     /**
      * Retrieve a site config
      */
@@ -1298,14 +1285,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Update a role
      */
     updateRoleV1AdminRolesRoleIdPatch(requestParameters: UpdateRoleV1AdminRolesRoleIdPatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminRoleDetail>;
-    /**
-     * Create or replace setup progress
-     */
-    updateSetupStatusV1SiteSettingsSetupStatusPutRaw(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteSetupStatusOut>>;
-    /**
-     * Create or replace setup progress
-     */
-    updateSetupStatusV1SiteSettingsSetupStatusPut(requestParameters: UpdateSetupStatusV1SiteSettingsSetupStatusPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteSetupStatusOut>;
     /**
      * Update a site config
      */

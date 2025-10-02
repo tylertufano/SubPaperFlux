@@ -104,6 +104,7 @@ def fetch_next_job() -> Optional[Job]:
         job = session.exec(stmt).first()
         if job:
             job.status = "in_progress"
+            job.run_at = datetime.now(timezone.utc)
             session.add(job)
             session.commit()
             session.refresh(job)

@@ -190,6 +190,8 @@
   "bookmarks_open_preview": "Open preview",
   "bookmarks_open_preview_aria": "Open preview for {title}",
   "jobs_title": "Jobs",
+  "jobs_run_at_label": "Last run",
+  "jobs_run_at_never": "Never run",
   "job_schedules_title": "Schedules",
   "job_schedules_filters_label": "Schedule filters",
   "job_schedules_filter_owner_label": "Owner",

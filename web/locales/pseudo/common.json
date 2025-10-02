@@ -256,6 +256,8 @@
   "job_type_unknown": "Desconocido ✨",
   "jobs_badge_rss_poll": "{stored}/{total} guardados{duplicates} ✨",
   "jobs_badge_rss_poll_duplicates": " (+{count} duplicados) ✨",
+  "jobs_run_at_label": "Última ejecución ✨",
+  "jobs_run_at_never": "Nunca ejecutado ✨",
   "admin_site_settings_description": "Edita el mensaje de bienvenida de la portada ✨",
   "admin_site_settings_form_heading": "Mensaje de bienvenida ✨",
   "admin_site_settings_form_description": "Actualiza titular, texto y llamada a la acción mostrados en la portada ✨",
