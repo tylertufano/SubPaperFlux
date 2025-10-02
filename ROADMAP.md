@@ -278,9 +278,9 @@ Reference: [User Management Rollout Plan](docs/user-management-rollout.md).
 
 ### Accessibility & Internationalization
 
-- [ ] Extract core strings and page text for localization (UI-013)
-- [ ] Color contrast audits and dark mode (UI-032)
-- [ ] Locale detection and formatting (dates, numbers) (UI-034)
+- [x] Extract core strings and page text for localization (UI-013)
+- [x] Color contrast audits and dark mode (UI-032)
+- [x] Locale detection and formatting (dates, numbers) (UI-034)
 
 ### UX Refinements
 
