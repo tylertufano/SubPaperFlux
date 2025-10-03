@@ -1402,28 +1402,9 @@ export default function Bookmarks() {
                                 />
                               </td>
                               <td className="td">
-                                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
-                                  <button
-                                    type="button"
-                                    className="inline-flex items-center justify-center rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-                                    onClick={(event) => {
-                                      event.stopPropagation()
-                                      const wasActive = previewBookmarkId === b.id
-                                      setShouldAutoFocusPreview(true)
-                                      setPreviewBookmarkId(b.id)
-                                      setIsPreviewOpen(prev => (wasActive ? !prev : true))
-                                    }}
-                                    aria-haspopup="dialog"
-                                    aria-controls={previewDialogId}
-                                    aria-expanded={isActive && isPreviewOpen}
-                                    aria-label={t('bookmarks_open_preview_aria', { title: bookmarkLabel })}
-                                  >
-                                    {t('bookmarks_open_preview')}
-                                  </button>
-                                  <span className="text-left text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {b.title}
-                                  </span>
-                                </div>
+                                <span className="text-left text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {b.title}
+                                </span>
                               </td>
                               <td className="td">
                                 <a className="text-blue-600 hover:underline" href={b.url} target="_blank" rel="noreferrer">
