@@ -434,8 +434,10 @@ function ScheduleForm({
     | { ok: false; errors: Record<string, string>; message?: string } {
     const nextErrors: Record<string, string> = {};
     const trimmedScheduleName = scheduleName.trim();
+    const fallbackScheduleName =
+      trimmedScheduleName || jobTypeLabel(jobType, t).trim();
     const trimmedFrequency = frequency.trim();
-    if (!trimmedScheduleName) {
+    if (!fallbackScheduleName) {
       nextErrors.scheduleName = t("job_schedules_error_schedule_name");
     }
     if (!trimmedFrequency) {
@@ -578,7 +580,7 @@ function ScheduleForm({
     }
 
     const result: ScheduleFormResult = {
-      scheduleName: trimmedScheduleName,
+      scheduleName: fallbackScheduleName,
       jobType,
       frequency: trimmedFrequency,
       payload,
