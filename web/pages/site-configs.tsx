@@ -22,7 +22,9 @@ import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
+import { SiteConfigApiOutFromJSON } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
+import { SiteConfigSeleniumOutFromJSON } from '../sdk/src/models/SiteConfigSeleniumOut'
 
 const API_METHOD_OPTIONS = SUPPORTED_HTTP_METHODS
 const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
@@ -774,7 +776,7 @@ export default function SiteConfigs() {
   }
 
   function normalizeListItem(
-    value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut,
+    value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut | Record<string, unknown>,
   ): SiteConfigRecord {
     if (isApiConfig(value)) {
       const normalizedApi: SiteConfigRecord = {
@@ -783,16 +785,32 @@ export default function SiteConfigs() {
       }
       return normalizedApi
     }
-    const normalizedSelenium: SiteConfigRecord = {
-      ...(value as SiteConfigSeleniumOut),
-      loginType: 'selenium' as const,
+    if (isSeleniumConfig(value)) {
+      const normalizedSelenium: SiteConfigRecord = {
+        ...(value as SiteConfigSeleniumOut),
+        loginType: 'selenium' as const,
+      }
+      return normalizedSelenium
     }
-    return normalizedSelenium
+    if (value && typeof value === 'object') {
+      if ('api_config' in value) {
+        return normalizeListItem(SiteConfigApiOutFromJSON(value))
+      }
+      if ('selenium_config' in value) {
+        return normalizeListItem(SiteConfigSeleniumOutFromJSON(value))
+      }
+      if ('login_type' in value) {
+        const loginTypeRaw = value['login_type']
+        const loginType = loginTypeRaw === 'api' ? 'api' : 'selenium'
+        return normalizeListItem({ ...value, loginType } as SiteConfigRecord)
+      }
+    }
+    return value as unknown as SiteConfigRecord
   }
 
   const listItems = Array.isArray(data)
-    ? (data as SiteConfigRecord[]).map(normalizeListItem)
-    : (data as SiteConfigsPage | undefined)?.items?.map(normalizeListItem) ?? []
+    ? (data as Array<SiteConfigRecord | Record<string, unknown>>).map((item) => normalizeListItem(item))
+    : (data as SiteConfigsPage | undefined)?.items?.map((item: any) => normalizeListItem(item)) ?? []
 
   return (
     <div>
