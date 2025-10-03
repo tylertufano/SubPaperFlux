@@ -20,19 +20,19 @@ import { exists, mapValues } from '../runtime';
  */
 export interface JobScheduleOut {
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobScheduleOut
      */
     id: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobScheduleOut
      */
     scheduleName: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobScheduleOut
      */
