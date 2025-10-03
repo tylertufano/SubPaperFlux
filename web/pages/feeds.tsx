@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSessionReauth } from '../lib/useSessionReauth'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 import type { Credential } from '../sdk/src/models/Credential'
 import { buildSiteConfigLabelMap, buildSiteLoginOptions, SiteLoginOption } from '../lib/siteLoginOptions'
@@ -13,7 +13,7 @@ import { buildSiteConfigLabelMap, buildSiteLoginOptions, SiteLoginOption } from 
 export default function Feeds() {
   const { t } = useI18n()
   const router = useRouter()
-  const { data: session, status: sessionStatus } = useSession()
+  const { data: session, status: sessionStatus } = useSessionReauth()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const permissions = extractPermissionList(session?.user)
   const isAuthenticated = sessionStatus === 'authenticated'

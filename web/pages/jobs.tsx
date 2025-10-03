@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSessionReauth } from '../lib/useSessionReauth'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 
 const ORDER_BY = 'run_at' as const
@@ -15,7 +15,7 @@ const ORDER_BY = 'run_at' as const
 export default function Jobs() {
   const { t } = useI18n()
   const router = useRouter()
-  const { data: session, status: sessionStatus } = useSession()
+  const { data: session, status: sessionStatus } = useSessionReauth()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })

@@ -7,7 +7,7 @@ import { useI18n } from '../lib/i18n'
 import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSessionReauth } from '../lib/useSessionReauth'
 import {
   extractPermissionList,
   hasPermission,
@@ -80,7 +80,7 @@ function extractItems<T>(source: ItemsSource<T> | undefined): T[] {
 export default function Bookmarks() {
   const { t } = useI18n()
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSessionReauth()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const numberFormatter = useNumberFormatter()
   const dateTimeFormatter = useDateTimeFormatter({ dateStyle: 'medium', timeStyle: 'short' })
