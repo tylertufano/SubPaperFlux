@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/router";
-import { useSession } from "next-auth/react";
+import { useSessionReauth } from "../lib/useSessionReauth";
 import { Alert, Breadcrumbs, EmptyState, Nav } from "../components";
 import { useI18n } from "../lib/i18n";
 import { buildBreadcrumbs } from "../lib/breadcrumbs";
@@ -1332,7 +1332,7 @@ function ScheduleForm({
 export default function JobSchedulesPage() {
   const { t } = useI18n();
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus } = useSessionReauth();
   const breadcrumbs = useMemo(
     () => buildBreadcrumbs(router.pathname, t),
     [router.pathname, t],

@@ -6,7 +6,7 @@ import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
-import { useSession } from 'next-auth/react'
+import { useSessionReauth } from '../lib/useSessionReauth'
 import {
   extractPermissionList,
   hasPermission,
@@ -18,7 +18,7 @@ import {
 export default function Credentials() {
   const { t } = useI18n()
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useSessionReauth()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const permissions = extractPermissionList(session?.user)
   const currentUserId =
