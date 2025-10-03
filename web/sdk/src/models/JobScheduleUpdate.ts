@@ -93,13 +93,13 @@ export function JobScheduleUpdateToJSON(value?: JobScheduleUpdate | null): any {
         return null;
     }
     return {
-
-        'schedule_name': value.scheduleName,
+        
         'job_type': value.jobType,
         'payload': value.payload,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,
+        'schedule_name': value.scheduleName,
     };
 }
 

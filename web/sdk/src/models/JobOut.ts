@@ -68,7 +68,7 @@ export interface JobOut {
      */
     payload: { [key: string]: any; } | null;
     /**
-     *
+     * 
      * @type {{ [key: string]: any; }}
      * @memberof JobOut
      */
