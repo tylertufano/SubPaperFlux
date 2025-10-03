@@ -74,18 +74,6 @@ export interface JobOut {
      */
     details?: { [key: string]: any; } | null;
     /**
-     *
-     * @type {any}
-     * @memberof JobOut
-     */
-    scheduleId?: any | null;
-    /**
-     *
-     * @type {any}
-     * @memberof JobOut
-     */
-    scheduleName?: any | null;
-    /**
      * 
      * @type {any}
      * @memberof JobOut
@@ -97,6 +85,18 @@ export interface JobOut {
      * @memberof JobOut
      */
     runAt?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobOut
+     */
+    scheduleId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobOut
+     */
+    scheduleName?: any | null;
 }
 
 /**
@@ -133,10 +133,10 @@ export function JobOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Jo
         'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
         'details': !exists(json, 'details') ? undefined : json['details'],
-        'scheduleId': !exists(json, 'schedule_id') ? undefined : json['schedule_id'],
-        'scheduleName': !exists(json, 'schedule_name') ? undefined : json['schedule_name'],
         'createdAt': json['created_at'],
         'runAt': !exists(json, 'run_at') ? undefined : json['run_at'],
+        'scheduleId': !exists(json, 'schedule_id') ? undefined : json['schedule_id'],
+        'scheduleName': !exists(json, 'schedule_name') ? undefined : json['schedule_name'],
     };
 }
 
@@ -158,10 +158,10 @@ export function JobOutToJSON(value?: JobOut | null): any {
         'owner_user_id': value.ownerUserId,
         'payload': value.payload,
         'details': value.details,
-        'schedule_id': value.scheduleId,
-        'schedule_name': value.scheduleName,
         'created_at': value.createdAt,
         'run_at': value.runAt,
+        'schedule_id': value.scheduleId,
+        'schedule_name': value.scheduleName,
     };
 }
 
