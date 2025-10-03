@@ -44,7 +44,7 @@ export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
     roleName: any;
     body?: any | null;
 }
-export interface ListAuditLogsV1AdminAuditGetRequest {
+export interface ListAuditLogsAdminAuditGetRequest {
     page?: any;
     size?: any;
     entityType?: any;
@@ -55,7 +55,18 @@ export interface ListAuditLogsV1AdminAuditGetRequest {
     since?: any;
     until?: any;
 }
-export interface ListAuditLogsV1AdminAuditGet0Request {
+export interface ListAuditLogsAdminAuditGet0Request {
+    page?: any;
+    size?: any;
+    entityType?: any;
+    entityId?: any;
+    action?: any;
+    ownerUserId?: any;
+    actorUserId?: any;
+    since?: any;
+    until?: any;
+}
+export interface ListAuditLogsV1AdminAuditGetRequest {
     page?: any;
     size?: any;
     entityType?: any;
@@ -197,19 +208,27 @@ export declare class AdminApi extends runtime.BaseAPI {
     /**
      * List audit log entries
      */
+    listAuditLogsAdminAuditGetRaw(requestParameters: ListAuditLogsAdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>>;
+    /**
+     * List audit log entries
+     */
+    listAuditLogsAdminAuditGet(requestParameters?: ListAuditLogsAdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
+    /**
+     * List audit log entries
+     */
+    listAuditLogsAdminAuditGet_1Raw(requestParameters: ListAuditLogsAdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>>;
+    /**
+     * List audit log entries
+     */
+    listAuditLogsAdminAuditGet_1(requestParameters?: ListAuditLogsAdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
+    /**
+     * List audit log entries
+     */
     listAuditLogsV1AdminAuditGetRaw(requestParameters: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>>;
     /**
      * List audit log entries
      */
     listAuditLogsV1AdminAuditGet(requestParameters?: ListAuditLogsV1AdminAuditGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
-    /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_1Raw(requestParameters: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuditLogsPage>>;
-    /**
-     * List audit log entries
-     */
-    listAuditLogsV1AdminAuditGet_1(requestParameters?: ListAuditLogsV1AdminAuditGet0Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuditLogsPage>;
     /**
      * List organizations
      */
@@ -237,25 +256,25 @@ export declare class AdminApi extends runtime.BaseAPI {
     /**
      * Postgres Enable Rls
      */
-    postgresEnableRlsV1AdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
+    postgresEnableRlsAdminPostgresEnableRlsPostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
         [key: string]: any;
     }>>;
     /**
      * Postgres Enable Rls
      */
-    postgresEnableRlsV1AdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
+    postgresEnableRlsAdminPostgresEnableRlsPost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
         [key: string]: any;
     }>;
     /**
      * Postgres Prepare
      */
-    postgresPrepareV1AdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
+    postgresPrepareAdminPostgresPreparePostRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
         [key: string]: any;
     }>>;
     /**
      * Postgres Prepare
      */
-    postgresPrepareV1AdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
+    postgresPrepareAdminPostgresPreparePost(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
         [key: string]: any;
     }>;
     /**

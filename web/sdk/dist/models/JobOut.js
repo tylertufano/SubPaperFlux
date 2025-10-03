@@ -47,10 +47,10 @@ function JobOutFromJSONTyped(json, ignoreDiscriminator) {
         'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
         'details': !(0, runtime_1.exists)(json, 'details') ? undefined : json['details'],
-        'createdAt': json['created_at'],
-        'runAt': !(0, runtime_1.exists)(json, 'run_at') ? undefined : json['run_at'],
         'scheduleId': !(0, runtime_1.exists)(json, 'schedule_id') ? undefined : json['schedule_id'],
         'scheduleName': !(0, runtime_1.exists)(json, 'schedule_name') ? undefined : json['schedule_name'],
+        'createdAt': json['created_at'],
+        'runAt': !(0, runtime_1.exists)(json, 'run_at') ? undefined : json['run_at'],
     };
 }
 exports.JobOutFromJSONTyped = JobOutFromJSONTyped;
@@ -71,10 +71,10 @@ function JobOutToJSON(value) {
         'owner_user_id': value.ownerUserId,
         'payload': value.payload,
         'details': value.details,
-        'created_at': value.createdAt,
-        'run_at': value.runAt,
         'schedule_id': value.scheduleId,
         'schedule_name': value.scheduleName,
+        'created_at': value.createdAt,
+        'run_at': value.runAt,
     };
 }
 exports.JobOutToJSON = JobOutToJSON;
