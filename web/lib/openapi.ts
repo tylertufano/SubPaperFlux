@@ -405,6 +405,37 @@ async function getClients() {
           }
         },
       }
+      const handleUnauthorized: Middleware = {
+        post: async ({ response }) => {
+          if (response.status !== 401) {
+            return undefined
+          }
+
+          try {
+            await response.clone().text()
+          } catch {
+            // Ignore failures draining the response body
+          }
+
+          if (isOidcAutoLoginEnabled()) {
+            return triggerOidcRedirect()
+          }
+
+          if (typeof window !== 'undefined') {
+            const callbackUrl = resolveSignOutRedirectUrl()
+            try {
+              await signOut({ callbackUrl, redirect: true })
+            } catch (error) {
+              if (typeof console !== 'undefined' && typeof console.error === 'function') {
+                console.error('Failed to sign out after 401 response.', error)
+              }
+            }
+          }
+
+          throw new AuthorizationRedirectError('Authentication required. Redirecting to sign-in.')
+        },
+      }
+
       const cfg = new Configuration({
         basePath,
         accessToken: async () => {
@@ -413,7 +444,7 @@ async function getClients() {
           return token ?? ''
         },
         headers: { 'X-CSRF-Token': CSRF, 'x-csrf-token': CSRF },
-        middleware: [retry, attachAccessToken],
+        middleware: [retry, attachAccessToken, handleUnauthorized],
       })
       return {
         v1: new V1Api(cfg),
