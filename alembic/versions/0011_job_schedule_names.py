@@ -1,6 +1,4 @@
-"""Add schedule names to job schedules
-
-"""Add schedule names to job schedules
+"""Add schedule names to job schedules.
 
 Revision ID: 0011_job_schedule_names
 Revises: 0010_job_run_timestamps
