@@ -7,8 +7,7 @@ from .util_subpaperflux import format_site_login_pair_id, poll_rss_and_publish
 
 def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     # Expected payload: {"feed_id": str, "instapaper_id": str | None,
-    #                    "lookback": "24h", "is_paywalled": bool, "rss_requires_auth": bool,
-    #                    "site_login_pair": str | None}
+    #                    "lookback": "24h", "site_login_pair": str | None}
     if not (payload.get("feed_id")):
         raise ValueError("feed_id is required")
     instapaper_id = payload.get("instapaper_id") or None
@@ -19,12 +18,11 @@ def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) ->
         if cred and site_cfg:
             site_login_pair = format_site_login_pair_id(str(cred), str(site_cfg))
 
+    # Feed-level configuration determines paywall/authentication behavior.
     res = poll_rss_and_publish(
         instapaper_id=instapaper_id,
         feed_id=payload["feed_id"],
         lookback=payload.get("lookback", "24h"),
-        is_paywalled=payload.get("is_paywalled", False),
-        rss_requires_auth=payload.get("rss_requires_auth", False),
         site_login_pair_id=site_login_pair,
         owner_user_id=owner_user_id,
     )

@@ -285,8 +285,6 @@ function initPayloadState(
       return {
         feed_id: payload?.feed_id ?? "",
         lookback: payload?.lookback ?? "",
-        is_paywalled: Boolean(payload?.is_paywalled ?? false),
-        rss_requires_auth: Boolean(payload?.rss_requires_auth ?? false),
         site_login_pair: initialSiteLoginPair,
       };
     case "publish":
@@ -495,8 +493,6 @@ function ScheduleForm({
     } else if (jobType === "rss_poll") {
       const feedId = (payloadState.feed_id || "").toString().trim();
       const lookback = (payloadState.lookback || "").toString().trim();
-      const isPaywalled = Boolean(payloadState.is_paywalled);
-      const rssRequiresAuth = Boolean(payloadState.rss_requires_auth);
       if (!feedId)
         nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
       const siteLoginValue = (payloadState.site_login_pair || "")
@@ -505,8 +501,6 @@ function ScheduleForm({
       const siteLogin = parseSiteLoginKey(siteLoginValue);
       if (feedId) payload.feed_id = feedId;
       if (lookback) payload.lookback = lookback;
-      payload.is_paywalled = isPaywalled;
-      payload.rss_requires_auth = rssRequiresAuth;
       if (siteLogin) {
         payload.site_login_pair = toSiteLoginKey(siteLogin);
       }
@@ -886,30 +880,6 @@ function ScheduleForm({
                 onChange={(e) => updatePayload("lookback", e.target.value)}
               />
             </div>
-            <label className="inline-flex items-center gap-2">
-              <input
-                id="schedule-rss-paywalled"
-                type="checkbox"
-                checked={Boolean(payloadState.is_paywalled)}
-                onChange={(e) => updatePayload("is_paywalled", e.target.checked)}
-              />
-              <span className="text-sm text-gray-700">
-                {t("job_schedules_field_is_paywalled")}
-              </span>
-            </label>
-            <label className="inline-flex items-center gap-2">
-              <input
-                id="schedule-rss-requires-auth"
-                type="checkbox"
-                checked={Boolean(payloadState.rss_requires_auth)}
-                onChange={(e) =>
-                  updatePayload("rss_requires_auth", e.target.checked)
-                }
-              />
-              <span className="text-sm text-gray-700">
-                {t("job_schedules_field_rss_requires_auth")}
-              </span>
-            </label>
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700"

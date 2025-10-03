@@ -72,8 +72,6 @@ const defaultSchedule = {
   payload: {
     feed_id: "feed-1",
     lookback: "12h",
-    is_paywalled: true,
-    rss_requires_auth: true,
     site_login_pair: "cred-login::site-1",
   },
   frequency: "1h",
@@ -357,16 +355,6 @@ describe("JobSchedulesPage", () => {
     ) as HTMLInputElement;
     fireEvent.change(lookbackInput, { target: { value: "6h" } });
 
-    const paywalledCheckbox = screen.getByLabelText(
-      "Feed is paywalled",
-    ) as HTMLInputElement;
-    fireEvent.click(paywalledCheckbox);
-
-    const requiresAuthCheckbox = screen.getByLabelText(
-      "Feed requires authentication",
-    ) as HTMLInputElement;
-    fireEvent.click(requiresAuthCheckbox);
-
     const siteLoginSelect = getSiteLoginSelect();
     expect(siteLoginSelect).not.toBeNull();
 
@@ -387,8 +375,6 @@ describe("JobSchedulesPage", () => {
         payload: expect.objectContaining({
           feed_id: "feed-1",
           lookback: "6h",
-          is_paywalled: true,
-          rss_requires_auth: true,
           site_login_pair: "cred-login::site-1",
         }),
       }),
@@ -396,6 +382,8 @@ describe("JobSchedulesPage", () => {
     const createdPayload =
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
     expect(createdPayload.instapaper_id).toBeUndefined();
+    expect(createdPayload.is_paywalled).toBeUndefined();
+    expect(createdPayload.rss_requires_auth).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -491,8 +479,6 @@ describe("JobSchedulesPage", () => {
         payload: expect.objectContaining({
           feed_id: "feed-2",
           lookback: "12h",
-          is_paywalled: true,
-          rss_requires_auth: true,
         }),
       }),
     });
@@ -500,8 +486,8 @@ describe("JobSchedulesPage", () => {
       openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
     expect(updatedPayload.site_login_pair).toBeUndefined();
     expect(updatedPayload.lookback).toBe("12h");
-    expect(updatedPayload.is_paywalled).toBe(true);
-    expect(updatedPayload.rss_requires_auth).toBe(true);
+    expect(updatedPayload.is_paywalled).toBeUndefined();
+    expect(updatedPayload.rss_requires_auth).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
