@@ -428,8 +428,18 @@ class Job(SQLModel, table=True):
 
 class JobSchedule(SQLModel, table=True):
     __tablename__ = "job_schedule"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id",
+            "schedule_name",
+            name="uq_job_schedule_owner_name",
+        ),
+    )
 
     id: str = Field(default_factory=lambda: gen_id("js"), primary_key=True)
+    schedule_name: str = Field(
+        sa_column=Column(String(length=255), nullable=False, index=True)
+    )
     job_type: str = Field(
         sa_column=Column(String(length=255), nullable=False, index=True)
     )

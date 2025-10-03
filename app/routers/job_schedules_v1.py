@@ -165,6 +165,7 @@ def _ensure_publish_schedule_exclusivity(
 def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
     return JobScheduleOut(
         id=schedule.id,
+        schedule_name=schedule.schedule_name,
         job_type=schedule.job_type,
         owner_user_id=schedule.owner_user_id,
         payload=dict(schedule.payload or {}),
@@ -178,7 +179,30 @@ def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
     )
 
 
+def _ensure_unique_schedule_name(
+    session,
+    owner_id: Optional[str],
+    schedule_name: str,
+    *,
+    exclude_schedule_id: Optional[str] = None,
+) -> None:
+    stmt = select(JobSchedule).where(JobSchedule.schedule_name == schedule_name)
+    if owner_id is None:
+        stmt = stmt.where(JobSchedule.owner_user_id.is_(None))
+    else:
+        stmt = stmt.where(JobSchedule.owner_user_id == owner_id)
+    if exclude_schedule_id:
+        stmt = stmt.where(JobSchedule.id != exclude_schedule_id)
+    existing = session.exec(stmt).first()
+    if existing:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="A schedule with this name already exists for the selected scope.",
+        )
+
+
 def _job_to_schema(job: Job) -> JobOut:
+    details = dict(job.details or {})
     return JobOut(
         id=job.id,
         type=job.type,
@@ -188,9 +212,11 @@ def _job_to_schema(job: Job) -> JobOut:
         available_at=job.available_at,
         owner_user_id=job.owner_user_id,
         payload=dict(job.payload or {}),
-        details=dict(job.details or {}),
+        details=details,
         created_at=job.created_at,
         run_at=job.run_at,
+        schedule_id=details.get("schedule_id"),
+        schedule_name=details.get("schedule_name"),
     )
 
 
@@ -314,6 +340,8 @@ def create_job_schedule(
     owner_id = body.owner_user_id if body.owner_user_id is not None else user_id
     _ensure_manage_permission(session, current_user, owner_id=owner_id)
 
+    _ensure_unique_schedule_name(session, owner_id, body.schedule_name)
+
     if body.job_type == "publish":
         payload = dict(body.payload or {})
         _ensure_publish_schedule_exclusivity(
@@ -327,6 +355,7 @@ def create_job_schedule(
         next_run_at = _compute_next_run_at(body.frequency)
 
     schedule = JobSchedule(
+        schedule_name=body.schedule_name,
         job_type=body.job_type,
         payload=dict(body.payload or {}),
         frequency=body.frequency,
@@ -364,6 +393,20 @@ def update_job_schedule(
     if "job_type" in updates:
         _validate_job_type_or_400(updates["job_type"])
 
+    if "schedule_name" in updates:
+        next_name = updates["schedule_name"]
+        if next_name is None:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Schedule name cannot be null.",
+            )
+        _ensure_unique_schedule_name(
+            session,
+            schedule.owner_user_id,
+            next_name,
+            exclude_schedule_id=schedule.id,
+        )
+
     prospective_job_type = updates.get("job_type", schedule.job_type)
     prospective_payload = (
         dict(updates["payload"] or {})
@@ -389,6 +432,8 @@ def update_job_schedule(
         schedule.next_run_at = updates["next_run_at"]
     if "is_active" in updates:
         schedule.is_active = updates["is_active"]
+    if "schedule_name" in updates:
+        schedule.schedule_name = updates["schedule_name"]
 
     became_active = bool(schedule.is_active) and not was_active and updates.get("is_active")
     if became_active and schedule.next_run_at is None:
@@ -448,7 +493,10 @@ def run_job_schedule_now(
         payload=dict(schedule.payload or {}),
         status="queued",
         owner_user_id=schedule.owner_user_id,
-        details={"schedule_id": schedule.id},
+        details={
+            "schedule_id": schedule.id,
+            "schedule_name": schedule.schedule_name,
+        },
     )
     session.add(job)
 

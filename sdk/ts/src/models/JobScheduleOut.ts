@@ -20,13 +20,19 @@ import { exists, mapValues } from '../runtime';
  */
 export interface JobScheduleOut {
     /**
-     * 
+     *
      * @type {any}
      * @memberof JobScheduleOut
      */
     id: any | null;
     /**
-     * 
+     *
+     * @type {any}
+     * @memberof JobScheduleOut
+     */
+    scheduleName: any | null;
+    /**
+     *
      * @type {any}
      * @memberof JobScheduleOut
      */
@@ -93,6 +99,7 @@ export interface JobScheduleOut {
 export function instanceOfJobScheduleOut(value: object): boolean {
     let isInstance = true;
     isInstance = isInstance && "id" in value;
+    isInstance = isInstance && "scheduleName" in value;
     isInstance = isInstance && "jobType" in value;
     isInstance = isInstance && "payload" in value;
     isInstance = isInstance && "frequency" in value;
@@ -111,6 +118,7 @@ export function JobScheduleOutFromJSONTyped(json: any, ignoreDiscriminator: bool
     return {
         
         'id': json['id'],
+        'scheduleName': json['schedule_name'],
         'jobType': json['job_type'],
         'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
@@ -134,6 +142,7 @@ export function JobScheduleOutToJSON(value?: JobScheduleOut | null): any {
     return {
         
         'id': value.id,
+        'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'owner_user_id': value.ownerUserId,
         'payload': value.payload,

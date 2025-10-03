@@ -29,6 +29,7 @@ type ActiveFilter = "all" | "active" | "paused";
 type OwnerScope = "self" | "global";
 
 type ScheduleFormResult = {
+  scheduleName: string;
   jobType: JobType;
   frequency: string;
   payload: Record<string, any>;
@@ -337,6 +338,9 @@ function ScheduleForm({
 }: ScheduleFormProps) {
   const { t } = useI18n();
   const initialType = (initialSchedule?.jobType as JobType) ?? DEFAULT_JOB_TYPE;
+  const [scheduleName, setScheduleName] = useState(
+    initialSchedule?.scheduleName ?? "",
+  );
   const [jobType, setJobType] = useState<JobType>(initialType);
   const [frequency, setFrequency] = useState(
     initialSchedule?.frequency ?? defaultFrequency(initialType),
@@ -380,6 +384,7 @@ function ScheduleForm({
           : "self"
         : "self",
     );
+    setScheduleName(initialSchedule?.scheduleName ?? "");
     setPayloadState(initPayloadState(nextType, initialSchedule?.payload));
     setErrors({});
     setFormError(null);
@@ -428,7 +433,11 @@ function ScheduleForm({
     | { ok: true; value: ScheduleFormResult }
     | { ok: false; errors: Record<string, string>; message?: string } {
     const nextErrors: Record<string, string> = {};
+    const trimmedScheduleName = scheduleName.trim();
     const trimmedFrequency = frequency.trim();
+    if (!trimmedScheduleName) {
+      nextErrors.scheduleName = t("job_schedules_error_schedule_name");
+    }
     if (!trimmedFrequency) {
       nextErrors.frequency = t("job_schedules_error_frequency");
     }
@@ -569,6 +578,7 @@ function ScheduleForm({
     }
 
     const result: ScheduleFormResult = {
+      scheduleName: trimmedScheduleName,
       jobType,
       frequency: trimmedFrequency,
       payload,
@@ -1143,6 +1153,29 @@ function ScheduleForm({
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex flex-col md:col-span-2">
+          <label
+            className="text-sm font-medium text-gray-700"
+            htmlFor="schedule-name"
+          >
+            {t("job_schedules_field_schedule_name")}
+          </label>
+          <input
+            id="schedule-name"
+            className="input"
+            value={scheduleName}
+            onChange={(e) => setScheduleName(e.target.value)}
+            aria-invalid={Boolean(errors.scheduleName)}
+            aria-describedby={
+              errors.scheduleName ? "schedule-name-error" : undefined
+            }
+          />
+          {errors.scheduleName && (
+            <p id="schedule-name-error" className="text-sm text-red-600 mt-1">
+              {errors.scheduleName}
+            </p>
+          )}
+        </div>
         <div className="flex flex-col">
           <label
             className="text-sm font-medium text-gray-700"
@@ -1456,6 +1489,7 @@ export default function JobSchedulesPage() {
     try {
       await v1.createJobScheduleV1JobSchedulesPost({
         jobScheduleCreate: {
+          scheduleName: values.scheduleName,
           jobType: values.jobType,
           frequency: values.frequency,
           payload: values.payload,
@@ -1484,6 +1518,7 @@ export default function JobSchedulesPage() {
       await v1.updateJobScheduleV1JobSchedulesScheduleIdPatch({
         scheduleId: editingSchedule.id,
         jobScheduleUpdate: {
+          scheduleName: values.scheduleName,
           jobType: values.jobType,
           payload: values.payload,
           frequency: values.frequency,
@@ -1771,6 +1806,9 @@ export default function JobSchedulesPage() {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="th" scope="col">
+                    {t("job_schedules_column_name")}
+                  </th>
+                  <th className="th" scope="col">
                     {t("job_schedules_column_job_type")}
                   </th>
                   <th className="th" scope="col">
@@ -1813,7 +1851,11 @@ export default function JobSchedulesPage() {
                   const isExpanded = Boolean(expanded[schedule.id]);
                   return (
                     <React.Fragment key={schedule.id}>
-                      <tr className="odd:bg-white even:bg-gray-50">
+                      <tr
+                        className="odd:bg-white even:bg-gray-50"
+                        id={`schedule-${schedule.id}`}
+                      >
+                        <td className="td">{schedule.scheduleName}</td>
                         <td className="td">
                           {jobTypeLabel(schedule.jobType, t)}
                         </td>
@@ -1888,13 +1930,19 @@ export default function JobSchedulesPage() {
                       </tr>
                       {isExpanded && (
                         <tr className="bg-gray-50">
-                          <td className="td" colSpan={8}>
+                          <td className="td" colSpan={9}>
                             <div className="p-4 space-y-3">
                               <div>
                                 <h3 className="text-sm font-semibold text-gray-800 mb-2">
                                   {t("job_schedules_metadata_heading")}
                                 </h3>
                                 <dl className="grid gap-2 md:grid-cols-2 text-sm text-gray-700">
+                                  <div>
+                                    <dt className="font-medium">
+                                      {t("job_schedules_field_schedule_name")}
+                                    </dt>
+                                    <dd>{schedule.scheduleName}</dd>
+                                  </div>
                                   <div>
                                     <dt className="font-medium">
                                       {t("job_schedules_column_next_run")}

@@ -190,6 +190,7 @@ export default function Jobs() {
               <table className="table" role="table" aria-label={t('jobs_table_label')}>
                 <thead className="bg-gray-100">
                   <tr>
+                    <th className="th" scope="col">{t('jobs_column_schedule')}</th>
                     <th className="th" scope="col">{t('id_label')}</th>
                     <th className="th" scope="col">{t('type_label')}</th>
                     <th className="th" scope="col">{t('status_label')}</th>
@@ -225,6 +226,20 @@ export default function Jobs() {
                     return (
                       <React.Fragment key={j.id}>
                         <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                          <td className="td">
+                            {j.schedule_name ? (
+                              j.schedule_id ? (
+                                <Link
+                                  href={`/job-schedules#schedule-${j.schedule_id}`}
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {j.schedule_name}
+                                </Link>
+                              ) : (
+                                j.schedule_name
+                              )
+                            ) : '—'}
+                          </td>
                           <td className="td">{j.id}</td>
                           <td className="td">{j.type}</td>
                           <td className="td">
@@ -299,7 +314,7 @@ export default function Jobs() {
                         </tr>
                       {expanded[j.id] && (
                         <tr key={`${j.id}-details`} id={`job-row-details-${j.id}`} className="bg-gray-50">
-                          <td className="td" colSpan={7}>
+                          <td className="td" colSpan={8}>
                             <div className="p-3">
                               <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
                               <pre className="text-sm bg-white p-3 rounded border overflow-auto">
