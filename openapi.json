@@ -9752,6 +9752,28 @@
               }
             ],
             "title": "Run At"
+          },
+          "schedule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Id"
+          },
+          "schedule_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Name"
           }
         },
         "type": "object",
@@ -9786,6 +9808,12 @@
       },
       "JobScheduleCreate": {
         "properties": {
+          "schedule_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "title": "Schedule Name"
+          },
           "job_type": {
             "type": "string",
             "minLength": 1,
@@ -9832,6 +9860,7 @@
         },
         "type": "object",
         "required": [
+          "schedule_name",
           "job_type",
           "frequency"
         ],
@@ -9842,6 +9871,10 @@
           "id": {
             "type": "string",
             "title": "Id"
+          },
+          "schedule_name": {
+            "type": "string",
+            "title": "Schedule Name"
           },
           "job_type": {
             "type": "string",
@@ -9934,6 +9967,7 @@
         "type": "object",
         "required": [
           "id",
+          "schedule_name",
           "job_type",
           "payload",
           "frequency"
@@ -9942,6 +9976,12 @@
       },
       "JobScheduleUpdate": {
         "properties": {
+          "schedule_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "title": "Schedule Name"
+          },
           "job_type": {
             "anyOf": [
               {

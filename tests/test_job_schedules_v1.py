@@ -105,6 +105,7 @@ def test_create_schedule_defaults_next_run_when_omitted(client: TestClient, monk
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "login-default",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "15m",
@@ -113,6 +114,7 @@ def test_create_schedule_defaults_next_run_when_omitted(client: TestClient, monk
     assert create_resp.status_code == 201, create_resp.text
     created = create_resp.json()
 
+    assert created["schedule_name"] == "login-default"
     assert created["next_run_at"] is not None
     next_run_at = _parse_iso(created["next_run_at"])
     assert next_run_at == _normalize(fixed_now + timedelta(minutes=15))
@@ -125,6 +127,7 @@ def test_toggle_reactivation_restores_next_run_when_missing(client: TestClient, 
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "toggle-schedule",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -162,6 +165,7 @@ def test_patch_reactivation_restores_next_run_when_missing(client: TestClient, m
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "patch-reactivate",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "30m",
@@ -199,6 +203,7 @@ def test_create_list_get_schedule(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "list-schedule",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -210,23 +215,27 @@ def test_create_list_get_schedule(client: TestClient):
     assert created["owner_user_id"] == "primary"
     assert created["is_active"] is True
     assert created["payload"] == _sample_payload()
+    assert created["schedule_name"] == "list-schedule"
 
     list_resp = client.get("/v1/job-schedules")
     assert list_resp.status_code == 200
     listing = list_resp.json()
     assert listing["total"] == 1
     assert listing["items"][0]["id"] == created["id"]
+    assert listing["items"][0]["schedule_name"] == "list-schedule"
 
     detail_resp = client.get(f"/v1/job-schedules/{created['id']}")
     assert detail_resp.status_code == 200
     detail = detail_resp.json()
     assert detail["frequency"] == "1h"
+    assert detail["schedule_name"] == "list-schedule"
 
 
 def test_update_schedule_fields(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "update-schedule",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -251,12 +260,14 @@ def test_update_schedule_fields(client: TestClient):
     update_resp = client.patch(
         f"/v1/job-schedules/{schedule_id}",
         json={
+            "schedule_name": "update-schedule-renamed",
             "frequency": "6h",
             "next_run_at": datetime(2024, 6, 1, 12, 0, tzinfo=timezone.utc).isoformat(),
         },
     )
     assert update_resp.status_code == 200
     updated = update_resp.json()
+    assert updated["schedule_name"] == "update-schedule-renamed"
     assert updated["frequency"] == "6h"
     assert updated["next_run_at"].startswith("2024-06-01T12:00:00")
 
@@ -275,6 +286,7 @@ def test_update_schedule_fields(client: TestClient):
     assert second["job_type"] == "publish"
     assert second["payload"]["instapaper_id"] == "insta-1"
     assert second["payload"]["feed_id"] == feed_id
+    assert second["schedule_name"] == "update-schedule-renamed"
 
     toggle_resp = client.post(f"/v1/job-schedules/{schedule_id}/toggle")
     assert toggle_resp.status_code == 200
@@ -285,6 +297,7 @@ def test_validation_errors(client: TestClient):
     bad_payload_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "invalid-schedule",
             "job_type": "login",
             "payload": {"site_login_pair": ""},
             "frequency": "1h",
@@ -298,6 +311,7 @@ def test_validation_errors(client: TestClient):
     unknown_type_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "unknown-type",
             "job_type": "unknown",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -311,6 +325,7 @@ def test_validation_errors(client: TestClient):
     retention_missing_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "retention-missing",
             "job_type": "retention",
             "payload": {"older_than": "30d"},
             "frequency": "1d",
@@ -338,6 +353,7 @@ def test_create_rss_schedule_without_instapaper(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "rss-schedule",
             "job_type": "rss_poll",
             "payload": {"feed_id": feed_id},
             "frequency": "1h",
@@ -349,10 +365,38 @@ def test_create_rss_schedule_without_instapaper(client: TestClient):
     assert "instapaper_id" not in schedule["payload"]
 
 
+def test_schedule_name_uniqueness(client: TestClient):
+    first = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "duplicate-name",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    duplicate = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "duplicate-name",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert duplicate.status_code == 400
+    error_payload = duplicate.json()
+    message = error_payload.get("message") or error_payload.get("detail") or ""
+    assert "name" in message.lower()
+
+
 def test_run_now_creates_job(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "run-now",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -365,6 +409,7 @@ def test_run_now_creates_job(client: TestClient):
     job_payload = run_resp.json()
     assert job_payload["type"] == "login"
     assert job_payload["owner_user_id"] == "primary"
+    assert job_payload["schedule_name"] == "run-now"
 
     from app.db import get_session
     from app.models import JobSchedule
@@ -382,6 +427,7 @@ def test_retention_schedule_requires_explicit_instapaper_credential(client: Test
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "retention-valid",
             "job_type": "retention",
             "payload": {
                 "older_than": "60d",
@@ -401,6 +447,7 @@ def test_retention_schedule_rejects_legacy_instapaper_id(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "retention-legacy",
             "job_type": "retention",
             "payload": {
                 "older_than": "60d",
@@ -416,6 +463,7 @@ def test_create_publish_wildcard_schedule(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-wildcard",
             "job_type": "publish",
             "payload": {"instapaper_id": "insta-wild"},
             "frequency": "1h",
@@ -431,6 +479,7 @@ def test_publish_targeted_conflicts_with_existing_wildcard(client: TestClient):
     wildcard_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-wildcard-conflict",
             "job_type": "publish",
             "payload": {"instapaper_id": "insta-conflict"},
             "frequency": "1h",
@@ -455,6 +504,7 @@ def test_publish_targeted_conflicts_with_existing_wildcard(client: TestClient):
     targeted_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-targeted-conflict",
             "job_type": "publish",
             "payload": {"instapaper_id": "insta-conflict", "feed_id": feed_id},
             "frequency": "1h",
@@ -467,6 +517,7 @@ def test_publish_targeted_conflicts_with_existing_wildcard(client: TestClient):
     update_targeted_schedule = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-update-source",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -505,6 +556,7 @@ def test_publish_wildcard_conflicts_with_existing_targeted(client: TestClient):
     targeted_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-targeted-existing",
             "job_type": "publish",
             "payload": {"instapaper_id": "insta-targeted", "feed_id": feed_id},
             "frequency": "1h",
@@ -515,6 +567,7 @@ def test_publish_wildcard_conflicts_with_existing_targeted(client: TestClient):
     wildcard_resp = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-wildcard-attempt",
             "job_type": "publish",
             "payload": {"instapaper_id": "insta-targeted"},
             "frequency": "1h",
@@ -527,6 +580,7 @@ def test_publish_wildcard_conflicts_with_existing_targeted(client: TestClient):
     update_schedule = client.post(
         "/v1/job-schedules",
         json={
+            "schedule_name": "publish-update-target",
             "job_type": "login",
             "payload": _sample_payload(),
             "frequency": "1h",
@@ -554,6 +608,7 @@ def test_rbac_enforcement(client: TestClient):
 
     with next(get_session()) as session:
         other_schedule = JobSchedule(
+            schedule_name="other-schedule",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",

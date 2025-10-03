@@ -34,6 +34,7 @@ def test_enqueue_due_schedules_advances_next_run():
 
     with next(get_session()) as session:
         schedule = JobSchedule(
+            schedule_name="login-schedule-1",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",
@@ -57,6 +58,7 @@ def test_enqueue_due_schedules_advances_next_run():
             assert schedule.last_error_at is None
             assert schedule.next_run_at == initial_next_run + parse_frequency("1h")
             assert job.details.get("schedule_id") == schedule_id
+            assert job.details.get("schedule_name") == "login-schedule-1"
         persisted_jobs = session.exec(select(Job)).all()
         assert len(persisted_jobs) == 1
 
@@ -77,6 +79,7 @@ def test_scheduler_skips_inactive_or_future():
 
     with next(get_session()) as session:
         inactive = JobSchedule(
+            schedule_name="login-inactive",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",
@@ -85,6 +88,7 @@ def test_scheduler_skips_inactive_or_future():
             is_active=False,
         )
         upcoming = JobSchedule(
+            schedule_name="login-upcoming",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",
@@ -121,6 +125,7 @@ def test_schedule_error_tracking(monkeypatch):
 
     with next(get_session()) as session:
         schedule = JobSchedule(
+            schedule_name="login-schedule-2",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",
@@ -171,6 +176,7 @@ def test_enqueue_due_schedules_skips_if_paused_after_select(monkeypatch):
 
     with next(get_session()) as session:
         schedule = JobSchedule(
+            schedule_name="login-schedule-3",
             job_type="login",
             payload=_sample_payload(),
             frequency="1h",

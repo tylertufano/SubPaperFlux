@@ -20,7 +20,13 @@ import { exists, mapValues } from '../runtime';
  */
 export interface JobScheduleCreate {
     /**
-     * 
+     *
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
+    scheduleName: any | null;
+    /**
+     *
      * @type {any}
      * @memberof JobScheduleCreate
      */
@@ -62,6 +68,7 @@ export interface JobScheduleCreate {
  */
 export function instanceOfJobScheduleCreate(value: object): boolean {
     let isInstance = true;
+    isInstance = isInstance && "scheduleName" in value;
     isInstance = isInstance && "jobType" in value;
     isInstance = isInstance && "frequency" in value;
 
@@ -77,7 +84,8 @@ export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: b
         return json;
     }
     return {
-        
+
+        'scheduleName': json['schedule_name'],
         'jobType': json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
         'frequency': json['frequency'],
@@ -95,7 +103,8 @@ export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
         return null;
     }
     return {
-        
+
+        'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,
         'frequency': value.frequency,

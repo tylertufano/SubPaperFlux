@@ -10,7 +10,7 @@ from ..jobs.validation import validate_job
 
 from ..auth.oidc import get_current_user
 from ..db import get_session, get_session_ctx
-from ..models import Job
+from ..models import Job, JobSchedule
 from ..schemas import JobsPage, JobOut
 
 
@@ -62,22 +62,44 @@ def list_jobs(
     stmt = stmt.offset((page - 1) * size).limit(size)
     rows = session.exec(stmt).all()
 
-    items = [
-        JobOut(
-            id=r.id,
-            type=r.type,
-            status=r.status,
-            attempts=r.attempts or 0,
-            last_error=r.last_error,
-            available_at=r.available_at,
-            owner_user_id=r.owner_user_id,
-            payload=r.payload or {},
-            details=r.details or {},
-            created_at=r.created_at,
-            run_at=r.run_at,
+    schedule_ids: set[str] = set()
+    for r in rows:
+        raw_details = r.details or {}
+        if not isinstance(raw_details, dict):
+            continue
+        schedule_id = raw_details.get("schedule_id")
+        if schedule_id:
+            schedule_ids.add(schedule_id)
+    schedule_map: dict[str, str] = {}
+    if schedule_ids:
+        schedule_rows = session.exec(
+            select(JobSchedule.id, JobSchedule.schedule_name).where(
+                JobSchedule.id.in_(schedule_ids)
+            )
+        ).all()
+        schedule_map = {schedule_id: schedule_name for schedule_id, schedule_name in schedule_rows}
+
+    items = []
+    for r in rows:
+        details = dict(r.details or {})
+        schedule_id = details.get("schedule_id")
+        items.append(
+            JobOut(
+                id=r.id,
+                type=r.type,
+                status=r.status,
+                attempts=r.attempts or 0,
+                last_error=r.last_error,
+                available_at=r.available_at,
+                owner_user_id=r.owner_user_id,
+                payload=r.payload or {},
+                details=details,
+                created_at=r.created_at,
+                run_at=r.run_at,
+                schedule_id=schedule_id,
+                schedule_name=schedule_map.get(schedule_id),
+            )
         )
-        for r in rows
-    ]
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return JobsPage(items=items, total=int(total), page=page, size=size, has_next=has_next, total_pages=total_pages)

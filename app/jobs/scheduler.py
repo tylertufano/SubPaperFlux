@@ -131,7 +131,10 @@ def enqueue_due_schedules(
             payload=dict(schedule.payload or {}),
             status="queued",
             owner_user_id=schedule.owner_user_id,
-            details={"schedule_id": schedule.id},
+            details={
+                "schedule_id": schedule.id,
+                "schedule_name": schedule.schedule_name,
+            },
         )
         session.add(job)
         session.flush()

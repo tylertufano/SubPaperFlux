@@ -195,6 +195,8 @@ class JobOut(BaseModel):
     details: dict = Field(default_factory=dict)
     created_at: datetime
     run_at: Optional[datetime] = None
+    schedule_id: Optional[str] = None
+    schedule_name: Optional[str] = None
 
 
 class JobsPage(BaseModel):
@@ -207,6 +209,7 @@ class JobsPage(BaseModel):
 
 
 class JobScheduleCreate(BaseModel):
+    schedule_name: constr(strip_whitespace=True, min_length=1, max_length=255)
     job_type: constr(strip_whitespace=True, min_length=1)
     payload: Dict[str, Any] = Field(default_factory=dict)
     frequency: constr(strip_whitespace=True, min_length=1)
@@ -234,6 +237,7 @@ class JobScheduleCreate(BaseModel):
 
 
 class JobScheduleUpdate(BaseModel):
+    schedule_name: Optional[constr(strip_whitespace=True, min_length=1, max_length=255)] = None
     job_type: Optional[constr(strip_whitespace=True, min_length=1)] = None
     payload: Optional[Dict[str, Any]] = None
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
@@ -272,6 +276,7 @@ class JobScheduleUpdate(BaseModel):
 
 class JobScheduleOut(BaseModel):
     id: str
+    schedule_name: str
     job_type: str
     owner_user_id: Optional[str] = None
     payload: Dict[str, Any]
