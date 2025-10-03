@@ -851,8 +851,19 @@ def get_new_rss_entries(
         )
         is_paywalled = rss_feed_config.getboolean("is_paywalled", fallback=False)
 
+        requires_authenticated_access = rss_requires_auth or is_paywalled
+        has_cookies = bool(cookies)
+
+        if requires_authenticated_access and not has_cookies:
+            logging.error(
+                "Feed or content is marked as private/paywalled but no cookies are available."
+            )
+            raise RuntimeError(
+                "Cannot poll RSS feed without authentication cookies when feed/content is private or paywalled."
+            )
+
         # Determine if we need to use a session with cookies for the RSS feed
-        if rss_requires_auth and cookies:
+        if rss_requires_auth and has_cookies:
             logging.info(
                 f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
             )
@@ -1030,8 +1041,10 @@ def get_new_rss_entries(
         if "response" in locals():
             logging.debug(f"HTTP status code: {feed_response.status_code}")
             logging.debug(f"HTTP response body: {feed_response.text}")
+        raise
     except Exception as e:
         logging.error(f"An unexpected error occurred while processing feed: {e}")
+        raise
 
     return new_entries
 
