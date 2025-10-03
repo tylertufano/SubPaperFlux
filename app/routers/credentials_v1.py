@@ -13,7 +13,7 @@ from ..auth import (
 )
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
-from ..models import Credential as CredentialModel
+from ..models import Credential as CredentialModel, SiteConfig as SiteConfigModel
 from ..schemas import CredentialsPage, Credential as CredentialSchema
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
 from ..security.csrf import csrf_protect
@@ -58,6 +58,23 @@ def create_credential_v1(
 
     description = body.description.strip()
     owner = body.owner_user_id
+    site_config_id = body.site_config_id
+    site_config: Optional[SiteConfigModel] = None
+    if body.kind == "site_login" and site_config_id:
+        site_config = session.get(SiteConfigModel, site_config_id)
+        if not site_config:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_config_id is invalid",
+            )
+        if site_config.owner_user_id:
+            if owner is None:
+                owner = site_config.owner_user_id
+            elif owner != site_config.owner_user_id:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="site_config_id does not belong to the credential owner",
+                )
 
     if owner is None:
         allowed_global = has_permission(
@@ -82,7 +99,6 @@ def create_credential_v1(
             .where(CredentialModel.owner_user_id == owner),
         )
 
-    site_config_id = body.site_config_id
     if body.kind == "site_login" and not site_config_id:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -95,6 +111,7 @@ def create_credential_v1(
             current_user,
             site_config_id=site_config_id,
             credential_owner_id=owner,
+            site_config=site_config,
         )
 
     model = CredentialModel(
