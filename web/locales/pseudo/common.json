@@ -192,8 +192,6 @@
   "job_schedules_field_cookie_key_optional": "Clave de cookie (opcional) ✨",
   "job_schedules_field_instapaper_credential": "Credencial de Instapaper ✨",
   "job_schedules_field_lookback": "Ventana de repaso ✨",
-  "job_schedules_field_is_paywalled": "Feed de pago ✨",
-  "job_schedules_field_rss_requires_auth": "Feed requiere autenticación ✨",
   "job_schedules_field_publish_url": "URL a publicar ✨",
   "job_schedules_field_publish_title": "Título (opcional) ✨",
   "job_schedules_field_publish_folder": "Carpeta (opcional) ✨",
