@@ -157,14 +157,22 @@ export default function Credentials() {
           scope_global: allowGlobalScope && scopeGlobal,
         })
       } else {
+        const credentialPayload: any = {
+          kind,
+          description: trimmedDescription,
+          data: parsed.data,
+        }
+
+        if (allowGlobalScope && scopeGlobal) {
+          credentialPayload.owner_user_id = null
+        }
+
+        if (kind === 'site_login') {
+          credentialPayload.site_config_id = trimmedSiteConfigId
+        }
+
         await creds.createCredentialCredentialsPost({
-          credential: {
-            kind,
-            description: trimmedDescription,
-            data: parsed.data,
-            ownerUserId: allowGlobalScope && scopeGlobal ? null : undefined,
-            siteConfigId: kind === 'site_login' ? trimmedSiteConfigId : undefined,
-          },
+          credential: credentialPayload,
         })
       }
 
@@ -288,8 +296,8 @@ export default function Credentials() {
           kind: editing.kind,
           description: trimmedDescription,
           data,
-          siteConfigId: editing.kind === 'site_login' ? trimmedSiteConfigId : undefined,
-        },
+          ...(editing.kind === 'site_login' ? { site_config_id: trimmedSiteConfigId } : {}),
+        } as any,
       })
       setEditing(null)
       setEditDescription('')
