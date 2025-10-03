@@ -21,6 +21,10 @@ export default function Credentials() {
   const { data: session, status } = useSession()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
   const permissions = extractPermissionList(session?.user)
+  const currentUserId =
+    typeof session?.user?.id === 'string' && session.user.id.trim().length > 0
+      ? session.user.id.trim()
+      : undefined
   const isAuthenticated = status === 'authenticated'
   const canViewCredentials = Boolean(
     isAuthenticated &&
@@ -164,11 +168,13 @@ export default function Credentials() {
         }
 
         if (allowGlobalScope && scopeGlobal) {
-          credentialPayload.owner_user_id = null
+          credentialPayload.ownerUserId = null
+        } else if (currentUserId) {
+          credentialPayload.ownerUserId = currentUserId
         }
 
         if (kind === 'site_login') {
-          credentialPayload.site_config_id = trimmedSiteConfigId
+          credentialPayload.siteConfigId = trimmedSiteConfigId
         }
 
         await creds.createCredentialCredentialsPost({
@@ -296,7 +302,7 @@ export default function Credentials() {
           kind: editing.kind,
           description: trimmedDescription,
           data,
-          ...(editing.kind === 'site_login' ? { site_config_id: trimmedSiteConfigId } : {}),
+          ...(editing.kind === 'site_login' ? { siteConfigId: trimmedSiteConfigId } : {}),
         } as any,
       })
       setEditing(null)
