@@ -20,13 +20,13 @@ import { exists, mapValues } from '../runtime';
  */
 export interface JobScheduleUpdate {
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobScheduleUpdate
      */
     scheduleName?: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof JobScheduleUpdate
      */
@@ -75,7 +75,7 @@ export function JobScheduleUpdateFromJSONTyped(json: any, ignoreDiscriminator: b
         return json;
     }
     return {
-
+        
         'scheduleName': !exists(json, 'schedule_name') ? undefined : json['schedule_name'],
         'jobType': !exists(json, 'job_type') ? undefined : json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
@@ -94,12 +94,12 @@ export function JobScheduleUpdateToJSON(value?: JobScheduleUpdate | null): any {
     }
     return {
         
+        'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,
-        'schedule_name': value.scheduleName,
     };
 }
 
