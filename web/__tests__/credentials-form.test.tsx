@@ -159,6 +159,7 @@ export async function setup(options: CredentialsSetupOptions = {}): Promise<Cred
     swr: swrConfig,
     session: {
       user: {
+        id: 'user-123',
         name: 'Test User',
         email: 'user@example.com',
         permissions: ['credentials:manage'],
@@ -278,7 +279,7 @@ describe('credential editing', () => {
           kind: existingCredential.kind,
           description: 'Updated credential',
           data: { username: 'bob' },
-          site_config_id: 'sc-1',
+          siteConfigId: 'sc-1',
         },
       })
 
@@ -379,7 +380,11 @@ describe('credential creation form', () => {
 
     await waitFor(() => expect(createCredentialMock).toHaveBeenCalledTimes(1))
     expect(createCredentialMock).toHaveBeenCalledWith(expect.objectContaining({
-      credential: expect.objectContaining({ description: 'Site login credential', site_config_id: 'sc-1' }),
+      credential: expect.objectContaining({
+        description: 'Site login credential',
+        siteConfigId: 'sc-1',
+        ownerUserId: 'user-123',
+      }),
     }))
 
     const bannerMessage = await screen.findByText('Credential created')
