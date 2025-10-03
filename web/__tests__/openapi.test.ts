@@ -9,11 +9,11 @@ const { authMock, signInMock, signOutMock, getSessionMock } = vi.hoisted(() => (
 
 vi.mock('../auth', () => ({
   auth: () => authMock(),
-  signIn: (...args: any[]) => signInMock(...args),
-  signOut: (...args: any[]) => signOutMock(...args),
 }))
 
 vi.mock('next-auth/react', () => ({
+  signIn: (...args: any[]) => signInMock(...args),
+  signOut: (...args: any[]) => signOutMock(...args),
   getSession: () => getSessionMock(),
 }))
 
@@ -95,7 +95,7 @@ describe('authorizedRequest', () => {
     expect(signInResolved).toBe(true)
   })
 
-  it('uses a server-side fallback callback URL when window is unavailable', async () => {
+  it('does not attempt browser redirects on the server when window is unavailable', async () => {
     process.env.NEXT_PUBLIC_OIDC_AUTO_LOGIN = 'true'
     process.env.API_BASE = 'https://api.example.com'
     process.env.NEXTAUTH_URL = 'https://app.example.com/after-login'
@@ -114,10 +114,7 @@ describe('authorizedRequest', () => {
     ).rejects.toBeInstanceOf(AuthorizationRedirectError)
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(signInMock).toHaveBeenCalledWith('oidc', {
-      callbackUrl: 'https://app.example.com/after-login',
-      redirect: true,
-    })
+    expect(signInMock).not.toHaveBeenCalled()
   })
 
   it('does not trigger automatic sign-in when auto-login is disabled', async () => {

@@ -11,9 +11,9 @@ import { SiteConfigSeleniumToJSON } from '../sdk/src/models/SiteConfigSelenium'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
 import type { JobScheduleCreate } from '../sdk/src/models/JobScheduleCreate'
 import type { JobScheduleUpdate } from '../sdk/src/models/JobScheduleUpdate'
-import { auth, signIn, signOut } from '../auth'
+import { auth } from '../auth'
 import type { Session } from 'next-auth'
-import { getSession } from 'next-auth/react'
+import { getSession, signIn, signOut } from 'next-auth/react'
 
 export type UiConfig = {
   apiBase: string
@@ -217,6 +217,9 @@ function resolveCallbackUrl(): string {
 }
 
 async function triggerOidcRedirect(): Promise<never> {
+  if (typeof window === 'undefined') {
+    throw new AuthorizationRedirectError('Authentication required. Redirecting to sign-in.')
+  }
   const callbackUrl = resolveCallbackUrl()
   try {
     await signIn('oidc', { callbackUrl, redirect: true })
