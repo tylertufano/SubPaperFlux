@@ -80,10 +80,12 @@ def _validate_site_config_assignment(
     *,
     site_config_id: Optional[str],
     credential_owner_id: Optional[str],
+    site_config: Optional[SiteConfigModel] = None,
 ) -> Optional[SiteConfigModel]:
     if not site_config_id:
         return None
-    site_config = session.get(SiteConfigModel, site_config_id)
+    if site_config is None:
+        site_config = session.get(SiteConfigModel, site_config_id)
     if not site_config:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -175,6 +177,23 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         data = encrypt_dict(data)
     description = body.description.strip()
     owner = body.owner_user_id
+    site_config_id = body.site_config_id
+    site_config: Optional[SiteConfigModel] = None
+    if body.kind == "site_login" and site_config_id:
+        site_config = session.get(SiteConfigModel, site_config_id)
+        if not site_config:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="site_config_id is invalid",
+            )
+        if site_config.owner_user_id:
+            if owner is None:
+                owner = site_config.owner_user_id
+            elif owner != site_config.owner_user_id:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="site_config_id does not belong to the credential owner",
+                )
     if owner is None:
         allowed_global = _ensure_permission(
             session,
@@ -195,7 +214,6 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
                 CredentialModel.owner_user_id == owner
             ),
         )
-    site_config_id = body.site_config_id
     if body.kind == "site_login" and not site_config_id:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -207,6 +225,7 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
             current_user,
             site_config_id=site_config_id,
             credential_owner_id=owner,
+            site_config=site_config,
         )
     model = CredentialModel(
         kind=body.kind,
