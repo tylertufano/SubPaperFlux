@@ -805,7 +805,7 @@ export default function SiteConfigs() {
         return normalizeListItem({ ...value, loginType } as SiteConfigRecord)
       }
     }
-    return value as SiteConfigRecord
+    return value as unknown as SiteConfigRecord
   }
 
   const listItems = Array.isArray(data)
