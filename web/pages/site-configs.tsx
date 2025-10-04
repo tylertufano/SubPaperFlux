@@ -902,46 +902,57 @@ export default function SiteConfigs() {
                         <td className="td">{sc.siteUrl}</td>
                         <td className="td">{resolveLoginTypeLabel(loginType)}</td>
                         <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
-                        <td className="td flex gap-2">
-                          {!sc.ownerUserId && (
+                        <td className="td">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!sc.ownerUserId && (
+                              <button
+                                type="button"
+                                className="btn btn-compact"
+                                onClick={() => copyToUser(sc.id)}
+                                disabled={copyingId === sc.id}
+                                aria-busy={copyingId === sc.id}
+                              >
+                                {t('copy_to_workspace')}
+                              </button>
+                            )}
                             <button
                               type="button"
-                              className="btn"
-                              onClick={() => copyToUser(sc.id)}
-                            disabled={copyingId === sc.id}
-                            aria-busy={copyingId === sc.id}
-                          >
-                            {t('copy_to_workspace')}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={async () => {
-                            try {
-                              const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
-                              setBanner({ kind: result.ok ? 'success' : 'error', message: t('site_configs_test_result', { result: JSON.stringify(result) }) })
-                            } catch (err: any) {
-                              setBanner({ kind: 'error', message: err?.message || String(err) })
-                            }
-                          }}
-                        >
-                          {t('site_configs_test_button')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => {
-                            if (isApiConfig(sc) || isSeleniumConfig(sc)) {
-                              setEditing(toFormState(sc))
-                              setEditErrors({})
-                            }
-                          }}
-                        >
-                          {t('btn_edit')}
-                        </button>
-                        <button type="button" className="btn" onClick={() => del(sc.id)}>{t('btn_delete')}</button>
-                      </td>
+                              className="btn btn-compact"
+                              onClick={async () => {
+                                try {
+                                  const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
+                                  setBanner({
+                                    kind: result.ok ? 'success' : 'error',
+                                    message: t('site_configs_test_result', { result: JSON.stringify(result) }),
+                                  })
+                                } catch (err: any) {
+                                  setBanner({ kind: 'error', message: err?.message || String(err) })
+                                }
+                              }}
+                            >
+                              {t('site_configs_test_button')}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-compact"
+                              onClick={() => {
+                                if (isApiConfig(sc) || isSeleniumConfig(sc)) {
+                                  setEditing(toFormState(sc))
+                                  setEditErrors({})
+                                }
+                              }}
+                            >
+                              {t('btn_edit')}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-compact"
+                              onClick={() => del(sc.id)}
+                            >
+                              {t('btn_delete')}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
