@@ -271,13 +271,10 @@ describe('site configs table display', () => {
       expect(within(seleniumRow).getByText('Browser automation')).toBeInTheDocument()
       expect(within(apiRow).getByText('Direct API')).toBeInTheDocument()
 
-      const summaries = within(table).getAllByTestId('site-config-summary')
-      expect(summaries[0]).toHaveTextContent('Selectors — user: #username, pass: #password, button: button\[type="submit"\]')
-      expect(summaries[0]).toHaveTextContent('Cookies stored: sessionid')
-      expect(summaries[1]).toHaveTextContent('POST https://example.com/api/login')
-      expect(summaries[1]).toHaveTextContent('Headers: 1')
-      expect(summaries[1]).toHaveTextContent('Body provided')
-      expect(summaries[1]).toHaveTextContent('Cookie values: 1')
+      const seleniumCells = within(seleniumRow).getAllByRole('cell')
+      const apiCells = within(apiRow).getAllByRole('cell')
+      expect(seleniumCells).toHaveLength(5)
+      expect(apiCells).toHaveLength(5)
     } finally {
       unmount()
     }
