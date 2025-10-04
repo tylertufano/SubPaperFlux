@@ -4,7 +4,7 @@ import { v1 } from '../lib/openapi'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
 import Link from 'next/link'
-import { formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
+import { formatDateTimeValue, formatNumberValue, useDateTimeFormatter, useNumberFormatter } from '../lib/format'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
 import { useSessionReauth } from '../lib/useSessionReauth'
@@ -216,11 +216,11 @@ export default function Jobs() {
                         : ''
 
                     const rawRunAt = j.run_at ?? j.runAt
-                    const parsedRunAt = rawRunAt ? new Date(rawRunAt) : null
-                    const formattedRunAt =
-                      parsedRunAt && !Number.isNaN(parsedRunAt.getTime())
-                        ? dateTimeFormatter.format(parsedRunAt)
-                        : t('jobs_run_at_never')
+                    const formattedRunAt = formatDateTimeValue(
+                      rawRunAt,
+                      dateTimeFormatter,
+                      t('jobs_run_at_never'),
+                    )
 
                     return (
                       <React.Fragment key={j.id}>

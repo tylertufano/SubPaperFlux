@@ -31,31 +31,94 @@ function parseNumber(input: NumberLike | null | undefined): number | bigint | nu
   return Number.isFinite(numeric) ? numeric : null
 }
 
+function parseUnixTimestamp(value: number): Date | null {
+  if (!Number.isFinite(value)) {
+    return null
+  }
+
+  const magnitude = Math.abs(value)
+
+  if (magnitude >= 1e12) {
+    const millis = new Date(value)
+    if (!Number.isNaN(millis.getTime())) {
+      return millis
+    }
+  }
+
+  const seconds = new Date(value * 1000)
+  if (!Number.isNaN(seconds.getTime())) {
+    return seconds
+  }
+
+  const micros = new Date(value / 1000)
+  if (!Number.isNaN(micros.getTime())) {
+    return micros
+  }
+
+  if (magnitude < 1e12) {
+    const millis = new Date(value)
+    if (!Number.isNaN(millis.getTime())) {
+      return millis
+    }
+  }
+
+  return null
+}
+
+function normalizeDateString(input: string): string[] {
+  const candidates = new Set<string>()
+  const trimmed = input.trim()
+  if (!trimmed) {
+    return []
+  }
+
+  candidates.add(trimmed)
+
+  if (trimmed.includes(' ') && !trimmed.includes('T')) {
+    candidates.add(trimmed.replace(' ', 'T'))
+  }
+
+  if (/[+-]\d{2}:?\d{2}Z$/i.test(trimmed)) {
+    candidates.add(trimmed.replace(/Z$/i, ''))
+  }
+
+  return Array.from(candidates)
+}
+
 function parseDate(input: DateLike | null | undefined): Date | null {
   if (input === null || input === undefined) return null
   if (input instanceof Date) {
     return Number.isNaN(input.getTime()) ? null : input
   }
+
   if (typeof input === 'number') {
-    const date = new Date(input)
-    return Number.isNaN(date.getTime()) ? null : date
+    return parseUnixTimestamp(input)
   }
+
   if (typeof input === 'bigint') {
-    const date = new Date(Number(input))
-    return Number.isNaN(date.getTime()) ? null : date
+    return parseUnixTimestamp(Number(input))
   }
-  const trimmed = input.trim()
-  if (!trimmed) return null
-  const direct = new Date(trimmed)
-  if (!Number.isNaN(direct.getTime())) {
-    return direct
+
+  const candidates = normalizeDateString(String(input))
+  for (const candidate of candidates) {
+    const parsed = new Date(candidate)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed
+    }
   }
-  const numeric = Number(trimmed)
-  if (!Number.isFinite(numeric)) {
-    return null
+
+  if (candidates.length > 0) {
+    const last = candidates[candidates.length - 1] ?? ''
+    if (/^-?\d+(\.\d+)?$/.test(last.trim())) {
+      const numeric = Number(last)
+      const parsed = parseUnixTimestamp(numeric)
+      if (parsed) {
+        return parsed
+      }
+    }
   }
-  const date = new Date(numeric)
-  return Number.isNaN(date.getTime()) ? null : date
+
+  return null
 }
 
 export function useNumberFormatter(options?: Intl.NumberFormatOptions) {
