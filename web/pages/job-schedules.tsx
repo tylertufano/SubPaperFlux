@@ -167,6 +167,13 @@ function parseDateValue(value: unknown): Date | null {
 
 type RawJobSchedule = JobScheduleOut & {
   job_type?: string;
+  schedule_name?: string | null;
+  owner_user_id?: string | null;
+  next_run_at?: string | number | Date | null;
+  last_run_at?: string | number | Date | null;
+  last_job_id?: string | null;
+  last_error?: string | null;
+  last_error_at?: string | number | Date | null;
   // Support legacy snake_case field names from older API responses.
   is_active?: unknown;
 };
@@ -202,13 +209,25 @@ function normalizeIsActive(
 function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   const jobType = schedule.jobType ?? schedule.job_type;
   const rawIsActive = schedule.isActive ?? schedule.is_active;
+  const scheduleName =
+    schedule.scheduleName ?? schedule.schedule_name ?? "";
+  const ownerUserId = schedule.ownerUserId ?? schedule.owner_user_id;
+  const lastJobId = schedule.lastJobId ?? schedule.last_job_id;
+  const lastError = schedule.lastError ?? schedule.last_error;
+  const nextRunAt = schedule.nextRunAt ?? schedule.next_run_at;
+  const lastRunAt = schedule.lastRunAt ?? schedule.last_run_at;
+  const lastErrorAt = schedule.lastErrorAt ?? schedule.last_error_at;
   return {
     ...schedule,
+    scheduleName,
     jobType: (jobType ?? schedule.jobType) as JobType,
     isActive: normalizeIsActive(rawIsActive),
-    nextRunAt: parseDateValue(schedule.nextRunAt),
-    lastRunAt: parseDateValue(schedule.lastRunAt),
-    lastErrorAt: parseDateValue(schedule.lastErrorAt),
+    ownerUserId,
+    lastJobId,
+    lastError,
+    nextRunAt: parseDateValue(nextRunAt),
+    lastRunAt: parseDateValue(lastRunAt),
+    lastErrorAt: parseDateValue(lastErrorAt),
   };
 }
 
