@@ -385,7 +385,7 @@ export default function SiteConfigs() {
     const idPrefix = `${prefix}-site-config`
     return (
       <>
-        <div>
+        <div className="md:col-span-2">
           <input
             id={`${idPrefix}-username-selector`}
             className="input"
@@ -407,7 +407,7 @@ export default function SiteConfigs() {
             <div id={`${idPrefix}-username-selector-error`} className="text-sm text-red-600">{errors['selenium.username_selector']}</div>
           )}
         </div>
-        <div>
+        <div className="md:col-span-2">
           <input
             id={`${idPrefix}-password-selector`}
             className="input"
@@ -429,7 +429,7 @@ export default function SiteConfigs() {
             <div id={`${idPrefix}-password-selector-error`} className="text-sm text-red-600">{errors['selenium.password_selector']}</div>
           )}
         </div>
-        <div>
+        <div className="md:col-span-2">
           <input
             id={`${idPrefix}-login-selector`}
             className="input"
@@ -451,7 +451,7 @@ export default function SiteConfigs() {
             <div id={`${idPrefix}-login-selector-error`} className="text-sm text-red-600">{errors['selenium.login_button_selector']}</div>
           )}
         </div>
-        <div>
+        <div className="md:col-span-2">
           <input
             id={`${idPrefix}-post-login-selector`}
             className="input"
@@ -467,26 +467,28 @@ export default function SiteConfigs() {
             }}
           />
         </div>
-        <input
-          id={`${idPrefix}-cookies`}
-          className="input md:col-span-2"
-          placeholder={t('site_configs_field_cookies_placeholder')}
-          aria-label={t('site_configs_field_cookies_placeholder')}
-          value={config?.cookies_to_store ?? ''}
-          onChange={(e) => {
-            const value = e.target.value
-            update((prev) => ({
-              ...prev,
-              selenium_config: { ...prev.selenium_config, cookies_to_store: value },
-            }))
-            setErrors((prev) => ({
-              ...prev,
-              required_cookies: hasAnyCookies(current, { stored: value })
-                ? ''
-                : t('site_configs_error_required_cookies'),
-            }))
-          }}
-        />
+        <div className="md:col-span-2">
+          <input
+            id={`${idPrefix}-cookies`}
+            className="input"
+            placeholder={t('site_configs_field_cookies_placeholder')}
+            aria-label={t('site_configs_field_cookies_placeholder')}
+            value={config?.cookies_to_store ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              update((prev) => ({
+                ...prev,
+                selenium_config: { ...prev.selenium_config, cookies_to_store: value },
+              }))
+              setErrors((prev) => ({
+                ...prev,
+                required_cookies: hasAnyCookies(current, { stored: value })
+                  ? ''
+                  : t('site_configs_error_required_cookies'),
+              }))
+            }}
+          />
+        </div>
       </>
     )
   }
@@ -505,7 +507,7 @@ export default function SiteConfigs() {
     const idPrefix = `${prefix}-site-config`
     return (
       <>
-        <div>
+        <div className="md:col-span-2">
           <input
             id={`${idPrefix}-endpoint`}
             className="input"
