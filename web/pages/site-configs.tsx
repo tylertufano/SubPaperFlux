@@ -729,52 +729,6 @@ export default function SiteConfigs() {
     return isApiConfig(value) ? 'api' : 'selenium'
   }
 
-  function renderConfigSummary(value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut) {
-    if (isApiConfig(value)) {
-      const apiConfig = value.apiConfig
-      const method = apiConfig?.method ?? ''
-      const endpoint = apiConfig?.endpoint ?? ''
-      const headersCount = apiConfig?.headers ? Object.keys(apiConfig.headers).length : 0
-      const cookiesCount = apiConfig?.cookies ? Object.keys(apiConfig.cookies).length : 0
-      const body = apiConfig?.body
-      const hasBody = body !== undefined
-      const isBodyNull = body === null
-      return (
-        <div className="text-sm text-gray-600 space-y-1" data-testid="site-config-summary">
-          <div>{t('site_configs_summary_api_request', { method, endpoint })}</div>
-          {headersCount > 0 && (
-            <div>{t('site_configs_summary_headers_count', { count: headersCount })}</div>
-          )}
-          {hasBody && (
-            <div>
-              {isBodyNull ? t('site_configs_summary_body_null') : t('site_configs_summary_body_present')}
-            </div>
-          )}
-          {cookiesCount > 0 && (
-            <div>{t('site_configs_summary_cookies_count', { count: cookiesCount })}</div>
-          )}
-        </div>
-      )
-    }
-    const seleniumConfig = value.seleniumConfig
-    const username = seleniumConfig?.usernameSelector ?? ''
-    const password = seleniumConfig?.passwordSelector ?? ''
-    const loginButton = seleniumConfig?.loginButtonSelector ?? ''
-    const postLogin = seleniumConfig?.postLoginSelector ?? ''
-    const cookies = seleniumConfig?.cookiesToStore?.length
-      ? seleniumConfig.cookiesToStore.join(', ')
-      : ''
-    return (
-      <div className="text-sm text-gray-600 space-y-1" data-testid="site-config-summary">
-        <div>
-          {t('site_configs_summary_selenium', { username, password, button: loginButton })}
-        </div>
-        {postLogin && <div>{t('site_configs_summary_post_login', { selector: postLogin })}</div>}
-        {cookies && <div>{t('site_configs_summary_cookies', { cookies })}</div>}
-      </div>
-    )
-  }
-
   function normalizeListItem(
     value: SiteConfigRecord | SiteConfigApiOut | SiteConfigSeleniumOut | Record<string, unknown>,
   ): SiteConfigRecord {
@@ -935,7 +889,6 @@ export default function SiteConfigs() {
                     <th className="th" scope="col">{t('name_label')}</th>
                     <th className="th" scope="col">{t('url_label')}</th>
                     <th className="th" scope="col">{t('site_configs_column_type')}</th>
-                    <th className="th" scope="col">{t('site_configs_column_details')}</th>
                     <th className="th" scope="col">{t('scope_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
@@ -948,7 +901,6 @@ export default function SiteConfigs() {
                         <td className="td">{sc.name}</td>
                         <td className="td">{sc.siteUrl}</td>
                         <td className="td">{resolveLoginTypeLabel(loginType)}</td>
-                        <td className="td">{renderConfigSummary(sc)}</td>
                         <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                         <td className="td flex gap-2">
                           {!sc.ownerUserId && (
