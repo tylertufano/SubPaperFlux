@@ -33,12 +33,8 @@ import type {
   ApiTokenWithSecret,
   ApiTokensPage,
   AuditLogsPage,
-  BookmarkFolderUpdate,
   BookmarkOut,
-  BookmarkTagsUpdate,
   BookmarksPage,
-  BulkBookmarkFolderUpdate,
-  BulkBookmarkTagUpdate,
   Credential,
   CredentialsPage,
   Feed,
@@ -104,18 +100,10 @@ import {
     ApiTokensPageToJSON,
     AuditLogsPageFromJSON,
     AuditLogsPageToJSON,
-    BookmarkFolderUpdateFromJSON,
-    BookmarkFolderUpdateToJSON,
     BookmarkOutFromJSON,
     BookmarkOutToJSON,
-    BookmarkTagsUpdateFromJSON,
-    BookmarkTagsUpdateToJSON,
     BookmarksPageFromJSON,
     BookmarksPageToJSON,
-    BulkBookmarkFolderUpdateFromJSON,
-    BulkBookmarkFolderUpdateToJSON,
-    BulkBookmarkTagUpdateFromJSON,
-    BulkBookmarkTagUpdateToJSON,
     CredentialFromJSON,
     CredentialToJSON,
     CredentialsPageFromJSON,
@@ -187,16 +175,6 @@ export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
     xCsrfToken?: any;
 }
 
-export interface BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest {
-    bulkBookmarkFolderUpdate: BulkBookmarkFolderUpdate;
-    xCsrfToken?: any;
-}
-
-export interface BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest {
-    bulkBookmarkTagUpdate: BulkBookmarkTagUpdate;
-    xCsrfToken?: any;
-}
-
 export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
     userId: any;
 }
@@ -211,8 +189,6 @@ export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
 
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     search?: any;
@@ -274,11 +250,6 @@ export interface CreateTokenV1MeTokensPostRequest {
     apiTokenCreate: ApiTokenCreate;
 }
 
-export interface DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest {
-    bookmarkId: any;
-    xCsrfToken?: any;
-}
-
 export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
     bookmarkId: any;
     deleteRemote?: any;
@@ -335,8 +306,6 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -346,14 +315,6 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     regex?: any;
     regexTarget?: any;
     regexFlags?: any;
-}
-
-export interface GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest {
-    bookmarkId: any;
-}
-
-export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
-    bookmarkId: any;
 }
 
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
@@ -405,8 +366,6 @@ export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
 export interface HeadBookmarksV1BookmarksHeadRequest {
     search?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     titleQuery?: any;
@@ -419,8 +378,6 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
 export interface HeadBookmarksV1BookmarksHead0Request {
     search?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     titleQuery?: any;
@@ -465,8 +422,6 @@ export interface ListBookmarksV1BookmarksGetRequest {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -484,8 +439,6 @@ export interface ListBookmarksV1BookmarksGet0Request {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -633,18 +586,6 @@ export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
 
 export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
     scheduleId: any;
-}
-
-export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
-    bookmarkId: any;
-    bookmarkFolderUpdate: BookmarkFolderUpdate;
-    xCsrfToken?: any;
-}
-
-export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
-    bookmarkId: any;
-    bookmarkTagsUpdate: BookmarkTagsUpdate;
-    xCsrfToken?: any;
 }
 
 export interface UpdateCredentialV1V1CredentialsCredIdPutRequest {
@@ -862,104 +803,6 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
-     * Bulk Update Bookmark Folders
-     */
-    async bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.bulkBookmarkFolderUpdate === null || requestParameters.bulkBookmarkFolderUpdate === undefined) {
-            throw new runtime.RequiredError('bulkBookmarkFolderUpdate','Required parameter requestParameters.bulkBookmarkFolderUpdate was null or undefined when calling bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/bulk-folders`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: BulkBookmarkFolderUpdateToJSON(requestParameters.bulkBookmarkFolderUpdate),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    async bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
-            throw new runtime.RequiredError('bulkBookmarkTagUpdate','Required parameter requestParameters.bulkBookmarkTagUpdate was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/bulk-tags`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: BulkBookmarkTagUpdateToJSON(requestParameters.bulkBookmarkTagUpdate),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    async bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Clear user role overrides
      */
     async clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters: ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminUserOut>> {
@@ -1085,14 +928,6 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters.feedId !== undefined) {
             queryParameters['feed_id'] = requestParameters.feedId;
-        }
-
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
         }
 
         if (requestParameters.since !== undefined) {
@@ -1665,47 +1500,6 @@ export class V1Api extends runtime.BaseAPI {
     }
 
     /**
-     * Delete Bookmark Folder
-     */
-    async deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-            throw new runtime.RequiredError('bookmarkId','Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-            method: 'DELETE',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Delete Bookmark Folder
-     */
-    async deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides);
-    }
-
-    /**
      * Delete Bookmark
      */
     async deleteBookmarkV1BookmarksBookmarkIdDeleteRaw(requestParameters: DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -2162,14 +1956,6 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters.feedId;
         }
 
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
-        }
-
         if (requestParameters.since !== undefined) {
             queryParameters['since'] = requestParameters.since;
         }
@@ -2235,90 +2021,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async exportBookmarksV1BookmarksExportGet(requestParameters: ExportBookmarksV1BookmarksExportGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get Bookmark Folder
-     */
-    async getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-            throw new runtime.RequiredError('bookmarkId','Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkFolderV1BookmarksBookmarkIdFolderGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Get Bookmark Folder
-     */
-    async getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get Bookmark Tags
-     */
-    async getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-            throw new runtime.RequiredError('bookmarkId','Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkTagsV1BookmarksBookmarkIdTagsGet.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Get Bookmark Tags
-     */
-    async getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2853,14 +2555,6 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters.feedId;
         }
 
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
-        }
-
         if (requestParameters.since !== undefined) {
             queryParameters['since'] = requestParameters.since;
         }
@@ -2933,14 +2627,6 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters.feedId !== undefined) {
             queryParameters['feed_id'] = requestParameters.feedId;
-        }
-
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
         }
 
         if (requestParameters.since !== undefined) {
@@ -3211,14 +2897,6 @@ export class V1Api extends runtime.BaseAPI {
             queryParameters['feed_id'] = requestParameters.feedId;
         }
 
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
-        }
-
         if (requestParameters.since !== undefined) {
             queryParameters['since'] = requestParameters.since;
         }
@@ -3307,14 +2985,6 @@ export class V1Api extends runtime.BaseAPI {
 
         if (requestParameters.feedId !== undefined) {
             queryParameters['feed_id'] = requestParameters.feedId;
-        }
-
-        if (requestParameters.tagId !== undefined) {
-            queryParameters['tag_id'] = requestParameters.tagId;
-        }
-
-        if (requestParameters.folderId !== undefined) {
-            queryParameters['folder_id'] = requestParameters.folderId;
         }
 
         if (requestParameters.since !== undefined) {
@@ -4631,108 +4301,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut> {
         const response = await this.toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Update Bookmark Folder
-     */
-    async updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>> {
-        if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-            throw new runtime.RequiredError('bookmarkId','Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
-        }
-
-        if (requestParameters.bookmarkFolderUpdate === null || requestParameters.bookmarkFolderUpdate === undefined) {
-            throw new runtime.RequiredError('bookmarkFolderUpdate','Required parameter requestParameters.bookmarkFolderUpdate was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-            method: 'PUT',
-            headers: headerParameters,
-            query: queryParameters,
-            body: BookmarkFolderUpdateToJSON(requestParameters.bookmarkFolderUpdate),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => FolderOutFromJSON(jsonValue));
-    }
-
-    /**
-     * Update Bookmark Folder
-     */
-    async updateBookmarkFolderV1BookmarksBookmarkIdFolderPut(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut> {
-        const response = await this.updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Update Bookmark Tags
-     */
-    async updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-            throw new runtime.RequiredError('bookmarkId','Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
-        }
-
-        if (requestParameters.bookmarkTagsUpdate === null || requestParameters.bookmarkTagsUpdate === undefined) {
-            throw new runtime.RequiredError('bookmarkTagsUpdate','Required parameter requestParameters.bookmarkTagsUpdate was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-            headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-            method: 'PUT',
-            headers: headerParameters,
-            query: queryParameters,
-            body: BookmarkTagsUpdateToJSON(requestParameters.bookmarkTagsUpdate),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Update Bookmark Tags
-     */
-    async updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

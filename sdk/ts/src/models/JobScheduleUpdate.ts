@@ -42,6 +42,18 @@ export interface JobScheduleUpdate {
      * @type {any}
      * @memberof JobScheduleUpdate
      */
+    tags?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleUpdate
+     */
+    folderId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleUpdate
+     */
     frequency?: any | null;
     /**
      * 
@@ -79,6 +91,8 @@ export function JobScheduleUpdateFromJSONTyped(json: any, ignoreDiscriminator: b
         'scheduleName': !exists(json, 'schedule_name') ? undefined : json['schedule_name'],
         'jobType': !exists(json, 'job_type') ? undefined : json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
         'frequency': !exists(json, 'frequency') ? undefined : json['frequency'],
         'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
         'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
@@ -97,6 +111,8 @@ export function JobScheduleUpdateToJSON(value?: JobScheduleUpdate | null): any {
         'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,
+        'tags': value.tags,
+        'folder_id': value.folderId,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,

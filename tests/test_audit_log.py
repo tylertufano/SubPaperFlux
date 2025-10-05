@@ -204,7 +204,7 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
     assert final_logs["items"][2]["details"]["name"] == "Demo Site"
 
 
-def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient):
+def test_audit_log_tracks_bookmark_deletes(admin_client: TestClient):
     from app.db import get_session
     from app.models import Bookmark
 
@@ -220,23 +220,6 @@ def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient)
         session.commit()
         bookmark_id = bookmark.id
 
-    update_response = admin_client.put(
-        f"/v1/bookmarks/{bookmark_id}/tags",
-        json={"tags": ["alpha", "beta"]},
-    )
-    assert update_response.status_code == 200
-
-    logs_after_update = fetch_audit(
-        admin_client,
-        entity_type="bookmark",
-        entity_id=bookmark_id,
-        size=10,
-    )
-    assert logs_after_update["total"] >= 1
-    assert logs_after_update["items"][0]["action"] == "update"
-    assert logs_after_update["items"][0]["entity_id"] == bookmark_id
-    assert logs_after_update["items"][0]["details"]["tags"] == ["alpha", "beta"]
-
     delete_response = admin_client.delete(
         f"/v1/bookmarks/{bookmark_id}",
         params={"delete_remote": "false"},
@@ -249,11 +232,7 @@ def test_audit_log_tracks_bookmark_updates_and_deletes(admin_client: TestClient)
         entity_id=bookmark_id,
         size=10,
     )
-    assert final_logs["total"] >= 2
-    assert [item["action"] for item in final_logs["items"][:2]] == [
-        "delete",
-        "update",
-    ]
+    assert final_logs["total"] >= 1
+    assert final_logs["items"][0]["action"] == "delete"
     assert final_logs["items"][0]["details"]["delete_remote"] is False
     assert final_logs["items"][0]["details"]["instapaper_bookmark_id"] == "insta-001"
-    assert final_logs["items"][1]["details"]["tags"] == ["alpha", "beta"]

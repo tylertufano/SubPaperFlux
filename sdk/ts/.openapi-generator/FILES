@@ -37,14 +37,8 @@ src/models/ApiTokenWithSecret.ts
 src/models/ApiTokensPage.ts
 src/models/AuditLogOut.ts
 src/models/AuditLogsPage.ts
-src/models/BookmarkFolderSummary.ts
-src/models/BookmarkFolderUpdate.ts
 src/models/BookmarkOut.ts
-src/models/BookmarkTagSummary.ts
-src/models/BookmarkTagsUpdate.ts
 src/models/BookmarksPage.ts
-src/models/BulkBookmarkFolderUpdate.ts
-src/models/BulkBookmarkTagUpdate.ts
 src/models/Credential.ts
 src/models/CredentialsPage.ts
 src/models/Feed.ts

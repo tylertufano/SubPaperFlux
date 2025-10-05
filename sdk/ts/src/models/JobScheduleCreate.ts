@@ -42,6 +42,18 @@ export interface JobScheduleCreate {
      * @type {any}
      * @memberof JobScheduleCreate
      */
+    tags?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
+    folderId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
     frequency: any | null;
     /**
      * 
@@ -88,6 +100,8 @@ export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: b
         'scheduleName': json['schedule_name'],
         'jobType': json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
         'frequency': json['frequency'],
         'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
         'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
@@ -107,6 +121,8 @@ export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
         'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,
+        'tags': value.tags,
+        'folder_id': value.folderId,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,
