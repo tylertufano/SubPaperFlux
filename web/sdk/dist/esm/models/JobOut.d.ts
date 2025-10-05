@@ -73,6 +73,30 @@ export interface JobOut {
     details?: {
         [key: string]: any;
     } | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    createdAt: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    runAt?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    scheduleId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobOut
+     */
+    scheduleName?: any | null;
 }
 /**
  * Check if a given object implements the JobOut interface.

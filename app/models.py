@@ -379,6 +379,14 @@ class Feed(SQLModel, table=True):
             ForeignKey("credential.id", ondelete="SET NULL"), nullable=True
         ),
     )
+    folder_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(
+            ForeignKey("folder.id", ondelete="SET NULL"),
+            nullable=True,
+            index=True,
+        ),
+    )
 
 
 class Credential(SQLModel, table=True):
@@ -555,6 +563,29 @@ class Tag(SQLModel, table=True):
     name: str = Field(index=True)
 
 
+class FeedTagLink(SQLModel, table=True):
+    __tablename__ = "feed_tag_link"
+    __table_args__ = (
+        UniqueConstraint("feed_id", "tag_id", name="uq_feed_tag_link_feed_tag"),
+    )
+
+    feed_id: str = Field(
+        sa_column=Column(
+            ForeignKey("feed.id", ondelete="CASCADE"),
+            primary_key=True,
+            index=True,
+        )
+    )
+    tag_id: str = Field(
+        sa_column=Column(
+            ForeignKey("tag.id", ondelete="CASCADE"),
+            primary_key=True,
+            index=True,
+        ),
+    )
+    position: int = Field(sa_column=Column(Integer, nullable=False))
+
+
 class Folder(SQLModel, table=True):
     __tablename__ = "folder"
     __table_args__ = (
@@ -640,6 +671,7 @@ __all__ = [
     "Cookie",
     "Bookmark",
     "Tag",
+    "FeedTagLink",
     "Folder",
     "BookmarkTagLink",
     "BookmarkFolderLink",

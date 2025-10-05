@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import func
+from sqlalchemy import delete, func
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select
 
@@ -11,7 +11,13 @@ from ..auth import (
 )
 from ..schemas import Feed as FeedSchema
 from ..db import get_session
-from ..models import Credential as CredentialModel, Feed as FeedModel
+from ..models import (
+    Credential as CredentialModel,
+    Feed as FeedModel,
+    FeedTagLink,
+    Folder as FolderModel,
+    Tag as TagModel,
+)
 from ..util.quotas import enforce_user_quota
 from ..config import is_user_mgmt_enforce_enabled
 from .credentials import _validate_site_config_assignment
@@ -210,17 +216,135 @@ def _validate_site_login_configuration(
     return normalized_site_config_id, normalized_credential_id
 
 
+def _validate_feed_folder(
+    session,
+    *,
+    owner_id: Optional[str],
+    folder_id: Optional[str],
+) -> Optional[str]:
+    normalized_folder_id = _normalize_optional(folder_id)
+    if not normalized_folder_id:
+        return None
+    folder = session.get(FolderModel, normalized_folder_id)
+    if not folder:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="folder_id is invalid",
+        )
+    if folder.owner_user_id != owner_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="folder_id does not belong to the feed owner",
+        )
+    return folder.id
+
+
+def _validate_feed_tags(
+    session,
+    *,
+    owner_id: Optional[str],
+    tag_ids: List[str],
+) -> List[str]:
+    if not tag_ids:
+        return []
+    normalized_ids: List[str] = []
+    seen: set[str] = set()
+    for raw_id in tag_ids:
+        tag_id = str(raw_id).strip()
+        if not tag_id:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="tag_ids may not contain blank identifiers",
+            )
+        if tag_id in seen:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="tag_ids may not contain duplicates",
+            )
+        seen.add(tag_id)
+        normalized_ids.append(tag_id)
+
+    rows = session.exec(
+        select(TagModel).where(TagModel.id.in_(normalized_ids))
+    ).all()
+    tag_map = {tag.id: tag for tag in rows}
+    missing = [tag_id for tag_id in normalized_ids if tag_id not in tag_map]
+    if missing:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="tag_ids contains invalid tag references",
+        )
+
+    for tag_id in normalized_ids:
+        tag = tag_map[tag_id]
+        if tag.owner_user_id != owner_id:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="tag_ids must belong to the feed owner",
+            )
+
+    return normalized_ids
+
+
+def _apply_feed_tags(session, *, feed_id: str, tag_ids: List[str]) -> None:
+    session.exec(delete(FeedTagLink).where(FeedTagLink.feed_id == feed_id))
+    for position, tag_id in enumerate(tag_ids):
+        session.add(
+            FeedTagLink(feed_id=feed_id, tag_id=tag_id, position=position)
+        )
+
+
+def _get_feed_tag_map(session, feed_ids: List[str]) -> dict[str, List[str]]:
+    if not feed_ids:
+        return {}
+    rows = session.exec(
+        select(FeedTagLink)
+        .where(FeedTagLink.feed_id.in_(feed_ids))
+        .order_by(FeedTagLink.feed_id, FeedTagLink.position)
+    ).all()
+    tag_map: dict[str, List[str]] = {}
+    for row in rows:
+        tag_map.setdefault(row.feed_id, []).append(row.tag_id)
+    return tag_map
+
+
+def _feed_to_schema(
+    session,
+    feed: FeedModel,
+    tag_map: Optional[dict[str, List[str]]] = None,
+) -> FeedSchema:
+    if tag_map is None:
+        tag_map = _get_feed_tag_map(session, [feed.id])
+    tag_ids = tag_map.get(feed.id, [])
+    return FeedSchema(
+        id=feed.id,
+        url=feed.url,
+        poll_frequency=feed.poll_frequency,
+        initial_lookback_period=feed.initial_lookback_period,
+        is_paywalled=feed.is_paywalled,
+        rss_requires_auth=feed.rss_requires_auth,
+        site_config_id=feed.site_config_id,
+        owner_user_id=feed.owner_user_id,
+        site_login_credential_id=feed.site_login_credential_id,
+        folder_id=feed.folder_id,
+        tag_ids=tag_ids,
+    )
+
+
 @router.get("", response_model=List[FeedSchema])
 @router.get("/", response_model=List[FeedSchema])
 def list_feeds(current_user=Depends(get_current_user), session=Depends(get_session)):
     user_id = current_user["sub"]
     stmt = select(FeedModel).where(FeedModel.owner_user_id == user_id)
-    return session.exec(stmt).all()
+    records = session.exec(stmt).all()
+    tag_map = _get_feed_tag_map(session, [record.id for record in records])
+    return [_feed_to_schema(session, record, tag_map) for record in records]
 
 
 @router.post("/", response_model=FeedSchema, status_code=status.HTTP_201_CREATED)
 def create_feed(body: FeedSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
     payload = body.model_dump(mode="json")
+    tag_ids = payload.pop("tag_ids", [])
     requested_owner = payload.get("owner_user_id")
     owner_specified = "owner_user_id" in getattr(body, "model_fields_set", set())
     owner_id = _resolve_owner(
@@ -240,6 +364,16 @@ def create_feed(body: FeedSchema, current_user=Depends(get_current_user), sessio
     )
     payload["site_config_id"] = normalized_site_config_id
     payload["site_login_credential_id"] = normalized_credential_id
+    payload["folder_id"] = _validate_feed_folder(
+        session,
+        owner_id=owner_id,
+        folder_id=payload.get("folder_id"),
+    )
+    validated_tag_ids = _validate_feed_tags(
+        session,
+        owner_id=owner_id,
+        tag_ids=tag_ids,
+    )
     model = FeedModel(**payload)
     if owner_id is not None:
         enforce_user_quota(
@@ -253,9 +387,11 @@ def create_feed(body: FeedSchema, current_user=Depends(get_current_user), sessio
         )
     model.owner_user_id = owner_id
     session.add(model)
+    session.flush()
+    _apply_feed_tags(session, feed_id=model.id, tag_ids=validated_tag_ids)
     session.commit()
     session.refresh(model)
-    return model
+    return _feed_to_schema(session, model)
 
 
 @router.delete("/{feed_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -322,7 +458,19 @@ def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current
     )
     model.site_config_id = normalized_site_config_id
     model.site_login_credential_id = normalized_credential_id
+    model.folder_id = _validate_feed_folder(
+        session,
+        owner_id=model.owner_user_id,
+        folder_id=body.folder_id,
+    )
+    validated_tag_ids = _validate_feed_tags(
+        session,
+        owner_id=model.owner_user_id,
+        tag_ids=body.tag_ids,
+    )
     session.add(model)
+    session.flush()
+    _apply_feed_tags(session, feed_id=model.id, tag_ids=validated_tag_ids)
     session.commit()
     session.refresh(model)
-    return model
+    return _feed_to_schema(session, model)

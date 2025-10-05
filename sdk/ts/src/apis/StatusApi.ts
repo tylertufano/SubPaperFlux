@@ -25,11 +25,6 @@ import {
     StatusResponseToJSON,
 } from '../models';
 
-export interface IntegrationsStatusStatusIntegrationsGetRequest {
-    instapaperCredId?: any;
-    minifluxCredId?: any;
-}
-
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
     instapaperCredId?: any;
     minifluxCredId?: any;
@@ -39,32 +34,6 @@ export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
  * 
  */
 export class StatusApi extends runtime.BaseAPI {
-
-    /**
-     * Db Status
-     */
-    async dbStatusStatusDbGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/status/db`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     * Db Status
-     */
-    async dbStatusStatusDbGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.dbStatusStatusDbGetRaw(initOverrides);
-        return await response.value();
-    }
 
     /**
      * Db Status
@@ -95,32 +64,6 @@ export class StatusApi extends runtime.BaseAPI {
     /**
      * Get Status
      */
-    async getStatusStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusResponse>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/status`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => StatusResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Get Status
-     */
-    async getStatusStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StatusResponse> {
-        const response = await this.getStatusStatusGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get Status
-     */
     async getStatusV1StatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusResponse>> {
         const queryParameters: any = {};
 
@@ -141,48 +84,6 @@ export class StatusApi extends runtime.BaseAPI {
      */
     async getStatusV1StatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StatusResponse> {
         const response = await this.getStatusV1StatusGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Integrations Status
-     */
-    async integrationsStatusStatusIntegrationsGetRaw(requestParameters: IntegrationsStatusStatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
-        const queryParameters: any = {};
-
-        if (requestParameters.instapaperCredId !== undefined) {
-            queryParameters['instapaper_cred_id'] = requestParameters.instapaperCredId;
-        }
-
-        if (requestParameters.minifluxCredId !== undefined) {
-            queryParameters['miniflux_cred_id'] = requestParameters.minifluxCredId;
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/status/integrations`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse<any>(response);
-    }
-
-    /**
-     * Integrations Status
-     */
-    async integrationsStatusStatusIntegrationsGet(requestParameters: IntegrationsStatusStatusIntegrationsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{ [key: string]: any; }> {
-        const response = await this.integrationsStatusStatusIntegrationsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

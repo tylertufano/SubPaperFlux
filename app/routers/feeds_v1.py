@@ -15,26 +15,26 @@ from ..security.csrf import csrf_protect
 from ..util.quotas import enforce_user_quota
 from .feeds import (
     _ensure_feed_permission,
+    _feed_to_schema,
+    _get_feed_tag_map,
     _resolve_owner,
+    _validate_feed_folder,
     _validate_site_login_configuration,
+    _validate_feed_tags,
+    _apply_feed_tags,
 )
 
 
 router = APIRouter(prefix="/v1/feeds", tags=["v1"])
 
 
-def _feed_to_out(model: FeedModel) -> FeedOut:
-    return FeedOut(
-        id=model.id,
-        url=model.url,
-        poll_frequency=model.poll_frequency,
-        initial_lookback_period=model.initial_lookback_period,
-        is_paywalled=model.is_paywalled,
-        rss_requires_auth=model.rss_requires_auth,
-        site_config_id=model.site_config_id,
-        owner_user_id=model.owner_user_id,
-        site_login_credential_id=model.site_login_credential_id,
-    )
+def _feed_to_out(
+    session,
+    model: FeedModel,
+    tag_map: Optional[dict[str, List[str]]] = None,
+) -> FeedOut:
+    payload = _feed_to_schema(session, model, tag_map=tag_map).model_dump(mode="json")
+    return FeedOut(**payload)
 
 
 @router.get("", response_model=FeedsPage, summary="List feeds")
@@ -152,7 +152,8 @@ def list_feeds_v1(
     end = start + size
     rows = records[start:end]
 
-    items = [_feed_to_out(r) for r in rows]
+    tag_map = _get_feed_tag_map(session, [record.id for record in rows])
+    items = [_feed_to_out(session, r, tag_map=tag_map) for r in rows]
     has_next = (page * size) < total
     total_pages = int((total + size - 1) // size) if size else 1
     return FeedsPage(items=items, total=total, page=page, size=size, has_next=has_next, total_pages=total_pages)
@@ -179,7 +180,7 @@ def get_feed_v1(
     ):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    return _feed_to_out(model)
+    return _feed_to_out(session, model)
 
 
 @router.post(
@@ -195,6 +196,7 @@ def create_feed_v1(
     session=Depends(get_session),
 ):
     payload = body.model_dump(mode="json")
+    tag_ids = payload.pop("tag_ids", [])
     requested_owner = payload.get("owner_user_id")
     owner_specified = "owner_user_id" in getattr(body, "model_fields_set", set())
     owner_id = _resolve_owner(
@@ -216,6 +218,16 @@ def create_feed_v1(
 
     payload["site_config_id"] = normalized_site_config_id
     payload["site_login_credential_id"] = normalized_credential_id
+    payload["folder_id"] = _validate_feed_folder(
+        session,
+        owner_id=owner_id,
+        folder_id=payload.get("folder_id"),
+    )
+    validated_tag_ids = _validate_feed_tags(
+        session,
+        owner_id=owner_id,
+        tag_ids=tag_ids,
+    )
 
     model = FeedModel(**payload)
 
@@ -232,10 +244,12 @@ def create_feed_v1(
 
     model.owner_user_id = owner_id
     session.add(model)
+    session.flush()
+    _apply_feed_tags(session, feed_id=model.id, tag_ids=validated_tag_ids)
     session.commit()
     session.refresh(model)
 
-    return _feed_to_out(model)
+    return _feed_to_out(session, model)
 
 
 @router.put(
@@ -301,12 +315,24 @@ def update_feed_v1(
 
     model.site_config_id = normalized_site_config_id
     model.site_login_credential_id = normalized_credential_id
+    model.folder_id = _validate_feed_folder(
+        session,
+        owner_id=model.owner_user_id,
+        folder_id=body.folder_id,
+    )
+    validated_tag_ids = _validate_feed_tags(
+        session,
+        owner_id=model.owner_user_id,
+        tag_ids=body.tag_ids,
+    )
 
     session.add(model)
+    session.flush()
+    _apply_feed_tags(session, feed_id=model.id, tag_ids=validated_tag_ids)
     session.commit()
     session.refresh(model)
 
-    return _feed_to_out(model)
+    return _feed_to_out(session, model)
 
 
 @router.delete(

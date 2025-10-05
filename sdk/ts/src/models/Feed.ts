@@ -73,6 +73,18 @@ export interface Feed {
      * @memberof Feed
      */
     siteLoginCredentialId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof Feed
+     */
+    folderId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof Feed
+     */
+    tagIds?: any | null;
 }
 
 /**
@@ -104,6 +116,8 @@ export function FeedFromJSONTyped(json: any, ignoreDiscriminator: boolean): Feed
         'siteConfigId': !exists(json, 'site_config_id') ? undefined : json['site_config_id'],
         'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'siteLoginCredentialId': !exists(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
+        'tagIds': !exists(json, 'tag_ids') ? undefined : json['tag_ids'],
     };
 }
 
@@ -125,6 +139,8 @@ export function FeedToJSON(value?: Feed | null): any {
         'site_config_id': value.siteConfigId,
         'owner_user_id': value.ownerUserId,
         'site_login_credential_id': value.siteLoginCredentialId,
+        'folder_id': value.folderId,
+        'tag_ids': value.tagIds,
     };
 }
 
