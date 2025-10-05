@@ -32,31 +32,6 @@ class StatusApi extends runtime.BaseAPI {
     /**
      * Db Status
      */
-    dbStatusStatusDbGetRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            const response = yield this.request({
-                path: `/status/db`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response);
-        });
-    }
-    /**
-     * Db Status
-     */
-    dbStatusStatusDbGet(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.dbStatusStatusDbGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Db Status
-     */
     dbStatusV1StatusDbGetRaw(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
@@ -82,31 +57,6 @@ class StatusApi extends runtime.BaseAPI {
     /**
      * Get Status
      */
-    getStatusStatusGetRaw(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            const headerParameters = {};
-            const response = yield this.request({
-                path: `/status`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.StatusResponseFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Get Status
-     */
-    getStatusStatusGet(initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getStatusStatusGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get Status
-     */
     getStatusV1StatusGetRaw(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
@@ -126,44 +76,6 @@ class StatusApi extends runtime.BaseAPI {
     getStatusV1StatusGet(initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.getStatusV1StatusGetRaw(initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Integrations Status
-     */
-    integrationsStatusStatusIntegrationsGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const queryParameters = {};
-            if (requestParameters.instapaperCredId !== undefined) {
-                queryParameters['instapaper_cred_id'] = requestParameters.instapaperCredId;
-            }
-            if (requestParameters.minifluxCredId !== undefined) {
-                queryParameters['miniflux_cred_id'] = requestParameters.minifluxCredId;
-            }
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/status/integrations`,
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response);
-        });
-    }
-    /**
-     * Integrations Status
-     */
-    integrationsStatusStatusIntegrationsGet(requestParameters = {}, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.integrationsStatusStatusIntegrationsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

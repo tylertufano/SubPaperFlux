@@ -1,5 +1,7 @@
 import os
 import base64
+from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import select
@@ -691,6 +693,53 @@ def test_feed_update_allows_switching_site_login_credential(client):
         stored = session.get(Feed, feed["id"])
         assert stored is not None
         assert stored.site_login_credential_id == second_cred["id"]
+
+
+def test_feed_update_ignores_initial_lookback_after_first_poll(client):
+    create_resp = client.post(
+        "/v1/feeds/",
+        json={
+            "url": "https://example.com/locked.xml",
+            "initial_lookback_period": "24h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    feed = create_resp.json()
+
+    from app.db import get_session
+    from app.models import Feed
+
+    polled_at = datetime.now(timezone.utc)
+    with next(get_session()) as session:
+        stored = session.get(Feed, feed["id"])
+        assert stored is not None
+        stored.initial_lookback_period = "24h"
+        stored.last_rss_poll_at = polled_at
+        session.add(stored)
+        session.commit()
+
+    update_resp = client.put(
+        f"/v1/feeds/{feed['id']}",
+        json={
+            "id": feed["id"],
+            "url": feed["url"],
+            "poll_frequency": feed.get("poll_frequency") or "1h",
+            "initial_lookback_period": "12h",
+            "is_paywalled": feed.get("is_paywalled", False),
+            "rss_requires_auth": feed.get("rss_requires_auth", False),
+        },
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    payload = update_resp.json()
+    assert payload["initial_lookback_period"] == "24h"
+    assert payload.get("last_rss_poll_at") is not None
+
+    with next(get_session()) as session:
+        stored = session.get(Feed, feed["id"])
+        assert stored is not None
+        assert stored.initial_lookback_period == "24h"
+        assert stored.last_rss_poll_at is not None
+        assert stored.last_rss_poll_at == polled_at.replace(tzinfo=None)
 
 
 def test_feed_creation_rejects_mismatched_site_login_configuration(client):

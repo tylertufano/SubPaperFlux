@@ -154,96 +154,6 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bulkBookmarkFolderUpdate === null || requestParameters.bulkBookmarkFolderUpdate === undefined) {
-                throw new runtime.RequiredError('bulkBookmarkFolderUpdate', 'Required parameter requestParameters.bulkBookmarkFolderUpdate was null or undefined when calling bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/bulk-folders`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BulkBookmarkFolderUpdateToJSON)(requestParameters.bulkBookmarkFolderUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bulkBookmarkTagUpdate === null || requestParameters.bulkBookmarkTagUpdate === undefined) {
-                throw new runtime.RequiredError('bulkBookmarkTagUpdate', 'Required parameter requestParameters.bulkBookmarkTagUpdate was null or undefined when calling bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/bulk-tags`,
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BulkBookmarkTagUpdateToJSON)(requestParameters.bulkBookmarkTagUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Clear user role overrides
      */
     clearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRaw(requestParameters, initOverrides) {
@@ -361,12 +271,6 @@ class V1Api extends runtime.BaseAPI {
             const queryParameters = {};
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
             }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
@@ -877,43 +781,6 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'DELETE',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            return new runtime.VoidApiResponse(response);
-        });
-    }
-    /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters, initOverrides);
-        });
-    }
-    /**
      * Delete Bookmark
      */
     deleteBookmarkV1BookmarksBookmarkIdDeleteRaw(requestParameters, initOverrides) {
@@ -1327,12 +1194,6 @@ class V1Api extends runtime.BaseAPI {
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
             }
@@ -1388,86 +1249,6 @@ class V1Api extends runtime.BaseAPI {
     exportBookmarksV1BookmarksExportGet(requestParameters = {}, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.exportBookmarksV1BookmarksExportGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkFolderV1BookmarksBookmarkIdFolderGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling getBookmarkTagsV1BookmarksBookmarkIdTagsGet.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'GET',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }
@@ -1962,12 +1743,6 @@ class V1Api extends runtime.BaseAPI {
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
             }
@@ -2031,12 +1806,6 @@ class V1Api extends runtime.BaseAPI {
             }
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
             }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
@@ -2267,12 +2036,6 @@ class V1Api extends runtime.BaseAPI {
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
             }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
-            }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
             }
@@ -2346,12 +2109,6 @@ class V1Api extends runtime.BaseAPI {
             }
             if (requestParameters.feedId !== undefined) {
                 queryParameters['feed_id'] = requestParameters.feedId;
-            }
-            if (requestParameters.tagId !== undefined) {
-                queryParameters['tag_id'] = requestParameters.tagId;
-            }
-            if (requestParameters.folderId !== undefined) {
-                queryParameters['folder_id'] = requestParameters.folderId;
             }
             if (requestParameters.since !== undefined) {
                 queryParameters['since'] = requestParameters.since;
@@ -3533,97 +3290,6 @@ class V1Api extends runtime.BaseAPI {
     toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.toggleJobScheduleV1JobSchedulesScheduleIdTogglePostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Bookmark Folder
-     */
-    updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
-            }
-            if (requestParameters.bookmarkFolderUpdate === null || requestParameters.bookmarkFolderUpdate === undefined) {
-                throw new runtime.RequiredError('bookmarkFolderUpdate', 'Required parameter requestParameters.bookmarkFolderUpdate was null or undefined when calling updateBookmarkFolderV1BookmarksBookmarkIdFolderPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/{bookmark_id}/folder`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BookmarkFolderUpdateToJSON)(requestParameters.bookmarkFolderUpdate),
-            }, initOverrides);
-            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.FolderOutFromJSON)(jsonValue));
-        });
-    }
-    /**
-     * Update Bookmark Folder
-     */
-    updateBookmarkFolderV1BookmarksBookmarkIdFolderPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.bookmarkId === null || requestParameters.bookmarkId === undefined) {
-                throw new runtime.RequiredError('bookmarkId', 'Required parameter requestParameters.bookmarkId was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
-            }
-            if (requestParameters.bookmarkTagsUpdate === null || requestParameters.bookmarkTagsUpdate === undefined) {
-                throw new runtime.RequiredError('bookmarkTagsUpdate', 'Required parameter requestParameters.bookmarkTagsUpdate was null or undefined when calling updateBookmarkTagsV1BookmarksBookmarkIdTagsPut.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            headerParameters['Content-Type'] = 'application/json';
-            if (requestParameters.xCsrfToken !== undefined && requestParameters.xCsrfToken !== null) {
-                headerParameters['x-csrf-token'] = String(requestParameters.xCsrfToken);
-            }
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/bookmarks/{bookmark_id}/tags`.replace(`{${"bookmark_id"}}`, encodeURIComponent(String(requestParameters.bookmarkId))),
-                method: 'PUT',
-                headers: headerParameters,
-                query: queryParameters,
-                body: (0, models_1.BookmarkTagsUpdateToJSON)(requestParameters.bookmarkTagsUpdate),
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters, initOverrides);
             return yield response.value();
         });
     }

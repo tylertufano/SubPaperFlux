@@ -328,6 +328,7 @@ def _feed_to_schema(
         site_login_credential_id=feed.site_login_credential_id,
         folder_id=feed.folder_id,
         tag_ids=tag_ids,
+        last_rss_poll_at=feed.last_rss_poll_at,
     )
 
 
@@ -423,6 +424,8 @@ def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current
     ):
         return None
     update_payload = body.model_dump(mode="json", exclude_unset=True)
+    lookback_specified = "initial_lookback_period" in update_payload
+    has_polled = model.last_rss_poll_at is not None
     if "owner_user_id" in update_payload:
         requested_owner = update_payload.get("owner_user_id")
         new_owner = _resolve_owner(
@@ -446,7 +449,8 @@ def update_feed(feed_id: str, body: FeedSchema, current_user=Depends(get_current
     # Update allowed fields
     model.url = str(body.url)
     model.poll_frequency = body.poll_frequency
-    model.initial_lookback_period = body.initial_lookback_period
+    if lookback_specified and not has_polled:
+        model.initial_lookback_period = body.initial_lookback_period
     model.is_paywalled = body.is_paywalled
     model.rss_requires_auth = body.rss_requires_auth
     normalized_site_config_id, normalized_credential_id = _validate_site_login_configuration(

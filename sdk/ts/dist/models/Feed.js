@@ -42,6 +42,9 @@ function FeedFromJSONTyped(json, ignoreDiscriminator) {
         'siteConfigId': !(0, runtime_1.exists)(json, 'site_config_id') ? undefined : json['site_config_id'],
         'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'siteLoginCredentialId': !(0, runtime_1.exists)(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'],
+        'folderId': !(0, runtime_1.exists)(json, 'folder_id') ? undefined : json['folder_id'],
+        'tagIds': !(0, runtime_1.exists)(json, 'tag_ids') ? undefined : json['tag_ids'],
+        'lastRssPollAt': !(0, runtime_1.exists)(json, 'last_rss_poll_at') ? undefined : json['last_rss_poll_at'],
     };
 }
 exports.FeedFromJSONTyped = FeedFromJSONTyped;
@@ -62,6 +65,9 @@ function FeedToJSON(value) {
         'site_config_id': value.siteConfigId,
         'owner_user_id': value.ownerUserId,
         'site_login_credential_id': value.siteLoginCredentialId,
+        'folder_id': value.folderId,
+        'tag_ids': value.tagIds,
+        'last_rss_poll_at': value.lastRssPollAt,
     };
 }
 exports.FeedToJSON = FeedToJSON;

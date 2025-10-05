@@ -258,6 +258,7 @@ export default function Feeds() {
         ? (f.tag_ids ?? f.tagIds).map((tag: any) => String(tag))
         : [],
       folderId: f.folder_id != null || f.folderId != null ? String(f.folder_id ?? f.folderId ?? '') : '',
+      lastRssPollAt: f.last_rss_poll_at || f.lastRssPollAt || null,
     })
   }
 
@@ -268,19 +269,23 @@ export default function Feeds() {
 
   async function saveEdit(id: string) {
     try {
+      const lookbackLocked = Boolean(editRow?.lastRssPollAt)
+      const payload: any = {
+        url: editRow.url,
+        pollFrequency: editRow.pollFrequency,
+        isPaywalled: !!editRow.isPaywalled,
+        rssRequiresAuth: !!editRow.rssRequiresAuth,
+        siteConfigId: editRow.siteConfigId || undefined,
+        siteLoginCredentialId: editRow.siteLoginCredentialId || undefined,
+        tagIds: Array.isArray(editRow.tagIds) && editRow.tagIds.length > 0 ? editRow.tagIds : undefined,
+        folderId: editRow.folderId ? editRow.folderId : undefined,
+      }
+      if (!lookbackLocked) {
+        payload.initialLookbackPeriod = editRow.initialLookbackPeriod ?? ''
+      }
       await feedsApi.updateFeedFeedsFeedIdPut({
         feedId: id,
-        feed: {
-          url: editRow.url,
-          pollFrequency: editRow.pollFrequency,
-          initialLookbackPeriod: editRow.initialLookbackPeriod || undefined,
-          isPaywalled: !!editRow.isPaywalled,
-          rssRequiresAuth: !!editRow.rssRequiresAuth,
-          siteConfigId: editRow.siteConfigId || undefined,
-          siteLoginCredentialId: editRow.siteLoginCredentialId || undefined,
-          tagIds: Array.isArray(editRow.tagIds) && editRow.tagIds.length > 0 ? editRow.tagIds : undefined,
-          folderId: editRow.folderId ? editRow.folderId : undefined,
-        } as any,
+        feed: payload,
       })
       setBanner({ kind: 'success', message: t('feeds_update_success') })
       setEditingId(null)
@@ -331,12 +336,12 @@ export default function Feeds() {
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         <form
           id="create-feed"
-          className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-2"
+          className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3"
           role="form"
           aria-labelledby="create-feed-heading"
           onSubmit={(e) => { e.preventDefault(); createFeed() }}
         >
-          <h3 id="create-feed-heading" className="font-semibold md:col-span-3">{t('feeds_create_heading')}</h3>
+          <h3 id="create-feed-heading" className="font-semibold md:col-span-4">{t('feeds_create_heading')}</h3>
           <label className="sr-only" htmlFor="create-feed-url">{t('feeds_field_url_placeholder')}</label>
           <input
             id="create-feed-url"
@@ -367,7 +372,7 @@ export default function Feeds() {
           <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_login_select')}</label>
           <select
             id="create-feed-site-config"
-            className="input"
+            className="input md:col-span-2"
             aria-label={t('feeds_field_site_login_select')}
             value={siteLoginSelection}
             onChange={e => {
@@ -390,7 +395,7 @@ export default function Feeds() {
               </option>
             ))}
           </select>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <AutocompleteMultiSelect
               id="create-feed-tags"
               label={t('feeds_field_tags_label')}
@@ -403,7 +408,7 @@ export default function Feeds() {
               getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <AutocompleteSingleSelect
               id="create-feed-folder"
               label={t('feeds_field_folder_label')}
@@ -416,9 +421,9 @@ export default function Feeds() {
               clearLabel={t('combobox_clear_selection')}
             />
           </div>
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
-          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
-          <button type="submit" className="btn">{t('btn_create')}</button>
+          <label className="inline-flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
+          <label className="inline-flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
+          <button type="submit" className="btn md:col-span-1">{t('btn_create')}</button>
         </form>
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
@@ -458,7 +463,16 @@ export default function Feeds() {
                       <>
                         <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} aria-label={t('feeds_field_url_placeholder')} /></td>
                         <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} aria-label={t('feeds_field_poll_placeholder')} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} /></td>
+                        <td className="td">
+                          {editRow.lastRssPollAt ? (
+                            <div className="space-y-1 text-sm">
+                              <div>{editRow.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</div>
+                              <p className="text-xs text-gray-500">{t('feeds_field_lookback_locked_hint')}</p>
+                            </div>
+                          ) : (
+                            <input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} />
+                          )}
+                        </td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_paywalled_label')} checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_rss_auth_label')} checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
                         <td className="td">
@@ -520,7 +534,7 @@ export default function Feeds() {
                       <>
                         <td className="td">{f.url}</td>
                         <td className="td">{f.poll_frequency || f.pollFrequency}</td>
-                        <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || ''}</td>
+                        <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</td>
                         <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">

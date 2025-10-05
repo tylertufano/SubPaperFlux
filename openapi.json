@@ -8511,6 +8511,18 @@
             },
             "type": "array",
             "title": "Tag Ids"
+          },
+          "last_rss_poll_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Rss Poll At"
           }
         },
         "type": "object",
@@ -8604,6 +8616,18 @@
             },
             "type": "array",
             "title": "Tag Ids"
+          },
+          "last_rss_poll_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Rss Poll At"
           }
         },
         "type": "object",
