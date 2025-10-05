@@ -1,1 +1,18 @@
-{}
+{
+  "feeds_field_tags_label": "Tags",
+  "feeds_field_tags_placeholder": "Tags suchen",
+  "feeds_field_tags_help": "Wählen Sie Tags aus, die neuen Artikeln dieses Feeds zugewiesen werden. Die Reihenfolge entspricht der Auswahl.",
+  "feeds_field_folder_label": "Ordner",
+  "feeds_field_folder_placeholder": "Ordner suchen",
+  "feeds_field_folder_help": "Wählen Sie einen Zielordner für neue Artikel (optional).",
+  "feeds_table_tags_label": "Tags",
+  "feeds_table_folder_label": "Ordner",
+  "combobox_no_options": "Keine Treffer",
+  "combobox_remove_option": "{option} entfernen",
+  "combobox_clear_selection": "Auswahl löschen",
+  "job_schedules_field_publish_tags": "Tags hinzufügen",
+  "job_schedules_field_publish_tags_help": "Wählen Sie optionale Tags für veröffentlichte Artikel.",
+  "job_schedules_field_publish_folder": "Ordnerüberschreibung",
+  "job_schedules_field_publish_folder_help": "Wählen Sie einen Ordner für veröffentlichte Artikel (optional).",
+  "job_schedules_warning_publish_folder_override": "Dieser Zeitplan überschreibt beim Ausführen den Ordner des Feeds."
+}

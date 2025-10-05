@@ -1,4 +1,9 @@
 export { default as Alert } from './Alert'
+export { default as AutocompleteCombobox } from './AutocompleteCombobox'
+export {
+  AutocompleteMultiSelect,
+  AutocompleteSingleSelect,
+} from './AutocompleteCombobox'
 export { default as Breadcrumbs } from './Breadcrumbs'
 export { default as BulkActionToolbar } from './BulkActionToolbar'
 export { default as BulkFolderModal } from './BulkFolderModal'
