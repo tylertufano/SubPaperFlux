@@ -150,3 +150,77 @@ def test_enforced_request_for_authorized_owner_succeeds(monkeypatch, client):
         assert owners == {"primary", "other-1"}
     finally:
         is_user_mgmt_enforce_enabled.cache_clear()
+
+
+def test_feed_folder_and_tags_persist_in_order(client):
+    from app.db import get_session
+    from app.models import Feed, FeedTagLink, Folder, Tag
+
+    with next(get_session()) as session:
+        folder = Folder(name="Primary Folder", owner_user_id="primary")
+        updated_folder = Folder(name="Updated Folder", owner_user_id="primary")
+        tag_a = Tag(name="Tag Alpha", owner_user_id="primary")
+        tag_b = Tag(name="Tag Beta", owner_user_id="primary")
+        tag_c = Tag(name="Tag Gamma", owner_user_id="primary")
+        session.add_all([folder, updated_folder, tag_a, tag_b, tag_c])
+        folder_id = folder.id
+        updated_folder_id = updated_folder.id
+        tag_a_id = tag_a.id
+        tag_b_id = tag_b.id
+        tag_c_id = tag_c.id
+        session.commit()
+
+    create_resp = client.post(
+            "/v1/feeds",
+            json={
+                "url": "https://example.com/ordered.xml",
+                "poll_frequency": "1h",
+                "folder_id": folder_id,
+                "tag_ids": [tag_b_id, tag_a_id],
+            },
+        )
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["folder_id"] == folder_id
+    assert created["tag_ids"] == [tag_b_id, tag_a_id]
+
+    feed_id = created["id"]
+
+    with next(get_session()) as session:
+        links = session.exec(
+            select(FeedTagLink)
+            .where(FeedTagLink.feed_id == feed_id)
+            .order_by(FeedTagLink.position)
+        ).all()
+        assert [link.tag_id for link in links] == [tag_b_id, tag_a_id]
+
+    update_resp = client.put(
+        f"/v1/feeds/{feed_id}",
+        json={
+            "url": "https://example.com/ordered.xml",
+            "poll_frequency": "1h",
+            "initial_lookback_period": None,
+            "is_paywalled": False,
+            "rss_requires_auth": False,
+            "site_config_id": None,
+            "owner_user_id": "primary",
+            "site_login_credential_id": None,
+            "folder_id": updated_folder_id,
+            "tag_ids": [tag_c_id, tag_a_id],
+        },
+    )
+    assert update_resp.status_code == 200
+    updated = update_resp.json()
+    assert updated["folder_id"] == updated_folder_id
+    assert updated["tag_ids"] == [tag_c_id, tag_a_id]
+
+    with next(get_session()) as session:
+        feed = session.get(Feed, feed_id)
+        assert feed is not None
+        assert feed.folder_id == updated_folder_id
+        links = session.exec(
+            select(FeedTagLink)
+            .where(FeedTagLink.feed_id == feed_id)
+            .order_by(FeedTagLink.position)
+        ).all()
+        assert [link.tag_id for link in links] == [tag_c_id, tag_a_id]

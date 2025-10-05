@@ -92,6 +92,41 @@ class SiteConfigApi(SiteConfigCreateBase):
 SiteConfig = Annotated[Union[SiteConfigSelenium, SiteConfigApi], Field(discriminator="login_type")]
 
 
+def _validate_tag_id_sequence(raw_value: Any) -> List[str]:
+    if raw_value is None:
+        return []
+    if isinstance(raw_value, (str, bytes)):
+        raise PydanticCustomError(
+            "tag_ids_type",
+            "tag_ids must be provided as an ordered list of identifiers",
+        )
+    try:
+        iterator = iter(raw_value)
+    except TypeError as exc:  # pragma: no cover - defensive
+        raise PydanticCustomError(
+            "tag_ids_type",
+            "tag_ids must be provided as an ordered list of identifiers",
+        ) from exc
+
+    seen: set[str] = set()
+    normalized: List[str] = []
+    for value in iterator:
+        text = str(value).strip()
+        if not text:
+            raise PydanticCustomError(
+                "tag_ids_blank",
+                "tag_ids may not contain blank identifiers",
+            )
+        if text in seen:
+            raise PydanticCustomError(
+                "tag_ids_duplicates",
+                "tag_ids may not contain duplicate identifiers",
+            )
+        seen.add(text)
+        normalized.append(text)
+    return normalized
+
+
 class Feed(BaseModel):
     id: Optional[str] = None
     url: AnyHttpUrl
@@ -102,6 +137,13 @@ class Feed(BaseModel):
     site_config_id: Optional[str] = None
     owner_user_id: Optional[str] = None
     site_login_credential_id: Optional[str] = None
+    folder_id: Optional[str] = None
+    tag_ids: List[str] = Field(default_factory=list)
+
+    @field_validator("tag_ids", mode="before")
+    @classmethod
+    def _validate_tag_ids(cls, value: Any) -> List[str]:
+        return _validate_tag_id_sequence(value)
 
 
 class Credential(BaseModel):
@@ -348,6 +390,13 @@ class FeedOut(BaseModel):
     site_config_id: Optional[str] = None
     owner_user_id: Optional[str] = None
     site_login_credential_id: Optional[str] = None
+    folder_id: Optional[str] = None
+    tag_ids: List[str] = Field(default_factory=list)
+
+    @field_validator("tag_ids", mode="before")
+    @classmethod
+    def _validate_tag_ids(cls, value: Any) -> List[str]:
+        return _validate_tag_id_sequence(value)
 
 
 class FeedsPage(BaseModel):

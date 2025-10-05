@@ -5,122 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/status": {
-      "get": {
-        "tags": [
-          "status"
-        ],
-        "summary": "Get Status",
-        "operationId": "get_status_status_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StatusResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/status/db": {
-      "get": {
-        "tags": [
-          "status"
-        ],
-        "summary": "Db Status",
-        "operationId": "db_status_status_db_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Db Status Status Db Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/status/integrations": {
-      "get": {
-        "tags": [
-          "status"
-        ],
-        "summary": "Integrations Status",
-        "operationId": "integrations_status_status_integrations_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "instapaper_cred_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Instapaper Cred Id"
-            }
-          },
-          {
-            "name": "miniflux_cred_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Miniflux Cred Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Integrations Status Status Integrations Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/site-configs": {
       "post": {
         "tags": [
@@ -9416,6 +9300,24 @@
               }
             ],
             "title": "Site Login Credential Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "tag_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tag Ids"
           }
         },
         "type": "object",
@@ -9491,6 +9393,24 @@
               }
             ],
             "title": "Site Login Credential Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "tag_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tag Ids"
           }
         },
         "type": "object",
@@ -9810,8 +9730,8 @@
         "properties": {
           "schedule_name": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 255,
+            "minLength": 1,
             "title": "Schedule Name"
           },
           "job_type": {
@@ -9977,9 +9897,16 @@
       "JobScheduleUpdate": {
         "properties": {
           "schedule_name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Schedule Name"
           },
           "job_type": {
