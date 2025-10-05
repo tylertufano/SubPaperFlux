@@ -720,6 +720,102 @@ def test_bulk_publish_stream_success(monkeypatch):
     assert published_urls == ["https://example.com/one", "https://example.com/two"]
 
 
+def test_bulk_publish_derives_tags_and_folder(monkeypatch):
+    from app.db import get_session
+    from app.models import Bookmark, Feed, FeedTagLink, Folder, Tag
+    from app.routers import bookmarks as bookmarks_router
+
+    app, cred_id = _create_app_with_credential()
+
+    with next(get_session()) as session:
+        feed = Feed(owner_user_id="u1", url="https://example.com/rss.xml", poll_frequency="1h")
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+
+        tag_feed_one = Tag(owner_user_id="u1", name="FeedOne")
+        tag_feed_two = Tag(owner_user_id="u1", name="FeedTwo")
+        tag_extra = Tag(owner_user_id="u1", name="Extra")
+        session.add(tag_feed_one)
+        session.add(tag_feed_two)
+        session.add(tag_extra)
+        session.commit()
+
+        session.add(FeedTagLink(feed_id=feed.id, tag_id=tag_feed_one.id, position=0))
+        session.add(FeedTagLink(feed_id=feed.id, tag_id=tag_feed_two.id, position=1))
+
+        feed_folder = Folder(owner_user_id="u1", name="Feed Folder", instapaper_folder_id="feed-remote")
+        override_folder = Folder(owner_user_id="u1", name="Override Folder")
+        session.add(feed_folder)
+        session.add(override_folder)
+        session.commit()
+        session.refresh(override_folder)
+
+        feed.folder_id = feed_folder.id
+        session.add(feed)
+
+        bookmark = Bookmark(
+            owner_user_id="u1",
+            url="https://example.com/item",
+            title="Item",
+            feed_id=feed.id,
+        )
+        session.add(bookmark)
+        session.commit()
+        session.refresh(bookmark)
+
+        override_folder_id = override_folder.id
+        tag_extra_id = tag_extra.id
+        bookmark_id = bookmark.id
+        feed_folder_id = feed_folder.id
+
+    publish_calls = []
+
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        publish_calls.append(kwargs)
+        return {"bookmark_id": "ip-item"}
+
+    sync_calls = []
+
+    def fake_sync(session, **kwargs):
+        sync_calls.append(kwargs)
+        return {override_folder_id: "remote-override", feed_folder_id: "feed-remote"}
+
+    monkeypatch.setattr(bookmarks_router, "publish_url", fake_publish)
+    monkeypatch.setattr(bookmarks_router, "sync_instapaper_folders", fake_sync)
+
+    client = TestClient(app)
+    body = {
+        "instapaper_cred_id": cred_id,
+        "items": [
+            {
+                "id": "one",
+                "bookmark_id": bookmark_id,
+                "url": "https://example.com/item",
+                "tag_ids": [tag_extra_id],
+                "tags": ["Manual"],
+                "folder_id": override_folder_id,
+            }
+        ],
+    }
+
+    with client.stream("POST", "/v1/bookmarks/bulk-publish", json=body) as response:
+        assert response.status_code == 200
+        for chunk in response.iter_lines():
+            if not chunk:
+                continue
+            event = json.loads(chunk if isinstance(chunk, str) else chunk.decode())
+            if event.get("type") == "item" and event.get("status") == "failure":
+                pytest.fail(f"Unexpected failure event: {event}")
+
+    assert publish_calls
+    assert len(sync_calls) == 1
+    kwargs = publish_calls[0]
+    assert kwargs.get("tags") == ["FeedOne", "FeedTwo", "Extra", "Manual"]
+    assert kwargs.get("folder") == "Override Folder"
+    assert kwargs.get("folder_id") == "remote-override"
+
+
 def test_bulk_publish_stream_failure(monkeypatch):
     from app.routers import bookmarks as bookmarks_router
 

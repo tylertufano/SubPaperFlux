@@ -254,10 +254,17 @@ class JobScheduleCreate(BaseModel):
     schedule_name: constr(strip_whitespace=True, min_length=1, max_length=255)
     job_type: constr(strip_whitespace=True, min_length=1)
     payload: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    folder_id: Optional[str] = None
     frequency: constr(strip_whitespace=True, min_length=1)
     next_run_at: Optional[datetime] = None
     is_active: bool = True
     owner_user_id: Optional[str] = None
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _validate_tags(cls, value: Any) -> List[str]:
+        return _validate_tag_id_sequence(value)
 
     @field_validator("frequency")
     @classmethod
@@ -267,7 +274,12 @@ class JobScheduleCreate(BaseModel):
 
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleCreate":
-        result = validate_job(self.job_type, self.payload or {})
+        combined_payload = dict(self.payload or {})
+        if self.tags is not None:
+            combined_payload["tags"] = self.tags
+        if self.folder_id is not None or "folder_id" in combined_payload:
+            combined_payload["folder_id"] = self.folder_id
+        result = validate_job(self.job_type, combined_payload)
         if not result.get("ok", True):
             missing_values = result.get("missing", [])
             raise PydanticCustomError(
@@ -282,9 +294,18 @@ class JobScheduleUpdate(BaseModel):
     schedule_name: Optional[constr(strip_whitespace=True, min_length=1, max_length=255)] = None
     job_type: Optional[constr(strip_whitespace=True, min_length=1)] = None
     payload: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+    folder_id: Optional[str] = None
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
     next_run_at: Optional[datetime] = None
     is_active: Optional[bool] = None
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _validate_tags(cls, value: Any) -> Optional[List[str]]:
+        if value is None:
+            return None
+        return _validate_tag_id_sequence(value)
 
     @field_validator("frequency")
     @classmethod
@@ -305,7 +326,12 @@ class JobScheduleUpdate(BaseModel):
                 "job_type and payload must be provided together when updating the payload",
                 {},
             )
-        result = validate_job(provided_job_type, provided_payload or {})
+        combined_payload = dict(provided_payload or {})
+        if self.tags is not None:
+            combined_payload["tags"] = self.tags
+        if self.folder_id is not None or "folder_id" in combined_payload:
+            combined_payload["folder_id"] = self.folder_id
+        result = validate_job(provided_job_type, combined_payload)
         if not result.get("ok", True):
             missing_values = result.get("missing", [])
             raise PydanticCustomError(
@@ -322,6 +348,8 @@ class JobScheduleOut(BaseModel):
     job_type: str
     owner_user_id: Optional[str] = None
     payload: Dict[str, Any]
+    tags: List[str] = Field(default_factory=list)
+    folder_id: Optional[str] = None
     frequency: str
     next_run_at: Optional[datetime] = None
     last_run_at: Optional[datetime] = None

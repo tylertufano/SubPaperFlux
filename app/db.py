@@ -110,7 +110,7 @@ def _reset_rls(session: Session) -> None:
 
 
 def _session_scope() -> Iterator[Session]:
-    with Session(get_engine()) as session:
+    with Session(get_engine(), expire_on_commit=False) as session:
         applied = _configure_rls(session)
         try:
             yield session

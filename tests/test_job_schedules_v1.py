@@ -475,6 +475,41 @@ def test_create_publish_wildcard_schedule(client: TestClient):
     assert created["payload"].get("feed_id") in (None, "")
 
 
+def test_create_publish_schedule_with_tags_and_folder(client: TestClient):
+    from app.db import get_session
+    from app.models import Folder, Tag
+
+    with next(get_session()) as session:
+        tag_one = Tag(owner_user_id="primary", name="Daily")
+        tag_two = Tag(owner_user_id="primary", name="Focus")
+        folder = Folder(owner_user_id="primary", name="Reading List")
+        session.add(tag_one)
+        session.add(tag_two)
+        session.add(folder)
+        session.commit()
+        tag_one_id = tag_one.id
+        tag_two_id = tag_two.id
+        folder_id = folder.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "publish-with-tags",
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-123"},
+            "tags": [tag_one_id, tag_two_id],
+            "folder_id": folder_id,
+            "frequency": "2h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+    assert created["tags"] == [tag_one_id, tag_two_id]
+    assert created["folder_id"] == folder_id
+    assert created["payload"]["tags"] == [tag_one_id, tag_two_id]
+    assert created["payload"]["folder_id"] == folder_id
+
+
 def test_publish_targeted_conflicts_with_existing_wildcard(client: TestClient):
     wildcard_resp = client.post(
         "/v1/job-schedules",
@@ -599,6 +634,89 @@ def test_publish_wildcard_conflicts_with_existing_targeted(client: TestClient):
     assert update_resp.status_code == 400
     update_error = update_resp.json()
     assert update_error["details"]["error"] == "publish_schedule_conflict"
+
+
+def test_create_publish_schedule_rejects_invalid_targets(client: TestClient):
+    from app.db import get_session
+    from app.models import Folder, Tag
+
+    with next(get_session()) as session:
+        foreign_tag = Tag(owner_user_id="other", name="Elsewhere")
+        foreign_folder = Folder(owner_user_id="other", name="Foreign Folder")
+        local_tag = Tag(owner_user_id="primary", name="Local")
+        session.add(foreign_tag)
+        session.add(foreign_folder)
+        session.add(local_tag)
+        session.commit()
+        foreign_tag_id = foreign_tag.id
+        foreign_folder_id = foreign_folder.id
+        local_tag_id = local_tag.id
+
+    invalid_tag_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "publish-invalid-tag",
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-tag"},
+            "tags": [foreign_tag_id],
+            "frequency": "1h",
+        },
+    )
+    assert invalid_tag_resp.status_code == 400
+    assert invalid_tag_resp.json()["details"]["error"] == "invalid_publish_tags"
+
+    invalid_folder_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "publish-invalid-folder",
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-folder"},
+            "tags": [local_tag_id],
+            "folder_id": foreign_folder_id,
+            "frequency": "1h",
+        },
+    )
+    assert invalid_folder_resp.status_code == 400
+    assert invalid_folder_resp.json()["details"]["error"] == "invalid_publish_folder"
+
+
+def test_update_publish_schedule_tags_and_folder(client: TestClient):
+    from app.db import get_session
+    from app.models import Folder, Tag
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "publish-update-tags",
+            "job_type": "publish",
+            "payload": {"instapaper_id": "insta-update"},
+            "frequency": "3h",
+        },
+    )
+    schedule_id = create_resp.json()["id"]
+
+    with next(get_session()) as session:
+        tag_one = Tag(owner_user_id="primary", name="Morning")
+        tag_two = Tag(owner_user_id="primary", name="Evening")
+        folder = Folder(owner_user_id="primary", name="Priority")
+        session.add(tag_one)
+        session.add(tag_two)
+        session.add(folder)
+        session.commit()
+        tag_one_id = tag_one.id
+        tag_two_id = tag_two.id
+        folder_id = folder.id
+
+    patch_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"tags": [tag_one_id, tag_two_id], "folder_id": folder_id},
+    )
+    assert patch_resp.status_code == 200, patch_resp.text
+    payload = patch_resp.json()
+    assert payload["tags"] == [tag_one_id, tag_two_id]
+    assert payload["folder_id"] == folder_id
+    assert payload["payload"]["tags"] == [tag_one_id, tag_two_id]
+    assert payload["payload"]["folder_id"] == folder_id
 
 
 def test_rbac_enforcement(client: TestClient):

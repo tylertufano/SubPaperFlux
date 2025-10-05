@@ -7,7 +7,7 @@ import re
 import shlex
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -34,12 +34,17 @@ from ..models import (
     BookmarkFolderLink,
     BookmarkTagLink,
     Credential,
+    Feed,
     Folder,
     Tag,
 )
 from ..jobs.util_subpaperflux import (
     get_instapaper_oauth_session,
+    get_ordered_feed_tag_ids,
     publish_url,
+    resolve_effective_folder,
+    sync_instapaper_folders,
+    translate_tag_ids_to_names,
 )
 from ..schemas import (
     BookmarkFolderSummary,
@@ -1736,6 +1741,27 @@ def _normalise_tags(raw: object) -> Optional[List[str]]:
     return None
 
 
+def _normalise_tag_ids(raw: object) -> Optional[List[str]]:
+    if raw is None:
+        return None
+    values: Iterable = ()
+    if isinstance(raw, list):
+        values = raw
+    elif isinstance(raw, str):
+        values = [part.strip() for part in raw.split(",") if part.strip()]
+    else:
+        return None
+    normalized: List[str] = []
+    seen: set[str] = set()
+    for value in values:
+        text = str(value).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        normalized.append(text)
+    return normalized
+
+
 def _encode_event(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False) + "\n"
 
@@ -1747,9 +1773,16 @@ async def _bulk_publish_event_stream(
     items: List[dict],
     config_dir: str,
     instapaper_id: str,
+    session,
 ) -> AsyncGenerator[str, None]:
     success = 0
     failed = 0
+    feed_cache: Dict[str, Optional[Feed]] = {}
+    feed_tag_cache: Dict[str, List[str]] = {}
+    folder_cache: Dict[str, Optional[Folder]] = {}
+    tag_name_cache: Dict[str, Optional[str]] = {}
+    folder_map: Optional[Dict[str, Optional[str]]] = None
+
     yield _encode_event({"type": "start", "total": len(items)})
     try:
         for index, item in enumerate(items, start=1):
@@ -1758,8 +1791,28 @@ async def _bulk_publish_event_stream(
                 return
             item_id = str(item.get("id") or index)
             yield _encode_event({"type": "item", "id": item_id, "status": "pending"})
-            url = item.get("url")
-            if not isinstance(url, str) or not url.strip():
+
+            bookmark: Optional[Bookmark] = None
+            bookmark_identifier = item.get("bookmark_id") or item.get("bookmarkId")
+            if bookmark_identifier:
+                bookmark = session.get(Bookmark, str(bookmark_identifier))
+                if not bookmark or bookmark.owner_user_id != user_id:
+                    failed += 1
+                    yield _encode_event(
+                        {
+                            "type": "item",
+                            "id": item_id,
+                            "status": "failure",
+                            "message": "Bookmark not found or unauthorized",
+                        }
+                    )
+                    continue
+
+            raw_url = item.get("url")
+            url = raw_url.strip() if isinstance(raw_url, str) else None
+            if not url and bookmark and isinstance(bookmark.url, str):
+                url = bookmark.url
+            if not url:
                 failed += 1
                 yield _encode_event(
                     {
@@ -1770,22 +1823,108 @@ async def _bulk_publish_event_stream(
                     }
                 )
                 continue
-            publish_kwargs = {
+
+            publish_kwargs: Dict[str, Any] = {
                 "owner_user_id": user_id,
                 "config_dir": config_dir,
             }
-            title = item.get("title")
-            if isinstance(title, str) and title:
+
+            raw_title = item.get("title")
+            title = raw_title.strip() if isinstance(raw_title, str) else None
+            if not title and bookmark and isinstance(bookmark.title, str):
+                title = bookmark.title
+            if title:
                 publish_kwargs["title"] = title
-            folder = item.get("folder")
-            if isinstance(folder, str) and folder:
-                publish_kwargs["folder"] = folder
-            tags = _normalise_tags(item.get("tags"))
-            if tags:
-                publish_kwargs["tags"] = tags
+
             raw_html = item.get("raw_html_content") or item.get("rawHtmlContent")
+            if not raw_html and bookmark and isinstance(bookmark.raw_html_content, str):
+                raw_html = bookmark.raw_html_content
             if isinstance(raw_html, str) and raw_html:
                 publish_kwargs["raw_html_content"] = raw_html
+
+            feed_identifier = item.get("feed_id") or item.get("feedId")
+            if feed_identifier is None and bookmark and bookmark.feed_id:
+                feed_identifier = bookmark.feed_id
+            feed_id = str(feed_identifier).strip() if feed_identifier not in (None, "") else None
+
+            feed: Optional[Feed] = None
+            if feed_id:
+                if feed_id in feed_cache:
+                    feed = feed_cache[feed_id]
+                else:
+                    candidate = session.get(Feed, feed_id)
+                    if candidate and candidate.owner_user_id == user_id:
+                        feed = candidate
+                    feed_cache[feed_id] = feed
+
+            feed_tag_ids: List[str] = []
+            if feed and feed.id:
+                cached_ids = feed_tag_cache.get(feed.id)
+                if cached_ids is None:
+                    cached_ids = get_ordered_feed_tag_ids(session, feed.id)
+                    feed_tag_cache[feed.id] = cached_ids
+                feed_tag_ids = list(cached_ids)
+
+            item_tag_ids = _normalise_tag_ids(item.get("tag_ids") or item.get("tagIds")) or []
+
+            combined_tag_ids: List[str] = []
+            if feed_tag_ids:
+                combined_tag_ids.extend(feed_tag_ids)
+            if item_tag_ids:
+                combined_tag_ids.extend(item_tag_ids)
+
+            tag_names = translate_tag_ids_to_names(
+                session,
+                user_id,
+                combined_tag_ids,
+                cache=tag_name_cache,
+            )
+
+            direct_tag_names = _normalise_tags(item.get("tags"))
+            if direct_tag_names:
+                for name in direct_tag_names:
+                    if name not in tag_names:
+                        tag_names.append(name)
+
+            folder_override = item.get("folder_id") or item.get("folderId")
+            if folder_override not in (None, ""):
+                folder_override = str(folder_override).strip() or None
+            else:
+                folder_override = None
+
+            folder = resolve_effective_folder(
+                session,
+                feed=feed,
+                schedule_folder_id=folder_override,
+                cache=folder_cache,
+            )
+            if folder and folder.owner_user_id != user_id:
+                folder = None
+            folder_name: Optional[str] = None
+            remote_folder_id: Optional[str] = None
+            if folder:
+                folder_name = folder.name
+                if folder_map is None:
+                    folder_map = sync_instapaper_folders(
+                        session,
+                        instapaper_credential_id=str(instapaper_id),
+                        owner_user_id=user_id,
+                        config_dir=config_dir,
+                    )
+                session.refresh(folder)
+                remote_folder_id = (folder_map or {}).get(folder.id) or folder.instapaper_folder_id
+            else:
+                raw_folder_name = item.get("folder")
+                if isinstance(raw_folder_name, str) and raw_folder_name.strip():
+                    folder_name = raw_folder_name.strip()
+
+            if folder_name:
+                publish_kwargs["folder"] = folder_name
+            if remote_folder_id:
+                publish_kwargs["folder_id"] = remote_folder_id
+            if tag_names:
+                publish_kwargs["tags"] = tag_names
+
             try:
                 result = await asyncio.to_thread(
                     publish_url,
@@ -1856,6 +1995,7 @@ async def bulk_publish_bookmarks(
         items=items,
         config_dir=config_dir,
         instapaper_id=str(instapaper_id),
+        session=session,
     )
     headers = {"Cache-Control": "no-cache"}
     return StreamingResponse(stream, media_type="application/x-ndjson", headers=headers)

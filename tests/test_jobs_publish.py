@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 import pytest
 from sqlmodel import select
 
-from app.models import Bookmark, Feed
+from app.models import Bookmark, Feed, FeedTagLink, Folder, Job, JobSchedule, Tag
 
 
 @pytest.fixture(autouse=True)
@@ -367,6 +367,111 @@ def test_handle_publish_handles_failures(monkeypatch):
         assert "error_message" in status
         flags = bookmark.publication_flags["instapaper"]
         assert flags.get("last_error_message")
+
+
+def test_handle_publish_combines_feed_and_schedule_tags(monkeypatch):
+    from app.db import get_session, init_db
+    from app.jobs import publish as publish_module
+
+    init_db()
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+
+        tag_feed_a = Tag(owner_user_id="user-1", name="FeedAlpha")
+        tag_feed_b = Tag(owner_user_id="user-1", name="FeedBeta")
+        tag_schedule = Tag(owner_user_id="user-1", name="ScheduleTag")
+        session.add(tag_feed_a)
+        session.add(tag_feed_b)
+        session.add(tag_schedule)
+        session.commit()
+
+        session.add(FeedTagLink(feed_id=feed.id, tag_id=tag_feed_a.id, position=0))
+        session.add(FeedTagLink(feed_id=feed.id, tag_id=tag_feed_b.id, position=1))
+
+        feed_folder = Folder(
+            owner_user_id="user-1",
+            name="Feed Folder",
+            instapaper_folder_id="feed-remote",
+        )
+        schedule_folder = Folder(owner_user_id="user-1", name="Schedule Folder")
+        session.add(feed_folder)
+        session.add(schedule_folder)
+        session.commit()
+        session.refresh(feed_folder)
+        session.refresh(schedule_folder)
+
+        feed.folder_id = feed_folder.id
+        session.add(feed)
+
+        schedule = JobSchedule(
+            schedule_name="publish-schedule",
+            job_type="publish",
+            payload={
+                "instapaper_id": "insta-1",
+                "feed_id": feed.id,
+                "tags": [tag_schedule.id, tag_feed_a.id],
+                "folder_id": schedule_folder.id,
+            },
+            frequency="1h",
+            owner_user_id="user-1",
+        )
+        session.add(schedule)
+        session.commit()
+        session.refresh(schedule)
+
+        job = Job(
+            id="job-1",
+            type="publish",
+            payload=dict(schedule.payload or {}),
+            status="queued",
+            owner_user_id="user-1",
+            details={"schedule_id": schedule.id},
+        )
+        session.add(job)
+        session.commit()
+
+        _create_pending_bookmarks(session, feed.id, credential_id="insta-1")
+
+        feed_folder_id = feed_folder.id
+        schedule_folder_id = schedule_folder.id
+        schedule_folder_name = schedule_folder.name
+
+    publish_calls = []
+
+    def fake_publish(instapaper_id: str, url: str, **kwargs):
+        publish_calls.append(kwargs)
+        return {"bookmark_id": f"ip-{url.rsplit('/', 1)[-1]}"}
+
+    sync_calls = []
+
+    def fake_sync(session, **kwargs):
+        sync_calls.append(kwargs)
+        return {schedule_folder_id: "sched-remote", feed_folder_id: "feed-remote"}
+
+    monkeypatch.setattr(publish_module, "publish_url", fake_publish)
+    monkeypatch.setattr(publish_module, "sync_instapaper_folders", fake_sync)
+
+    result = publish_module.handle_publish(
+        job_id="job-1",
+        owner_user_id="user-1",
+        payload={"instapaper_id": "insta-1", "feed_id": feed.id},
+    )
+
+    assert result["attempted"] == 2
+    assert len(sync_calls) == 1
+    assert publish_calls
+    for call_kwargs in publish_calls:
+        assert call_kwargs.get("tags") == ["FeedAlpha", "FeedBeta", "ScheduleTag"]
+        assert call_kwargs.get("folder") == schedule_folder_name
+        assert call_kwargs.get("folder_id") == "sched-remote"
 
 
 def test_handle_publish_after_rss_poll_without_credentials(monkeypatch, tmp_path):
