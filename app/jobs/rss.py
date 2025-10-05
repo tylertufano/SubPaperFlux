@@ -1,28 +1,32 @@
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from ..jobs import register_handler
+from ..jobs.validation import scrub_legacy_schedule_payload
 from .util_subpaperflux import format_site_login_pair_id, poll_rss_and_publish
 
 
 def handle_rss_poll(*, job_id: str, owner_user_id: str | None, payload: dict) -> Dict[str, Any]:
     # Expected payload: {"feed_id": str, "instapaper_id": str | None,
-    #                    "lookback": "24h", "site_login_pair": str | None}
-    if not (payload.get("feed_id")):
+    #                    "site_login_pair": str | None}
+    sanitized_payload = scrub_legacy_schedule_payload(payload)
+    if "lookback" in (payload or {}):
+        logging.debug("Ignoring deprecated 'lookback' key in RSS poll payload")
+
+    if not (sanitized_payload.get("feed_id")):
         raise ValueError("feed_id is required")
-    instapaper_id = payload.get("instapaper_id") or None
-    site_login_pair = payload.get("site_login_pair")
+    instapaper_id = sanitized_payload.get("instapaper_id") or None
+    site_login_pair = sanitized_payload.get("site_login_pair")
     if not site_login_pair:
-        cred = payload.get("credential_id")
-        site_cfg = payload.get("site_config_id")
+        cred = sanitized_payload.get("credential_id")
+        site_cfg = sanitized_payload.get("site_config_id")
         if cred and site_cfg:
             site_login_pair = format_site_login_pair_id(str(cred), str(site_cfg))
 
     # Feed-level configuration determines paywall/authentication behavior.
     res = poll_rss_and_publish(
         instapaper_id=instapaper_id,
-        feed_id=payload["feed_id"],
-        lookback=payload.get("lookback", "24h"),
+        feed_id=sanitized_payload["feed_id"],
         site_login_pair_id=site_login_pair,
         owner_user_id=owner_user_id,
     )

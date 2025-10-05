@@ -235,7 +235,6 @@
   "job_schedules_field_instapaper_credential": "Instapaper credential",
   "job_schedules_field_saved_feed": "Saved feed",
   "job_schedules_field_saved_feed_help": "Select an existing feed instead of typing a URL.",
-  "job_schedules_field_lookback": "Lookback window",
   "job_schedules_field_publish_url": "URL to publish",
   "job_schedules_field_publish_title": "Title (optional)",
   "job_schedules_field_publish_folder": "Folder (optional)",

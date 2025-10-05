@@ -14,7 +14,7 @@ from pydantic import (
 from pydantic_core import PydanticCustomError
 
 from .jobs.scheduler import parse_frequency
-from .jobs.validation import validate_job
+from .jobs.validation import scrub_legacy_schedule_payload, validate_job
 
 
 class User(BaseModel):
@@ -287,6 +287,11 @@ class JobScheduleCreate(BaseModel):
                 "Missing payload fields: {missing}",
                 {"missing": ", ".join(missing_values)},
             )
+        object.__setattr__(
+            self,
+            "payload",
+            scrub_legacy_schedule_payload(self.payload),
+        )
         return self
 
 
@@ -339,6 +344,13 @@ class JobScheduleUpdate(BaseModel):
                 "Missing payload fields: {missing}",
                 {"missing": ", ".join(missing_values)},
             )
+        object.__setattr__(
+            self,
+            "payload",
+            None
+            if self.payload is None
+            else scrub_legacy_schedule_payload(self.payload),
+        )
         return self
 
 
