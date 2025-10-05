@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkFolderUpdate, BookmarkOut, BookmarkTagsUpdate, BookmarksPage, BulkBookmarkFolderUpdate, BulkBookmarkTagUpdate, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkOut, BookmarksPage, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleCreate, JobScheduleOut, JobScheduleUpdate, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -27,14 +27,6 @@ export interface BulkPublishBookmarksV1BookmarksBulkPublishPostRequest {
     } | null;
     xCsrfToken?: any;
 }
-export interface BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest {
-    bulkBookmarkFolderUpdate: BulkBookmarkFolderUpdate;
-    xCsrfToken?: any;
-}
-export interface BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest {
-    bulkBookmarkTagUpdate: BulkBookmarkTagUpdate;
-    xCsrfToken?: any;
-}
 export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequest {
     userId: any;
 }
@@ -46,8 +38,6 @@ export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
 }
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     search?: any;
@@ -97,10 +87,6 @@ export interface CreateTagV1BookmarksTagsPostRequest {
 export interface CreateTokenV1MeTokensPostRequest {
     apiTokenCreate: ApiTokenCreate;
 }
-export interface DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest {
-    bookmarkId: any;
-    xCsrfToken?: any;
-}
 export interface DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest {
     bookmarkId: any;
     deleteRemote?: any;
@@ -146,8 +132,6 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -157,12 +141,6 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
     regex?: any;
     regexTarget?: any;
     regexFlags?: any;
-}
-export interface GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest {
-    bookmarkId: any;
-}
-export interface GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest {
-    bookmarkId: any;
 }
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: any;
@@ -202,8 +180,6 @@ export interface GrantUserRoleV1AdminUsersUserIdRolesRoleNamePostRequest {
 export interface HeadBookmarksV1BookmarksHeadRequest {
     search?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     titleQuery?: any;
@@ -215,8 +191,6 @@ export interface HeadBookmarksV1BookmarksHeadRequest {
 export interface HeadBookmarksV1BookmarksHead0Request {
     search?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     titleQuery?: any;
@@ -257,8 +231,6 @@ export interface ListBookmarksV1BookmarksGetRequest {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -275,8 +247,6 @@ export interface ListBookmarksV1BookmarksGet0Request {
     search?: any;
     fuzzy?: any;
     feedId?: any;
-    tagId?: any;
-    folderId?: any;
     since?: any;
     until?: any;
     sortBy?: any;
@@ -408,16 +378,6 @@ export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
 export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
     scheduleId: any;
 }
-export interface UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest {
-    bookmarkId: any;
-    bookmarkFolderUpdate: BookmarkFolderUpdate;
-    xCsrfToken?: any;
-}
-export interface UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest {
-    bookmarkId: any;
-    bookmarkTagsUpdate: BookmarkTagsUpdate;
-    xCsrfToken?: any;
-}
 export interface UpdateCredentialV1V1CredentialsCredIdPutRequest {
     credId: any;
     credential: Credential;
@@ -509,22 +469,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Bulk Publish Bookmarks
      */
     bulkPublishBookmarksV1BookmarksBulkPublishPost(requestParameters: BulkPublishBookmarksV1BookmarksBulkPublishPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRaw(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Bulk Update Bookmark Folders
-     */
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost(requestParameters: BulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRaw(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Bulk Update Bookmark Tags
-     */
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost(requestParameters: BulkUpdateBookmarkTagsV1BookmarksBulkTagsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Clear user role overrides
      */
@@ -662,14 +606,6 @@ export declare class V1Api extends runtime.BaseAPI {
         [key: string]: any;
     }>;
     /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRaw(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
-    /**
-     * Delete Bookmark Folder
-     */
-    deleteBookmarkFolderV1BookmarksBookmarkIdFolderDelete(requestParameters: DeleteBookmarkFolderV1BookmarksBookmarkIdFolderDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
-    /**
      * Delete Bookmark
      */
     deleteBookmarkV1BookmarksBookmarkIdDeleteRaw(requestParameters: DeleteBookmarkV1BookmarksBookmarkIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
@@ -765,22 +701,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Export Bookmarks
      */
     exportBookmarksV1BookmarksExportGet(requestParameters?: ExportBookmarksV1BookmarksExportGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGetRaw(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Get Bookmark Folder
-     */
-    getBookmarkFolderV1BookmarksBookmarkIdFolderGet(requestParameters: GetBookmarkFolderV1BookmarksBookmarkIdFolderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGetRaw(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Get Bookmark Tags
-     */
-    getBookmarkTagsV1BookmarksBookmarkIdTagsGet(requestParameters: GetBookmarkTagsV1BookmarksBookmarkIdTagsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Get Bookmark
      */
@@ -1213,22 +1133,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Toggle schedule active state
      */
     toggleJobScheduleV1JobSchedulesScheduleIdTogglePost(requestParameters: ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<JobScheduleOut>;
-    /**
-     * Update Bookmark Folder
-     */
-    updateBookmarkFolderV1BookmarksBookmarkIdFolderPutRaw(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FolderOut>>;
-    /**
-     * Update Bookmark Folder
-     */
-    updateBookmarkFolderV1BookmarksBookmarkIdFolderPut(requestParameters: UpdateBookmarkFolderV1BookmarksBookmarkIdFolderPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FolderOut>;
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPutRaw(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Update Bookmark Tags
-     */
-    updateBookmarkTagsV1BookmarksBookmarkIdTagsPut(requestParameters: UpdateBookmarkTagsV1BookmarksBookmarkIdTagsPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Update credential
      */

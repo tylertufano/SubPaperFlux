@@ -80,13 +80,13 @@ export interface Feed {
      */
     folderId?: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof Feed
      */
     tagIds?: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof Feed
      */

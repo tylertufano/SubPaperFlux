@@ -80,13 +80,13 @@ export interface FeedOut {
      */
     folderId?: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof FeedOut
      */
     tagIds?: any | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof FeedOut
      */
@@ -114,7 +114,7 @@ export function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): F
         return json;
     }
     return {
-
+        
         'id': json['id'],
         'url': json['url'],
         'pollFrequency': json['poll_frequency'],
