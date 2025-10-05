@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Iterable, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_
@@ -12,7 +12,7 @@ from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..jobs import known_job_types
 from ..jobs.scheduler import parse_frequency
-from ..models import Job, JobSchedule
+from ..models import Folder, Job, JobSchedule, Tag
 from ..schemas import (
     JobOut,
     JobScheduleCreate,
@@ -23,6 +23,9 @@ from ..schemas import (
 
 
 router = APIRouter(prefix="/v1/job-schedules", tags=["v1"])
+
+
+_SENTINEL = object()
 
 
 def _current_user_id(current_user: Any) -> Optional[str]:
@@ -162,13 +165,80 @@ def _ensure_publish_schedule_exclusivity(
         )
 
 
+def _normalize_schedule_targets(payload: Dict[str, Any]) -> Tuple[List[str], Optional[str]]:
+    raw_tags = payload.get("tags") or []
+    tags: List[str] = []
+    if isinstance(raw_tags, list):
+        for value in raw_tags:
+            text = str(value).strip()
+            if text:
+                tags.append(text)
+    folder_value = payload.get("folder_id")
+    if folder_value is None:
+        folder_id: Optional[str] = None
+    else:
+        folder_text = str(folder_value).strip()
+        folder_id = folder_text or None
+    payload["tags"] = tags
+    if folder_id is None:
+        payload.pop("folder_id", None)
+    else:
+        payload["folder_id"] = folder_id
+    return tags, folder_id
+
+
+def _validate_publish_targets(
+    session,
+    owner_id: Optional[str],
+    *,
+    tag_ids: List[str],
+    folder_id: Optional[str],
+) -> None:
+    if tag_ids:
+        stmt = select(Tag.id).where(Tag.id.in_(tag_ids))
+        if owner_id is None:
+            stmt = stmt.where(Tag.owner_user_id.is_(None))
+        else:
+            stmt = stmt.where(Tag.owner_user_id == owner_id)
+        rows = session.exec(stmt).all()
+        found = {row if isinstance(row, str) else row.id for row in rows}
+        missing = [tag_id for tag_id in tag_ids if tag_id not in found]
+        if missing:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_publish_tags",
+                    "message": "One or more tags do not belong to the schedule owner.",
+                    "tag_ids": missing,
+                },
+            )
+    if folder_id:
+        folder = session.get(Folder, folder_id)
+        if not folder or folder.owner_user_id != owner_id:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_publish_folder",
+                    "message": "Folder does not belong to the schedule owner.",
+                    "folder_id": folder_id,
+                },
+            )
+
+
 def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
+    payload = dict(schedule.payload or {})
+    tags, folder_id = _normalize_schedule_targets(payload)
+    if schedule.job_type != "publish":
+        payload.pop("tags", None)
+        payload.pop("folder_id", None)
     return JobScheduleOut(
         id=schedule.id,
         schedule_name=schedule.schedule_name,
         job_type=schedule.job_type,
         owner_user_id=schedule.owner_user_id,
-        payload=dict(schedule.payload or {}),
+        payload=payload,
+        tags=tags,
+        folder_id=folder_id,
         frequency=schedule.frequency,
         next_run_at=schedule.next_run_at,
         last_run_at=schedule.last_run_at,
@@ -342,12 +412,24 @@ def create_job_schedule(
 
     _ensure_unique_schedule_name(session, owner_id, body.schedule_name)
 
+    payload = dict(body.payload or {})
+    if body.tags is not None:
+        payload["tags"] = body.tags
+    if body.folder_id is not None or "folder_id" in payload:
+        payload["folder_id"] = body.folder_id
+    normalized_tags, normalized_folder_id = _normalize_schedule_targets(payload)
+
     if body.job_type == "publish":
-        payload = dict(body.payload or {})
         _ensure_publish_schedule_exclusivity(
             session,
             instapaper_id=payload.get("instapaper_id"),
             feed_id=payload.get("feed_id"),
+        )
+        _validate_publish_targets(
+            session,
+            owner_id,
+            tag_ids=normalized_tags,
+            folder_id=normalized_folder_id,
         )
 
     next_run_at = body.next_run_at
@@ -357,7 +439,7 @@ def create_job_schedule(
     schedule = JobSchedule(
         schedule_name=body.schedule_name,
         job_type=body.job_type,
-        payload=dict(body.payload or {}),
+        payload=payload,
         frequency=body.frequency,
         next_run_at=next_run_at,
         is_active=body.is_active,
@@ -390,6 +472,9 @@ def update_job_schedule(
 
     was_active = bool(schedule.is_active)
     updates = body.model_dump(exclude_unset=True)
+    raw_payload_update = updates.pop("payload", _SENTINEL)
+    tags_update = updates.pop("tags", _SENTINEL)
+    folder_update = updates.pop("folder_id", _SENTINEL)
     if "job_type" in updates:
         _validate_job_type_or_400(updates["job_type"])
 
@@ -408,24 +493,40 @@ def update_job_schedule(
         )
 
     prospective_job_type = updates.get("job_type", schedule.job_type)
-    prospective_payload = (
-        dict(updates["payload"] or {})
-        if "payload" in updates
-        else dict(schedule.payload or {})
-    )
+
+    base_payload = dict(schedule.payload or {})
+    if raw_payload_update is not _SENTINEL:
+        base_payload.update(dict(raw_payload_update or {}))
+    if tags_update is not _SENTINEL:
+        base_payload["tags"] = tags_update or []
+    if folder_update is not _SENTINEL:
+        base_payload["folder_id"] = folder_update
+
+    normalized_tags, normalized_folder_id = _normalize_schedule_targets(base_payload)
 
     if prospective_job_type == "publish":
         _ensure_publish_schedule_exclusivity(
             session,
-            instapaper_id=prospective_payload.get("instapaper_id"),
-            feed_id=prospective_payload.get("feed_id"),
+            instapaper_id=base_payload.get("instapaper_id"),
+            feed_id=base_payload.get("feed_id"),
             exclude_schedule_id=schedule.id,
+        )
+        _validate_publish_targets(
+            session,
+            schedule.owner_user_id,
+            tag_ids=normalized_tags,
+            folder_id=normalized_folder_id,
         )
 
     if "job_type" in updates:
         schedule.job_type = updates["job_type"]
-    if "payload" in updates:
-        schedule.payload = dict(updates["payload"] or {})
+    payload_changed = (
+        raw_payload_update is not _SENTINEL
+        or tags_update is not _SENTINEL
+        or folder_update is not _SENTINEL
+    )
+    if payload_changed:
+        schedule.payload = base_payload
     if "frequency" in updates:
         schedule.frequency = updates["frequency"]
     if "next_run_at" in updates:

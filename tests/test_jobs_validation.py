@@ -26,3 +26,22 @@ def test_publish_requires_instapaper_allows_missing_feed():
         {"feed_id": "", "instapaper_id": "insta-1"},
     )
     assert blank_feed["ok"] is True
+
+
+def test_publish_allows_tag_ids_and_normalises():
+    payload = {"instapaper_id": "insta-1", "tags": ["tag-1", "tag-2"]}
+    result = validate_job("publish", payload)
+    assert result["ok"] is True
+    assert payload["tags"] == ["tag-1", "tag-2"]
+
+
+def test_publish_rejects_blank_tags_and_folder():
+    payload = {
+        "instapaper_id": "insta-1",
+        "tags": ["", "tag-2"],
+        "folder_id": "   ",
+    }
+    result = validate_job("publish", payload)
+    assert result["ok"] is False
+    assert "tags" in result["missing"]
+    assert "folder_id" in result["missing"]

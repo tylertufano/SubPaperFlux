@@ -25,5 +25,28 @@ def validate_job(job_type: str, payload: dict) -> Dict:
         else:
             if key not in payload or payload.get(key) in (None, ""):
                 missing.append(key)
+    if job_type == "publish":
+        tags_value = payload.get("tags")
+        if tags_value is not None:
+            if isinstance(tags_value, (list, tuple)):
+                normalized_tags: List[str] = []
+                for raw in tags_value:
+                    text = str(raw).strip()
+                    if not text:
+                        missing.append("tags")
+                        normalized_tags = []
+                        break
+                    normalized_tags.append(text)
+                if normalized_tags:
+                    payload["tags"] = normalized_tags
+            else:
+                missing.append("tags")
+        folder_value = payload.get("folder_id")
+        if folder_value is not None:
+            text = str(folder_value).strip()
+            if not text:
+                missing.append("folder_id")
+            else:
+                payload["folder_id"] = text
     return {"ok": not missing, "missing": missing}
 

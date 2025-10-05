@@ -1,14 +1,25 @@
 import logging
 
+from typing import Any, Dict, List, Optional
+
 from ..audit import record_audit_log
+from ..db import get_session_ctx
 from ..jobs import register_handler
+from ..models import (
+    Feed as FeedModel,
+    Folder as FolderModel,
+    Job as JobModel,
+    JobSchedule as JobScheduleModel,
+)
 from .util_subpaperflux import (
     apply_publication_result,
+    get_ordered_feed_tag_ids,
     iter_pending_instapaper_bookmarks,
     publish_url,
+    resolve_effective_folder,
+    sync_instapaper_folders,
+    translate_tag_ids_to_names,
 )
-from ..db import get_session_ctx
-from typing import Any, Dict, List, Optional
 
 
 def _normalise_limit(value: Any) -> Optional[int]:
@@ -60,6 +71,35 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
     result: Dict[str, Any] = {"attempted": 0, "published": [], "failed": []}
 
     with get_session_ctx() as session:
+        job_record = session.get(JobModel, job_id)
+        schedule_payload: Dict[str, Any] = {}
+        if job_record and isinstance(job_record.details, dict):
+            schedule_id = job_record.details.get("schedule_id")
+            if schedule_id:
+                schedule = session.get(JobScheduleModel, schedule_id)
+                if schedule and schedule.job_type == "publish":
+                    schedule_payload = dict(schedule.payload or {})
+        if not schedule_payload:
+            schedule_payload = dict(payload or {})
+
+        raw_schedule_tags = schedule_payload.get("tags") or []
+        schedule_tag_ids: List[str] = []
+        for raw_tag in raw_schedule_tags:
+            text = str(raw_tag).strip()
+            if text:
+                schedule_tag_ids.append(text)
+        schedule_folder_id_value = schedule_payload.get("folder_id")
+        if schedule_folder_id_value is None:
+            schedule_folder_id: Optional[str] = None
+        else:
+            schedule_folder_id = str(schedule_folder_id_value).strip() or None
+
+        feed_cache: Dict[str, Optional[FeedModel]] = {}
+        feed_tag_cache: Dict[str, List[str]] = {}
+        folder_cache: Dict[str, Optional[FolderModel]] = {}
+        tag_name_cache: Dict[str, Optional[str]] = {}
+        folder_map: Optional[Dict[str, Optional[str]]] = None
+
         pending = iter_pending_instapaper_bookmarks(
             session,
             owner_user_id=owner_user_id,
@@ -111,13 +151,63 @@ def handle_publish(*, job_id: str, owner_user_id: str | None, payload: dict) -> 
                 session.add(bookmark)
                 continue
 
+            feed: Optional[FeedModel] = None
+            feed_key = str(bookmark.feed_id) if bookmark.feed_id else None
+            if feed_key:
+                if feed_key in feed_cache:
+                    feed = feed_cache[feed_key]
+                else:
+                    feed = session.get(FeedModel, feed_key)
+                    feed_cache[feed_key] = feed
+            feed_tag_ids: List[str] = []
+            if feed and feed.id:
+                cached_ids = feed_tag_cache.get(feed.id)
+                if cached_ids is None:
+                    cached_ids = get_ordered_feed_tag_ids(session, feed.id)
+                    feed_tag_cache[feed.id] = cached_ids
+                feed_tag_ids = list(cached_ids)
+
+            combined_tag_ids: List[str] = []
+            if feed_tag_ids:
+                combined_tag_ids.extend(feed_tag_ids)
+            if schedule_tag_ids:
+                combined_tag_ids.extend(schedule_tag_ids)
+
+            tag_names = translate_tag_ids_to_names(
+                session,
+                owner_user_id,
+                combined_tag_ids,
+                cache=tag_name_cache,
+            )
+
+            folder = resolve_effective_folder(
+                session,
+                feed=feed,
+                schedule_folder_id=schedule_folder_id,
+                cache=folder_cache,
+            )
+            remote_folder_id: Optional[str] = None
+            folder_name: Optional[str] = None
+            if folder is not None:
+                folder_name = folder.name
+                if folder_map is None:
+                    folder_map = sync_instapaper_folders(
+                        session,
+                        instapaper_credential_id=str(instapaper_id),
+                        owner_user_id=owner_user_id,
+                        config_dir=config_dir,
+                    )
+                session.refresh(folder)
+                remote_folder_id = (folder_map or {}).get(folder.id) or folder.instapaper_folder_id
+
             try:
                 publish_res = publish_url(
                     str(instapaper_id),
                     bookmark.url,
                     title=bookmark.title,
-                    tags=None,
-                    folder=None,
+                    tags=tag_names if tag_names else None,
+                    folder=folder_name,
+                    folder_id=remote_folder_id,
                     owner_user_id=owner_user_id,
                     config_dir=config_dir,
                     raw_html_content=bookmark.raw_html_content,

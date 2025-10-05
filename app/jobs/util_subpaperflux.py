@@ -1,20 +1,24 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 from datetime import datetime, timezone
 
 from sqlmodel import select
 
 from ..audit import record_audit_log
 from ..db import get_session_ctx
+from ..integrations.instapaper import get_instapaper_oauth_session_for_credential
 from ..models import (
     Bookmark as BookmarkModel,
     Cookie as CookieModel,
     Credential as CredentialModel,
     Feed as FeedModel,
+    FeedTagLink as FeedTagLinkModel,
+    Folder as FolderModel,
     SiteConfig as SiteConfigModel,
     SiteLoginType,
+    Tag as TagModel,
 )
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
 
@@ -857,6 +861,175 @@ def get_miniflux_config(
     return decrypt_dict(rec.data or {})
 
 
+def get_ordered_feed_tag_ids(session, feed_id: Optional[str]) -> List[str]:
+    if not feed_id:
+        return []
+    stmt = (
+        select(FeedTagLinkModel)
+        .where(FeedTagLinkModel.feed_id == feed_id)
+        .order_by(FeedTagLinkModel.position.asc())
+    )
+    rows = session.exec(stmt).all()
+    ordered: List[str] = []
+    for row in rows:
+        tag_id = getattr(row, "tag_id", None)
+        if not tag_id:
+            continue
+        ordered.append(str(tag_id))
+    return ordered
+
+
+def translate_tag_ids_to_names(
+    session,
+    owner_user_id: Optional[str],
+    tag_ids: Sequence[str],
+    *,
+    cache: Optional[Dict[str, Optional[str]]] = None,
+) -> List[str]:
+    cache = cache if cache is not None else {}
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for raw in tag_ids:
+        text = str(raw).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        ordered.append(text)
+    missing = [tag_id for tag_id in ordered if tag_id not in cache]
+    if missing:
+        stmt = select(TagModel).where(TagModel.id.in_(missing))
+        if owner_user_id is None:
+            stmt = stmt.where(TagModel.owner_user_id.is_(None))
+        else:
+            stmt = stmt.where(TagModel.owner_user_id == owner_user_id)
+        rows = session.exec(stmt).all()
+        for tag in rows:
+            cache[tag.id] = tag.name
+        for tag_id in missing:
+            cache.setdefault(tag_id, None)
+    names: List[str] = []
+    for tag_id in ordered:
+        name = cache.get(tag_id)
+        if name:
+            names.append(name)
+    return names
+
+
+def resolve_effective_folder(
+    session,
+    *,
+    feed: Optional[FeedModel],
+    schedule_folder_id: Optional[str],
+    cache: Optional[Dict[str, Optional[FolderModel]]] = None,
+) -> Optional[FolderModel]:
+    folder_id: Optional[str] = None
+    if schedule_folder_id not in (None, ""):
+        folder_id = str(schedule_folder_id).strip()
+    elif feed and feed.folder_id not in (None, ""):
+        folder_id = str(feed.folder_id)
+    if not folder_id:
+        return None
+    if cache is not None and folder_id in cache:
+        return cache[folder_id]
+    folder = session.get(FolderModel, folder_id)
+    if cache is not None:
+        cache[folder_id] = folder
+    return folder
+
+
+def sync_instapaper_folders(
+    session,
+    *,
+    instapaper_credential_id: str,
+    owner_user_id: Optional[str],
+    config_dir: Optional[str] = None,
+    timeout: int = 10,
+) -> Dict[str, Optional[str]]:
+    oauth = get_instapaper_oauth_session_for_credential(
+        instapaper_credential_id,
+        owner_user_id,
+        config_dir=config_dir,
+    )
+    if not oauth:
+        return {}
+
+    resp = oauth.post(INSTAPAPER_FOLDERS_LIST_URL, timeout=timeout)
+    resp.raise_for_status()
+    try:
+        remote_entries = resp.json()
+    except ValueError:
+        remote_entries = json.loads(resp.text or "[]")
+
+    remote_by_id: Dict[str, dict] = {}
+    remote_by_title: Dict[str, str] = {}
+    for entry in remote_entries or []:
+        remote_id = entry.get("folder_id")
+        if remote_id is None:
+            continue
+        remote_id_str = str(remote_id)
+        remote_by_id[remote_id_str] = entry
+        title = entry.get("title")
+        if isinstance(title, str) and title:
+            remote_by_title.setdefault(title, remote_id_str)
+
+    stmt = select(FolderModel)
+    if owner_user_id is None:
+        stmt = stmt.where(FolderModel.owner_user_id.is_(None))
+    else:
+        stmt = stmt.where(FolderModel.owner_user_id == owner_user_id)
+    local_folders = session.exec(stmt).all()
+
+    mapping: Dict[str, Optional[str]] = {}
+    used_remote_ids: set[str] = set()
+
+    for folder in local_folders:
+        current_remote = folder.instapaper_folder_id
+        if current_remote and current_remote not in remote_by_id:
+            folder.instapaper_folder_id = None
+            session.add(folder)
+        elif current_remote:
+            used_remote_ids.add(current_remote)
+
+    for folder in local_folders:
+        if folder.instapaper_folder_id:
+            mapping[folder.id] = folder.instapaper_folder_id
+            continue
+        match_id = remote_by_title.get(folder.name)
+        if match_id and match_id not in used_remote_ids:
+            folder.instapaper_folder_id = match_id
+            used_remote_ids.add(match_id)
+            session.add(folder)
+            mapping[folder.id] = match_id
+            continue
+        if not folder.name:
+            mapping[folder.id] = None
+            continue
+        resp_add = oauth.post(
+            INSTAPAPER_FOLDERS_ADD_URL,
+            data={"title": folder.name},
+            timeout=timeout,
+        )
+        resp_add.raise_for_status()
+        try:
+            created_entries = resp_add.json()
+        except ValueError:
+            created_entries = json.loads(resp_add.text or "[]")
+        created_id: Optional[str] = None
+        if isinstance(created_entries, list) and created_entries:
+            created_id = created_entries[0].get("folder_id")
+        if created_id is not None:
+            created_id = str(created_id)
+            folder.instapaper_folder_id = created_id
+            used_remote_ids.add(created_id)
+        mapping[folder.id] = folder.instapaper_folder_id
+        session.add(folder)
+
+    for folder in local_folders:
+        mapping.setdefault(folder.id, folder.instapaper_folder_id)
+
+    return mapping
+
+
 def push_miniflux_cookies(
     *,
     miniflux_id: str,
@@ -900,6 +1073,7 @@ def publish_url(
     url: str,
     title: Optional[str] = None,
     folder: Optional[str] = None,
+    folder_id: Optional[str] = None,
     tags: Optional[List[str]] = None,
     owner_user_id: Optional[str] = None,
     config_dir: Optional[str] = None,
@@ -922,6 +1096,7 @@ def publish_url(
     instapaper_ini_config = IniSection(
         {
             "folder": folder,
+            "folder_id": folder_id,
             "tags": ",".join(tags) if tags else "",
             "resolve_final_url": True,
             "sanitize_content": True,
@@ -1106,3 +1281,6 @@ def apply_publication_result(
     bookmark.publication_flags = flags
 
     return instapaper_status, instapaper_flags
+INSTAPAPER_FOLDERS_LIST_URL = "https://www.instapaper.com/api/1.1/folders/list"
+INSTAPAPER_FOLDERS_ADD_URL = "https://www.instapaper.com/api/1.1/folders/add"
+
