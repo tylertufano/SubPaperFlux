@@ -14,6 +14,7 @@
   "combobox_no_options": "Keine Treffer",
   "combobox_remove_option": "{option} entfernen",
   "combobox_clear_selection": "Auswahl löschen",
+  "combobox_create_option": "\"{option}\" erstellen",
   "job_schedules_field_publish_tags": "Tags hinzufügen",
   "job_schedules_field_publish_tags_help": "Wählen Sie optionale Tags für veröffentlichte Artikel.",
   "job_schedules_field_publish_folder": "Ordnerüberschreibung",

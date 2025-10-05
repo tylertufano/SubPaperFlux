@@ -15,6 +15,8 @@ type BaseProps = {
   helpTextId?: string
   disabled?: boolean
   describedBy?: string
+  onCreate?: (label: string) => Promise<AutocompleteOption | null | undefined>
+  createOptionLabel?: (label: string) => string
 }
 
 type MultiProps = BaseProps & {
@@ -29,7 +31,9 @@ type SingleProps = BaseProps & {
   clearLabel?: string
 }
 
-type HighlightableOption = AutocompleteOption & { index: number }
+type HighlightableOption = AutocompleteOption & { index: number; isCreate?: boolean }
+
+const CREATE_OPTION_ID = '__create__'
 
 function normalizeOptions(options: AutocompleteOption[]): AutocompleteOption[] {
   return options
@@ -74,7 +78,7 @@ function OptionList({
   id: string
   options: HighlightableOption[]
   highlightedId: string | null
-  onSelect: (option: AutocompleteOption) => void
+  onSelect: (option: HighlightableOption) => void
   noOptionsLabel: string
 }) {
   if (options.length === 0) {
@@ -111,7 +115,14 @@ function OptionList({
               onMouseDown={event => event.preventDefault()}
               onClick={() => onSelect(option)}
             >
-              {option.label}
+              <span className="flex w-full items-center justify-between gap-2">
+                <span>{option.label}</span>
+                {option.isCreate ? (
+                  <span aria-hidden="true" className="text-xs text-blue-600">
+                    ＋
+                  </span>
+                ) : null}
+              </span>
             </button>
           </li>
         )
@@ -133,6 +144,8 @@ export function AutocompleteMultiSelect({
   disabled,
   describedBy,
   getRemoveLabel,
+  onCreate,
+  createOptionLabel,
 }: MultiProps) {
   const normalizedOptions = useMemo(() => normalizeOptions(options), [options])
   const optionLookup = useMemo(() => buildOptionLookup(normalizedOptions), [normalizedOptions])
@@ -141,22 +154,68 @@ export function AutocompleteMultiSelect({
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createdOptionLookup, setCreatedOptionLookup] = useState<Map<string, AutocompleteOption>>(
+    () => new Map(),
+  )
   const listboxId = `${id}-listbox`
 
   const selectedOptions = useMemo(() => {
-    return value.map(id => optionLookup.get(id) ?? { id, label: id })
-  }, [value, optionLookup])
+    return value.map(id => optionLookup.get(id) ?? createdOptionLookup.get(id) ?? { id, label: id })
+  }, [value, optionLookup, createdOptionLookup])
+
+  useEffect(() => {
+    setCreatedOptionLookup(prev => {
+      if (prev.size === 0) return prev
+      let mutated = false
+      const next = new Map(prev)
+      for (const key of prev.keys()) {
+        if (optionLookup.has(key)) {
+          next.delete(key)
+          mutated = true
+        }
+      }
+      return mutated ? next : prev
+    })
+  }, [optionLookup])
 
   const filteredOptions = useMemo(() => {
     const lower = query.trim().toLowerCase()
-    return normalizedOptions
+    const available = normalizedOptions
       .filter(option => !value.includes(option.id))
       .filter(option => {
         if (!lower) return true
         return option.label.toLowerCase().includes(lower)
       })
       .map((option, index) => ({ ...option, index }))
-  }, [normalizedOptions, value, query])
+
+    const trimmedQuery = query.trim()
+    const lowerQuery = trimmedQuery.toLowerCase()
+    const hasExactMatch =
+      normalizedOptions.some(
+        option => option.label.trim().toLowerCase() === lowerQuery,
+      ) ||
+      Array.from(createdOptionLookup.values()).some(
+        option => option.label.trim().toLowerCase() === lowerQuery,
+      )
+    const shouldShowCreateOption =
+      Boolean(onCreate) &&
+      Boolean(trimmedQuery) &&
+      !hasExactMatch &&
+      !isCreating
+
+    if (shouldShowCreateOption) {
+      const labelForCreate = createOptionLabel?.(trimmedQuery) ?? `Create "${trimmedQuery}"`
+      available.push({
+        id: CREATE_OPTION_ID,
+        label: labelForCreate,
+        index: available.length,
+        isCreate: true,
+      })
+    }
+
+    return available
+  }, [normalizedOptions, value, query, onCreate, createOptionLabel, isCreating, createdOptionLookup])
 
   useEffect(() => {
     if (!isOpen) {
@@ -171,8 +230,61 @@ export function AutocompleteMultiSelect({
 
   useOutsideBlur(containerRef, closeList)
 
-  function selectOption(option: AutocompleteOption) {
+  const handleCreateOption = useCallback(async () => {
+    if (!onCreate) return
+    const trimmed = query.trim()
+    if (!trimmed) return
+    if (isCreating) return
+    const normalizedLabel = trimmed
+    const lower = normalizedLabel.toLowerCase()
+    if (
+      normalizedOptions.some(option => option.label.trim().toLowerCase() === lower) ||
+      value.some(id => {
+        const label =
+          optionLookup.get(id)?.label ?? createdOptionLookup.get(id)?.label ?? ''
+        return label.trim().toLowerCase() === lower
+      })
+    ) {
+      return
+    }
+    setIsCreating(true)
+    try {
+      const created = await onCreate(normalizedLabel)
+      if (!created) return
+      const createdId = created.id != null ? String(created.id) : normalizedLabel
+      const createdLabel = created.label?.trim() || normalizedLabel
+      const normalizedOption = { id: createdId, label: createdLabel }
+      setCreatedOptionLookup(prev => {
+        const next = new Map(prev)
+        next.set(createdId, normalizedOption)
+        return next
+      })
+      if (!value.includes(createdId)) {
+        onChange([...value, createdId])
+      }
+      setQuery('')
+      setIsOpen(false)
+      inputRef.current?.focus()
+    } finally {
+      setIsCreating(false)
+    }
+  }, [
+    onCreate,
+    query,
+    isCreating,
+    normalizedOptions,
+    value,
+    optionLookup,
+    onChange,
+    createdOptionLookup,
+  ])
+
+  function selectOption(option: HighlightableOption) {
     if (disabled) return
+    if (option.isCreate) {
+      void handleCreateOption()?.catch(() => {})
+      return
+    }
     if (value.includes(option.id)) return
     onChange([...value, option.id])
     setQuery('')
@@ -322,6 +434,8 @@ export function AutocompleteSingleSelect({
   disabled,
   describedBy,
   clearLabel,
+  onCreate,
+  createOptionLabel,
 }: SingleProps) {
   const normalizedOptions = useMemo(() => normalizeOptions(options), [options])
   const optionLookup = useMemo(() => buildOptionLookup(normalizedOptions), [normalizedOptions])
@@ -330,19 +444,67 @@ export function AutocompleteSingleSelect({
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createdOptionLookup, setCreatedOptionLookup] = useState<Map<string, AutocompleteOption>>(
+    () => new Map(),
+  )
   const listboxId = `${id}-listbox`
 
-  const selectedOption = value ? optionLookup.get(value) ?? { id: value, label: value } : null
+  const selectedOption = value
+    ? optionLookup.get(value) ?? createdOptionLookup.get(value) ?? { id: value, label: value }
+    : null
+
+  useEffect(() => {
+    setCreatedOptionLookup(prev => {
+      if (prev.size === 0) return prev
+      let mutated = false
+      const next = new Map(prev)
+      for (const key of prev.keys()) {
+        if (optionLookup.has(key)) {
+          next.delete(key)
+          mutated = true
+        }
+      }
+      return mutated ? next : prev
+    })
+  }, [optionLookup])
 
   const filteredOptions = useMemo(() => {
     const lower = query.trim().toLowerCase()
-    return normalizedOptions
+    const available = normalizedOptions
       .filter(option => {
         if (!lower) return true
         return option.label.toLowerCase().includes(lower)
       })
       .map((option, index) => ({ ...option, index }))
-  }, [normalizedOptions, query])
+
+    const trimmedQuery = query.trim()
+    const lowerQuery = trimmedQuery.toLowerCase()
+    const hasExactMatch =
+      normalizedOptions.some(
+        option => option.label.trim().toLowerCase() === lowerQuery,
+      ) ||
+      Array.from(createdOptionLookup.values()).some(
+        option => option.label.trim().toLowerCase() === lowerQuery,
+      )
+    const shouldShowCreateOption =
+      Boolean(onCreate) &&
+      Boolean(trimmedQuery) &&
+      !hasExactMatch &&
+      !isCreating
+
+    if (shouldShowCreateOption) {
+      const labelForCreate = createOptionLabel?.(trimmedQuery) ?? `Create "${trimmedQuery}"`
+      available.push({
+        id: CREATE_OPTION_ID,
+        label: labelForCreate,
+        index: available.length,
+        isCreate: true,
+      })
+    }
+
+    return available
+  }, [normalizedOptions, query, onCreate, createOptionLabel, isCreating, createdOptionLookup])
 
   useEffect(() => {
     if (!isOpen) {
@@ -365,8 +527,47 @@ export function AutocompleteSingleSelect({
 
   useOutsideBlur(containerRef, closeList)
 
-  function selectOption(option: AutocompleteOption) {
+  const handleCreateOption = useCallback(async () => {
+    if (!onCreate) return
+    const trimmed = query.trim()
+    if (!trimmed) return
+    if (isCreating) return
+    const lower = trimmed.toLowerCase()
+    if (
+      normalizedOptions.some(option => option.label.trim().toLowerCase() === lower) ||
+      Array.from(createdOptionLookup.values()).some(
+        option => option.label.trim().toLowerCase() === lower,
+      )
+    ) {
+      return
+    }
+    setIsCreating(true)
+    try {
+      const created = await onCreate(trimmed)
+      if (!created) return
+      const createdId = created.id != null ? String(created.id) : trimmed
+      const createdLabel = created.label?.trim() || trimmed
+      const normalizedOption = { id: createdId, label: createdLabel }
+      setCreatedOptionLookup(prev => {
+        const next = new Map(prev)
+        next.set(createdId, normalizedOption)
+        return next
+      })
+      onChange(createdId)
+      setIsOpen(false)
+      setQuery(createdLabel)
+      inputRef.current?.blur()
+    } finally {
+      setIsCreating(false)
+    }
+  }, [onCreate, query, isCreating, normalizedOptions, onChange, createdOptionLookup])
+
+  function selectOption(option: HighlightableOption) {
     if (disabled) return
+    if (option.isCreate) {
+      void handleCreateOption()?.catch(() => {})
+      return
+    }
     onChange(option.id)
     setIsOpen(false)
     setQuery(option.label)

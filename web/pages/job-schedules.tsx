@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/router";
 import { useSessionReauth } from "../lib/useSessionReauth";
@@ -25,6 +25,7 @@ import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
 import type { TagOut } from "../sdk/src/models/TagOut";
 import type { FolderOut } from "../sdk/src/models/FolderOut";
+import type { AutocompleteOption } from "../components/AutocompleteCombobox";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
 import { buildSiteLoginOptions, SiteLoginOption } from "../lib/siteLoginOptions";
 type JobType =
@@ -73,6 +74,8 @@ type ScheduleFormProps = {
   onCancel?: () => void;
   isSubmitting?: boolean;
   allowOwnerSelection: boolean;
+  onCreateTag?: (label: string) => Promise<AutocompleteOption | null>;
+  onCreateFolder?: (label: string) => Promise<AutocompleteOption | null>;
 };
 
 const PAGE_SIZE = 20;
@@ -375,6 +378,8 @@ function ScheduleForm({
   onCancel,
   isSubmitting,
   allowOwnerSelection,
+  onCreateTag,
+  onCreateFolder,
 }: ScheduleFormProps) {
   const { t } = useI18n();
   const initialType = (initialSchedule?.jobType as JobType) ?? DEFAULT_JOB_TYPE;
@@ -409,6 +414,11 @@ function ScheduleForm({
         initialSchedule?.id ?? null,
       ),
     [schedules, initialSchedule?.id],
+  );
+
+  const createOptionLabel = useCallback(
+    (value: string) => t("combobox_create_option", { option: value }),
+    [t],
   );
 
   useEffect(() => {
@@ -1131,6 +1141,8 @@ function ScheduleForm({
                 getRemoveLabel={(option) =>
                   t("combobox_remove_option", { option: option.label })
                 }
+                onCreate={onCreateTag}
+                createOptionLabel={createOptionLabel}
               />
             </div>
             <div className="flex flex-col md:col-span-2">
@@ -1146,6 +1158,8 @@ function ScheduleForm({
                 helpTextId={folderHelpId}
                 clearLabel={t("combobox_clear_selection")}
                 describedBy={folderWarningId}
+                onCreate={onCreateFolder}
+                createOptionLabel={createOptionLabel}
               />
               {folderWarningId && (
                 <p id={folderWarningId} className="text-sm text-amber-600">
@@ -1519,11 +1533,11 @@ export default function JobSchedulesPage() {
     canManageSchedules ? ["/v1/feeds", "job-schedules"] : null,
     () => v1.listFeedsV1V1FeedsGet({ page: 1, size: 200 }),
   );
-  const { data: tagsData } = useSWR(
+  const { data: tagsData, mutate: mutateTags } = useSWR(
     canManageSchedules ? ["/v1/bookmarks/tags", "job-schedules"] : null,
     () => v1.listTagsBookmarksTagsGet(),
   );
-  const { data: foldersData } = useSWR(
+  const { data: foldersData, mutate: mutateFolders } = useSWR(
     canManageSchedules ? ["/v1/bookmarks/folders", "job-schedules"] : null,
     () => v1.listFoldersBookmarksFoldersGet(),
   );
@@ -1560,6 +1574,112 @@ export default function JobSchedulesPage() {
   const totalPages = data?.totalPages ?? data?.total ?? 1;
   const currentUserId =
     typeof session?.user?.id === "string" ? session.user.id : undefined;
+
+  function appendItemToCollection<T extends { id?: string | number }>(
+    existing: any,
+    item: T,
+  ): any {
+    if (!item) return existing;
+    const normalizedId =
+      item && item.id != null && item.id !== "" ? String(item.id) : undefined;
+    const normalizedItem = normalizedId ? { ...item, id: normalizedId } : { ...item };
+    if (!existing) {
+      return { items: [normalizedItem] };
+    }
+    if (Array.isArray(existing)) {
+      if (
+        normalizedId &&
+        existing.some((entry: any) => String(entry?.id) === normalizedId)
+      ) {
+        return existing;
+      }
+      return [...existing, normalizedItem];
+    }
+    if (Array.isArray(existing.items)) {
+      if (
+        normalizedId &&
+        existing.items.some((entry: any) => String(entry?.id) === normalizedId)
+      ) {
+        return existing;
+      }
+      return { ...existing, items: [...existing.items, normalizedItem] };
+    }
+    return existing;
+  }
+
+  const handleCreateTag = useCallback(
+    async (label: string) => {
+      const trimmed = label.trim();
+      if (!trimmed) return null;
+      try {
+        const created = await v1.createTagBookmarksTagsPost({
+          tagCreate: { name: trimmed },
+        });
+        const createdId = created?.id != null ? String(created.id) : trimmed;
+        const createdLabel =
+          typeof created?.name === "string" && created.name.trim()
+            ? created.name.trim()
+            : trimmed;
+        const option = { id: createdId, label: createdLabel };
+        if (mutateTags) {
+          void mutateTags(
+            (prev: any) =>
+              appendItemToCollection(prev, {
+                ...(created ?? {}),
+                id: createdId,
+                name: createdLabel,
+              }),
+            false,
+          );
+        }
+        return option;
+      } catch (error: any) {
+        setBanner({
+          kind: "error",
+          message: error?.message ?? String(error),
+        });
+        throw error;
+      }
+    },
+    [mutateTags, setBanner],
+  );
+
+  const handleCreateFolder = useCallback(
+    async (label: string) => {
+      const trimmed = label.trim();
+      if (!trimmed) return null;
+      try {
+        const created = await v1.createFolderBookmarksFoldersPost({
+          folderCreate: { name: trimmed },
+        });
+        const createdId = created?.id != null ? String(created.id) : trimmed;
+        const createdLabel =
+          typeof created?.name === "string" && created.name.trim()
+            ? created.name.trim()
+            : trimmed;
+        const option = { id: createdId, label: createdLabel };
+        if (mutateFolders) {
+          void mutateFolders(
+            (prev: any) =>
+              appendItemToCollection(prev, {
+                ...(created ?? {}),
+                id: createdId,
+                name: createdLabel,
+              }),
+            false,
+          );
+        }
+        return option;
+      } catch (error: any) {
+        setBanner({
+          kind: "error",
+          message: error?.message ?? String(error),
+        });
+        throw error;
+      }
+    },
+    [mutateFolders, setBanner],
+  );
 
   if (sessionStatus === "loading") {
     return (
@@ -1879,6 +1999,8 @@ export default function JobSchedulesPage() {
               onSubmit={handleCreate}
               isSubmitting={isCreating}
               allowOwnerSelection={canManageSchedules}
+              onCreateTag={handleCreateTag}
+              onCreateFolder={handleCreateFolder}
             />
           </div>
         ) : null}
@@ -1901,6 +2023,8 @@ export default function JobSchedulesPage() {
               onCancel={() => setEditingSchedule(null)}
               isSubmitting={isEditing}
               allowOwnerSelection={false}
+              onCreateTag={handleCreateTag}
+              onCreateFolder={handleCreateFolder}
             />
           </div>
         ) : null}

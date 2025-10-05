@@ -441,6 +441,7 @@
   "combobox_no_options": "No matches",
   "combobox_remove_option": "Remove {option}",
   "combobox_clear_selection": "Clear selection",
+  "combobox_create_option": "Create \"{option}\"",
   "form_fill_required": "Fill required fields",
   "credentials_test_result": "{service}: {result}",
   "credentials_create_success": "Credential created",

@@ -13,6 +13,8 @@ const openApiSpies = vi.hoisted(() => ({
   createFeed: vi.fn(),
   updateFeed: vi.fn(),
   deleteFeed: vi.fn(),
+  createTag: vi.fn(),
+  createFolder: vi.fn(),
 }));
 
 vi.mock("next/router", () => ({
@@ -37,6 +39,8 @@ vi.mock("../lib/openapi", () => ({
     listCredentialsV1V1CredentialsGet: openApiSpies.listCredentials,
     listTagsBookmarksTagsGet: openApiSpies.listTags,
     listFoldersBookmarksFoldersGet: openApiSpies.listFolders,
+    createTagBookmarksTagsPost: openApiSpies.createTag,
+    createFolderBookmarksFoldersPost: openApiSpies.createFolder,
   },
   feeds: {
     createFeedFeedsPost: openApiSpies.createFeed,
@@ -104,6 +108,8 @@ type RenderOptions = {
   tags?: typeof defaultTags;
   folders?: typeof defaultFolders;
   mutate?: ReturnType<typeof vi.fn>;
+  tagMutate?: ReturnType<typeof vi.fn>;
+  folderMutate?: ReturnType<typeof vi.fn>;
 };
 
 function renderPage({
@@ -111,6 +117,8 @@ function renderPage({
   tags = defaultTags,
   folders = defaultFolders,
   mutate = vi.fn().mockResolvedValue(undefined),
+  tagMutate = vi.fn().mockResolvedValue(undefined),
+  folderMutate = vi.fn().mockResolvedValue(undefined),
 }: RenderOptions = {}) {
   const handlers = [
     {
@@ -127,11 +135,11 @@ function renderPage({
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/bookmarks/tags",
-      value: makeSWRSuccess(tags),
+      value: makeSWRSuccess(tags, { mutate: tagMutate }),
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/bookmarks/folders",
-      value: makeSWRSuccess(folders),
+      value: makeSWRSuccess(folders, { mutate: folderMutate }),
     },
   ];
 
@@ -141,7 +149,7 @@ function renderPage({
     session: defaultSession,
   });
 
-  return { mutate };
+  return { mutate, tagMutate, folderMutate };
 }
 
 describe("FeedsPage", () => {
@@ -156,6 +164,11 @@ describe("FeedsPage", () => {
     openApiSpies.createFeed.mockResolvedValue({});
     openApiSpies.updateFeed.mockResolvedValue({});
     openApiSpies.deleteFeed.mockResolvedValue({});
+    openApiSpies.createTag.mockResolvedValue({ id: "tag-new", name: "Created" });
+    openApiSpies.createFolder.mockResolvedValue({
+      id: "folder-new",
+      name: "Created Folder",
+    });
   });
 
   it("renders saved tags and folder for feeds", async () => {
@@ -201,6 +214,65 @@ describe("FeedsPage", () => {
     });
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
+  });
+
+  it("creates new tags and folders from combobox input", async () => {
+    const tagMutate = vi.fn().mockResolvedValue(undefined);
+    const folderMutate = vi.fn().mockResolvedValue(undefined);
+    openApiSpies.createTag.mockResolvedValue({
+      id: "tag-new",
+      name: "Curated",
+    });
+    openApiSpies.createFolder.mockResolvedValue({
+      id: "folder-new",
+      name: "Later",
+    });
+
+    renderPage({ tagMutate, folderMutate });
+
+    const urlInput = screen.getByLabelText("Feed URL") as HTMLInputElement;
+    fireEvent.change(urlInput, {
+      target: { value: "https://example.com/created" },
+    });
+
+    const tagsCombobox = screen.getByRole("combobox", {
+      name: "Tags",
+    }) as HTMLInputElement;
+    fireEvent.change(tagsCombobox, { target: { value: "Curated" } });
+
+    await screen.findByRole("option", { name: 'Create "Curated"' });
+    fireEvent.keyDown(tagsCombobox, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(openApiSpies.createTag).toHaveBeenCalledWith({
+        tagCreate: { name: "Curated" },
+      }),
+    );
+    await waitFor(() => expect(tagMutate).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Curated")).toBeInTheDocument());
+
+    const folderCombobox = screen.getByRole("combobox", {
+      name: "Folder",
+    }) as HTMLInputElement;
+    fireEvent.change(folderCombobox, { target: { value: "Later" } });
+
+    await screen.findByRole("option", { name: 'Create "Later"' });
+    fireEvent.keyDown(folderCombobox, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(openApiSpies.createFolder).toHaveBeenCalledWith({
+        folderCreate: { name: "Later" },
+      }),
+    );
+    await waitFor(() => expect(folderMutate).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => expect(openApiSpies.createFeed).toHaveBeenCalled());
+
+    const payload = openApiSpies.createFeed.mock.calls[0][0].feed;
+    expect(payload.tagIds).toContain("tag-new");
+    expect(payload.folderId).toBe("folder-new");
   });
 
   it("prevents editing the initial lookback after the first poll", async () => {
