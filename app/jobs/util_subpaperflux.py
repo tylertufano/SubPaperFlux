@@ -561,6 +561,7 @@ def poll_rss_and_publish(
         feed_requires_auth = feed.rss_requires_auth
         feed_site_config_id = feed.site_config_id
         feed_site_login_credential_id = feed.site_login_credential_id
+        feed_last_poll_at = feed.last_rss_poll_at
         feed_site_config = None
         if feed_site_config_id:
             sc = session.get(SiteConfigModel, feed_site_config_id)
@@ -600,9 +601,15 @@ def poll_rss_and_publish(
         }
     )
 
-    # State with last_rss_timestamp set by lookback
+    # State with last_rss_timestamp set by lookback on first poll only
     now = datetime.now(timezone.utc)
-    cutoff = now - timedelta(seconds=parse_lookback_to_seconds(effective_lookback))
+    cutoff = None
+    if feed_last_poll_at:
+        cutoff = feed_last_poll_at
+        if cutoff.tzinfo is None:
+            cutoff = cutoff.replace(tzinfo=timezone.utc)
+    if cutoff is None:
+        cutoff = now - timedelta(seconds=parse_lookback_to_seconds(effective_lookback))
     state = {
         "last_rss_timestamp": cutoff,
         "last_rss_poll_time": cutoff,
@@ -651,6 +658,8 @@ def poll_rss_and_publish(
     stored = 0
     duplicates = 0
     total_entries = len(new_entries)
+
+    poll_completed_at = datetime.now(timezone.utc)
 
     with get_session_ctx() as session:
         for entry in new_entries:
@@ -769,6 +778,12 @@ def poll_rss_and_publish(
             )
             session.commit()
             stored += 1
+
+        feed_record = session.get(FeedModel, feed_id)
+        if feed_record:
+            feed_record.last_rss_poll_at = poll_completed_at
+            session.add(feed_record)
+            session.commit()
 
     return {"stored": stored, "duplicates": duplicates, "total": total_entries}
 
