@@ -6,6 +6,7 @@ export type BreadcrumbItem = {
 const breadcrumbKeyMap: Record<string, string> = {
   '/': 'breadcrumb_home',
   '/bookmarks': 'nav_bookmarks',
+  '/folders-tags': 'nav_folders_tags',
   '/credentials': 'credentials_title',
   '/feeds': 'feeds_title',
   '/jobs': 'jobs_title',

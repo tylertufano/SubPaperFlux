@@ -345,5 +345,7 @@
   "admin_metrics_total_sum": "Duración total: {sum}s ✨",
   "admin_metrics_all_requests": "Todas las solicitudes ✨",
   "admin_metrics_all_jobs": "Todos los trabajos ✨",
-  "admin_metrics_ui_link_label": "Panel de métricas ✨"
+  "admin_metrics_ui_link_label": "Panel de métricas ✨",
+  "nav_folders_tags": "Carpetas & Tags ✨",
+  "folders_tags_title": "Carpetas & Tags ✨"
 }
