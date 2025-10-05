@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, EmptyState, Nav } from '../components'
+import { Alert, AutocompleteMultiSelect, AutocompleteSingleSelect, Breadcrumbs, EmptyState, Nav } from '../components'
 import { v1, feeds as feedsApi } from '../lib/openapi'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
@@ -8,6 +8,8 @@ import { useRouter } from 'next/router'
 import { useSessionReauth } from '../lib/useSessionReauth'
 import { extractPermissionList, hasPermission, PERMISSION_MANAGE_BOOKMARKS, PERMISSION_READ_BOOKMARKS } from '../lib/rbac'
 import type { Credential } from '../sdk/src/models/Credential'
+import type { TagOut } from '../sdk/src/models/TagOut'
+import type { FolderOut } from '../sdk/src/models/FolderOut'
 import { buildSiteConfigLabelMap, buildSiteLoginOptions, SiteLoginOption } from '../lib/siteLoginOptions'
 
 export default function Feeds() {
@@ -34,6 +36,14 @@ export default function Feeds() {
     canViewFeeds ? ['/v1/credentials', 'feeds'] : null,
     () => v1.listCredentialsV1V1CredentialsGet({ page: 1, size: 200 }),
   )
+  const { data: tagsData } = useSWR(
+    canViewFeeds ? ['/v1/bookmarks/tags', 'feeds'] : null,
+    () => v1.listTagsBookmarksTagsGet(),
+  )
+  const { data: foldersData } = useSWR(
+    canViewFeeds ? ['/v1/bookmarks/folders', 'feeds'] : null,
+    () => v1.listFoldersBookmarksFoldersGet(),
+  )
   const [url, setUrl] = useState('')
   const [poll, setPoll] = useState('1h')
   const [lookback, setLookback] = useState('')
@@ -42,6 +52,8 @@ export default function Feeds() {
   const [siteConfigId, setSiteConfigId] = useState('')
   const [siteLoginCredentialId, setSiteLoginCredentialId] = useState('')
   const [siteLoginSelection, setSiteLoginSelection] = useState('')
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [selectedFolderId, setSelectedFolderId] = useState('')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editRow, setEditRow] = useState<any | null>(null)
@@ -64,6 +76,48 @@ export default function Feeds() {
   const siteLoginOptions: SiteLoginOption[] = useMemo(
     () => buildSiteLoginOptions(loginCredentials, siteConfigs, t('feeds_field_site_config_only')),
     [loginCredentials, siteConfigs, t],
+  )
+
+  const tagItems = useMemo(() => {
+    if (!tagsData) return [] as TagOut[]
+    if (Array.isArray(tagsData)) return tagsData as TagOut[]
+    if (Array.isArray((tagsData as any).items)) return (tagsData as any).items as TagOut[]
+    return [] as TagOut[]
+  }, [tagsData])
+
+  const folderItems = useMemo(() => {
+    if (!foldersData) return [] as FolderOut[]
+    if (Array.isArray(foldersData)) return foldersData as FolderOut[]
+    if (Array.isArray((foldersData as any).items)) return (foldersData as any).items as FolderOut[]
+    return [] as FolderOut[]
+  }, [foldersData])
+
+  const tagOptions = useMemo(
+    () =>
+      tagItems
+        .map(tag => {
+          const id = tag?.id != null ? String(tag.id) : ''
+          if (!id) return null
+          const rawName = typeof tag?.name === 'string' ? tag.name.trim() : ''
+          const label = rawName || id
+          return { id, label }
+        })
+        .filter(Boolean) as { id: string; label: string }[],
+    [tagItems],
+  )
+
+  const folderOptions = useMemo(
+    () =>
+      folderItems
+        .map(folder => {
+          const id = folder?.id != null ? String(folder.id) : ''
+          if (!id) return null
+          const rawName = typeof folder?.name === 'string' ? folder.name.trim() : ''
+          const label = rawName || id
+          return { id, label }
+        })
+        .filter(Boolean) as { id: string; label: string }[],
+    [folderItems],
   )
 
   const getSelectionForFeed = useCallback(
@@ -137,6 +191,22 @@ export default function Feeds() {
     return map
   }, [loginCredentials])
 
+  const tagLabelMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const option of tagOptions) {
+      map.set(option.id, option.label)
+    }
+    return map
+  }, [tagOptions])
+
+  const folderLabelMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const option of folderOptions) {
+      map.set(option.id, option.label)
+    }
+    return map
+  }, [folderOptions])
+
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
     try {
@@ -148,8 +218,10 @@ export default function Feeds() {
         rssRequiresAuth: rssAuth,
         siteConfigId: siteConfigId || undefined,
         siteLoginCredentialId: siteLoginCredentialId || undefined,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+        folderId: selectedFolderId || undefined,
       } as any })
-      setUrl(''); setLookback(''); setSiteConfigId(''); setSiteLoginCredentialId(''); setSiteLoginSelection(''); setPaywalled(false); setRssAuth(false)
+      setUrl(''); setLookback(''); setSiteConfigId(''); setSiteLoginCredentialId(''); setSiteLoginSelection(''); setSelectedTagIds([]); setSelectedFolderId(''); setPaywalled(false); setRssAuth(false)
       setBanner({ kind: 'success', message: t('feeds_create_success') })
       mutate()
     } catch (e: any) {
@@ -182,6 +254,10 @@ export default function Feeds() {
       siteConfigId: rawSiteConfigId,
       siteLoginCredentialId: rawCredentialId,
       siteLoginSelection: selection,
+      tagIds: Array.isArray(f.tag_ids ?? f.tagIds)
+        ? (f.tag_ids ?? f.tagIds).map((tag: any) => String(tag))
+        : [],
+      folderId: f.folder_id != null || f.folderId != null ? String(f.folder_id ?? f.folderId ?? '') : '',
     })
   }
 
@@ -202,6 +278,8 @@ export default function Feeds() {
           rssRequiresAuth: !!editRow.rssRequiresAuth,
           siteConfigId: editRow.siteConfigId || undefined,
           siteLoginCredentialId: editRow.siteLoginCredentialId || undefined,
+          tagIds: Array.isArray(editRow.tagIds) && editRow.tagIds.length > 0 ? editRow.tagIds : undefined,
+          folderId: editRow.folderId ? editRow.folderId : undefined,
         } as any,
       })
       setBanner({ kind: 'success', message: t('feeds_update_success') })
@@ -312,6 +390,32 @@ export default function Feeds() {
               </option>
             ))}
           </select>
+          <div className="md:col-span-3">
+            <AutocompleteMultiSelect
+              id="create-feed-tags"
+              label={t('feeds_field_tags_label')}
+              placeholder={t('feeds_field_tags_placeholder')}
+              options={tagOptions}
+              value={selectedTagIds}
+              onChange={setSelectedTagIds}
+              noOptionsLabel={t('combobox_no_options')}
+              helpText={t('feeds_field_tags_help')}
+              getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
+            />
+          </div>
+          <div className="md:col-span-3">
+            <AutocompleteSingleSelect
+              id="create-feed-folder"
+              label={t('feeds_field_folder_label')}
+              placeholder={t('feeds_field_folder_placeholder')}
+              options={folderOptions}
+              value={selectedFolderId ? selectedFolderId : null}
+              onChange={(next) => setSelectedFolderId(next ?? '')}
+              noOptionsLabel={t('combobox_no_options')}
+              helpText={t('feeds_field_folder_help')}
+              clearLabel={t('combobox_clear_selection')}
+            />
+          </div>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
           <button type="submit" className="btn">{t('btn_create')}</button>
@@ -341,6 +445,8 @@ export default function Feeds() {
                   <th className="th">{t('lookback_label')}</th>
                   <th className="th">{t('paywalled_label')}</th>
                   <th className="th">{t('rss_auth_label')}</th>
+                  <th className="th">{t('feeds_table_tags_label')}</th>
+                  <th className="th">{t('feeds_table_folder_label')}</th>
                   <th className="th">{t('site_config_label')}</th>
                   <th className="th">{t('actions_label')}</th>
                 </tr>
@@ -355,6 +461,32 @@ export default function Feeds() {
                         <td className="td"><input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} /></td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_paywalled_label')} checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
                         <td className="td"><input type="checkbox" aria-label={t('feeds_field_rss_auth_label')} checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
+                        <td className="td">
+                          <AutocompleteMultiSelect
+                            id={`edit-feed-tags-${f.id}`}
+                            label={t('feeds_field_tags_label')}
+                            placeholder={t('feeds_field_tags_placeholder')}
+                            options={tagOptions}
+                            value={Array.isArray(editRow.tagIds) ? editRow.tagIds : []}
+                            onChange={(next) => setEditRow({ ...editRow, tagIds: next })}
+                            noOptionsLabel={t('combobox_no_options')}
+                            helpText={t('feeds_field_tags_help')}
+                            getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
+                          />
+                        </td>
+                        <td className="td">
+                          <AutocompleteSingleSelect
+                            id={`edit-feed-folder-${f.id}`}
+                            label={t('feeds_field_folder_label')}
+                            placeholder={t('feeds_field_folder_placeholder')}
+                            options={folderOptions}
+                            value={editRow.folderId ? editRow.folderId : null}
+                            onChange={(next) => setEditRow({ ...editRow, folderId: next ?? '' })}
+                            noOptionsLabel={t('combobox_no_options')}
+                            helpText={t('feeds_field_folder_help')}
+                            clearLabel={t('combobox_clear_selection')}
+                          />
+                        </td>
                         <td className="td">
                           <select
                             className="input w-full"
@@ -391,6 +523,27 @@ export default function Feeds() {
                         <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || ''}</td>
                         <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
                         <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
+                        <td className="td">
+                          {(() => {
+                            const rawTags = Array.isArray(f.tag_ids ?? f.tagIds) ? (f.tag_ids ?? f.tagIds) : []
+                            if (!rawTags.length) return ''
+                            return rawTags
+                              .map((tagId: any) => {
+                                const normalized = tagId != null ? String(tagId) : ''
+                                return normalized ? tagLabelMap.get(normalized) || normalized : ''
+                              })
+                              .filter(Boolean)
+                              .join(', ')
+                          })()}
+                        </td>
+                        <td className="td">
+                          {(() => {
+                            const folderValue = f.folder_id ?? f.folderId
+                            if (!folderValue) return ''
+                            const normalized = String(folderValue)
+                            return folderLabelMap.get(normalized) || normalized
+                          })()}
+                        </td>
                         <td className="td">{
                           (() => {
                             const id = f.site_config_id || f.siteConfigId

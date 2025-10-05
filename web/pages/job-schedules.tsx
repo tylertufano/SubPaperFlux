@@ -2,7 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/router";
 import { useSessionReauth } from "../lib/useSessionReauth";
-import { Alert, Breadcrumbs, EmptyState, Nav } from "../components";
+import {
+  Alert,
+  AutocompleteMultiSelect,
+  AutocompleteSingleSelect,
+  Breadcrumbs,
+  EmptyState,
+  Nav,
+} from "../components";
 import { useI18n } from "../lib/i18n";
 import { buildBreadcrumbs } from "../lib/breadcrumbs";
 import { v1, type SiteConfigRecord } from "../lib/openapi";
@@ -16,6 +23,8 @@ import type { JobScheduleOut } from "../sdk/src/models/JobScheduleOut";
 import type { Credential } from "../sdk/src/models/Credential";
 import type { FeedOut } from "../sdk/src/models/FeedOut";
 import type { JobSchedulesPage } from "../sdk/src/models/JobSchedulesPage";
+import type { TagOut } from "../sdk/src/models/TagOut";
+import type { FolderOut } from "../sdk/src/models/FolderOut";
 import { useDateTimeFormatter, useNumberFormatter } from "../lib/format";
 import { buildSiteLoginOptions, SiteLoginOption } from "../lib/siteLoginOptions";
 type JobType =
@@ -57,6 +66,8 @@ type ScheduleFormProps = {
   credentials: Credential[];
   siteConfigs: SiteConfigRecord[];
   feeds: FeedOut[];
+  tags: TagOut[];
+  folders: FolderOut[];
   schedules: ExtendedJobSchedule[];
   onSubmit: (values: ScheduleFormResult) => Promise<void>;
   onCancel?: () => void;
@@ -311,6 +322,15 @@ function initPayloadState(
       return {
         instapaper_id: payload?.instapaper_id ?? "",
         feed_id: payload?.feed_id ?? "",
+        tags: Array.isArray(payload?.tags)
+          ? payload.tags.map((value: any) => String(value))
+          : [],
+        folderId:
+          payload?.folderId != null
+            ? String(payload.folderId)
+            : payload?.folder_id != null
+              ? String(payload.folder_id)
+              : "",
       };
     case "retention":
       return {
@@ -349,6 +369,8 @@ function ScheduleForm({
   credentials,
   siteConfigs,
   feeds,
+  tags,
+  folders,
   schedules,
   onSubmit,
   onCancel,
@@ -538,6 +560,12 @@ function ScheduleForm({
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
       const feedId = (payloadState.feed_id || "").toString().trim();
+      const tags = Array.isArray(payloadState.tags)
+        ? payloadState.tags
+            .map((value: any) => String(value).trim())
+            .filter((value: string) => value.length > 0)
+        : [];
+      const folderOverride = (payloadState.folderId || "").toString().trim();
       const isWildcardSelection = feedId === "";
       if (!instapaperId)
         nextErrors["payload.instapaper_id"] = t(
@@ -548,6 +576,12 @@ function ScheduleForm({
       }
       if (feedId) {
         payload.feed_id = feedId;
+      }
+      if (tags.length > 0) {
+        payload.tags = tags;
+      }
+      if (folderOverride) {
+        payload.folderId = folderOverride;
       }
       const publishGroup = instapaperId
         ? publishScheduleGroups.get(instapaperId)
@@ -632,6 +666,34 @@ function ScheduleForm({
   const siteLoginOptions: SiteLoginOption[] = useMemo(
     () => buildSiteLoginOptions(loginCredentials, siteConfigs, t("feeds_field_site_config_only")),
     [loginCredentials, siteConfigs, t],
+  );
+
+  const tagOptions = useMemo(
+    () =>
+      tags
+        .map((tag) => {
+          const id = tag?.id != null ? String(tag.id) : "";
+          if (!id) return null;
+          const rawName = typeof tag?.name === "string" ? tag.name.trim() : "";
+          const label = rawName || id;
+          return { id, label };
+        })
+        .filter(Boolean) as { id: string; label: string }[],
+    [tags],
+  );
+
+  const folderOptions = useMemo(
+    () =>
+      folders
+        .map((folder) => {
+          const id = folder?.id != null ? String(folder.id) : "";
+          if (!id) return null;
+          const rawName = typeof folder?.name === "string" ? folder.name.trim() : "";
+          const label = rawName || id;
+          return { id, label };
+        })
+        .filter(Boolean) as { id: string; label: string }[],
+    [folders],
   );
 
   function renderJobSpecificFields() {
@@ -968,6 +1030,16 @@ function ScheduleForm({
             feedDescribedByIds.length > 0
               ? feedDescribedByIds.join(" ")
               : undefined;
+          const publishTags = Array.isArray(payloadState.tags)
+            ? payloadState.tags
+            : [];
+          const folderOverrideValue = (payloadState.folderId || "")
+            .toString()
+            .trim();
+          const folderWarningId = folderOverrideValue
+            ? "schedule-publish-folder-warning"
+            : undefined;
+          const folderHelpId = "schedule-publish-folder-help";
         return (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
@@ -1059,6 +1131,42 @@ function ScheduleForm({
                   className="text-sm text-red-600"
                 >
                   {t("job_schedules_error_publish_wildcard_exists")}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col md:col-span-2">
+              <AutocompleteMultiSelect
+                id="schedule-publish-tags"
+                label={t("job_schedules_field_publish_tags")}
+                placeholder={t("feeds_field_tags_placeholder")}
+                options={tagOptions}
+                value={publishTags}
+                onChange={(next) => updatePayload("tags", next)}
+                noOptionsLabel={t("combobox_no_options")}
+                helpText={t("job_schedules_field_publish_tags_help")}
+                helpTextId="schedule-publish-tags-help"
+                getRemoveLabel={(option) =>
+                  t("combobox_remove_option", { option: option.label })
+                }
+              />
+            </div>
+            <div className="flex flex-col md:col-span-2">
+              <AutocompleteSingleSelect
+                id="schedule-publish-folder"
+                label={t("job_schedules_field_publish_folder")}
+                placeholder={t("feeds_field_folder_placeholder")}
+                options={folderOptions}
+                value={folderOverrideValue ? folderOverrideValue : null}
+                onChange={(next) => updatePayload("folderId", next ?? "")}
+                noOptionsLabel={t("combobox_no_options")}
+                helpText={t("job_schedules_field_publish_folder_help")}
+                helpTextId={folderHelpId}
+                clearLabel={t("combobox_clear_selection")}
+                describedBy={folderWarningId}
+              />
+              {folderWarningId && (
+                <p id={folderWarningId} className="text-sm text-amber-600">
+                  {t("job_schedules_warning_publish_folder_override")}
                 </p>
               )}
             </div>
@@ -1428,6 +1536,14 @@ export default function JobSchedulesPage() {
     canManageSchedules ? ["/v1/feeds", "job-schedules"] : null,
     () => v1.listFeedsV1V1FeedsGet({ page: 1, size: 200 }),
   );
+  const { data: tagsData } = useSWR(
+    canManageSchedules ? ["/v1/bookmarks/tags", "job-schedules"] : null,
+    () => v1.listTagsBookmarksTagsGet(),
+  );
+  const { data: foldersData } = useSWR(
+    canManageSchedules ? ["/v1/bookmarks/folders", "job-schedules"] : null,
+    () => v1.listFoldersBookmarksFoldersGet(),
+  );
 
   const numberFormatter = useNumberFormatter();
   const dateFormatter = useDateTimeFormatter({
@@ -1441,6 +1557,26 @@ export default function JobSchedulesPage() {
       ),
     [data],
   );
+
+  const credentials = credentialsData?.items ?? [];
+  const siteConfigs = siteConfigsData?.items ?? [];
+  const feeds = feedsData?.items ?? [];
+  const tagsList = useMemo(() => {
+    if (!tagsData) return [] as TagOut[];
+    if (Array.isArray(tagsData)) return tagsData as TagOut[];
+    if (Array.isArray((tagsData as any).items)) return (tagsData as any).items as TagOut[];
+    return [] as TagOut[];
+  }, [tagsData]);
+  const foldersList = useMemo(() => {
+    if (!foldersData) return [] as FolderOut[];
+    if (Array.isArray(foldersData)) return foldersData as FolderOut[];
+    if (Array.isArray((foldersData as any).items)) return (foldersData as any).items as FolderOut[];
+    return [] as FolderOut[];
+  }, [foldersData]);
+  const hasNext = Boolean(data?.hasNext);
+  const totalPages = data?.totalPages ?? data?.total ?? 1;
+  const currentUserId =
+    typeof session?.user?.id === "string" ? session.user.id : undefined;
 
   if (sessionStatus === "loading") {
     return (
@@ -1478,14 +1614,6 @@ export default function JobSchedulesPage() {
       t("access_denied_message"),
     );
   }
-
-  const credentials = credentialsData?.items ?? [];
-  const siteConfigs = siteConfigsData?.items ?? [];
-  const feeds = feedsData?.items ?? [];
-  const hasNext = Boolean(data?.hasNext);
-  const totalPages = data?.totalPages ?? data?.total ?? 1;
-  const currentUserId =
-    typeof session?.user?.id === "string" ? session.user.id : undefined;
 
   const formatDateValue = (value?: Date | null) =>
     value ? dateFormatter.format(value) : "—";
@@ -1762,6 +1890,8 @@ export default function JobSchedulesPage() {
               credentials={credentials}
               siteConfigs={siteConfigs}
               feeds={feeds}
+              tags={tagsList}
+              folders={foldersList}
               schedules={schedules}
               onSubmit={handleCreate}
               isSubmitting={isCreating}
@@ -1781,6 +1911,8 @@ export default function JobSchedulesPage() {
               credentials={credentials}
               siteConfigs={siteConfigs}
               feeds={feeds}
+              tags={tagsList}
+              folders={foldersList}
               schedules={schedules}
               onSubmit={handleUpdate}
               onCancel={() => setEditingSchedule(null)}

@@ -21,6 +21,8 @@ const openApiSpies = vi.hoisted(() => ({
   listCredentials: vi.fn(),
   listSiteConfigs: vi.fn(),
   listFeeds: vi.fn(),
+  listTags: vi.fn(),
+  listFolders: vi.fn(),
 }));
 
 vi.mock("next/router", () => ({
@@ -54,6 +56,8 @@ vi.mock("../lib/openapi", () => ({
     listCredentialsV1V1CredentialsGet: openApiSpies.listCredentials,
     listSiteConfigsV1V1SiteConfigsGet: openApiSpies.listSiteConfigs,
     listFeedsV1V1FeedsGet: openApiSpies.listFeeds,
+    listTagsBookmarksTagsGet: openApiSpies.listTags,
+    listFoldersBookmarksFoldersGet: openApiSpies.listFolders,
   },
 }));
 
@@ -170,11 +174,27 @@ const defaultFeeds = {
   ],
 };
 
+const defaultTags = {
+  items: [
+    { id: "tag-1", name: "Research" },
+    { id: "tag-2", name: "News" },
+  ],
+};
+
+const defaultFolders = {
+  items: [
+    { id: "folder-1", name: "Reading List" },
+    { id: "folder-2", name: "Highlights" },
+  ],
+};
+
 type RenderOptions = {
   schedules?: typeof defaultSchedulesPage;
   credentials?: typeof defaultCredentials;
   siteConfigs?: typeof defaultSiteConfigs;
   feeds?: typeof defaultFeeds;
+  tags?: typeof defaultTags;
+  folders?: typeof defaultFolders;
   mutate?: ReturnType<typeof vi.fn>;
 };
 
@@ -183,6 +203,8 @@ function renderPage({
   credentials = defaultCredentials,
   siteConfigs = defaultSiteConfigs,
   feeds = defaultFeeds,
+  tags = defaultTags,
+  folders = defaultFolders,
   mutate = vi.fn().mockResolvedValue(undefined),
 }: RenderOptions = {}) {
   const handlers = [
@@ -203,6 +225,16 @@ function renderPage({
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/feeds",
       value: makeSWRSuccess(feeds),
+    },
+    {
+      matcher: (key: any) =>
+        Array.isArray(key) && key[0] === "/v1/bookmarks/tags",
+      value: makeSWRSuccess(tags),
+    },
+    {
+      matcher: (key: any) =>
+        Array.isArray(key) && key[0] === "/v1/bookmarks/folders",
+      value: makeSWRSuccess(folders),
     },
   ];
 
@@ -244,6 +276,8 @@ describe("JobSchedulesPage", () => {
     openApiSpies.listCredentials.mockResolvedValue(defaultCredentials);
     openApiSpies.listSiteConfigs.mockResolvedValue(defaultSiteConfigs);
     openApiSpies.listFeeds.mockResolvedValue(defaultFeeds);
+    openApiSpies.listTags.mockResolvedValue(defaultTags);
+    openApiSpies.listFolders.mockResolvedValue(defaultFolders);
     openApiSpies.listSchedules.mockResolvedValue(defaultSchedulesPage);
   });
 
@@ -528,6 +562,64 @@ describe("JobSchedulesPage", () => {
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
     expect(createdPayload.instapaper_id).toBe("cred-publish");
     expect(createdPayload.feed_id).toBeUndefined();
+  });
+
+  it("submits publish schedules with tags and a folder override", async () => {
+    renderPage();
+
+    const createButton = screen.getByRole("button", {
+      name: "Create schedule",
+    });
+    const createForm = createButton.closest("form") as HTMLFormElement;
+
+    const jobTypeSelect = within(createForm).getByLabelText(
+      "Job type",
+    ) as HTMLSelectElement;
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const instapaperSelect = await within(createForm).findByLabelText(
+      "Instapaper credential",
+    );
+    fireEvent.change(instapaperSelect, { target: { value: "cred-publish" } });
+
+    const tagsCombobox = within(createForm).getByRole("combobox", {
+      name: "Tags to apply",
+    }) as HTMLInputElement;
+    fireEvent.focus(tagsCombobox);
+    fireEvent.change(tagsCombobox, { target: { value: "Research" } });
+    const tagOption = await within(createForm).findByRole("option", {
+      name: "Research",
+    });
+    fireEvent.mouseDown(tagOption);
+    fireEvent.click(tagOption);
+
+    const folderCombobox = within(createForm).getByRole("combobox", {
+      name: "Folder override",
+    }) as HTMLInputElement;
+    fireEvent.focus(folderCombobox);
+    fireEvent.change(folderCombobox, { target: { value: "Reading" } });
+    const folderOption = await within(createForm).findByRole("option", {
+      name: "Reading List",
+    });
+    fireEvent.mouseDown(folderOption);
+    fireEvent.click(folderOption);
+
+    fireEvent.click(createButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.createSchedule).toHaveBeenCalledTimes(1),
+    );
+
+    const createdPayload =
+      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+    expect(createdPayload.tags).toEqual(["tag-1"]);
+    expect(createdPayload.folderId).toBe("folder-1");
+
+    expect(
+      within(createForm).getByText(
+        "This schedule will override the feed's folder when it runs.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("blocks wildcard publish schedules when one already exists", async () => {
