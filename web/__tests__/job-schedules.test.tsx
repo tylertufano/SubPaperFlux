@@ -23,6 +23,8 @@ const openApiSpies = vi.hoisted(() => ({
   listFeeds: vi.fn(),
   listTags: vi.fn(),
   listFolders: vi.fn(),
+  createTag: vi.fn(),
+  createFolder: vi.fn(),
 }));
 
 vi.mock("next/router", () => ({
@@ -58,6 +60,8 @@ vi.mock("../lib/openapi", () => ({
     listFeedsV1V1FeedsGet: openApiSpies.listFeeds,
     listTagsBookmarksTagsGet: openApiSpies.listTags,
     listFoldersBookmarksFoldersGet: openApiSpies.listFolders,
+    createTagBookmarksTagsPost: openApiSpies.createTag,
+    createFolderBookmarksFoldersPost: openApiSpies.createFolder,
   },
 }));
 
@@ -195,6 +199,8 @@ type RenderOptions = {
   tags?: typeof defaultTags;
   folders?: typeof defaultFolders;
   mutate?: ReturnType<typeof vi.fn>;
+  tagMutate?: ReturnType<typeof vi.fn>;
+  folderMutate?: ReturnType<typeof vi.fn>;
 };
 
 function renderPage({
@@ -205,6 +211,8 @@ function renderPage({
   tags = defaultTags,
   folders = defaultFolders,
   mutate = vi.fn().mockResolvedValue(undefined),
+  tagMutate = vi.fn().mockResolvedValue(undefined),
+  folderMutate = vi.fn().mockResolvedValue(undefined),
 }: RenderOptions = {}) {
   const handlers = [
     {
@@ -228,12 +236,12 @@ function renderPage({
     {
       matcher: (key: any) =>
         Array.isArray(key) && key[0] === "/v1/bookmarks/tags",
-      value: makeSWRSuccess(tags),
+      value: makeSWRSuccess(tags, { mutate: tagMutate }),
     },
     {
       matcher: (key: any) =>
         Array.isArray(key) && key[0] === "/v1/bookmarks/folders",
-      value: makeSWRSuccess(folders),
+      value: makeSWRSuccess(folders, { mutate: folderMutate }),
     },
   ];
 
@@ -243,7 +251,7 @@ function renderPage({
     session: defaultSession,
   });
 
-  return { mutate };
+  return { mutate, tagMutate, folderMutate };
 }
 
 function getSiteLoginSelect(form?: HTMLFormElement): HTMLSelectElement | null {
@@ -278,6 +286,11 @@ describe("JobSchedulesPage", () => {
     openApiSpies.listTags.mockResolvedValue(defaultTags);
     openApiSpies.listFolders.mockResolvedValue(defaultFolders);
     openApiSpies.listSchedules.mockResolvedValue(defaultSchedulesPage);
+    openApiSpies.createTag.mockResolvedValue({ id: "tag-new", name: "Created" });
+    openApiSpies.createFolder.mockResolvedValue({
+      id: "folder-new",
+      name: "Created Folder",
+    });
   });
 
   it("renders schedule list with expandable details", async () => {
@@ -520,6 +533,76 @@ describe("JobSchedulesPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Schedule updated.",
     );
+  });
+
+  it("creates publish tags and folders from combobox input", async () => {
+    const publishSchedule = makePublishSchedule({ id: "schedule-publish" });
+    const tagMutate = vi.fn().mockResolvedValue(undefined);
+    const folderMutate = vi.fn().mockResolvedValue(undefined);
+    openApiSpies.listSchedules.mockResolvedValue({
+      ...defaultSchedulesPage,
+      items: [publishSchedule],
+    });
+    openApiSpies.getSchedule.mockResolvedValue(publishSchedule);
+    openApiSpies.createTag.mockResolvedValue({
+      id: "tag-new",
+      name: "Curated",
+    });
+    openApiSpies.createFolder.mockResolvedValue({
+      id: "folder-new",
+      name: "Later",
+    });
+
+    renderPage({
+      schedules: { ...defaultSchedulesPage, items: [publishSchedule] },
+      tagMutate,
+      folderMutate,
+    });
+
+    const editButton = await screen.findByRole("button", { name: "Edit" });
+    fireEvent.click(editButton);
+
+    const tagsCombobox = (await screen.findByRole("combobox", {
+      name: "Tags to apply",
+    })) as HTMLInputElement;
+    fireEvent.change(tagsCombobox, { target: { value: "Curated" } });
+    await screen.findByRole("option", { name: 'Create "Curated"' });
+    fireEvent.keyDown(tagsCombobox, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(openApiSpies.createTag).toHaveBeenCalledWith({
+        tagCreate: { name: "Curated" },
+      }),
+    );
+    await waitFor(() => expect(tagMutate).toHaveBeenCalled());
+
+    const folderCombobox = (await screen.findByRole("combobox", {
+      name: "Folder override",
+    })) as HTMLInputElement;
+    fireEvent.change(folderCombobox, { target: { value: "Later" } });
+    await screen.findByRole("option", { name: 'Create "Later"' });
+    fireEvent.keyDown(folderCombobox, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(openApiSpies.createFolder).toHaveBeenCalledWith({
+        folderCreate: { name: "Later" },
+      }),
+    );
+    await waitFor(() => expect(folderMutate).toHaveBeenCalled());
+
+    const saveButton = await screen.findByRole("button", {
+      name: "Save changes",
+    });
+    fireEvent.click(saveButton);
+
+    await waitFor(() =>
+      expect(openApiSpies.updateSchedule).toHaveBeenCalledTimes(1),
+    );
+
+    const updatePayload =
+      openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
+    expect(updatePayload.tags).toContain("tag-new");
+    expect(updatePayload.folderId).toBe("folder-new");
   });
 
   it("creates publish schedules without a feed when no conflicts exist", async () => {

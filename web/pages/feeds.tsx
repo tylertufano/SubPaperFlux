@@ -36,11 +36,11 @@ export default function Feeds() {
     canViewFeeds ? ['/v1/credentials', 'feeds'] : null,
     () => v1.listCredentialsV1V1CredentialsGet({ page: 1, size: 200 }),
   )
-  const { data: tagsData } = useSWR(
+  const { data: tagsData, mutate: mutateTags } = useSWR(
     canViewFeeds ? ['/v1/bookmarks/tags', 'feeds'] : null,
     () => v1.listTagsBookmarksTagsGet(),
   )
-  const { data: foldersData } = useSWR(
+  const { data: foldersData, mutate: mutateFolders } = useSWR(
     canViewFeeds ? ['/v1/bookmarks/folders', 'feeds'] : null,
     () => v1.listFoldersBookmarksFoldersGet(),
   )
@@ -198,6 +198,112 @@ export default function Feeds() {
     }
     return map
   }, [tagOptions])
+
+  function appendItemToCollection<T extends { id?: string | number }>(
+    existing: any,
+    item: T,
+  ): any {
+    if (!item) return existing
+    const normalizedId =
+      item && item.id != null && item.id !== '' ? String(item.id) : undefined
+    const normalizedItem = normalizedId ? { ...item, id: normalizedId } : { ...item }
+    if (!existing) {
+      return { items: [normalizedItem] }
+    }
+    if (Array.isArray(existing)) {
+      if (
+        normalizedId &&
+        existing.some((entry: any) => String(entry?.id) === normalizedId)
+      ) {
+        return existing
+      }
+      return [...existing, normalizedItem]
+    }
+    if (Array.isArray(existing.items)) {
+      if (
+        normalizedId &&
+        existing.items.some((entry: any) => String(entry?.id) === normalizedId)
+      ) {
+        return existing
+      }
+      return { ...existing, items: [...existing.items, normalizedItem] }
+    }
+    return existing
+  }
+
+  const handleCreateTag = useCallback(
+    async (label: string) => {
+      const trimmed = label.trim()
+      if (!trimmed) return null
+      try {
+        const created = await v1.createTagBookmarksTagsPost({
+          tagCreate: { name: trimmed },
+        })
+        const createdId = created?.id != null ? String(created.id) : trimmed
+        const createdLabel =
+          typeof created?.name === 'string' && created.name.trim()
+            ? created.name.trim()
+            : trimmed
+        const option = { id: createdId, label: createdLabel }
+        if (mutateTags) {
+          void mutateTags(
+            (prev: any) =>
+              appendItemToCollection(prev, {
+                ...(created ?? {}),
+                id: createdId,
+                name: createdLabel,
+              }),
+            false,
+          )
+        }
+        return option
+      } catch (error: any) {
+        setBanner({
+          kind: 'error',
+          message: error?.message || String(error),
+        })
+        throw error
+      }
+    },
+    [mutateTags, setBanner],
+  )
+
+  const handleCreateFolder = useCallback(
+    async (label: string) => {
+      const trimmed = label.trim()
+      if (!trimmed) return null
+      try {
+        const created = await v1.createFolderBookmarksFoldersPost({
+          folderCreate: { name: trimmed },
+        })
+        const createdId = created?.id != null ? String(created.id) : trimmed
+        const createdLabel =
+          typeof created?.name === 'string' && created.name.trim()
+            ? created.name.trim()
+            : trimmed
+        const option = { id: createdId, label: createdLabel }
+        if (mutateFolders) {
+          void mutateFolders(
+            (prev: any) =>
+              appendItemToCollection(prev, {
+                ...(created ?? {}),
+                id: createdId,
+                name: createdLabel,
+              }),
+            false,
+          )
+        }
+        return option
+      } catch (error: any) {
+        setBanner({
+          kind: 'error',
+          message: error?.message || String(error),
+        })
+        throw error
+      }
+    },
+    [mutateFolders, setBanner],
+  )
 
   const folderLabelMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -406,6 +512,8 @@ export default function Feeds() {
               noOptionsLabel={t('combobox_no_options')}
               helpText={t('feeds_field_tags_help')}
               getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
+              onCreate={handleCreateTag}
+              createOptionLabel={(option) => t('combobox_create_option', { option })}
             />
           </div>
           <div className="md:col-span-4">
@@ -419,6 +527,8 @@ export default function Feeds() {
               noOptionsLabel={t('combobox_no_options')}
               helpText={t('feeds_field_folder_help')}
               clearLabel={t('combobox_clear_selection')}
+              onCreate={handleCreateFolder}
+              createOptionLabel={(option) => t('combobox_create_option', { option })}
             />
           </div>
           <label className="inline-flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
@@ -486,6 +596,8 @@ export default function Feeds() {
                             noOptionsLabel={t('combobox_no_options')}
                             helpText={t('feeds_field_tags_help')}
                             getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
+                            onCreate={handleCreateTag}
+                            createOptionLabel={(option) => t('combobox_create_option', { option })}
                           />
                         </td>
                         <td className="td">
@@ -499,6 +611,8 @@ export default function Feeds() {
                             noOptionsLabel={t('combobox_no_options')}
                             helpText={t('feeds_field_folder_help')}
                             clearLabel={t('combobox_clear_selection')}
+                            onCreate={handleCreateFolder}
+                            createOptionLabel={(option) => t('combobox_create_option', { option })}
                           />
                         </td>
                         <td className="td">
