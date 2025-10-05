@@ -54,6 +54,18 @@ export interface JobScheduleOut {
      * @type {any}
      * @memberof JobScheduleOut
      */
+    tags?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleOut
+     */
+    folderId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleOut
+     */
     frequency: any | null;
     /**
      * 
@@ -122,6 +134,8 @@ export function JobScheduleOutFromJSONTyped(json: any, ignoreDiscriminator: bool
         'jobType': json['job_type'],
         'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
+        'tags': !exists(json, 'tags') ? undefined : json['tags'],
+        'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
         'frequency': json['frequency'],
         'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
         'lastRunAt': !exists(json, 'last_run_at') ? undefined : json['last_run_at'],
@@ -146,6 +160,8 @@ export function JobScheduleOutToJSON(value?: JobScheduleOut | null): any {
         'job_type': value.jobType,
         'owner_user_id': value.ownerUserId,
         'payload': value.payload,
+        'tags': value.tags,
+        'folder_id': value.folderId,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'last_run_at': value.lastRunAt,

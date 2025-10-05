@@ -467,38 +467,6 @@ class FolderOut(BaseModel):
     bookmark_count: int = 0
 
 
-class BookmarkTagsUpdate(BaseModel):
-    tags: List[str] = Field(default_factory=list)
-
-
-class BulkBookmarkTagUpdate(BaseModel):
-    bookmark_ids: List[UUID] = Field(..., min_length=1)
-    tags: List[str] = Field(default_factory=list)
-    clear: bool = False
-
-
-class BookmarkTagSummary(BaseModel):
-    bookmark_id: str
-    tags: List[TagOut] = Field(default_factory=list)
-
-
-class BookmarkFolderUpdate(BaseModel):
-    folder_id: Optional[str] = None
-    folder_name: Optional[str] = Field(default=None, min_length=1)
-    instapaper_folder_id: Optional[str] = None
-
-
-class BulkBookmarkFolderUpdate(BaseModel):
-    bookmark_ids: List[UUID] = Field(..., min_length=1)
-    folder_id: Optional[str] = None
-    instapaper_folder_id: Optional[str] = None
-
-
-class BookmarkFolderSummary(BaseModel):
-    bookmark_id: str
-    folder: Optional[FolderOut] = None
-
-
 class AuditLogOut(BaseModel):
     id: str
     entity_type: str
