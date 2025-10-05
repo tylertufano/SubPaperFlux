@@ -140,6 +140,11 @@ describe("Nav component", () => {
     ).toBe(true);
     expect(
       accountDropdowns.some((dropdown) =>
+        within(dropdown).queryByText("Folders & Tags"),
+      ),
+    ).toBe(true);
+    expect(
+      accountDropdowns.some((dropdown) =>
         within(dropdown).queryByText("Metrics"),
       ),
     ).toBe(true);

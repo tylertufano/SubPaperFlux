@@ -14,5 +14,7 @@
   "job_schedules_field_publish_tags_help": "Wählen Sie optionale Tags für veröffentlichte Artikel.",
   "job_schedules_field_publish_folder": "Ordnerüberschreibung",
   "job_schedules_field_publish_folder_help": "Wählen Sie einen Ordner für veröffentlichte Artikel (optional).",
-  "job_schedules_warning_publish_folder_override": "Dieser Zeitplan überschreibt beim Ausführen den Ordner des Feeds."
+  "job_schedules_warning_publish_folder_override": "Dieser Zeitplan überschreibt beim Ausführen den Ordner des Feeds.",
+  "nav_folders_tags": "Ordner & Tags",
+  "folders_tags_title": "Ordner & Tags"
 }

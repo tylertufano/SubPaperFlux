@@ -35,7 +35,6 @@ vi.mock('../components', async () => {
   return {
     __esModule: true,
     ...actual,
-    BulkTagModal: () => null,
     ProgressModal: actual.ProgressModal,
     BulkPublishModal: actual.BulkPublishModal,
     Alert: ({ kind, message }: { kind: string; message: React.ReactNode }) => (

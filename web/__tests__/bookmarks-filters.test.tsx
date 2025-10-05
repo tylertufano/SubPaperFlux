@@ -4,20 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Bookmarks from '../pages/bookmarks'
 import { I18nProvider } from '../lib/i18n'
 
-const {
-  useSWRMock,
-  mutateBookmarksMock,
-  mutateTagsMock,
-  mutateFoldersMock,
-  mutatePreviewMock,
-  updateTagMock,
-} = vi.hoisted(() => ({
+const { useSWRMock, mutateBookmarksMock, mutatePreviewMock } = vi.hoisted(() => ({
   useSWRMock: vi.fn(),
   mutateBookmarksMock: vi.fn(),
-  mutateTagsMock: vi.fn(),
-  mutateFoldersMock: vi.fn(),
   mutatePreviewMock: vi.fn(),
-  updateTagMock: vi.fn(),
 }))
 
 const { useSessionMock } = vi.hoisted(() => ({
@@ -66,14 +56,6 @@ vi.mock('../lib/openapi', () => ({
   v1: {
     listBookmarksV1BookmarksGet: vi.fn(),
     bulkDeleteBookmarksV1BookmarksBulkDeletePost: vi.fn(),
-    listTagsBookmarksTagsGet: vi.fn(),
-    createTagBookmarksTagsPost: vi.fn(),
-    updateTagBookmarksTagsTagIdPut: (...args: any[]) => updateTagMock(...args),
-    deleteTagBookmarksTagsTagIdDelete: vi.fn(),
-    listFoldersBookmarksFoldersGet: vi.fn(),
-    createFolderBookmarksFoldersPost: vi.fn(),
-    updateFolderBookmarksFoldersFolderIdPut: vi.fn(),
-    deleteFolderBookmarksFoldersFolderIdDelete: vi.fn(),
     listFeedsV1V1FeedsGet: vi.fn(),
     previewBookmarkV1BookmarksBookmarkIdPreviewGet: vi.fn(),
   },
@@ -83,11 +65,7 @@ describe('Bookmarks filters and pagination', () => {
   beforeEach(() => {
     useSWRMock.mockReset()
     mutateBookmarksMock.mockReset()
-    mutateTagsMock.mockReset()
-    mutateFoldersMock.mockReset()
     mutatePreviewMock.mockReset()
-    updateTagMock.mockReset()
-    updateTagMock.mockResolvedValue({})
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
       data: { user: { permissions: ['bookmarks:read'] } },
@@ -113,18 +91,6 @@ describe('Bookmarks filters and pagination', () => {
       total: 2,
       totalPages: 3,
       hasNext: true,
-    }
-
-    const tagsData = {
-      items: [
-        { id: 'tag-1', name: 'Tag One', bookmark_count: 5 },
-      ],
-    }
-
-    const foldersData = {
-      items: [
-        { id: 'folder-1', name: 'Folder One', bookmark_count: 8, instapaper_folder_id: '111' },
-      ],
     }
 
     useSWRMock.mockImplementation((key: any) => {
@@ -155,27 +121,9 @@ describe('Bookmarks filters and pagination', () => {
         }
       }
 
-      if (Array.isArray(key) && key[0] === '/v1/bookmarks/tags') {
-        return {
-          data: tagsData,
-          error: undefined,
-          isLoading: false,
-          mutate: mutateTagsMock,
-        }
-      }
-
-      if (Array.isArray(key) && key[0] === '/v1/bookmarks/folders') {
-        return {
-          data: foldersData,
-          error: undefined,
-          isLoading: false,
-          mutate: mutateFoldersMock,
-        }
-      }
-
       if (Array.isArray(key) && key[0] === '/v1/feeds') {
         return {
-          data: { items: [] },
+          data: { items: [{ id: 'feed-1', url: 'https://example.com/feed' }] },
           error: undefined,
           isLoading: false,
           mutate: vi.fn(),
@@ -203,30 +151,32 @@ describe('Bookmarks filters and pagination', () => {
     )
   }
 
-  it('passes filter state to useSWR keys and resets pagination', async () => {
+  it('updates SWR keys when filters, pagination, and sorting change', async () => {
     renderBookmarks()
 
     await screen.findByText('Bookmark One')
 
-    const getBookmarkKeys = () => useSWRMock.mock.calls
-      .filter(([key]) => Array.isArray(key) && key[0] === '/v1/bookmarks')
-      .map(([key]) => key as any[])
+    const getBookmarkKeys = () =>
+      useSWRMock.mock.calls
+        .filter(([key]) => Array.isArray(key) && key[0] === '/v1/bookmarks')
+        .map(([key]) => key as any[])
 
     let bookmarkCallCount = getBookmarkKeys().length
 
-    const expectNewBookmarkCall = async (predicate: (key: any[]) => boolean) => {
+    const expectLatestBookmarkKey = async (assert: (key: any[]) => void) => {
       await waitFor(() => {
-        const newKeys = getBookmarkKeys().slice(bookmarkCallCount)
-        expect(newKeys.some(predicate)).toBe(true)
+        expect(getBookmarkKeys().length).toBeGreaterThan(bookmarkCallCount)
       })
       bookmarkCallCount = getBookmarkKeys().length
+      const latestKey = getBookmarkKeys()[bookmarkCallCount - 1]
+      assert(latestKey)
     }
 
-    // Move to page 2 and verify the key captures pagination.
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await expectNewBookmarkCall((key) => key[1] === 2)
+    await expectLatestBookmarkKey((key) => {
+      expect(key[1]).toBe(2)
+    })
 
-    // Submit a keyword search, expect mutate and page reset to 1.
     const searchForm = screen.getByRole('search')
     fireEvent.change(within(searchForm).getByLabelText('Keyword'), { target: { value: 'read later' } })
     fireEvent.click(within(searchForm).getByRole('button', { name: 'Search' }))
@@ -234,50 +184,27 @@ describe('Bookmarks filters and pagination', () => {
     await waitFor(() => {
       expect(mutateBookmarksMock).toHaveBeenCalledTimes(1)
     })
-    await expectNewBookmarkCall((key) => key[1] === 1 && key[2] === 'read later')
+    await expectLatestBookmarkKey((key) => {
+      expect(key[1]).toBe(1)
+      expect(key[2]).toBe('read later')
+    })
 
-    // Apply tag filter and ensure pagination resets.
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await expectNewBookmarkCall((key) => key[1] === 2 && key[2] === 'read later')
+    const feedSelect = within(searchForm).getByLabelText('Feed') as HTMLSelectElement
+    fireEvent.change(feedSelect, { target: { value: 'feed-1' } })
+    expect(feedSelect).toHaveValue('feed-1')
+    await expectLatestBookmarkKey((key) => {
+      expect(key[8]).toBe('feed-1')
+    })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tag One' }))
-    await expectNewBookmarkCall((key) => key[1] === 1 && key[9] === 'tag-1')
-
-    // Apply folder filter and ensure pagination resets.
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await expectNewBookmarkCall((key) => key[1] === 2 && key[9] === 'tag-1')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Folder One' }))
-    await expectNewBookmarkCall((key) => key[1] === 1 && key[9] === 'tag-1' && key[10] === 'folder-1')
-
-    // Toggle sort via column header and ensure pagination resets and mutate fires again.
     fireEvent.click(screen.getByRole('button', { name: /^Title/ }))
-    await expectNewBookmarkCall((key) => key[1] === 1 && key[13] === 'title' && key[14] === 'asc')
+    await expectLatestBookmarkKey((key) => {
+      expect(key[1]).toBe(1)
+      expect(key[11]).toBe('title')
+      expect(key[12]).toBe('asc')
+    })
 
     await waitFor(() => {
       expect(mutateBookmarksMock).toHaveBeenCalledTimes(2)
     })
-
-    // Edit a tag to ensure banner messaging and SWR mutations occur without network calls.
-    const tagListItem = screen.getByText('Tag One').closest('li') as HTMLElement
-    fireEvent.click(within(tagListItem).getByRole('button', { name: 'Edit' }))
-
-    fireEvent.change(within(tagListItem).getByLabelText('Edit tag Tag One'), { target: { value: 'Tag One Updated' } })
-    fireEvent.click(within(tagListItem).getByRole('button', { name: 'Save' }))
-
-    await waitFor(() => {
-      expect(updateTagMock).toHaveBeenCalledWith({ tagId: 'tag-1', tagUpdate: { name: 'Tag One Updated' } })
-    })
-
-    await waitFor(() => {
-      expect(mutateTagsMock).toHaveBeenCalledTimes(1)
-    })
-
-    await waitFor(() => {
-      expect(mutateBookmarksMock).toHaveBeenCalledTimes(3)
-    })
-
-    await screen.findByRole('alert')
-    await screen.findByText('Updated tag Tag One Updated.')
   })
 })

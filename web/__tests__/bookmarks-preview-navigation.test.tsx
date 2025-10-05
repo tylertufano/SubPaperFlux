@@ -4,11 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Bookmarks from '../pages/bookmarks'
 import { I18nProvider } from '../lib/i18n'
 
-const { useSWRMock, mutateBookmarksMock, mutateTagsMock, mutateFoldersMock, mutatePreviewMock, useSessionMock } = vi.hoisted(() => ({
+const { useSWRMock, mutateBookmarksMock, mutatePreviewMock, useSessionMock } = vi.hoisted(() => ({
   useSWRMock: vi.fn(),
   mutateBookmarksMock: vi.fn(),
-  mutateTagsMock: vi.fn(),
-  mutateFoldersMock: vi.fn(),
   mutatePreviewMock: vi.fn(),
   useSessionMock: vi.fn(() => ({
     data: { user: { permissions: ['bookmarks:read'] } },
@@ -33,8 +31,6 @@ vi.mock('../lib/openapi', () => ({
   v1: {
     listBookmarksV1BookmarksGet: vi.fn(),
     listFeedsV1V1FeedsGet: vi.fn(),
-    listTagsBookmarksTagsGet: vi.fn(),
-    listFoldersBookmarksFoldersGet: vi.fn(),
     previewBookmarkV1BookmarksBookmarkIdPreviewGet: vi.fn(),
   },
 }))
@@ -51,7 +47,6 @@ vi.mock('../components', async () => {
     __esModule: true,
     ...actual,
     BulkPublishModal: () => null,
-    BulkTagModal: () => null,
     ProgressModal: () => null,
     Alert: ({ message }: { message: React.ReactNode }) => (
       <div data-testid="alert">{message}</div>
@@ -70,8 +65,6 @@ describe('Bookmarks preview keyboard navigation', () => {
   beforeEach(() => {
     useSWRMock.mockReset()
     mutateBookmarksMock.mockReset()
-    mutateTagsMock.mockReset()
-    mutateFoldersMock.mockReset()
     mutatePreviewMock.mockReset()
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
@@ -125,24 +118,6 @@ describe('Bookmarks preview keyboard navigation', () => {
           error: undefined,
           isLoading: false,
           mutate: mutateBookmarksMock,
-        }
-      }
-
-      if (Array.isArray(key) && key[0] === '/v1/bookmarks/tags') {
-        return {
-          data: { items: [] },
-          error: undefined,
-          isLoading: false,
-          mutate: mutateTagsMock,
-        }
-      }
-
-      if (Array.isArray(key) && key[0] === '/v1/bookmarks/folders') {
-        return {
-          data: { items: [] },
-          error: undefined,
-          isLoading: false,
-          mutate: mutateFoldersMock,
         }
       }
 

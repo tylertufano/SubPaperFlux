@@ -127,6 +127,7 @@ export default function Nav() {
   const accountItems = [
     { href: '/me', label: t('nav_profile') },
     { href: '/me/tokens', label: t('nav_tokens') },
+    ...(canViewBookmarks ? [{ href: '/folders-tags', label: t('nav_folders_tags') }] : []),
     ...adminAccountItems,
     { label: t('btn_sign_out'), onClick: () => signOut() },
   ]
