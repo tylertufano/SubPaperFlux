@@ -373,6 +373,10 @@ class Feed(SQLModel, table=True):
     rss_requires_auth: bool = False
     site_config_id: Optional[str] = Field(default=None, index=True)
     owner_user_id: Optional[str] = Field(default=None, index=True)
+    last_rss_poll_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
     site_login_credential_id: Optional[str] = Field(
         default=None,
         sa_column=Column(
