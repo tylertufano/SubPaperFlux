@@ -67,6 +67,8 @@ const defaultFeeds = {
       id: "feed-1",
       url: "https://news.example.com/rss",
       pollFrequency: "1h",
+      initialLookbackPeriod: "",
+      lastRssPollAt: null,
       isPaywalled: false,
       rssRequiresAuth: false,
       tagIds: ["tag-1", "tag-2"],
@@ -199,5 +201,42 @@ describe("FeedsPage", () => {
     });
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
+  });
+
+  it("prevents editing the initial lookback after the first poll", async () => {
+    const polledFeed = {
+      items: [
+        {
+          ...defaultFeeds.items[0],
+          id: "feed-locked",
+          pollFrequency: "1h",
+          initialLookbackPeriod: "48h",
+          lastRssPollAt: "2024-06-01T00:00:00.000Z",
+        },
+      ],
+    };
+    openApiSpies.listFeeds.mockResolvedValue(polledFeed);
+
+    renderPage({ feeds: polledFeed });
+
+    const table = await screen.findByRole("table", { name: "Feeds table" });
+    const row = within(table).getByText("https://news.example.com/rss").closest("tr") as HTMLTableRowElement;
+
+    fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
+
+    expect(within(row).queryByLabelText("Initial lookback (first poll only)")).toBeNull();
+    expect(
+      within(row).getByText("Initial lookback can only be updated before the first poll runs."),
+    ).toBeInTheDocument();
+
+    const pollInput = within(row).getByLabelText("Poll frequency (e.g., 1h)") as HTMLInputElement;
+    fireEvent.change(pollInput, { target: { value: "2h" } });
+
+    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(openApiSpies.updateFeed).toHaveBeenCalledTimes(1));
+
+    const updateArgs = openApiSpies.updateFeed.mock.calls[0][0];
+    expect(updateArgs.feed).not.toHaveProperty("initialLookbackPeriod");
   });
 });

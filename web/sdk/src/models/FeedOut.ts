@@ -80,11 +80,17 @@ export interface FeedOut {
      */
     folderId?: any | null;
     /**
-     * 
+     *
      * @type {any}
      * @memberof FeedOut
      */
     tagIds?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof FeedOut
+     */
+    lastRssPollAt?: any | null;
 }
 
 /**
@@ -108,7 +114,7 @@ export function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): F
         return json;
     }
     return {
-        
+
         'id': json['id'],
         'url': json['url'],
         'pollFrequency': json['poll_frequency'],
@@ -120,6 +126,7 @@ export function FeedOutFromJSONTyped(json: any, ignoreDiscriminator: boolean): F
         'siteLoginCredentialId': !exists(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'],
         'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
         'tagIds': !exists(json, 'tag_ids') ? undefined : json['tag_ids'],
+        'lastRssPollAt': !exists(json, 'last_rss_poll_at') ? undefined : json['last_rss_poll_at'],
     };
 }
 
@@ -143,6 +150,7 @@ export function FeedOutToJSON(value?: FeedOut | null): any {
         'site_login_credential_id': value.siteLoginCredentialId,
         'folder_id': value.folderId,
         'tag_ids': value.tagIds,
+        'last_rss_poll_at': value.lastRssPollAt,
     };
 }
 

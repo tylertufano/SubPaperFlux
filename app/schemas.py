@@ -139,11 +139,20 @@ class Feed(BaseModel):
     site_login_credential_id: Optional[str] = None
     folder_id: Optional[str] = None
     tag_ids: List[str] = Field(default_factory=list)
+    last_rss_poll_at: Optional[datetime] = None
 
     @field_validator("tag_ids", mode="before")
     @classmethod
     def _validate_tag_ids(cls, value: Any) -> List[str]:
         return _validate_tag_id_sequence(value)
+
+    @model_validator(mode="after")
+    def _normalize_lookback(cls, values: "Feed") -> "Feed":  # type: ignore[override]
+        lookback = values.initial_lookback_period
+        if isinstance(lookback, str):
+            normalized = lookback.strip()
+            values.initial_lookback_period = normalized or None
+        return values
 
 
 class Credential(BaseModel):
@@ -432,6 +441,7 @@ class FeedOut(BaseModel):
     site_login_credential_id: Optional[str] = None
     folder_id: Optional[str] = None
     tag_ids: List[str] = Field(default_factory=list)
+    last_rss_poll_at: Optional[datetime] = None
 
     @field_validator("tag_ids", mode="before")
     @classmethod
