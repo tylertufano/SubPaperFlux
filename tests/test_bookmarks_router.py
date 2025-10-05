@@ -197,6 +197,206 @@ def test_tag_and_folder_catalog_endpoints():
 
     assert all(item["id"] != folder_id for item in client.get("/v1/bookmarks/folders").json())
 
+
+def test_delete_tag_cleans_publish_references():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.auth.oidc import get_current_user
+    from app.models import Feed, FeedTagLink, Job, JobSchedule, Tag
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        feed = Feed(owner_user_id="u1", url="https://example.com/rss.xml", poll_frequency="1h")
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+
+        keep_tag = Tag(owner_user_id="u1", name="Keep")
+        personal_tag = Tag(owner_user_id="u1", name="Personal")
+        global_tag = Tag(owner_user_id=None, name="Global")
+        session.add(keep_tag)
+        session.add(personal_tag)
+        session.add(global_tag)
+        session.commit()
+        session.refresh(keep_tag)
+        session.refresh(personal_tag)
+        session.refresh(global_tag)
+
+        session.add(FeedTagLink(feed_id=feed.id, tag_id=personal_tag.id, position=0))
+        session.commit()
+
+        personal_schedule = JobSchedule(
+            schedule_name="personal-publish",
+            job_type="publish",
+            payload={"tags": [personal_tag.id, keep_tag.id]},
+            frequency="1h",
+            owner_user_id="u1",
+        )
+        global_schedule = JobSchedule(
+            schedule_name="global-publish",
+            job_type="publish",
+            payload={"tags": [global_tag.id]},
+            frequency="1h",
+            owner_user_id=None,
+        )
+        session.add(personal_schedule)
+        session.add(global_schedule)
+        session.commit()
+        session.refresh(personal_schedule)
+        session.refresh(global_schedule)
+
+        personal_job = Job(type="publish", payload={"tags": [personal_tag.id]}, owner_user_id="u1")
+        global_job = Job(type="publish", payload={"tags": [global_tag.id]}, owner_user_id=None)
+        session.add(personal_job)
+        session.add(global_job)
+        session.commit()
+        session.refresh(personal_job)
+        session.refresh(global_job)
+
+        personal_tag_id = personal_tag.id
+        keep_tag_id = keep_tag.id
+        global_tag_id = global_tag.id
+        personal_schedule_id = personal_schedule.id
+        global_schedule_id = global_schedule.id
+        personal_job_id = personal_job.id
+        global_job_id = global_job.id
+
+    client = TestClient(app)
+
+    delete_personal = client.delete(f"/v1/bookmarks/tags/{personal_tag_id}")
+    assert delete_personal.status_code == 204
+
+    with next(get_session()) as session:
+        assert (
+            session.exec(select(FeedTagLink).where(FeedTagLink.tag_id == personal_tag_id)).first()
+            is None
+        )
+        refreshed_schedule = session.get(JobSchedule, personal_schedule_id)
+        assert refreshed_schedule is not None
+        assert refreshed_schedule.payload.get("tags") == [keep_tag_id]
+
+        refreshed_job = session.get(Job, personal_job_id)
+        assert refreshed_job is not None
+        assert refreshed_job.payload.get("tags") == []
+
+        untouched_schedule = session.get(JobSchedule, global_schedule_id)
+        assert untouched_schedule is not None
+        assert untouched_schedule.payload.get("tags") == [global_tag_id]
+
+    delete_global = client.delete(f"/v1/bookmarks/tags/{global_tag_id}")
+    assert delete_global.status_code == 204
+
+    with next(get_session()) as session:
+        refreshed_schedule = session.get(JobSchedule, global_schedule_id)
+        assert refreshed_schedule is not None
+        assert refreshed_schedule.payload.get("tags") == []
+
+        refreshed_job = session.get(Job, global_job_id)
+        assert refreshed_job is not None
+        assert refreshed_job.payload.get("tags") == []
+
+
+def test_delete_folder_clears_publish_overrides():
+    from app.db import init_db, get_session
+    from app.main import create_app
+    from app.auth.oidc import get_current_user
+    from app.models import Feed, Folder, Job, JobSchedule
+
+    app = create_app()
+    init_db()
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u1"}
+
+    with next(get_session()) as session:
+        feed = Feed(owner_user_id="u1", url="https://example.com/rss.xml", poll_frequency="1h")
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+
+        personal_folder = Folder(owner_user_id="u1", name="Personal")
+        global_folder = Folder(owner_user_id=None, name="Global")
+        session.add(personal_folder)
+        session.add(global_folder)
+        session.commit()
+        session.refresh(personal_folder)
+        session.refresh(global_folder)
+
+        feed.folder_id = personal_folder.id
+        session.add(feed)
+        session.commit()
+
+        personal_schedule = JobSchedule(
+            schedule_name="personal-folder",
+            job_type="publish",
+            payload={"folder_id": personal_folder.id},
+            frequency="1h",
+            owner_user_id="u1",
+        )
+        global_schedule = JobSchedule(
+            schedule_name="global-folder",
+            job_type="publish",
+            payload={"folder_id": global_folder.id},
+            frequency="1h",
+            owner_user_id=None,
+        )
+        session.add(personal_schedule)
+        session.add(global_schedule)
+        session.commit()
+        session.refresh(personal_schedule)
+        session.refresh(global_schedule)
+
+        personal_job = Job(type="publish", payload={"folder_id": personal_folder.id}, owner_user_id="u1")
+        global_job = Job(type="publish", payload={"folder_id": global_folder.id}, owner_user_id=None)
+        session.add(personal_job)
+        session.add(global_job)
+        session.commit()
+        session.refresh(personal_job)
+        session.refresh(global_job)
+
+        feed_id = feed.id
+        personal_folder_id = personal_folder.id
+        global_folder_id = global_folder.id
+        personal_schedule_id = personal_schedule.id
+        global_schedule_id = global_schedule.id
+        personal_job_id = personal_job.id
+        global_job_id = global_job.id
+
+    client = TestClient(app)
+
+    delete_personal = client.delete(f"/v1/bookmarks/folders/{personal_folder_id}")
+    assert delete_personal.status_code == 204
+
+    with next(get_session()) as session:
+        refreshed_feed = session.get(Feed, feed_id)
+        assert refreshed_feed is not None
+        assert refreshed_feed.folder_id is None
+
+        refreshed_schedule = session.get(JobSchedule, personal_schedule_id)
+        assert refreshed_schedule is not None
+        assert "folder_id" not in refreshed_schedule.payload
+
+        refreshed_job = session.get(Job, personal_job_id)
+        assert refreshed_job is not None
+        assert "folder_id" not in refreshed_job.payload
+
+        untouched_schedule = session.get(JobSchedule, global_schedule_id)
+        assert untouched_schedule is not None
+        assert untouched_schedule.payload.get("folder_id") == global_folder_id
+
+    delete_global = client.delete(f"/v1/bookmarks/folders/{global_folder_id}")
+    assert delete_global.status_code == 204
+
+    with next(get_session()) as session:
+        refreshed_schedule = session.get(JobSchedule, global_schedule_id)
+        assert refreshed_schedule is not None
+        assert "folder_id" not in refreshed_schedule.payload
+
+        refreshed_job = session.get(Job, global_job_id)
+        assert refreshed_job is not None
+        assert "folder_id" not in refreshed_job.payload
+
 def test_bulk_publish_stream_success(monkeypatch):
     from app.routers import bookmarks as bookmarks_router
 

@@ -33,7 +33,10 @@ from ..models import (
     Bookmark,
     Credential,
     Feed,
+    FeedTagLink,
     Folder,
+    Job,
+    JobSchedule,
     Tag,
 )
 from ..jobs.util_subpaperflux import (
@@ -805,6 +808,50 @@ def delete_tag(tag_id: str, current_user=Depends(get_current_user), session=Depe
         attempted_action="delete",
         permission=PERMISSION_MANAGE_BOOKMARKS,
     )
+    owner_id = tag.owner_user_id
+
+    session.exec(delete(FeedTagLink).where(FeedTagLink.tag_id == tag.id))
+
+    schedule_stmt = select(JobSchedule).where(JobSchedule.job_type == "publish")
+    if owner_id is None:
+        schedule_stmt = schedule_stmt.where(JobSchedule.owner_user_id.is_(None))
+    else:
+        schedule_stmt = schedule_stmt.where(JobSchedule.owner_user_id == owner_id)
+    schedules = session.exec(schedule_stmt).all()
+    for schedule in schedules:
+        payload = dict(schedule.payload or {})
+        original_tags = list(payload.get("tags") or [])
+        if not original_tags:
+            continue
+        filtered_tags = [value for value in original_tags if value != tag.id]
+        if filtered_tags == original_tags:
+            continue
+        payload["tags"] = filtered_tags
+        if not filtered_tags:
+            payload["tags"] = []
+        schedule.payload = payload
+        session.add(schedule)
+
+    job_stmt = select(Job).where(Job.type == "publish")
+    if owner_id is None:
+        job_stmt = job_stmt.where(Job.owner_user_id.is_(None))
+    else:
+        job_stmt = job_stmt.where(Job.owner_user_id == owner_id)
+    jobs = session.exec(job_stmt).all()
+    for job in jobs:
+        payload = dict(job.payload or {})
+        original_tags = list(payload.get("tags") or [])
+        if not original_tags:
+            continue
+        filtered_tags = [value for value in original_tags if value != tag.id]
+        if filtered_tags == original_tags:
+            continue
+        payload["tags"] = filtered_tags
+        if not filtered_tags:
+            payload["tags"] = []
+        job.payload = payload
+        session.add(job)
+
     session.delete(tag)
     session.commit()
     return None
@@ -923,6 +970,48 @@ def delete_folder(folder_id: str, current_user=Depends(get_current_user), sessio
         attempted_action="delete",
         permission=PERMISSION_MANAGE_BOOKMARKS,
     )
+    owner_id = folder.owner_user_id
+
+    feed_stmt = select(Feed).where(Feed.folder_id == folder.id)
+    if owner_id is None:
+        feed_stmt = feed_stmt.where(Feed.owner_user_id.is_(None))
+    else:
+        feed_stmt = feed_stmt.where(Feed.owner_user_id == owner_id)
+    feeds = session.exec(feed_stmt).all()
+    for feed in feeds:
+        feed.folder_id = None
+        session.add(feed)
+
+    schedule_stmt = select(JobSchedule).where(JobSchedule.job_type == "publish")
+    if owner_id is None:
+        schedule_stmt = schedule_stmt.where(JobSchedule.owner_user_id.is_(None))
+    else:
+        schedule_stmt = schedule_stmt.where(JobSchedule.owner_user_id == owner_id)
+    schedules = session.exec(schedule_stmt).all()
+    for schedule in schedules:
+        payload = dict(schedule.payload or {})
+        folder_value = payload.get("folder_id")
+        if folder_value != folder.id:
+            continue
+        payload.pop("folder_id", None)
+        schedule.payload = payload
+        session.add(schedule)
+
+    job_stmt = select(Job).where(Job.type == "publish")
+    if owner_id is None:
+        job_stmt = job_stmt.where(Job.owner_user_id.is_(None))
+    else:
+        job_stmt = job_stmt.where(Job.owner_user_id == owner_id)
+    jobs = session.exec(job_stmt).all()
+    for job in jobs:
+        payload = dict(job.payload or {})
+        folder_value = payload.get("folder_id")
+        if folder_value != folder.id:
+            continue
+        payload.pop("folder_id", None)
+        job.payload = payload
+        session.add(job)
+
     session.delete(folder)
     session.commit()
     return None
