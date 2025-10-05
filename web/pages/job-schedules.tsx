@@ -315,7 +315,6 @@ function initPayloadState(
     case "rss_poll":
       return {
         feed_id: payload?.feed_id ?? "",
-        lookback: payload?.lookback ?? "",
         site_login_pair: initialSiteLoginPair,
       };
     case "publish":
@@ -544,7 +543,6 @@ function ScheduleForm({
       }
     } else if (jobType === "rss_poll") {
       const feedId = (payloadState.feed_id || "").toString().trim();
-      const lookback = (payloadState.lookback || "").toString().trim();
       if (!feedId)
         nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
       const siteLoginValue = (payloadState.site_login_pair || "")
@@ -552,7 +550,6 @@ function ScheduleForm({
         .trim();
       const siteLogin = parseSiteLoginKey(siteLoginValue);
       if (feedId) payload.feed_id = feedId;
-      if (lookback) payload.lookback = lookback;
       if (siteLogin) {
         payload.site_login_pair = toSiteLoginKey(siteLogin);
       }
@@ -958,20 +955,6 @@ function ScheduleForm({
                   {errors["payload.feed_id"]}
                 </p>
               )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="schedule-rss-lookback"
-              >
-                {t("job_schedules_field_lookback")}
-              </label>
-              <input
-                id="schedule-rss-lookback"
-                className="input"
-                value={payloadState.lookback || ""}
-                onChange={(e) => updatePayload("lookback", e.target.value)}
-              />
             </div>
             <div className="flex flex-col">
               <label

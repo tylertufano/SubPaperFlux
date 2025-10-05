@@ -403,7 +403,7 @@ Credentials (DB-backed)
 Job Types (preview)
 - `login`: payload `{ "site_login_pair": "<credId>::<siteId>" }`
 - `miniflux_refresh`: payload `{ "miniflux_id": "<DB_MINIFLUX_ID>", "feed_ids": [1,2,3], "site_login_pair": "<credId>::<siteId>" }`
-- `rss_poll`: payload `{ "feed_id": "<DB_FEED_ID>", "lookback": "24h", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }` (collects matching entries and stores them as bookmarks in the local cache)
+- `rss_poll`: payload `{ "feed_id": "<DB_FEED_ID>", "is_paywalled": false, "rss_requires_auth": false, "site_login_pair": "<credId>::<siteId>" }` (collects matching entries and stores them as bookmarks in the local cache)
 - `publish`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "feed_id": "Optional <DB_FEED_ID>", "folder": "Optional" }` (consumes stored bookmarks and sends them to Instapaper; omit `feed_id` to publish across all feeds, or include it to restrict the run to a single feed)
 - `retention`: payload `{ "instapaper_id": "<DB_INSTAPAPER_ID>", "older_than": "30d", "feed_id": "Optional" }` (requires an Instapaper credential and can optionally scope to a specific feed when pruning)
 

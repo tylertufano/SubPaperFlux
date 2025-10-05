@@ -12,6 +12,7 @@ from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..jobs import known_job_types
 from ..jobs.scheduler import parse_frequency
+from ..jobs.validation import scrub_legacy_schedule_payload
 from ..models import Folder, Job, JobSchedule, Tag
 from ..schemas import (
     JobOut,
@@ -226,7 +227,7 @@ def _validate_publish_targets(
 
 
 def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
-    payload = dict(schedule.payload or {})
+    payload = scrub_legacy_schedule_payload(schedule.payload)
     tags, folder_id = _normalize_schedule_targets(payload)
     if schedule.job_type != "publish":
         payload.pop("tags", None)
@@ -412,7 +413,7 @@ def create_job_schedule(
 
     _ensure_unique_schedule_name(session, owner_id, body.schedule_name)
 
-    payload = dict(body.payload or {})
+    payload = scrub_legacy_schedule_payload(body.payload)
     if body.tags is not None:
         payload["tags"] = body.tags
     if body.folder_id is not None or "folder_id" in payload:
@@ -494,9 +495,9 @@ def update_job_schedule(
 
     prospective_job_type = updates.get("job_type", schedule.job_type)
 
-    base_payload = dict(schedule.payload or {})
+    base_payload = scrub_legacy_schedule_payload(schedule.payload)
     if raw_payload_update is not _SENTINEL:
-        base_payload.update(dict(raw_payload_update or {}))
+        base_payload.update(scrub_legacy_schedule_payload(raw_payload_update))
     if tags_update is not _SENTINEL:
         base_payload["tags"] = tags_update or []
     if folder_update is not _SENTINEL:
@@ -526,7 +527,7 @@ def update_job_schedule(
         or folder_update is not _SENTINEL
     )
     if payload_changed:
-        schedule.payload = base_payload
+        schedule.payload = scrub_legacy_schedule_payload(base_payload)
     if "frequency" in updates:
         schedule.frequency = updates["frequency"]
     if "next_run_at" in updates:
@@ -591,7 +592,7 @@ def run_job_schedule_now(
 
     job = Job(
         type=schedule.job_type,
-        payload=dict(schedule.payload or {}),
+        payload=scrub_legacy_schedule_payload(schedule.payload),
         status="queued",
         owner_user_id=schedule.owner_user_id,
         details={

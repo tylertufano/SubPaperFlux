@@ -75,7 +75,6 @@ const defaultSchedule = {
   jobType: "rss_poll",
   payload: {
     feed_id: "feed-1",
-    lookback: "12h",
     site_login_pair: "cred-login::site-1",
   },
   frequency: "1h",
@@ -384,11 +383,6 @@ describe("JobSchedulesPage", () => {
     )) as HTMLSelectElement;
     fireEvent.change(feedSelect, { target: { value: "feed-1" } });
 
-    const lookbackInput = screen.getByLabelText(
-      "Lookback window",
-    ) as HTMLInputElement;
-    fireEvent.change(lookbackInput, { target: { value: "6h" } });
-
     const siteLoginSelect = getSiteLoginSelect();
     expect(siteLoginSelect).not.toBeNull();
 
@@ -408,7 +402,6 @@ describe("JobSchedulesPage", () => {
         isActive: true,
         payload: expect.objectContaining({
           feed_id: "feed-1",
-          lookback: "6h",
           site_login_pair: "cred-login::site-1",
         }),
       }),
@@ -418,6 +411,7 @@ describe("JobSchedulesPage", () => {
     expect(createdPayload.instapaper_id).toBeUndefined();
     expect(createdPayload.is_paywalled).toBeUndefined();
     expect(createdPayload.rss_requires_auth).toBeUndefined();
+    expect(createdPayload.lookback).toBeUndefined();
 
     await waitFor(() => expect(mutate).toHaveBeenCalled());
     expect(await screen.findByRole("status")).toHaveTextContent(
@@ -512,14 +506,13 @@ describe("JobSchedulesPage", () => {
         isActive: false,
         payload: expect.objectContaining({
           feed_id: "feed-2",
-          lookback: "12h",
         }),
       }),
     });
     const updatedPayload =
       openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
     expect(updatedPayload.site_login_pair).toBeUndefined();
-    expect(updatedPayload.lookback).toBe("12h");
+    expect(updatedPayload.lookback).toBeUndefined();
     expect(updatedPayload.is_paywalled).toBeUndefined();
     expect(updatedPayload.rss_requires_auth).toBeUndefined();
 
