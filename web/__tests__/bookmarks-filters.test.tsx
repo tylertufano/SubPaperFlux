@@ -44,9 +44,7 @@ vi.mock('../components', async () => {
     Alert: ({ message }: { message: React.ReactNode }) => (
       <div role="alert">{message}</div>
     ),
-    BulkFolderModal: () => null,
     BulkPublishModal: () => null,
-    BulkTagModal: () => null,
     EmptyState: ({ message, action }: { message: React.ReactNode; action?: React.ReactNode }) => (
       <div>
         <div>{message}</div>
@@ -72,13 +70,10 @@ vi.mock('../lib/openapi', () => ({
     createTagBookmarksTagsPost: vi.fn(),
     updateTagBookmarksTagsTagIdPut: (...args: any[]) => updateTagMock(...args),
     deleteTagBookmarksTagsTagIdDelete: vi.fn(),
-    getBookmarkTagsBookmarksBookmarkIdTagsGet: vi.fn(),
-    bulkUpdateBookmarkTagsV1BookmarksBulkTagsPost: vi.fn(),
     listFoldersBookmarksFoldersGet: vi.fn(),
     createFolderBookmarksFoldersPost: vi.fn(),
     updateFolderBookmarksFoldersFolderIdPut: vi.fn(),
     deleteFolderBookmarksFoldersFolderIdDelete: vi.fn(),
-    bulkUpdateBookmarkFoldersV1BookmarksBulkFoldersPost: vi.fn(),
     listFeedsV1V1FeedsGet: vi.fn(),
     previewBookmarkV1BookmarksBookmarkIdPreviewGet: vi.fn(),
   },

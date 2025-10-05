@@ -19,17 +19,19 @@ const { useSessionMock } = vi.hoisted(() => ({
 }))
 
 const {
-  getBookmarkTagsMock,
-  updateBookmarkTagsMock,
-  getBookmarkFolderMock,
-  updateBookmarkFolderMock,
-  deleteBookmarkFolderMock,
+  createTagMock,
+  updateTagMock,
+  deleteTagMock,
+  createFolderMock,
+  updateFolderMock,
+  deleteFolderMock,
 } = vi.hoisted(() => ({
-  getBookmarkTagsMock: vi.fn(),
-  updateBookmarkTagsMock: vi.fn(),
-  getBookmarkFolderMock: vi.fn(),
-  updateBookmarkFolderMock: vi.fn(),
-  deleteBookmarkFolderMock: vi.fn(),
+  createTagMock: vi.fn(),
+  updateTagMock: vi.fn(),
+  deleteTagMock: vi.fn(),
+  createFolderMock: vi.fn(),
+  updateFolderMock: vi.fn(),
+  deleteFolderMock: vi.fn(),
 }))
 
 vi.mock('swr', () => ({
@@ -51,18 +53,13 @@ vi.mock('../lib/openapi', () => ({
     listFeedsV1V1FeedsGet: vi.fn(),
     listTagsBookmarksTagsGet: vi.fn(),
     listFoldersBookmarksFoldersGet: vi.fn(),
-    createTagBookmarksTagsPost: vi.fn(),
-    updateTagBookmarksTagsTagIdPut: vi.fn(),
-    deleteTagBookmarksTagsTagIdDelete: vi.fn(),
-    createFolderBookmarksFoldersPost: vi.fn(),
-    updateFolderBookmarksFoldersFolderIdPut: vi.fn(),
-    deleteFolderBookmarksFoldersFolderIdDelete: vi.fn(),
+    createTagBookmarksTagsPost: (...args: any[]) => createTagMock(...args),
+    updateTagBookmarksTagsTagIdPut: (...args: any[]) => updateTagMock(...args),
+    deleteTagBookmarksTagsTagIdDelete: (...args: any[]) => deleteTagMock(...args),
+    createFolderBookmarksFoldersPost: (...args: any[]) => createFolderMock(...args),
+    updateFolderBookmarksFoldersFolderIdPut: (...args: any[]) => updateFolderMock(...args),
+    deleteFolderBookmarksFoldersFolderIdDelete: (...args: any[]) => deleteFolderMock(...args),
     bulkDeleteBookmarksV1BookmarksBulkDeletePost: vi.fn(),
-    getBookmarkTagsBookmarksBookmarkIdTagsGet: (...args: any[]) => getBookmarkTagsMock(...args),
-    updateBookmarkTagsBookmarksBookmarkIdTagsPut: (...args: any[]) => updateBookmarkTagsMock(...args),
-    getBookmarkFolderBookmarksBookmarkIdFolderGet: (...args: any[]) => getBookmarkFolderMock(...args),
-    updateBookmarkFolderBookmarksBookmarkIdFolderPut: (...args: any[]) => updateBookmarkFolderMock(...args),
-    deleteBookmarkFolderBookmarksBookmarkIdFolderDelete: (...args: any[]) => deleteBookmarkFolderMock(...args),
   },
 }))
 
@@ -71,7 +68,6 @@ vi.mock('../components', async () => {
   return {
     __esModule: true,
     ...actual,
-    BulkTagModal: () => null,
     Alert: ({ kind, message }: { kind: string; message: React.ReactNode }) => (
       <div data-testid="alert" data-kind={kind}>{message}</div>
     ),
@@ -105,22 +101,23 @@ function renderBookmarks() {
   )
 }
 
-describe('Bookmark tag assignment and folder moves', () => {
+describe('Tag and folder catalogs', () => {
   beforeEach(() => {
     useSWRMock.mockReset()
     mutateBookmarksMock.mockReset()
     mutateTagsMock.mockReset()
     mutateFoldersMock.mockReset()
-    getBookmarkTagsMock.mockReset()
-    updateBookmarkTagsMock.mockReset()
-    getBookmarkFolderMock.mockReset()
-    updateBookmarkFolderMock.mockReset()
-    deleteBookmarkFolderMock.mockReset()
     useSessionMock.mockReset()
     useSessionMock.mockReturnValue({
       data: { user: { permissions: ['bookmarks:read'] } },
       status: 'authenticated' as const,
     })
+    createTagMock.mockReset()
+    updateTagMock.mockReset()
+    deleteTagMock.mockReset()
+    createFolderMock.mockReset()
+    updateFolderMock.mockReset()
+    deleteFolderMock.mockReset()
 
     const bookmarksData = {
       items: [
@@ -136,10 +133,11 @@ describe('Bookmark tag assignment and folder moves', () => {
       hasNext: false,
     }
     const tagsData = { items: [{ id: 'tag-1', name: 'Initial Tag', bookmark_count: 1 }] }
-    const foldersData = { items: [
-      { id: 'folder-1', name: 'Reading List', bookmark_count: 2 },
-      { id: 'folder-2', name: 'Later', bookmark_count: 0 },
-    ] }
+    const foldersData = {
+      items: [
+        { id: 'folder-1', name: 'Reading List', bookmark_count: 2, instapaper_folder_id: '123' },
+      ],
+    }
 
     useSWRMock.mockImplementation((key: any) => {
       if (Array.isArray(key) && key[0] === '/v1/bookmarks') {
@@ -195,72 +193,58 @@ describe('Bookmark tag assignment and folder moves', () => {
     cleanup()
   })
 
-  it('updates bookmark tags through the assignment modal', async () => {
-    getBookmarkTagsMock.mockResolvedValueOnce([
-      { id: 'tag-1', name: 'Initial Tag' },
-    ])
-    updateBookmarkTagsMock.mockResolvedValueOnce([])
+  it('creates a new tag from the catalog form', async () => {
+    createTagMock.mockResolvedValueOnce({})
 
     renderBookmarks()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Tags' }))
+    const tagsSection = within(screen.getByRole('region', { name: 'Tags' }))
+    fireEvent.change(tagsSection.getByLabelText('Tag name'), { target: { value: 'Research' } })
+    fireEvent.click(tagsSection.getByRole('button', { name: 'Create' }))
 
-    await waitFor(() => expect(getBookmarkTagsMock).toHaveBeenCalledWith({ bookmarkId: 'bookmark-1' }))
-
-    const dialog = await screen.findByRole('dialog', { name: 'Edit tags for First Bookmark' })
-    const input = within(dialog).getByLabelText('Tags (comma-separated)') as HTMLInputElement
-    expect(input.value).toBe('Initial Tag')
-
-    fireEvent.change(input, { target: { value: 'Alpha, Beta' } })
-
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
-
-    await waitFor(() => expect(updateBookmarkTagsMock).toHaveBeenCalledTimes(1))
-    expect(updateBookmarkTagsMock).toHaveBeenCalledWith({
-      bookmarkId: 'bookmark-1',
-      bookmarkTagsUpdate: { tags: ['Alpha', 'Beta'] },
-    })
-
-    await waitFor(() => expect(screen.getByTestId('alert')).toHaveTextContent('Updated tags for First Bookmark (2 total).'))
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit tags for First Bookmark' })).not.toBeInTheDocument())
-
-    expect(mutateBookmarksMock).toHaveBeenCalled()
+    await waitFor(() => expect(createTagMock).toHaveBeenCalledTimes(1))
+    expect(createTagMock).toHaveBeenCalledWith({ tagCreate: { name: 'Research' } })
     expect(mutateTagsMock).toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByTestId('alert')).toHaveTextContent('Created tag Research.'))
   })
 
-  it('moves bookmark to a new folder from the modal', async () => {
-    getBookmarkFolderMock.mockResolvedValueOnce(null)
-    updateBookmarkFolderMock.mockResolvedValueOnce({})
+  it('updates an existing folder entry', async () => {
+    updateFolderMock.mockResolvedValueOnce({})
 
     renderBookmarks()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move Folder' }))
+    const foldersSection = within(screen.getByRole('region', { name: 'Folders' }))
+    fireEvent.click(foldersSection.getByRole('button', { name: 'Edit' }))
 
-    await waitFor(() => expect(getBookmarkFolderMock).toHaveBeenCalledWith({ bookmarkId: 'bookmark-1' }))
+    const nameInput = foldersSection.getByLabelText('Edit folder Reading List') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Daily Reads' } })
 
-    const dialog = await screen.findByRole('dialog', { name: 'Move First Bookmark to folder' })
-    const nameInput = within(dialog).getByLabelText('New folder name') as HTMLInputElement
-    fireEvent.change(nameInput, { target: { value: 'Fresh Reads' } })
-
-    const instapaperInput = within(dialog).getByLabelText('Instapaper folder ID') as HTMLInputElement
+    const folderListItem = nameInput.closest('li') as HTMLElement | null
+    if (!folderListItem) {
+      throw new Error('Expected folder list item to exist')
+    }
+    const folderItemScope = within(folderListItem)
+    const instapaperInput = folderItemScope.getByLabelText('Instapaper folder ID') as HTMLInputElement
     fireEvent.change(instapaperInput, { target: { value: '456' } })
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+    fireEvent.click(folderItemScope.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => expect(updateBookmarkFolderMock).toHaveBeenCalledTimes(1))
-    expect(updateBookmarkFolderMock).toHaveBeenCalledWith({
-      bookmarkId: 'bookmark-1',
-      bookmarkFolderUpdate: {
-        folder_name: 'Fresh Reads',
-        instapaper_folder_id: '456',
-      },
+    await waitFor(() => expect(updateFolderMock).toHaveBeenCalledTimes(1))
+    expect(updateFolderMock).toHaveBeenCalledWith({
+      folderId: 'folder-1',
+      folderUpdate: { name: 'Daily Reads', instapaper_folder_id: '456' },
     })
-
-    await waitFor(() => expect(screen.getByTestId('alert')).toHaveTextContent('Created folder Fresh Reads and moved bookmark.'))
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Move First Bookmark to folder' })).not.toBeInTheDocument())
-
-    expect(mutateBookmarksMock).toHaveBeenCalled()
     expect(mutateFoldersMock).toHaveBeenCalled()
-    expect(deleteBookmarkFolderMock).not.toHaveBeenCalled()
+    expect(mutateBookmarksMock).toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByTestId('alert')).toHaveTextContent('Updated folder Daily Reads.'))
+  })
+
+  it('does not render per-bookmark tag or folder actions', () => {
+    renderBookmarks()
+
+    expect(screen.queryByRole('button', { name: 'Edit Tags' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Move Folder' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Assign tags' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Move to folder' })).not.toBeInTheDocument()
   })
 })
