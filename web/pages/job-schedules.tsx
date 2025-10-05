@@ -1558,6 +1558,26 @@ export default function JobSchedulesPage() {
     [data],
   );
 
+  const credentials = credentialsData?.items ?? [];
+  const siteConfigs = siteConfigsData?.items ?? [];
+  const feeds = feedsData?.items ?? [];
+  const tagsList = useMemo(() => {
+    if (!tagsData) return [] as TagOut[];
+    if (Array.isArray(tagsData)) return tagsData as TagOut[];
+    if (Array.isArray((tagsData as any).items)) return (tagsData as any).items as TagOut[];
+    return [] as TagOut[];
+  }, [tagsData]);
+  const foldersList = useMemo(() => {
+    if (!foldersData) return [] as FolderOut[];
+    if (Array.isArray(foldersData)) return foldersData as FolderOut[];
+    if (Array.isArray((foldersData as any).items)) return (foldersData as any).items as FolderOut[];
+    return [] as FolderOut[];
+  }, [foldersData]);
+  const hasNext = Boolean(data?.hasNext);
+  const totalPages = data?.totalPages ?? data?.total ?? 1;
+  const currentUserId =
+    typeof session?.user?.id === "string" ? session.user.id : undefined;
+
   if (sessionStatus === "loading") {
     return (
       <div>
@@ -1594,26 +1614,6 @@ export default function JobSchedulesPage() {
       t("access_denied_message"),
     );
   }
-
-  const credentials = credentialsData?.items ?? [];
-  const siteConfigs = siteConfigsData?.items ?? [];
-  const feeds = feedsData?.items ?? [];
-  const tagsList = useMemo(() => {
-    if (!tagsData) return [] as TagOut[];
-    if (Array.isArray(tagsData)) return tagsData as TagOut[];
-    if (Array.isArray((tagsData as any).items)) return (tagsData as any).items as TagOut[];
-    return [] as TagOut[];
-  }, [tagsData]);
-  const foldersList = useMemo(() => {
-    if (!foldersData) return [] as FolderOut[];
-    if (Array.isArray(foldersData)) return foldersData as FolderOut[];
-    if (Array.isArray((foldersData as any).items)) return (foldersData as any).items as FolderOut[];
-    return [] as FolderOut[];
-  }, [foldersData]);
-  const hasNext = Boolean(data?.hasNext);
-  const totalPages = data?.totalPages ?? data?.total ?? 1;
-  const currentUserId =
-    typeof session?.user?.id === "string" ? session.user.id : undefined;
 
   const formatDateValue = (value?: Date | null) =>
     value ? dateFormatter.format(value) : "—";
