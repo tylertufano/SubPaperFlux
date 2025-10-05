@@ -181,7 +181,7 @@ export function AutocompleteMultiSelect({
 
   const filteredOptions = useMemo(() => {
     const lower = query.trim().toLowerCase()
-    const available = normalizedOptions
+    const available: HighlightableOption[] = normalizedOptions
       .filter(option => !value.includes(option.id))
       .filter(option => {
         if (!lower) return true
@@ -471,7 +471,7 @@ export function AutocompleteSingleSelect({
 
   const filteredOptions = useMemo(() => {
     const lower = query.trim().toLowerCase()
-    const available = normalizedOptions
+    const available: HighlightableOption[] = normalizedOptions
       .filter(option => {
         if (!lower) return true
         return option.label.toLowerCase().includes(lower)
