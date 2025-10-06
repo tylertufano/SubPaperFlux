@@ -23,6 +23,7 @@ from .credentials import (
     InstapaperLoginRequest,
     _ensure_global_kind,
     _get_db_credential_by_kind,
+    _include_global_query,
     _load_instapaper_app_creds_from_file,
     _map_instapaper_error,
     _mask_credential,
@@ -231,7 +232,7 @@ def create_instapaper_credential_from_login_v1(
 def list_credentials_v1(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
-    include_global: bool = Query(True),
+    include_global: bool = Depends(_include_global_query),
     kind: Optional[str] = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),

@@ -43,7 +43,7 @@ export interface SiteConfigSeleniumOut {
      * @type {any}
      * @memberof SiteConfigSeleniumOut
      */
-    ownerUserId?: any | null;
+    ownerUserId: any | null;
     /**
      * 
      * @type {any}
@@ -89,6 +89,7 @@ export function instanceOfSiteConfigSeleniumOut(value: object): boolean {
     let isInstance = true;
     isInstance = isInstance && "name" in value;
     isInstance = isInstance && "siteUrl" in value;
+    isInstance = isInstance && "ownerUserId" in value;
     isInstance = isInstance && "id" in value;
     isInstance = isInstance && "seleniumConfig" in value;
 
@@ -107,7 +108,7 @@ export function SiteConfigSeleniumOutFromJSONTyped(json: any, ignoreDiscriminato
         
         'name': json['name'],
         'siteUrl': json['site_url'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
+        'ownerUserId': json['owner_user_id'],
         'successTextClass': !exists(json, 'success_text_class') ? undefined : json['success_text_class'],
         'expectedSuccessText': !exists(json, 'expected_success_text') ? undefined : json['expected_success_text'],
         'requiredCookies': !exists(json, 'required_cookies') ? undefined : json['required_cookies'],

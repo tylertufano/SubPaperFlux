@@ -111,16 +111,6 @@
         ],
         "parameters": [
           {
-            "name": "include_global",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true,
-              "title": "Include Global"
-            }
-          },
-          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -450,68 +440,6 @@
         }
       }
     },
-    "/v1/site-configs/{config_id}/copy": {
-      "post": {
-        "tags": [
-          "v1"
-        ],
-        "summary": "Copy Site Config V1",
-        "operationId": "copy_site_config_v1_v1_site_configs__config_id__copy_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "config_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Config Id"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/SiteConfigSeleniumOut"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SiteConfigApiOut"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "login_type",
-                    "mapping": {
-                      "selenium": "#/components/schemas/SiteConfigSeleniumOut",
-                      "api": "#/components/schemas/SiteConfigApiOut"
-                    }
-                  },
-                  "title": "Response Copy Site Config V1 V1 Site Configs  Config Id  Copy Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/credentials": {
       "post": {
         "tags": [
@@ -587,16 +515,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "include_global",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true,
-              "title": "Include Global"
-            }
-          },
           {
             "name": "kind",
             "in": "query",
@@ -9553,14 +9471,8 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "minLength": 1,
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9605,6 +9517,7 @@
         "required": [
           "name",
           "site_url",
+          "owner_user_id",
           "api_config"
         ],
         "title": "SiteConfigApi"
@@ -9622,14 +9535,8 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "minLength": 1,
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9667,6 +9574,7 @@
         "required": [
           "name",
           "site_url",
+          "owner_user_id",
           "id",
           "api_config"
         ],
@@ -9685,14 +9593,8 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "minLength": 1,
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9737,6 +9639,7 @@
         "required": [
           "name",
           "site_url",
+          "owner_user_id",
           "selenium_config"
         ],
         "title": "SiteConfigSelenium"
@@ -9754,14 +9657,8 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "minLength": 1,
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9799,6 +9696,7 @@
         "required": [
           "name",
           "site_url",
+          "owner_user_id",
           "id",
           "selenium_config"
         ],

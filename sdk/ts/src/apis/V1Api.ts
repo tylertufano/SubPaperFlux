@@ -183,10 +183,6 @@ export interface CopyCredentialV1CredentialsCredIdCopyPostRequest {
     credId: any;
 }
 
-export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
-    configId: any;
-}
-
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: any;
     since?: any;
@@ -451,7 +447,6 @@ export interface ListBookmarksV1BookmarksGet0Request {
 }
 
 export interface ListCredentialsV1V1CredentialsGetRequest {
-    includeGlobal?: any;
     kind?: any;
     page?: any;
     size?: any;
@@ -511,7 +506,6 @@ export interface ListRolesV1AdminRolesGetRequest {
 }
 
 export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
-    includeGlobal?: any;
     search?: any;
     page?: any;
     size?: any;
@@ -875,48 +869,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async copyCredentialV1CredentialsCredIdCopyPost(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential> {
         const response = await this.copyCredentialV1CredentialsCredIdCopyPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Copy Site Config V1
-     */
-    async copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters.configId === null || requestParameters.configId === undefined) {
-            throw new runtime.RequiredError('configId','Required parameter requestParameters.configId was null or undefined when calling copySiteConfigV1V1SiteConfigsConfigIdCopyPost.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("HTTPBearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v1/site-configs/{config_id}/copy`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Copy Site Config V1
-     */
-    async copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -3057,10 +3009,6 @@ export class V1Api extends runtime.BaseAPI {
     async listCredentialsV1V1CredentialsGetRaw(requestParameters: ListCredentialsV1V1CredentialsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CredentialsPage>> {
         const queryParameters: any = {};
 
-        if (requestParameters.includeGlobal !== undefined) {
-            queryParameters['include_global'] = requestParameters.includeGlobal;
-        }
-
         if (requestParameters.kind !== undefined) {
             queryParameters['kind'] = requestParameters.kind;
         }
@@ -3514,10 +3462,6 @@ export class V1Api extends runtime.BaseAPI {
      */
     async listSiteConfigsV1V1SiteConfigsGetRaw(requestParameters: ListSiteConfigsV1V1SiteConfigsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteConfigsPage>> {
         const queryParameters: any = {};
-
-        if (requestParameters.includeGlobal !== undefined) {
-            queryParameters['include_global'] = requestParameters.includeGlobal;
-        }
 
         if (requestParameters.search !== undefined) {
             queryParameters['search'] = requestParameters.search;

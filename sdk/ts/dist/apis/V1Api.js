@@ -224,46 +224,6 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
-     * Copy Site Config V1
-     */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.configId === null || requestParameters.configId === undefined) {
-                throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling copySiteConfigV1V1SiteConfigsConfigIdCopyPost.');
-            }
-            const queryParameters = {};
-            const headerParameters = {};
-            if (this.configuration && this.configuration.accessToken) {
-                const token = this.configuration.accessToken;
-                const tokenString = yield token("HTTPBearer", []);
-                if (tokenString) {
-                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
-                }
-            }
-            const response = yield this.request({
-                path: `/v1/site-configs/{config_id}/copy`.replace(`{${"config_id"}}`, encodeURIComponent(String(requestParameters.configId))),
-                method: 'POST',
-                headers: headerParameters,
-                query: queryParameters,
-            }, initOverrides);
-            if (this.isJsonMime(response.headers.get('content-type'))) {
-                return new runtime.JSONApiResponse(response);
-            }
-            else {
-                return new runtime.TextApiResponse(response);
-            }
-        });
-    }
-    /**
-     * Copy Site Config V1
-     */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters, initOverrides) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters, initOverrides);
-            return yield response.value();
-        });
-    }
-    /**
      * Count Bookmarks
      */
     countBookmarksV1BookmarksCountGetRaw(requestParameters, initOverrides) {
@@ -2169,9 +2129,6 @@ class V1Api extends runtime.BaseAPI {
     listCredentialsV1V1CredentialsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters.includeGlobal !== undefined) {
-                queryParameters['include_global'] = requestParameters.includeGlobal;
-            }
             if (requestParameters.kind !== undefined) {
                 queryParameters['kind'] = requestParameters.kind;
             }
@@ -2574,9 +2531,6 @@ class V1Api extends runtime.BaseAPI {
     listSiteConfigsV1V1SiteConfigsGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters.includeGlobal !== undefined) {
-                queryParameters['include_global'] = requestParameters.includeGlobal;
-            }
             if (requestParameters.search !== undefined) {
                 queryParameters['search'] = requestParameters.search;
             }
