@@ -73,24 +73,6 @@ def seed(user_id: str = "demo-user") -> None:
         )
         session.add(mini)
 
-        # Global site config example
-        sc_global = SiteConfig(
-            name="Example Global",
-            site_url="https://example.com/login",
-            success_text_class="alert alert-success",
-            expected_success_text="Welcome back!",
-            required_cookies=["sessionid"],
-            login_type=SiteLoginType.SELENIUM,
-            selenium_config={
-                "username_selector": "#user",
-                "password_selector": "#pass",
-                "login_button_selector": "button[type='submit']",
-                "cookies_to_store": ["sessionid"],
-            },
-            owner_user_id=None,
-        )
-        session.add(sc_global)
-
         # User site config example
         sc_user = SiteConfig(
             name="Example User",

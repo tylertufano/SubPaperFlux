@@ -1,12 +1,11 @@
 import base64
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import select
-
 
 USER_ID = "copy-user"
 IDENTITY = {
@@ -94,289 +93,63 @@ def _seed_user(*, quota_credentials=_UNSET, quota_site_configs=_UNSET):
         session.commit()
 
 
-def _insert_global_credential(*, site_config_id: Optional[str] = None):
+def _insert_global_credential(*, description: str = "Global Instapaper App") -> Tuple[str, dict]:
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
-    from app.models import SiteConfig, SiteLoginType
 
     plain = {
-        "username": "global-user",
-        "password": "global-pass",
-        "note": "shared",
+        "consumer_key": "global-key",
+        "consumer_secret": "global-secret",
     }
 
     with next(get_session()) as session:
-        target_site_config_id = site_config_id
-        if target_site_config_id is None:
-            site_config = session.exec(
-                select(SiteConfig).where(SiteConfig.owner_user_id.is_(None))
-            ).first()
-            if site_config is None:
-                site_config = SiteConfig(
-                    name="Global Login",
-                    site_url="https://global.example.com/login",
-                    login_type=SiteLoginType.SELENIUM,
-                    selenium_config={
-                        "username_selector": "#global-user",
-                        "password_selector": "#global-pass",
-                        "login_button_selector": "#login",
-                        "post_login_selector": ".dashboard",
-                        "cookies_to_store": ["sid", "csrftoken"],
-                    },
-                    success_text_class="alert alert-global",
-                    expected_success_text="Global success message",
-                    required_cookies=["sid", "csrftoken"],
-                    owner_user_id=None,
-                )
-                session.add(site_config)
-                session.commit()
-                session.refresh(site_config)
-            target_site_config_id = site_config.id
-
         record = Credential(
-            kind="site_login",
-            description="Global credential",
+            kind="instapaper_app",
+            description=description,
             data=encrypt_dict(plain),
             owner_user_id=None,
-            site_config_id=target_site_config_id,
         )
         session.add(record)
         session.commit()
         session.refresh(record)
-        return record, plain
+        return record.id, plain
 
 
-def _insert_global_site_config():
-    from app.db import get_session
-    from app.models import SiteConfig, SiteLoginType
-
-    with next(get_session()) as session:
-        record = SiteConfig(
-            name="Global Login",
-            site_url="https://global.example.com/login",
-            login_type=SiteLoginType.SELENIUM,
-            selenium_config={
-                "username_selector": "#global-user",
-                "password_selector": "#global-pass",
-                "login_button_selector": "#login",  # pragma: allowlist secret
-                "post_login_selector": ".dashboard",
-                "cookies_to_store": ["sid", "csrftoken"],
-            },
-            success_text_class="alert alert-global",
-            expected_success_text="Global success message",
-            required_cookies=["sid", "csrftoken"],
-            owner_user_id=None,
-        )
-        session.add(record)
-        session.commit()
-        session.refresh(record)
-        return record
-
-
-def _insert_global_api_site_config():
-    from app.db import get_session
-    from app.models import SiteConfig, SiteLoginType
-
-    with next(get_session()) as session:
-        record = SiteConfig(
-            name="Global API Login",
-            site_url="https://global.example.com/api",
-            login_type=SiteLoginType.API,
-            api_config={
-                "endpoint": "https://global.example.com/api/login",
-                "method": "POST",
-                "headers": {"X-Mode": "global"},
-                "cookies": {"session": "shared"},
-            },
-            success_text_class="toast toast-global",
-            expected_success_text="API global success",
-            required_cookies=["session"],
-            owner_user_id=None,
-        )
-        session.add(record)
-        session.commit()
-        session.refresh(record)
-        return record
-
-
-def _create_user_credential(
-    *, description="User credential", site_config_id: Optional[str] = None
-):
+def _create_user_credential(*, description: str = "User credential"):
     from app.db import get_session
     from app.models import Credential
     from app.security.crypto import encrypt_dict
-    from app.models import SiteConfig, SiteLoginType
+
+    plain = {
+        "oauth_token": "user-token",
+        "oauth_token_secret": "user-secret",
+    }
 
     with next(get_session()) as session:
-        target_site_config_id = site_config_id
-        if target_site_config_id is None:
-            site_config = session.exec(
-                select(SiteConfig).where(SiteConfig.owner_user_id == USER_ID)
-            ).first()
-            if site_config is None:
-                site_config = SiteConfig(
-                    name="User Login",
-                    site_url="https://user.example.com/login",
-                    login_type=SiteLoginType.SELENIUM,
-                    selenium_config={
-                        "username_selector": "#user",
-                        "password_selector": "#pass",
-                        "login_button_selector": "#submit",
-                        "post_login_selector": ".app",
-                        "cookies_to_store": ["sid"],
-                    },
-                    success_text_class="alert alert-user",
-                    expected_success_text="User success message",
-                    required_cookies=["sid"],
-                    owner_user_id=USER_ID,
-                )
-                session.add(site_config)
-                session.commit()
-                session.refresh(site_config)
-            target_site_config_id = site_config.id
-
         record = Credential(
-            kind="site_login",
+            kind="instapaper",
             description=description,
-            data=encrypt_dict({"username": "user", "password": "secret"}),
-            owner_user_id=USER_ID,
-            site_config_id=target_site_config_id,
-        )
-        session.add(record)
-        session.commit()
-        session.refresh(record)
-        return record
-
-
-def _create_user_site_config(name="User Login"):
-    from app.db import get_session
-    from app.models import SiteConfig, SiteLoginType
-
-    with next(get_session()) as session:
-        record = SiteConfig(
-            name=name,
-            site_url="https://user.example.com/login",
-            login_type=SiteLoginType.SELENIUM,
-            selenium_config={
-                "username_selector": "#user",
-                "password_selector": "#pass",
-                "login_button_selector": "#submit",
-                "post_login_selector": ".app",
-                "cookies_to_store": ["sid"],
-            },
-            success_text_class="alert alert-user",
-            expected_success_text="User success message",
-            required_cookies=["sid"],
+            data=encrypt_dict(plain),
             owner_user_id=USER_ID,
         )
         session.add(record)
         session.commit()
         session.refresh(record)
         return record
-
-
-def test_copy_global_site_config_creates_user_owned_clone(copy_client):
-    global_config = _insert_global_site_config()
-
-    response = copy_client.post(f"/v1/site-configs/{global_config.id}/copy")
-    assert response.status_code == 201
-
-    payload = response.json()
-    assert payload["id"] != global_config.id
-    assert payload["owner_user_id"] == USER_ID
-    assert payload["name"] == global_config.name
-    assert payload["site_url"] == global_config.site_url
-    assert (
-        payload["selenium_config"]["cookies_to_store"] == global_config.cookies_to_store
-    )
-    assert payload["success_text_class"] == global_config.success_text_class
-    assert payload["expected_success_text"] == global_config.expected_success_text
-    assert payload["required_cookies"] == global_config.required_cookies
-
-    from app.db import get_session
-    from app.models import AuditLog, SiteConfig
-
-    with next(get_session()) as session:
-        clone = session.get(SiteConfig, payload["id"])
-        assert clone is not None
-        assert clone.owner_user_id == USER_ID
-        assert clone.username_selector == global_config.username_selector
-        assert clone.password_selector == global_config.password_selector
-        assert clone.login_button_selector == global_config.login_button_selector
-        assert clone.cookies_to_store == global_config.cookies_to_store
-        assert clone.success_text_class == global_config.success_text_class
-        assert clone.expected_success_text == global_config.expected_success_text
-        assert clone.required_cookies == global_config.required_cookies
-
-        records = session.exec(select(SiteConfig)).all()
-        assert len(records) == 2
-
-        audit = session.exec(
-            select(AuditLog)
-            .where(AuditLog.entity_type == "setting")
-            .where(AuditLog.entity_id == clone.id)
-            .where(AuditLog.action == "copy")
-        ).one()
-        assert audit.owner_user_id == USER_ID
-        assert audit.actor_user_id == USER_ID
-        assert audit.details["source_config_id"] == global_config.id
-        assert audit.details["name"] == global_config.name
-
-
-def test_copy_global_api_site_config_creates_user_owned_clone(copy_client):
-    global_api_config = _insert_global_api_site_config()
-
-    response = copy_client.post(f"/v1/site-configs/{global_api_config.id}/copy")
-    assert response.status_code == 201
-
-    payload = response.json()
-    assert payload["login_type"] == "api"
-    assert payload["owner_user_id"] == USER_ID
-    assert payload["api_config"]["endpoint"] == global_api_config.api_config.get("endpoint")
-    assert payload["api_config"]["headers"] == global_api_config.api_config.get("headers")
-    assert payload["success_text_class"] == global_api_config.success_text_class
-    assert payload["expected_success_text"] == global_api_config.expected_success_text
-    assert payload["required_cookies"] == global_api_config.required_cookies
-
-    from app.db import get_session
-    from app.models import AuditLog, SiteConfig
-
-    with next(get_session()) as session:
-        clone = session.get(SiteConfig, payload["id"])
-        assert clone is not None
-        assert clone.owner_user_id == USER_ID
-        assert clone.api_config == global_api_config.api_config
-        assert clone.success_text_class == global_api_config.success_text_class
-        assert clone.expected_success_text == global_api_config.expected_success_text
-        assert clone.required_cookies == global_api_config.required_cookies
-
-        audit = session.exec(
-            select(AuditLog)
-            .where(AuditLog.entity_type == "setting")
-            .where(AuditLog.entity_id == clone.id)
-            .where(AuditLog.action == "copy")
-        ).one()
-        assert audit.owner_user_id == USER_ID
-        assert audit.actor_user_id == USER_ID
-        assert audit.details["source_config_id"] == global_api_config.id
-        assert audit.details["name"] == global_api_config.name
 
 
 def test_copy_global_credential_creates_user_owned_clone(copy_client):
-    global_config = _insert_global_site_config()
-    global_credential, plain = _insert_global_credential(
-        site_config_id=global_config.id
-    )
+    global_credential_id, plain = _insert_global_credential()
 
-    response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
+    response = copy_client.post(f"/v1/credentials/{global_credential_id}/copy")
     assert response.status_code == 201
 
     payload = response.json()
-    assert payload["id"] != global_credential.id
+    assert payload["id"] != global_credential_id
     assert payload["owner_user_id"] == USER_ID
-    assert payload["kind"] == global_credential.kind
-    assert payload["description"] == global_credential.description
+    assert payload["kind"] == "instapaper_app"
+    assert payload["description"] == "Global Instapaper App"
 
     from app.db import get_session
     from app.models import AuditLog, Credential
@@ -386,11 +159,8 @@ def test_copy_global_credential_creates_user_owned_clone(copy_client):
         clone = session.get(Credential, payload["id"])
         assert clone is not None
         assert clone.owner_user_id == USER_ID
-        assert clone.kind == global_credential.kind
-        assert clone.description == global_credential.description
-
-        decrypted = decrypt_dict(clone.data)
-        assert decrypted == plain
+        assert clone.kind == "instapaper_app"
+        assert decrypt_dict(clone.data) == plain
 
         records = session.exec(select(Credential)).all()
         assert len(records) == 2
@@ -403,42 +173,28 @@ def test_copy_global_credential_creates_user_owned_clone(copy_client):
         ).one()
         assert audit.owner_user_id == USER_ID
         assert audit.actor_user_id == USER_ID
-        assert audit.details["source_credential_id"] == global_credential.id
-        assert audit.details["data_keys"] == sorted(plain.keys())
-        assert audit.details["description"] == global_credential.description
+        assert audit.details["source_credential_id"] == global_credential_id
+        assert audit.details["kind"] == "instapaper_app"
+        assert audit.details["description"] == "Global Instapaper App"
 
 
-def test_copy_global_assets_respects_quota_limits(copy_client):
-    _seed_user(quota_credentials=1, quota_site_configs=1)
-    global_config = _insert_global_site_config()
-    global_credential, _ = _insert_global_credential(site_config_id=global_config.id)
+def test_copy_global_credentials_respects_quota_limits(copy_client):
+    _seed_user(quota_credentials=1)
+    global_credential_id, _ = _insert_global_credential()
+    _create_user_credential(description="Existing credential")
 
-    user_config = _create_user_site_config(name="Existing config")
-    _create_user_credential(
-        description="Existing credential", site_config_id=user_config.id
-    )
-
-    cred_response = copy_client.post(f"/v1/credentials/{global_credential.id}/copy")
+    cred_response = copy_client.post(f"/v1/credentials/{global_credential_id}/copy")
     assert cred_response.status_code == 403
     cred_payload = cred_response.json()
     assert "quota exceeded" in cred_payload.get("message", "").lower()
 
-    site_response = copy_client.post(f"/v1/site-configs/{global_config.id}/copy")
-    assert site_response.status_code == 403
-    site_payload = site_response.json()
-    assert "quota exceeded" in site_payload.get("message", "").lower()
-
     from app.db import get_session
-    from app.models import AuditLog, Credential, SiteConfig
+    from app.models import AuditLog, Credential
 
     with next(get_session()) as session:
         creds = session.exec(select(Credential)).all()
         owned_creds = [c for c in creds if c.owner_user_id == USER_ID]
         assert len(owned_creds) == 1
-
-        configs = session.exec(select(SiteConfig)).all()
-        owned_configs = [c for c in configs if c.owner_user_id == USER_ID]
-        assert len(owned_configs) == 1
 
         audit_entries = session.exec(
             select(AuditLog).where(AuditLog.action == "copy")

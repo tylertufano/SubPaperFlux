@@ -1,18 +1,12 @@
 from typing import Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import TypeAdapter
 from sqlalchemy import func
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..auth import (
-    PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-    PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-    has_permission,
-)
 from ..auth.oidc import get_current_user
-from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig as SiteConfigModel, SiteLoginType
 from ..schemas import SiteConfig as SiteConfigSchema
@@ -133,32 +127,13 @@ def _summarize_login_payload(
 router = APIRouter()
 
 
-def _ensure_permission(
-    session,
-    current_user,
-    permission: str,
-    *,
-    owner_id: Optional[str] = None,
-) -> bool:
-    allowed = has_permission(session, current_user, permission, owner_id=owner_id)
-    if is_user_mgmt_enforce_enabled() and not allowed:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    return allowed
-
-
 @router.get("/", response_model=List[SiteConfigSchema])
-def list_site_configs(current_user=Depends(get_current_user), session=Depends(get_session), include_global: bool = Query(True)):
+def list_site_configs(
+    current_user=Depends(get_current_user), session=Depends(get_session)
+):
     user_id = current_user["sub"]
     stmt = select(SiteConfigModel).where(SiteConfigModel.owner_user_id == user_id)
     results = session.exec(stmt).all()
-    if include_global:
-        _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-        )
-        stmt2 = select(SiteConfigModel).where(SiteConfigModel.owner_user_id.is_(None))
-        results += session.exec(stmt2).all()
     return [_serialize_site_config(model) for model in results]
 
 
@@ -166,6 +141,7 @@ def list_site_configs(current_user=Depends(get_current_user), session=Depends(ge
 def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_user), session=Depends(get_session)):
     payload = body.model_dump(mode="json")
     payload.pop("id", None)
+    payload["owner_user_id"] = current_user["sub"]
     login_type, selenium_config, api_config = _normalize_login_payload(
         payload.get("login_type"),
         payload.get("selenium_config"),
@@ -183,25 +159,15 @@ def create_site_config(body: SiteConfigSchema, current_user=Depends(get_current_
         selenium_config=selenium_config,
         api_config=api_config,
     )
-    # Only admins may create global configs (owner_user_id None)
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            model.owner_user_id = current_user["sub"]
-    if model.owner_user_id:
-        enforce_user_quota(
-            session,
-            model.owner_user_id,
-            quota_field="quota_site_configs",
-            resource_name="Site config",
-            count_stmt=select(func.count()).select_from(SiteConfigModel).where(
-                SiteConfigModel.owner_user_id == model.owner_user_id
-            ),
-        )
+    enforce_user_quota(
+        session,
+        model.owner_user_id,
+        quota_field="quota_site_configs",
+        resource_name="Site config",
+        count_stmt=select(func.count()).select_from(SiteConfigModel).where(
+            SiteConfigModel.owner_user_id == model.owner_user_id
+        ),
+    )
     session.add(model)
     record_audit_log(
         session,
@@ -228,13 +194,7 @@ def get_site_config(config_id: str, current_user=Depends(get_current_user), sess
     model = session.get(SiteConfigModel, config_id)
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    if model.owner_user_id is None:
-        _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-        )
-    elif model.owner_user_id != current_user["sub"]:
+    if model.owner_user_id != current_user["sub"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return _serialize_site_config(model)
 
@@ -244,24 +204,8 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
     model = session.get(SiteConfigModel, config_id)
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    # Non-admins cannot modify global configs
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-            owner_id=model.owner_user_id,
-        )
-        if not allowed_cross:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if model.owner_user_id != current_user["sub"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     update_payload = body.model_dump(exclude_unset=True, mode="json")
     update_payload.pop("id", None)
     original = model.model_dump(mode="json")
@@ -284,7 +228,6 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
     for field in (
         "name",
         "site_url",
-        "owner_user_id",
         "success_text_class",
         "expected_success_text",
         "required_cookies",
@@ -310,7 +253,6 @@ def update_site_config(config_id: str, body: SiteConfigSchema, current_user=Depe
             "name": model.name,
             "site_url": model.site_url,
             "updated_fields": sorted(changed_fields),
-            "owner_changed": original.get("owner_user_id") != model.owner_user_id,
             "login_payload": _summarize_login_payload(
                 model.login_type, model.selenium_config, model.api_config
             ),
@@ -326,24 +268,8 @@ def delete_site_config(config_id: str, current_user=Depends(get_current_user), s
     model = session.get(SiteConfigModel, config_id)
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    # Non-admins cannot delete global configs
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-            owner_id=model.owner_user_id,
-        )
-        if not allowed_cross:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if model.owner_user_id != current_user["sub"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     record_audit_log(
         session,

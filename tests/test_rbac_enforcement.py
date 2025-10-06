@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
@@ -15,6 +17,10 @@ def _env(monkeypatch):
     monkeypatch.setenv("SQLMODEL_CREATE_ALL", "1")
     monkeypatch.setenv("USER_MGMT_CORE", "1")
     monkeypatch.setenv("USER_MGMT_ENFORCE", "0")
+    monkeypatch.setenv(
+        "CREDENTIALS_ENC_KEY",
+        base64.urlsafe_b64encode(os.urandom(32)).decode(),
+    )
 
     from app.config import is_user_mgmt_core_enabled, is_user_mgmt_enforce_enabled
 
@@ -46,6 +52,7 @@ def api_context(request, monkeypatch):
     from app.db import get_session, init_db
     from app.main import create_app
     from app.models import Credential, Feed, SiteConfig, SiteLoginType, Tag, User
+    from app.security.crypto import encrypt_dict
 
     init_db()
     app = create_app()
@@ -100,19 +107,19 @@ def api_context(request, monkeypatch):
         session.commit()
         assert ADMIN_ROLE_NAME in get_user_roles(session, admin_identity["sub"])
 
-        global_config = SiteConfig(
-            name="Global Config",
-            site_url="https://global.example.com/login",
+        admin_config = SiteConfig(
+            name="Admin Config",
+            site_url="https://admin.example.com/login",
             login_type=SiteLoginType.SELENIUM,
             selenium_config={
                 "username_selector": "#username",
                 "password_selector": "#password",
                 "login_button_selector": "#login",
             },
-            success_text_class="alert alert-global",
-            expected_success_text="Global success",
+            success_text_class="alert alert-admin",
+            expected_success_text="Admin success",
             required_cookies=["session"],
-            owner_user_id=None,
+            owner_user_id=admin_identity["sub"],
         )
         owner_config = SiteConfig(
             name="Owner Config",
@@ -128,17 +135,18 @@ def api_context(request, monkeypatch):
             required_cookies=["session"],
             owner_user_id=owner_identity["sub"],
         )
-        session.add(global_config)
+        session.add(admin_config)
         session.add(owner_config)
-        global_config_id = global_config.id
+        admin_config_id = admin_config.id
         owner_config_id = owner_config.id
 
         global_credential = Credential(
-            kind="site_login",
-            description="Global Login",
-            data={"username": "global", "password": "example"},
+            kind="instapaper_app",
+            description="Global App",
+            data=encrypt_dict(
+                {"consumer_key": "ckey", "consumer_secret": "csecret"}
+            ),
             owner_user_id=None,
-            site_config_id=global_config_id,
         )
         owner_credential = Credential(
             kind="site_login",
@@ -181,7 +189,7 @@ def api_context(request, monkeypatch):
         admin=admin_identity,
         guest=guest_identity,
         owner_site_config_id=owner_config_id,
-        global_site_config_id=global_config_id,
+        other_site_config_id=admin_config_id,
         owner_credential_id=owner_credential_id,
         global_credential_id=global_credential_id,
         owner_tag_id=owner_tag_id,
@@ -205,13 +213,13 @@ def test_site_config_access_controls(api_context):
     assert owner_resp.status_code == 200
     assert owner_resp.json()["owner_user_id"] == context.owner["sub"]
 
-    admin_global = context.request_as(
+    admin_other = context.request_as(
         context.admin,
         "GET",
-        f"/v1/site-configs/{context.global_site_config_id}",
+        f"/v1/site-configs/{context.other_site_config_id}",
     )
-    assert admin_global.status_code == 200
-    assert admin_global.json()["owner_user_id"] is None
+    assert admin_other.status_code == 200
+    assert admin_other.json()["owner_user_id"] == context.admin["sub"]
 
     guest_resp = context.request_as(
         context.guest,
@@ -439,11 +447,11 @@ def test_feed_creation_rejects_global_site_config_without_permission(api_context
         "/v1/feeds/",
         json={
             "url": "https://example.com/feeds/global-config.xml",
-            "site_config_id": context.global_site_config_id,
+            "site_config_id": context.other_site_config_id,
         },
     )
 
-    assert create_resp.status_code == 403
+    assert create_resp.status_code == 422
 
 
 def test_feed_update_rejects_global_site_config_without_permission(api_context):
@@ -455,7 +463,7 @@ def test_feed_update_rejects_global_site_config_without_permission(api_context):
 
     update_payload = _build_feed_update_payload(
         feed,
-        site_config_id=context.global_site_config_id,
+        site_config_id=context.other_site_config_id,
     )
 
     update_resp = context.request_as(
@@ -465,4 +473,4 @@ def test_feed_update_rejects_global_site_config_without_permission(api_context):
         json=update_payload,
     )
 
-    assert update_resp.status_code == 403
+    assert update_resp.status_code == 422

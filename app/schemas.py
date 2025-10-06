@@ -69,7 +69,7 @@ class SiteConfigBase(BaseModel):
 
     name: str
     site_url: AnyHttpUrl
-    owner_user_id: Optional[str] = None  # None means global
+    owner_user_id: constr(strip_whitespace=True, min_length=1)
     success_text_class: str = ""
     expected_success_text: str = ""
     required_cookies: List[str] = Field(default_factory=list)
