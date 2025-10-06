@@ -15,7 +15,6 @@ const openApiSpies = vi.hoisted(() => ({
   deleteSiteConfig: vi.fn(),
   testSiteConfig: vi.fn(),
   updateSiteConfig: vi.fn(),
-  copySiteConfigToUser: vi.fn(),
 }))
 
 vi.mock('next/router', () => ({
@@ -55,7 +54,6 @@ vi.mock('../lib/openapi', () => ({
     createSiteConfigSiteConfigsPost: openApiSpies.createSiteConfig,
     deleteSiteConfigSiteConfigsConfigIdDelete: openApiSpies.deleteSiteConfig,
     updateSiteConfigSiteConfigsConfigIdPut: openApiSpies.updateSiteConfig,
-    copySiteConfigToUser: openApiSpies.copySiteConfigToUser,
   },
 }))
 
@@ -64,7 +62,6 @@ export const createSiteConfigMock = openApiSpies.createSiteConfig
 export const deleteSiteConfigMock = openApiSpies.deleteSiteConfig
 export const testSiteConfigMock = openApiSpies.testSiteConfig
 export const updateSiteConfigMock = openApiSpies.updateSiteConfig
-export const copySiteConfigToUserMock = openApiSpies.copySiteConfigToUser
 
 const seleniumItem: SiteConfigSeleniumOut = {
   loginType: 'selenium',
@@ -134,7 +131,6 @@ export type SiteConfigFormControls = {
   apiHeaders?: HTMLTextAreaElement
   apiBody?: HTMLTextAreaElement
   apiCookies?: HTMLTextAreaElement
-  scopeGlobal: HTMLInputElement
 }
 
 export type SiteConfigsSetupResult = RenderResult & {
@@ -152,7 +148,6 @@ function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormCon
     name: withinForm.getByLabelText(/^Name$/i) as HTMLInputElement,
     siteUrl: withinForm.getByLabelText(/^Site URL$/i) as HTMLInputElement,
     loginTypeRadios,
-    scopeGlobal: withinForm.getByRole('checkbox', { name: /Global/i }) as HTMLInputElement,
   }
   base.successTextClass = withinForm.getByLabelText(/Success message CSS class/i) as HTMLInputElement
   base.expectedSuccessText = withinForm.getByLabelText(/Expected success text/i) as HTMLInputElement
@@ -273,8 +268,8 @@ describe('site configs table display', () => {
 
       const seleniumCells = within(seleniumRow).getAllByRole('cell')
       const apiCells = within(apiRow).getAllByRole('cell')
-      expect(seleniumCells).toHaveLength(5)
-      expect(apiCells).toHaveLength(5)
+      expect(seleniumCells).toHaveLength(4)
+      expect(apiCells).toHaveLength(4)
     } finally {
       unmount()
     }
@@ -390,7 +385,7 @@ describe('site configs creation validation', () => {
 })
 
 describe('site configs creation success path', () => {
-  it('submits selenium configs and toggles owner scope', async () => {
+  it('submits selenium configs with required fields', async () => {
     const { form, inputs, withinForm, mutate, unmount } = await setup()
 
     try {
@@ -429,30 +424,6 @@ describe('site configs creation success path', () => {
       })
 
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
-
-      fireEvent.change(inputs.name, { target: { value: 'Global Entry' } })
-      fireEvent.change(inputs.siteUrl, { target: { value: 'https://global.example/login' } })
-      fireEvent.change(inputs.usernameSelector!, { target: { value: '#global-user' } })
-      fireEvent.change(inputs.passwordSelector!, { target: { value: '#global-pass' } })
-      fireEvent.change(inputs.loginSelector!, { target: { value: 'button.global-submit' } })
-      fireEvent.change(inputs.cookiesText!, { target: { value: 'token=one, two , three' } })
-      fireEvent.change(inputs.successTextClass, { target: { value: 'alert-global' } })
-      fireEvent.change(inputs.expectedSuccessText, { target: { value: 'Welcome global' } })
-      fireEvent.change(inputs.requiredCookies, { target: { value: 'token, refresh' } })
-      fireEvent.click(inputs.scopeGlobal)
-
-      fireEvent.submit(form)
-
-      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(2))
-      const secondCall = createSiteConfigMock.mock.calls[1][0]
-      expect(secondCall.body).toMatchObject({
-        ownerUserId: null,
-        name: 'Global Entry',
-        siteUrl: 'https://global.example/login',
-        successTextClass: 'alert-global',
-        expectedSuccessText: 'Welcome global',
-        requiredCookies: ['token', 'refresh'],
-      })
     } finally {
       unmount()
     }
@@ -498,51 +469,6 @@ describe('site configs creation success path', () => {
         },
       })
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
-    } finally {
-      unmount()
-    }
-  })
-})
-
-describe('site configs copy to user scope', () => {
-  function buildConfig(overrides: Partial<SiteConfigSeleniumOut> = {}): SiteConfigSeleniumOut {
-    return {
-      ...seleniumItem,
-      ...overrides,
-    }
-  }
-
-  it('renders copy controls for global rows and updates the table after copying', async () => {
-    const globalConfig = buildConfig({ ownerUserId: null, id: 'global' })
-    const userConfig = buildConfig({ id: 'user-owned', ownerUserId: 'user-123', name: 'Personal' })
-    const copiedConfig = buildConfig({ id: 'copied', ownerUserId: 'user-123', name: 'Copied' })
-
-    const { mutate, unmount } = await setup({
-      data: {
-        items: [globalConfig, userConfig],
-        total: 2,
-        page: 1,
-        size: 25,
-      },
-    })
-
-    copySiteConfigToUserMock.mockResolvedValueOnce(copiedConfig)
-
-    try {
-      const globalRow = (await screen.findByText(globalConfig.name)).closest('tr') as HTMLElement
-      const userRow = (await screen.findByText(userConfig.name)).closest('tr') as HTMLElement
-
-      expect(within(globalRow).getByRole('button', { name: 'Copy to my workspace' })).toBeInTheDocument()
-      expect(within(userRow).queryByRole('button', { name: 'Copy to my workspace' })).not.toBeInTheDocument()
-
-      fireEvent.click(within(globalRow).getByRole('button', { name: 'Copy to my workspace' }))
-
-      await waitFor(() => expect(copySiteConfigToUserMock).toHaveBeenCalledTimes(1))
-      expect(copySiteConfigToUserMock).toHaveBeenLastCalledWith({ configId: globalConfig.id })
-
-      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
-      const copiedRow = (await screen.findByText(copiedConfig.name)).closest('tr') as HTMLElement
-      expect(within(copiedRow).getByText('User')).toBeInTheDocument()
     } finally {
       unmount()
     }

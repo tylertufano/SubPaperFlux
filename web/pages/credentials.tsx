@@ -12,7 +12,6 @@ import {
   hasPermission,
   PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
   PERMISSION_READ_GLOBAL_CREDENTIALS,
-  PERMISSION_READ_GLOBAL_SITE_CONFIGS,
 } from '../lib/rbac'
 
 export default function Credentials() {
@@ -31,8 +30,6 @@ export default function Credentials() {
       (hasPermission(permissions, PERMISSION_READ_GLOBAL_CREDENTIALS) ||
         hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)),
   )
-  const canManageGlobalCredentials = hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_CREDENTIALS)
-  const canReadGlobalSiteConfigs = hasPermission(permissions, PERMISSION_READ_GLOBAL_SITE_CONFIGS)
   const { data, error, isLoading, mutate } = useSWR(
     canViewCredentials ? ['/v1/credentials'] : null,
     () => v1.listCredentialsV1V1CredentialsGet({}),
@@ -42,16 +39,14 @@ export default function Credentials() {
     error: siteConfigsError,
     isLoading: isLoadingSiteConfigs,
   } = useSWR(
-    isAuthenticated ? ['/v1/site-configs', canReadGlobalSiteConfigs] : null,
-    () => v1.listSiteConfigsV1V1SiteConfigsGet({ includeGlobal: canReadGlobalSiteConfigs, size: 200 }),
+    isAuthenticated ? ['/v1/site-configs'] : null,
+    () => v1.listSiteConfigsV1V1SiteConfigsGet({ size: 200 }),
   )
   const [kind, setKind] = useState('site_login')
   const [description, setDescription] = useState('')
-  const [scopeGlobal, setScopeGlobal] = useState(false)
   const [jsonData, setJsonData] = useState('{\n  "username": "",\n  "password": ""\n}')
   const [siteConfigId, setSiteConfigId] = useState('')
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
-  const [copyingId, setCopyingId] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; kind: string; json: string } | null>(null)
   const [editDescription, setEditDescription] = useState('')
   const [editSiteConfigId, setEditSiteConfigId] = useState('')
@@ -61,7 +56,6 @@ export default function Credentials() {
   const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
   const hasDescription = description.trim().length > 0
   const hasEditDescription = editDescription.trim().length > 0
-  const allowGlobalScope = canManageGlobalCredentials && kind === 'instapaper_app'
   const siteConfigItems = useMemo(() => {
     if (!siteConfigsData) return [] as any[]
     if (Array.isArray(siteConfigsData)) return siteConfigsData as any[]
@@ -73,9 +67,8 @@ export default function Credentials() {
       siteConfigItems.map((item: any) => ({
         id: item.id,
         label: item.name || item.id,
-        scopeLabel: item.owner_user_id ? t('scope_user') : t('scope_global'),
       })),
-    [siteConfigItems, t],
+    [siteConfigItems],
   )
   const siteConfigMap = useMemo(() => {
     const map = new Map<string, any>()
@@ -158,7 +151,6 @@ export default function Credentials() {
           description: trimmedDescription,
           username: parsed.data.username,
           password: parsed.data.password,
-          scope_global: allowGlobalScope && scopeGlobal,
         })
       } else {
         const credentialPayload: any = {
@@ -167,9 +159,7 @@ export default function Credentials() {
           data: parsed.data,
         }
 
-        if (allowGlobalScope && scopeGlobal) {
-          credentialPayload.ownerUserId = null
-        } else if (currentUserId) {
+        if (currentUserId) {
           credentialPayload.ownerUserId = currentUserId
         }
 
@@ -205,51 +195,6 @@ export default function Credentials() {
       } else {
         setBanner({ kind: 'error', message: e.message || String(e) })
       }
-    }
-  }
-
-  async function copyCredToUser(credId: string) {
-    setBanner(null)
-    setCopyingId(credId)
-    try {
-      const copied = await creds.copyCredentialToUser({ credId })
-      const appendCredential = (candidate: any) => {
-        const list = Array.isArray(candidate) ? candidate : []
-        const exists = list.some((item: any) => item?.id === copied.id)
-        return exists ? { list, added: false } : { list: [...list, copied], added: true }
-      }
-      const applyToPage = (page: any) => {
-        if (!page || typeof page !== 'object') return page
-        const { list, added } = appendCredential(page.items)
-        if (!added) return page
-        const nextTotal = typeof page.total === 'number' ? page.total + 1 : page.total
-        return { ...page, items: list, total: nextTotal }
-      }
-      await mutate((current: any) => {
-        if (Array.isArray(current)) {
-          const { list, added } = appendCredential(current)
-          return added ? list : current
-        }
-        if (current && typeof current === 'object') {
-          return applyToPage(current)
-        }
-        if (current == null) {
-          if (Array.isArray(data)) {
-            const { list, added } = appendCredential(data)
-            return added ? list : data
-          }
-          if (data && typeof data === 'object') {
-            return applyToPage(data)
-          }
-        }
-        return current
-      }, { revalidate: false })
-      setBanner({ kind: 'success', message: t('copy_to_workspace_success') })
-    } catch (e: any) {
-      const reason = e?.message || String(e)
-      setBanner({ kind: 'error', message: t('copy_to_workspace_error', { reason }) })
-    } finally {
-      setCopyingId(null)
     }
   }
 
@@ -401,9 +346,6 @@ export default function Credentials() {
                 onChange={(e) => {
                   const nextKind = e.target.value
                   setKind(nextKind)
-                  if (nextKind !== 'instapaper_app') {
-                    setScopeGlobal(false)
-                  }
                 }}
               >
                 <option value="site_login">{t('credentials_kind_site_login')}</option>
@@ -411,19 +353,6 @@ export default function Credentials() {
                 <option value="instapaper">{t('credentials_kind_instapaper')}</option>
                 <option value="instapaper_app">{t('credentials_kind_instapaper_app')}</option>
               </select>
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={scopeGlobal && allowGlobalScope}
-                  onChange={e => setScopeGlobal(e.target.checked && allowGlobalScope)}
-                  disabled={!allowGlobalScope}
-                  aria-disabled={!allowGlobalScope}
-                />
-                {t('credentials_scope_global_label')}
-              </label>
-              {!allowGlobalScope && (
-                <span className="text-sm text-gray-500">{t('credentials_scope_global_hint')}</span>
-              )}
             </div>
             {kind === 'site_login' && (
               <div className="space-y-2">
@@ -453,7 +382,7 @@ export default function Credentials() {
                     </option>
                     {siteConfigOptions.map((option) => (
                       <option key={option.id} value={option.id}>
-                        {`${option.label} • ${option.scopeLabel}`}
+                        {option.label}
                       </option>
                     ))}
                   </select>
@@ -661,7 +590,6 @@ export default function Credentials() {
                     <th className="th" scope="col">{t('credentials_table_column_credential')}</th>
                     <th className="th" scope="col">{t('kind_label')}</th>
                     <th className="th" scope="col">{t('site_config_label')}</th>
-                    <th className="th" scope="col">{t('scope_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
@@ -683,30 +611,11 @@ export default function Credentials() {
                             <div className="space-y-0.5">
                               <div className="text-gray-900">{displayName}</div>
                               <div className="text-xs text-gray-500">{t('credentials_table_id_caption', { id: scId })}</div>
-                              {entry && (
-                                <div className="text-xs text-gray-500">
-                                  {t('scope_label')}: {entry.owner_user_id ? t('scope_user') : t('scope_global')}
-                                </div>
-                              )}
                             </div>
                           )
                         })()}
                       </td>
-                      <td className="td">{c.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                       <td className="td flex flex-wrap gap-2">
-                        {!c.ownerUserId && (
-                          <button
-                            type="button"
-                            className="btn"
-                            onClick={() => copyCredToUser(c.id)}
-                            disabled={copyingId === c.id}
-                            aria-busy={copyingId === c.id}
-                            aria-label={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
-                            title={t('credentials_copy_aria_label', { description: String(c.description ?? c.id ?? '') })}
-                          >
-                            {t('copy_to_workspace')}
-                          </button>
-                        )}
                         {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                           <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
                         )}
@@ -791,7 +700,7 @@ export default function Credentials() {
                         </option>
                         {siteConfigOptions.map((option) => (
                           <option key={option.id} value={option.id}>
-                            {`${option.label} • ${option.scopeLabel}`}
+                            {option.label}
                           </option>
                         ))}
                       </select>

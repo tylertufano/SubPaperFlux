@@ -9,7 +9,6 @@ import DropdownMenu from './DropdownMenu'
 import {
   PERMISSION_MANAGE_BOOKMARKS,
   PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
-  PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
   PERMISSION_READ_BOOKMARKS,
   PERMISSION_READ_GLOBAL_CREDENTIALS,
   extractPermissionList,
@@ -94,11 +93,7 @@ export default function Nav() {
     userMgmtUiEnabled && isAuthenticated && (isAdminUser || canManageGlobalCredentialsPermission),
   )
   const shouldShowCredentialsLink = canReadCredentials || canManageCredentials
-  const canManageSiteConfigs = Boolean(
-    userMgmtUiEnabled &&
-      isAuthenticated &&
-      (isAdminUser || hasPermission(permissions, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS)),
-  )
+  const shouldShowSiteConfigsLink = Boolean(userMgmtUiEnabled && isAuthenticated)
   const shouldShowFeedsMenu = Boolean(userMgmtUiEnabled && canViewBookmarks)
   const shouldShowBookmarksLink = canViewBookmarks
   const shouldShowJobsLink = canViewBookmarks
@@ -146,7 +141,7 @@ export default function Nav() {
         <Link href="/" className={`${baseLinkStyles} font-semibold`} aria-current={pathname === '/' ? 'page' : undefined}>
           {t('nav_brand')}
         </Link>
-        {canManageSiteConfigs ? (
+        {shouldShowSiteConfigsLink ? (
           <Link
             href="/site-configs"
             className={linkClass('/site-configs')}
