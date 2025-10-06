@@ -33,9 +33,6 @@ export interface ClearUserRoleOverridesV1AdminUsersUserIdRoleOverridesDeleteRequ
 export interface CopyCredentialV1CredentialsCredIdCopyPostRequest {
     credId: any;
 }
-export interface CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest {
-    configId: any;
-}
 export interface CountBookmarksV1BookmarksCountGetRequest {
     feedId?: any;
     since?: any;
@@ -258,7 +255,6 @@ export interface ListBookmarksV1BookmarksGet0Request {
     regexFlags?: any;
 }
 export interface ListCredentialsV1V1CredentialsGetRequest {
-    includeGlobal?: any;
     kind?: any;
     page?: any;
     size?: any;
@@ -310,7 +306,6 @@ export interface ListRolesV1AdminRolesGetRequest {
     search?: any;
 }
 export interface ListSiteConfigsV1V1SiteConfigsGetRequest {
-    includeGlobal?: any;
     search?: any;
     page?: any;
     size?: any;
@@ -485,14 +480,6 @@ export declare class V1Api extends runtime.BaseAPI {
      * Copy Credential
      */
     copyCredentialV1CredentialsCredIdCopyPost(requestParameters: CopyCredentialV1CredentialsCredIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Credential>;
-    /**
-     * Copy Site Config V1
-     */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPostRaw(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
-    /**
-     * Copy Site Config V1
-     */
-    copySiteConfigV1V1SiteConfigsConfigIdCopyPost(requestParameters: CopySiteConfigV1V1SiteConfigsConfigIdCopyPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
     /**
      * Count Bookmarks
      */

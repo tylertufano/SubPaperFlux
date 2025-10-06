@@ -69,6 +69,24 @@ export interface Feed {
      * @memberof Feed
      */
     siteLoginCredentialId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof Feed
+     */
+    folderId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof Feed
+     */
+    tagIds?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof Feed
+     */
+    lastRssPollAt?: any | null;
 }
 /**
  * Check if a given object implements the Feed interface.

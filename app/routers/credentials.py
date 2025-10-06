@@ -33,6 +33,12 @@ from ..config import is_user_mgmt_enforce_enabled
 router = APIRouter()
 
 
+def _include_global_query(
+    include_global: bool = Query(True, include_in_schema=False)
+) -> bool:
+    return include_global
+
+
 def _ensure_permission(session, current_user, permission: str, *, owner_id: Optional[str] = None) -> bool:
     allowed = has_permission(session, current_user, permission, owner_id=owner_id)
     if is_user_mgmt_enforce_enabled() and not allowed:
@@ -131,7 +137,11 @@ def _map_instapaper_error(result: InstapaperTokenResponse) -> HTTPException:
 
 
 @router.get("/", response_model=List[CredentialSchema])
-def list_credentials(current_user=Depends(get_current_user), session=Depends(get_session), include_global: bool = Query(True)):
+def list_credentials(
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+    include_global: bool = Depends(_include_global_query),
+):
     user_id = current_user["sub"]
     stmt = select(CredentialModel).where(CredentialModel.owner_user_id == user_id)
     records = session.exec(stmt).all()

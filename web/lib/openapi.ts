@@ -43,8 +43,6 @@ export function serializeSiteConfigRequest(body: SiteConfigRequest) {
   return SiteConfigSeleniumToJSON(body as SiteConfigSelenium)
 }
 
-export type SiteConfigCopyResponse = SiteConfigRecord
-
 export type PrometheusHistogramBucket = {
   upperBound: number | null
   rawUpperBound: string
@@ -1487,12 +1485,6 @@ export const v1 = {
   }) => (await getClients()).v1.runJobScheduleNowV1JobSchedulesScheduleIdRunNowPost({ scheduleId }),
   copyCredentialV1CredentialsCredIdCopyPost: async ({ credId }: { credId: string }): Promise<Credential> =>
     (await getClients()).v1.copyCredentialV1CredentialsCredIdCopyPost({ credId }),
-  copySiteConfigV1V1SiteConfigsConfigIdCopyPost: async ({
-    configId,
-  }: {
-    configId: string
-  }): Promise<SiteConfigCopyResponse> =>
-    (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
   getSiteWelcomeSetting: async () => fetchSiteWelcomeSetting(),
   updateSiteWelcomeSetting: async ({
     siteWelcomeSettingUpdate,
@@ -1686,12 +1678,6 @@ export const siteConfigs = {
       body: serializeSiteConfigRequest(body),
       xCsrfToken: CSRF,
     }),
-  copySiteConfigToUser: async ({
-    configId,
-  }: {
-    configId: string
-  }): Promise<SiteConfigCopyResponse> =>
-    (await getClients()).v1.copySiteConfigV1V1SiteConfigsConfigIdCopyPost({ configId }),
 }
 
 export const feeds = {
