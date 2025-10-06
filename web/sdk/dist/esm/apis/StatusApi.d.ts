@@ -11,6 +11,10 @@
  */
 import * as runtime from '../runtime';
 import type { StatusResponse } from '../models';
+export interface IntegrationsStatusStatusIntegrationsGetRequest {
+    instapaperCredId?: any;
+    minifluxCredId?: any;
+}
 export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
     instapaperCredId?: any;
     minifluxCredId?: any;
@@ -19,6 +23,18 @@ export interface IntegrationsStatusV1StatusIntegrationsGetRequest {
  *
  */
 export declare class StatusApi extends runtime.BaseAPI {
+    /**
+     * Db Status
+     */
+    dbStatusStatusDbGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
+        [key: string]: any;
+    }>>;
+    /**
+     * Db Status
+     */
+    dbStatusStatusDbGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
+        [key: string]: any;
+    }>;
     /**
      * Db Status
      */
@@ -34,11 +50,31 @@ export declare class StatusApi extends runtime.BaseAPI {
     /**
      * Get Status
      */
+    getStatusStatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusResponse>>;
+    /**
+     * Get Status
+     */
+    getStatusStatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StatusResponse>;
+    /**
+     * Get Status
+     */
     getStatusV1StatusGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StatusResponse>>;
     /**
      * Get Status
      */
     getStatusV1StatusGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StatusResponse>;
+    /**
+     * Integrations Status
+     */
+    integrationsStatusStatusIntegrationsGetRaw(requestParameters: IntegrationsStatusStatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{
+        [key: string]: any;
+    }>>;
+    /**
+     * Integrations Status
+     */
+    integrationsStatusStatusIntegrationsGet(requestParameters?: IntegrationsStatusStatusIntegrationsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<{
+        [key: string]: any;
+    }>;
     /**
      * Integrations Status
      */

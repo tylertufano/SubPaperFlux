@@ -69,24 +69,6 @@ export interface FeedOut {
      * @memberof FeedOut
      */
     siteLoginCredentialId?: any | null;
-    /**
-     *
-     * @type {any}
-     * @memberof FeedOut
-     */
-    folderId?: any | null;
-    /**
-     *
-     * @type {any}
-     * @memberof FeedOut
-     */
-    tagIds?: any | null;
-    /**
-     *
-     * @type {any}
-     * @memberof FeedOut
-     */
-    lastRssPollAt?: any | null;
 }
 /**
  * Check if a given object implements the FeedOut interface.
