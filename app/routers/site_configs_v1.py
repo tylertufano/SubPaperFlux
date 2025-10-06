@@ -1,4 +1,3 @@
-import copy
 from typing import Dict, List, Optional, Tuple
 
 import httpx
@@ -9,13 +8,7 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..auth import (
-    PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-    PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-    has_permission,
-)
 from ..auth.oidc import get_current_user
-from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
 from ..models import SiteConfig as SiteConfigModel, SiteLoginType
 from ..schemas import SiteConfig as SiteConfigSchema
@@ -27,15 +20,6 @@ from ..util.quotas import enforce_user_quota
 router = APIRouter(prefix="/v1/site-configs", tags=["v1"])
 
 _site_config_out_adapter = TypeAdapter(SiteConfigOut)
-
-
-def _ensure_permission(
-    session, current_user, permission: str, *, owner_id: Optional[str] = None
-) -> bool:
-    allowed = has_permission(session, current_user, permission, owner_id=owner_id)
-    if is_user_mgmt_enforce_enabled() and not allowed:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    return allowed
 
 
 def _site_config_to_schema(model: SiteConfigModel) -> SiteConfigOut:
@@ -157,6 +141,7 @@ def create_site_config_v1(
 ):
     payload = body.model_dump(mode="json")
     payload.pop("id", None)
+    payload["owner_user_id"] = current_user["sub"]
 
     login_type, selenium_config, api_config = _normalize_login_payload(
         payload.get("login_type"),
@@ -178,25 +163,15 @@ def create_site_config_v1(
         api_config=api_config,
     )
 
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            model.owner_user_id = current_user["sub"]
-
-    if model.owner_user_id:
-        enforce_user_quota(
-            session,
-            model.owner_user_id,
-            quota_field="quota_site_configs",
-            resource_name="Site config",
-            count_stmt=select(func.count())
-            .select_from(SiteConfigModel)
-            .where(SiteConfigModel.owner_user_id == model.owner_user_id),
-        )
+    enforce_user_quota(
+        session,
+        model.owner_user_id,
+        quota_field="quota_site_configs",
+        resource_name="Site config",
+        count_stmt=select(func.count())
+        .select_from(SiteConfigModel)
+        .where(SiteConfigModel.owner_user_id == model.owner_user_id),
+    )
 
     session.add(model)
 
@@ -226,26 +201,13 @@ def create_site_config_v1(
 def list_site_configs_v1(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
-    include_global: bool = Query(True),
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),
 ):
     user_id = current_user["sub"]
     stmt = select(SiteConfigModel).where(SiteConfigModel.owner_user_id == user_id)
-    if include_global:
-        _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-        )
-        # naive union via two queries
-        mine = session.exec(stmt).all()
-        global_stmt = select(SiteConfigModel).where(SiteConfigModel.owner_user_id.is_(None))
-        globs = session.exec(global_stmt).all()
-        rows = mine + globs
-    else:
-        rows = session.exec(stmt).all()
+    rows = session.exec(stmt).all()
     if search:
         q = search.lower()
         rows = [
@@ -284,13 +246,7 @@ def get_site_config_v1(
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    if model.owner_user_id is None:
-        _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-        )
-    elif model.owner_user_id != current_user["sub"]:
+    if model.owner_user_id != current_user["sub"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     return _site_config_to_schema(model)
@@ -312,23 +268,8 @@ def update_site_config_v1(
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-            owner_id=model.owner_user_id,
-        )
-        if not allowed_cross:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if model.owner_user_id != current_user["sub"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     update_payload = body.model_dump(exclude_unset=True, mode="json")
     update_payload.pop("id", None)
@@ -352,7 +293,6 @@ def update_site_config_v1(
     for field in (
         "name",
         "site_url",
-        "owner_user_id",
         "success_text_class",
         "expected_success_text",
         "required_cookies",
@@ -380,7 +320,6 @@ def update_site_config_v1(
             "name": model.name,
             "site_url": model.site_url,
             "updated_fields": sorted(changed_fields),
-            "owner_changed": original.get("owner_user_id") != model.owner_user_id,
             "login_payload": _summarize_login_payload(
                 model.login_type, model.selenium_config, model.api_config
             ),
@@ -408,23 +347,8 @@ def delete_site_config_v1(
     if not model:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    if model.owner_user_id is None:
-        allowed_global = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
-        if not allowed_global:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    elif model.owner_user_id != current_user["sub"]:
-        allowed_cross = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-            owner_id=model.owner_user_id,
-        )
-        if not allowed_cross:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if model.owner_user_id != current_user["sub"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     record_audit_log(
         session,
@@ -455,14 +379,8 @@ def test_site_config(
     config_id: str, current_user=Depends(get_current_user), session=Depends(get_session)
 ):
     sc = session.get(SiteConfigModel, config_id)
-    if not sc or sc.owner_user_id not in (current_user["sub"], None):
+    if not sc or sc.owner_user_id != current_user["sub"]:
         return {"ok": False, "error": "not_found"}
-    if sc.owner_user_id is None:
-        _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-        )
     login_type = SiteLoginType(sc.login_type)
     if login_type != SiteLoginType.SELENIUM:
         return {
@@ -508,91 +426,3 @@ def test_site_config(
         return {"ok": False, "error": str(e)}
 
 
-@router.post(
-    "/{config_id}/copy",
-    response_model=SiteConfigOut,
-    status_code=status.HTTP_201_CREATED,
-)
-def copy_site_config_v1(
-    config_id: str,
-    current_user=Depends(get_current_user),
-    session=Depends(get_session),
-):
-    source = session.get(SiteConfigModel, config_id)
-    if not source or source.owner_user_id is not None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-
-    try:
-        allowed = _ensure_permission(
-            session,
-            current_user,
-            PERMISSION_READ_GLOBAL_SITE_CONFIGS,
-        )
-    except HTTPException as exc:  # pragma: no cover - defensive branch
-        if exc.status_code == status.HTTP_403_FORBIDDEN:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Not found"
-            ) from exc
-        raise
-
-    if not allowed:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-
-    user_id = current_user["sub"]
-
-    enforce_user_quota(
-        session,
-        user_id,
-        quota_field="quota_site_configs",
-        resource_name="Site config",
-        count_stmt=select(func.count())
-        .select_from(SiteConfigModel)
-        .where(SiteConfigModel.owner_user_id == user_id),
-    )
-
-    source_login_type = SiteLoginType(source.login_type)
-
-    selenium_payload = (
-        copy.deepcopy(source.selenium_config)
-        if source_login_type == SiteLoginType.SELENIUM
-        else None
-    )
-    api_payload = (
-        copy.deepcopy(source.api_config)
-        if source_login_type == SiteLoginType.API
-        else None
-    )
-
-    clone = SiteConfigModel(
-        name=source.name,
-        site_url=source.site_url,
-        login_type=source_login_type,
-        selenium_config=selenium_payload,
-        api_config=api_payload,
-        success_text_class=source.success_text_class or "",
-        expected_success_text=source.expected_success_text or "",
-        required_cookies=list(source.required_cookies or []),
-        owner_user_id=user_id,
-    )
-
-    session.add(clone)
-
-    record_audit_log(
-        session,
-        entity_type="setting",
-        entity_id=clone.id,
-        action="copy",
-        owner_user_id=clone.owner_user_id,
-        actor_user_id=user_id,
-        details={
-            "source_config_id": source.id,
-            "name": clone.name,
-            "site_url": clone.site_url,
-            "login_type": SiteLoginType(clone.login_type).value,
-        },
-    )
-
-    session.commit()
-    session.refresh(clone)
-
-    return _site_config_to_schema(clone)

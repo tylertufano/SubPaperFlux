@@ -150,6 +150,7 @@ def test_audit_log_tracks_site_config_crud(admin_client: TestClient):
         "name": "Demo Site",
         "site_url": "https://example.com/login",
         "login_type": "selenium",
+        "owner_user_id": "admin",
         "selenium_config": {
             "username_selector": "#username",
             "password_selector": "#password",

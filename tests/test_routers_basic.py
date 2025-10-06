@@ -111,28 +111,11 @@ def test_credentials_and_siteconfigs(client):
             required_cookies=["api_session"],
             owner_user_id="u1",
         )
-        global_site = SiteConfig(
-            name="Global Site",
-            site_url="https://global.example.com/login",
-            login_type=SiteLoginType.SELENIUM,
-            selenium_config={
-                "username_selector": "#u",
-                "password_selector": "#p",
-                "login_button_selector": "button[type='submit']",
-                "cookies_to_store": ["sid"],
-            },
-            success_text_class="alert alert-global",
-            expected_success_text="Welcome Global User",
-            required_cookies=["sid"],
-            owner_user_id=None,
-        )
         session.add(user_site)
         session.add(api_user_site)
-        session.add(global_site)
         session.commit()
         session.refresh(user_site)
         session.refresh(api_user_site)
-        session.refresh(global_site)
 
     # Create a credential (site_login)
     r = client.post(
@@ -187,7 +170,7 @@ def test_credentials_and_siteconfigs(client):
             "description": "Global credential",
             "data": {"username": "ga", "password": "gp"},
             "owner_user_id": None,
-            "site_config_id": global_site.id,
+            "site_config_id": user_site.id,
         },
     )
     assert r_global_create.status_code == 400
@@ -241,6 +224,7 @@ def test_credentials_and_siteconfigs(client):
         "name": "Demo",
         "site_url": "https://example.com/login",
         "login_type": "selenium",
+        "owner_user_id": "u1",
         "selenium_config": {
             "username_selector": "#u",
             "password_selector": "#p",
@@ -290,6 +274,7 @@ def test_credentials_and_siteconfigs(client):
         "name": "API Demo",
         "site_url": "https://api.example.com/login",
         "login_type": "api",
+        "owner_user_id": "u1",
         "api_config": {
             "endpoint": "https://api.example.com/login",
             "method": "POST",
@@ -333,11 +318,10 @@ def test_credentials_and_siteconfigs(client):
     r4 = client.get("/v1/site-configs")
     assert r4.status_code == 200
     scs = r4.json()
-    assert scs["total"] == 3
+    assert scs["total"] == 2
     site_ids = {item["id"] for item in scs["items"]}
     assert user_site.id in site_ids
     assert api_user_site.id in site_ids
-    assert global_site.id in site_ids
 
     # Verify audit logs recorded
     from app.db import get_session
@@ -406,6 +390,7 @@ def test_site_login_credential_inherits_site_config_owner(client):
             "kind": "site_login",
             "description": "Subject credential",
             "data": {"username": "subject", "password": "pw"},
+            "owner_user_id": subject_user,
             "site_config_id": subject_config.id,
         },
     )
@@ -439,13 +424,6 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
         assert cred_resp.status_code == 201
         global_cred = cred_resp.json()
 
-        global_sc = _create_site_config(
-            client,
-            owner=None,
-            name="Global Config",
-            site_url="https://example.com/global",
-        )
-
         from app.auth.oidc import get_current_user
 
         original_override = client.app.dependency_overrides[get_current_user]
@@ -458,13 +436,11 @@ def test_enforced_global_access_requires_permission(monkeypatch, client):
             assert r_creds.status_code == 403
 
             r_site_configs = client.get("/v1/site-configs")
-            assert r_site_configs.status_code == 403
+            assert r_site_configs.status_code == 200
+            assert r_site_configs.json()["total"] == 0
 
             r_cred_detail = client.get(f"/v1/credentials/{global_cred['id']}")
             assert r_cred_detail.status_code == 403
-
-            r_sc_detail = client.get(f"/v1/site-configs/{global_sc['id']}")
-            assert r_sc_detail.status_code == 403
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
     finally:
@@ -523,16 +499,27 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
             r_sc_update = client.put(
                 f"/v1/site-configs/{owned_sc['id']}", json=sc_update_payload
             )
-            assert r_sc_update.status_code == 403
+            assert r_sc_update.status_code == 404
         finally:
             client.app.dependency_overrides[get_current_user] = original_override
 
-        tenant_sc = _create_site_config(
-            client,
-            owner="tenant",
-            name="Tenant Config",
-            site_url="https://example.com/tenant",
-        )
+        tenant_override = client.app.dependency_overrides.get(get_current_user)
+        try:
+            client.app.dependency_overrides[get_current_user] = lambda: {
+                "sub": "tenant",
+                "groups": [],
+            }
+            tenant_sc = _create_site_config(
+                client,
+                owner="tenant",
+                name="Tenant Config",
+                site_url="https://example.com/tenant",
+            )
+        finally:
+            if tenant_override is not None:
+                client.app.dependency_overrides[get_current_user] = tenant_override
+            else:
+                client.app.dependency_overrides.pop(get_current_user, None)
         other_cred_resp = client.post(
             "/v1/credentials",
             json={
@@ -561,7 +548,7 @@ def test_enforced_cross_tenant_updates_require_permission(monkeypatch, client):
         r_admin_sc_update = client.put(
             f"/v1/site-configs/{tenant_sc['id']}", json=sc_update_payload
         )
-        assert r_admin_sc_update.status_code == 200
+        assert r_admin_sc_update.status_code == 404
     finally:
         is_user_mgmt_enforce_enabled.cache_clear()
 

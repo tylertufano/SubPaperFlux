@@ -251,7 +251,9 @@ class SiteConfig(SQLModel, table=True):
     api_config: Optional[Dict[str, Any]] = Field(
         default=None, sa_column=Column(JSON, nullable=True)
     )
-    owner_user_id: Optional[str] = Field(default=None, index=True)  # None => global
+    owner_user_id: str = Field(
+        sa_column=Column(String(length=255), nullable=False, index=True)
+    )
 
     def __init__(self, **data: Any):  # type: ignore[override]
         required_cookies = data.pop("required_cookies", None)

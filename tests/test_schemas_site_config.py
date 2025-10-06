@@ -73,7 +73,7 @@ def test_site_config_serialization_excludes_unrelated_config():
         id="abc",
         name="Example",
         site_url="https://example.com",
-        owner_user_id=None,
+        owner_user_id="user-123",
         selenium_config=SeleniumConfig(
             username_selector="#user",
             password_selector="#pass",

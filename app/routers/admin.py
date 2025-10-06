@@ -6,12 +6,7 @@ from sqlalchemy import func
 from sqlmodel import select
 
 from ..audit import record_audit_log
-from ..auth import (
-    ADMIN_ROLE_NAME,
-    PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS,
-    has_permission,
-    user_has_role,
-)
+from ..auth import ADMIN_ROLE_NAME, user_has_role
 from ..auth.oidc import get_current_user
 from ..db import get_session, get_session_user_id, is_postgres
 from ..db_admin import prepare_postgres_search, enable_rls
@@ -46,11 +41,6 @@ def _require_admin(session, current_user) -> str:
             identity_for_check.setdefault("sub", resolved_user_id)
         else:
             identity_for_check = {"sub": resolved_user_id}
-
-    if has_permission(
-        session, identity_for_check, PERMISSION_MANAGE_GLOBAL_SITE_CONFIGS
-    ):
-        return resolved_user_id
 
     if user_has_role(session, resolved_user_id, ADMIN_ROLE_NAME):
         return resolved_user_id
