@@ -1723,7 +1723,7 @@ export default function JobSchedulesPage() {
 
   const scopeLabel = (schedule: ExtendedJobSchedule) => {
     if (!schedule.ownerUserId) {
-      return t("scope_global");
+      return t("scope_system");
     }
     if (schedule.ownerUserId === currentUserId) {
       return t("scope_user");

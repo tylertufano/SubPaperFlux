@@ -234,7 +234,9 @@ describe("Nav component", () => {
     expect(screen.queryByRole("link", { name: "Schedules" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Feeds" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Credentials" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Site Configs" })).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Site Configs" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "SubPaperFlux" }),
     ).toBeInTheDocument();
@@ -262,7 +264,9 @@ describe("Nav component", () => {
     expect(
       screen.getByRole("link", { name: "Credentials" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Site Configs" })).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Site Configs" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "SubPaperFlux" }),
     ).toBeInTheDocument();

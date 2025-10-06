@@ -1,12 +1,6 @@
 import useSWR from 'swr'
 import { Alert, Breadcrumbs, EmptyState, InlineTip, Nav } from '../components'
-import {
-  v1,
-  siteConfigs as site,
-  type SiteConfigCopyResponse,
-  type SiteConfigRecord,
-  type SiteConfigRequest,
-} from '../lib/openapi'
+import { v1, siteConfigs as site, type SiteConfigRecord, type SiteConfigRequest } from '../lib/openapi'
 import { useMemo, useState } from 'react'
 import {
   isValidUrl,
@@ -210,9 +204,7 @@ export default function SiteConfigs() {
   )
   const [form, setForm] = useState<SiteConfigFormState>(() => createEmptyForm('selenium'))
   const [createErrors, setCreateErrors] = useState<LocalizedErrors>({})
-  const [scopeGlobal, setScopeGlobal] = useState(false)
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
-  const [copyingId, setCopyingId] = useState<string | null>(null)
   const [editing, setEditing] = useState<SiteConfigFormState | null>(null)
   const [editErrors, setEditErrors] = useState<LocalizedErrors>({})
 
@@ -255,11 +247,9 @@ export default function SiteConfigs() {
       setBanner({ kind: 'error', message })
       return
     }
-    submission.ownerUserId = scopeGlobal ? null : undefined
     try {
       await site.createSiteConfigSiteConfigsPost({ body: submission })
       setForm(createEmptyForm(form.login_type))
-      setScopeGlobal(false)
       setCreateErrors({})
       setBanner({ kind: 'success', message: t('site_configs_create_success') })
       await mutate()
@@ -276,54 +266,6 @@ export default function SiteConfigs() {
       await mutate()
     } catch (err: any) {
       setBanner({ kind: 'error', message: err?.message || String(err) })
-    }
-  }
-
-  async function copyToUser(configId: string) {
-    setBanner(null)
-    setCopyingId(configId)
-    try {
-      const copied: SiteConfigCopyResponse = await site.copySiteConfigToUser({ configId })
-      const normalizedCopied = normalizeListItem(copied)
-      const appendConfig = (candidate: any) => {
-        const list: SiteConfigRecord[] = Array.isArray(candidate)
-          ? candidate.map(normalizeListItem)
-          : []
-        const exists = list.some((item) => item?.id === normalizedCopied.id)
-        return exists ? { list, added: false } : { list: [...list, normalizedCopied], added: true }
-      }
-      const applyToPage = (page: SiteConfigList) => {
-        if (!page || typeof page !== 'object' || !('items' in page)) return page
-        const { list, added } = appendConfig((page as SiteConfigsPage).items)
-        if (!added) return page
-        const nextTotal = typeof (page as SiteConfigsPage).total === 'number' ? (page as SiteConfigsPage).total + 1 : (page as SiteConfigsPage).total
-        return { ...(page as SiteConfigsPage), items: list, total: nextTotal }
-      }
-      await mutate((current: SiteConfigList | undefined) => {
-        if (Array.isArray(current)) {
-          const { list, added } = appendConfig(current)
-          return added ? list : current
-        }
-        if (current && typeof current === 'object') {
-          return applyToPage(current)
-        }
-        if (current == null) {
-          if (Array.isArray(data)) {
-            const { list, added } = appendConfig(data)
-            return added ? list : data
-          }
-          if (data && typeof data === 'object') {
-            return applyToPage(data)
-          }
-        }
-        return current as any
-      }, { revalidate: false })
-      setBanner({ kind: 'success', message: t('copy_to_workspace_success') })
-    } catch (err: any) {
-      const reason = err?.message || String(err)
-      setBanner({ kind: 'error', message: t('copy_to_workspace_error', { reason }) })
-    } finally {
-      setCopyingId(null)
     }
   }
 
@@ -857,10 +799,6 @@ export default function SiteConfigs() {
             ? renderSeleniumFields(form, createErrors, setForm, setCreateErrors, 'create')
             : renderApiFields(form, createErrors, setForm, setCreateErrors, 'create')}
           {renderSharedFields(form, createErrors, setForm, setCreateErrors, 'create')}
-          <label className="inline-flex items-center gap-2 md:col-span-2">
-            <input type="checkbox" checked={scopeGlobal} onChange={(e) => setScopeGlobal(e.target.checked)} />
-            {t('site_configs_scope_global_label')}
-          </label>
           <button
             type="submit"
             className="btn"
@@ -891,7 +829,6 @@ export default function SiteConfigs() {
                     <th className="th" scope="col">{t('name_label')}</th>
                     <th className="th" scope="col">{t('url_label')}</th>
                     <th className="th" scope="col">{t('site_configs_column_type')}</th>
-                    <th className="th" scope="col">{t('scope_label')}</th>
                     <th className="th" scope="col">{t('actions_label')}</th>
                   </tr>
                 </thead>
@@ -903,20 +840,8 @@ export default function SiteConfigs() {
                         <td className="td">{sc.name}</td>
                         <td className="td">{sc.siteUrl}</td>
                         <td className="td">{resolveLoginTypeLabel(loginType)}</td>
-                        <td className="td">{sc.ownerUserId ? t('scope_user') : t('scope_global')}</td>
                         <td className="td">
                           <div className="flex flex-wrap items-center gap-2">
-                            {!sc.ownerUserId && (
-                              <button
-                                type="button"
-                                className="btn btn-compact"
-                                onClick={() => copyToUser(sc.id)}
-                                disabled={copyingId === sc.id}
-                                aria-busy={copyingId === sc.id}
-                              >
-                                {t('copy_to_workspace')}
-                              </button>
-                            )}
                             <button
                               type="button"
                               className="btn btn-compact"
