@@ -405,6 +405,48 @@ def test_site_login_credential_inherits_site_config_owner(client):
         assert stored.owner_user_id == subject_user
 
 
+def test_site_login_credential_accepts_camelcase_fields(client):
+    from app.db import get_session
+    from app.models import SiteConfig, SiteLoginType
+
+    subject_user = "subject-user"
+
+    with next(get_session()) as session:
+        subject_config = SiteConfig(
+            name="Subject Site",
+            site_url="https://subject.example.com/login",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["sid"],
+            },
+            success_text_class="alert alert-subject",
+            expected_success_text="Logged in",
+            required_cookies=["sid"],
+            owner_user_id=subject_user,
+        )
+        session.add(subject_config)
+        session.commit()
+        session.refresh(subject_config)
+
+    response = client.post(
+        "/v1/credentials",
+        json={
+            "kind": "site_login",
+            "description": "Subject credential",
+            "data": {"username": "subject", "password": "pw"},
+            "ownerUserId": subject_user,
+            "siteConfigId": subject_config.id,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    payload = response.json()
+    assert payload["site_config_id"] == subject_config.id
+
+
 def test_enforced_global_access_requires_permission(monkeypatch, client):
     monkeypatch.setenv("USER_MGMT_ENFORCE", "1")
     from app.config import is_user_mgmt_enforce_enabled

@@ -3,6 +3,7 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import (
+    AliasChoices,
     AnyHttpUrl,
     BaseModel,
     ConfigDict,
@@ -160,8 +161,14 @@ class Credential(BaseModel):
     kind: str  # instapaper|miniflux|site_login|substack
     description: constr(strip_whitespace=True, min_length=1, max_length=200)
     data: dict  # Placeholder; to be encrypted at rest in a real impl
-    owner_user_id: Optional[str] = None
-    site_config_id: Optional[str] = None
+    owner_user_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("owner_user_id", "ownerUserId"),
+    )
+    site_config_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("site_config_id", "siteConfigId"),
+    )
 
     @model_validator(mode="after")
     def _validate_site_config(cls, values: "Credential") -> "Credential":  # type: ignore[override]
