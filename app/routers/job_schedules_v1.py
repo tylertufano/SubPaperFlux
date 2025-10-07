@@ -12,7 +12,7 @@ from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..jobs import known_job_types
 from ..jobs.scheduler import parse_frequency
-from ..jobs.validation import scrub_legacy_schedule_payload
+from ..jobs.validation import scrub_legacy_schedule_payload, validate_job
 from ..models import Folder, Job, JobSchedule, Tag
 from ..schemas import (
     JobOut,
@@ -423,6 +423,27 @@ def update_job_schedule(
 
     normalized_tags, normalized_folder_id = _normalize_schedule_targets(base_payload)
 
+    payload_changed = (
+        raw_payload_update is not _SENTINEL
+        or tags_update is not _SENTINEL
+        or folder_update is not _SENTINEL
+    )
+
+    validation_required = payload_changed or ("job_type" in updates)
+
+    if validation_required:
+        validation_result = validate_job(prospective_job_type, dict(base_payload))
+        if not validation_result.get("ok", True):
+            missing_values = validation_result.get("missing", [])
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "error": "job_payload_missing_fields",
+                    "missing": missing_values,
+                    "message": "Missing payload fields",
+                },
+            )
+
     if prospective_job_type == "publish":
         _ensure_publish_schedule_exclusivity(
             session,
@@ -439,11 +460,6 @@ def update_job_schedule(
 
     if "job_type" in updates:
         schedule.job_type = updates["job_type"]
-    payload_changed = (
-        raw_payload_update is not _SENTINEL
-        or tags_update is not _SENTINEL
-        or folder_update is not _SENTINEL
-    )
     if payload_changed:
         schedule.payload = scrub_legacy_schedule_payload(base_payload)
     if "frequency" in updates:

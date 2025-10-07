@@ -199,6 +199,52 @@ def test_patch_reactivation_restores_next_run_when_missing(client: TestClient, m
     assert reactivated_next_run == _normalize(resume_time + timedelta(minutes=30))
 
 
+def test_patch_payload_without_job_type(client: TestClient):
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "login-payload-update",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201
+    schedule_id = create_resp.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"payload": {"site_login_pair": "cred-2::site-2"}},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    updated = update_resp.json()
+    assert updated["payload"]["site_login_pair"] == "cred-2::site-2"
+
+
+def test_patch_payload_missing_required_field(client: TestClient):
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "login-payload-missing",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201
+    schedule_id = create_resp.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={"payload": {"site_login_pair": ""}},
+    )
+    assert update_resp.status_code == 422
+    problem = update_resp.json()
+    assert problem["status"] == 422
+    assert problem["details"]["error"] == "job_payload_missing_fields"
+    assert "site_login_pair" in problem["details"]["missing"]
+
+
 def test_create_list_get_schedule(client: TestClient):
     create_resp = client.post(
         "/v1/job-schedules",
