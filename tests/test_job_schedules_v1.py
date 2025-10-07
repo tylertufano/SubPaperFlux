@@ -413,6 +413,107 @@ def test_create_rss_schedule_without_instapaper(client: TestClient):
     assert "instapaper_id" not in schedule["payload"]
 
 
+def test_create_rss_schedule_with_site_login_identifiers(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.org/feed.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "rss-with-login",
+            "job_type": "rss_poll",
+            "payload": {"feed_id": feed_id},
+            "site_login_credential_id": "cred-1",
+            "site_login_config_id": "site-1",
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    schedule = create_resp.json()
+    assert schedule["payload"]["site_login_pair"] == "cred-1::site-1"
+
+
+def test_create_rss_schedule_requires_both_site_login_identifiers(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.net/rss.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "rss-with-login-missing",
+            "job_type": "rss_poll",
+            "payload": {"feed_id": feed_id},
+            "site_login_credential_id": "cred-only",
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 422
+    detail = create_resp.json()
+    errors = detail["details"]["errors"]
+    assert any("site_login" in err.get("msg", "") for err in errors)
+
+
+def test_update_rss_schedule_with_site_login_identifiers(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.com/rss-updated.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "rss-update-login",
+            "job_type": "rss_poll",
+            "payload": {"feed_id": feed_id},
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201
+    schedule_id = create_resp.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={
+            "site_login_credential_id": "cred-2",
+            "site_login_config_id": "site-2",
+        },
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    updated = update_resp.json()
+    assert updated["payload"]["site_login_pair"] == "cred-2::site-2"
+
+
 def test_schedule_name_uniqueness(client: TestClient):
     first = client.post(
         "/v1/job-schedules",
