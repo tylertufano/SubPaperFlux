@@ -34,9 +34,7 @@ type JobType =
   | "rss_poll"
   | "publish"
   | "retention";
-type OwnerFilter = "me" | "global" | "all";
 type ActiveFilter = "all" | "active" | "paused";
-type OwnerScope = "self" | "global";
 
 type ScheduleFormResult = {
   scheduleName: string;
@@ -45,7 +43,6 @@ type ScheduleFormResult = {
   payload: Record<string, any>;
   nextRunAt: Date | null;
   isActive: boolean;
-  ownerUserId?: string | null;
 };
 
 type ScheduleFormMode = "create" | "edit";
@@ -73,7 +70,6 @@ type ScheduleFormProps = {
   onSubmit: (values: ScheduleFormResult) => Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
-  allowOwnerSelection: boolean;
   onCreateTag?: (label: string) => Promise<AutocompleteOption | null>;
   onCreateFolder?: (label: string) => Promise<AutocompleteOption | null>;
 };
@@ -377,7 +373,6 @@ function ScheduleForm({
   onSubmit,
   onCancel,
   isSubmitting,
-  allowOwnerSelection,
   onCreateTag,
   onCreateFolder,
 }: ScheduleFormProps) {
@@ -394,13 +389,6 @@ function ScheduleForm({
     toDateTimeLocalValue(initialSchedule?.nextRunAt ?? null),
   );
   const [isActive, setIsActive] = useState(initialSchedule?.isActive ?? true);
-  const [ownerScope, setOwnerScope] = useState<OwnerScope>(
-    initialSchedule
-      ? initialSchedule.ownerUserId == null
-        ? "global"
-        : "self"
-      : "self",
-  );
   const [payloadState, setPayloadState] = useState<Record<string, any>>(
     initPayloadState(initialType, initialSchedule?.payload),
   );
@@ -427,13 +415,6 @@ function ScheduleForm({
     setFrequency(initialSchedule?.frequency ?? defaultFrequency(nextType));
     setNextRunAt(toDateTimeLocalValue(initialSchedule?.nextRunAt ?? null));
     setIsActive(initialSchedule?.isActive ?? true);
-    setOwnerScope(
-      initialSchedule
-        ? initialSchedule.ownerUserId == null
-          ? "global"
-          : "self"
-        : "self",
-    );
     setScheduleName(initialSchedule?.scheduleName ?? "");
     setPayloadState(initPayloadState(nextType, initialSchedule?.payload));
     setErrors({});
@@ -646,7 +627,6 @@ function ScheduleForm({
       payload,
       nextRunAt: parsedNextRun,
       isActive,
-      ownerUserId: ownerScope === "global" ? null : undefined,
     };
 
     return { ok: true, value: result };
@@ -664,11 +644,6 @@ function ScheduleForm({
     setFormError(null);
     await onSubmit(result.value);
   }
-
-  const ownerOptions: Array<{ value: OwnerScope; label: string }> = [
-    { value: "self", label: t("job_schedules_owner_self") },
-    { value: "global", label: t("job_schedules_owner_global") },
-  ];
 
   const siteLoginOptions: SiteLoginOption[] = useMemo(
     () => buildSiteLoginOptions(loginCredentials, siteConfigs, t("feeds_field_site_config_only")),
@@ -1390,30 +1365,6 @@ function ScheduleForm({
             </p>
           )}
         </div>
-        <div className="flex flex-col">
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="schedule-owner"
-          >
-            {t("job_schedules_field_owner")}
-          </label>
-          <select
-            id="schedule-owner"
-            className="input"
-            value={ownerScope}
-            onChange={(e) => setOwnerScope(e.target.value as OwnerScope)}
-            disabled={!allowOwnerSelection || mode === "edit"}
-          >
-            {ownerOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-sm text-gray-600 mt-1">
-            {t("job_schedules_field_owner_help")}
-          </p>
-        </div>
         <label className="inline-flex items-center gap-2 md:col-span-2">
           <input
             id="schedule-active"
@@ -1477,7 +1428,6 @@ export default function JobSchedulesPage() {
     isAuthenticated && hasPermission(permissions, PERMISSION_MANAGE_BOOKMARKS),
   );
 
-  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("me");
   const [jobTypeFilter, setJobTypeFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [page, setPage] = useState(1);
@@ -1498,17 +1448,14 @@ export default function JobSchedulesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [ownerFilter, jobTypeFilter, activeFilter]);
+  }, [jobTypeFilter, activeFilter]);
 
   const { data, error, isLoading, mutate } = useSWR<JobSchedulesPage>(
     canViewSchedules
-      ? ["/v1/job-schedules", ownerFilter, jobTypeFilter, activeFilter, page]
+      ? ["/v1/job-schedules", jobTypeFilter, activeFilter, page]
       : null,
-    async ([, owner, jobType, active, currentPage]) => {
+    async ([, jobType, active, currentPage]) => {
       const params: any = { page: currentPage, size: PAGE_SIZE };
-      if (owner && owner !== "all") {
-        params.ownerUserId = [owner];
-      }
       if (jobType) {
         params.jobType = jobType;
       }
@@ -1572,9 +1519,6 @@ export default function JobSchedulesPage() {
   }, [foldersData]);
   const hasNext = Boolean(data?.hasNext);
   const totalPages = data?.totalPages ?? data?.total ?? 1;
-  const currentUserId =
-    typeof session?.user?.id === "string" ? session.user.id : undefined;
-
   function appendItemToCollection<T extends { id?: string | number }>(
     existing: any,
     item: T,
@@ -1721,16 +1665,6 @@ export default function JobSchedulesPage() {
   const formatDateValue = (value?: Date | null) =>
     value ? dateFormatter.format(value) : "—";
 
-  const scopeLabel = (schedule: ExtendedJobSchedule) => {
-    if (!schedule.ownerUserId) {
-      return t("scope_system");
-    }
-    if (schedule.ownerUserId === currentUserId) {
-      return t("scope_user");
-    }
-    return schedule.ownerUserId;
-  };
-
   const statusLabel = (schedule: ExtendedJobSchedule) =>
     schedule.isActive
       ? t("job_schedules_status_active")
@@ -1747,7 +1681,6 @@ export default function JobSchedulesPage() {
           payload: values.payload,
           nextRunAt: values.nextRunAt ?? undefined,
           isActive: values.isActive,
-          ownerUserId: values.ownerUserId,
         },
       });
       setBanner({
@@ -1873,17 +1806,10 @@ export default function JobSchedulesPage() {
   }
 
   function clearFilters() {
-    setOwnerFilter("me");
     setJobTypeFilter("");
     setActiveFilter("all");
     setPage(1);
   }
-
-  const ownerFilterOptions: Array<{ value: OwnerFilter; label: string }> = [
-    { value: "me", label: t("job_schedules_owner_me") },
-    { value: "global", label: t("job_schedules_owner_global_only") },
-    { value: "all", label: t("job_schedules_owner_all") },
-  ];
 
   return (
     <div>
@@ -1905,25 +1831,6 @@ export default function JobSchedulesPage() {
           role="search"
           aria-label={t("job_schedules_filters_label")}
         >
-          <label
-            className="text-sm text-gray-700"
-            htmlFor="job-schedule-filter-owner"
-          >
-            {t("job_schedules_filter_owner_label")}
-          </label>
-          <select
-            id="job-schedule-filter-owner"
-            className="input"
-            value={ownerFilter}
-            onChange={(e) => setOwnerFilter(e.target.value as OwnerFilter)}
-          >
-            {ownerFilterOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
           <label
             className="text-sm text-gray-700"
             htmlFor="job-schedule-filter-type"
@@ -1998,7 +1905,6 @@ export default function JobSchedulesPage() {
               schedules={schedules}
               onSubmit={handleCreate}
               isSubmitting={isCreating}
-              allowOwnerSelection={canManageSchedules}
               onCreateTag={handleCreateTag}
               onCreateFolder={handleCreateFolder}
             />
@@ -2022,7 +1928,6 @@ export default function JobSchedulesPage() {
               onSubmit={handleUpdate}
               onCancel={() => setEditingSchedule(null)}
               isSubmitting={isEditing}
-              allowOwnerSelection={false}
               onCreateTag={handleCreateTag}
               onCreateFolder={handleCreateFolder}
             />
@@ -2084,9 +1989,6 @@ export default function JobSchedulesPage() {
                     {t("job_schedules_column_last_job")}
                   </th>
                   <th className="th" scope="col">
-                    {t("job_schedules_column_scope")}
-                  </th>
-                  <th className="th" scope="col">
                     {t("job_schedules_column_status")}
                   </th>
                   <th className="th" scope="col">
@@ -2127,7 +2029,6 @@ export default function JobSchedulesPage() {
                           {formatDateValue(schedule.lastRunAt)}
                         </td>
                         <td className="td">{schedule.lastJobId ?? "—"}</td>
-                        <td className="td">{scopeLabel(schedule)}</td>
                         <td className="td">{statusLabel(schedule)}</td>
                         <td className="td">
                           <div className="flex flex-wrap gap-2">
@@ -2190,7 +2091,7 @@ export default function JobSchedulesPage() {
                       </tr>
                       {isExpanded && (
                         <tr className="bg-gray-50">
-                          <td className="td" colSpan={9}>
+                          <td className="td" colSpan={8}>
                             <div className="p-4 space-y-3">
                               <div>
                                 <h3 className="text-sm font-semibold text-gray-800 mb-2">
