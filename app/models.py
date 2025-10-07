@@ -457,8 +457,9 @@ class JobSchedule(SQLModel, table=True):
     job_type: str = Field(
         sa_column=Column(String(length=255), nullable=False, index=True)
     )
-    owner_user_id: str = Field(
-        sa_column=Column(String, nullable=False, index=True),
+    owner_user_id: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String, nullable=True, index=True),
     )
     payload: Dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
     frequency: str = Field(sa_column=Column(String(length=255), nullable=False))
