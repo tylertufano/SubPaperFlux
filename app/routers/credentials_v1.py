@@ -69,7 +69,25 @@ def create_credential_v1(
         if not site_config_id:
             site_config_id = None
 
-    if owner is None:
+    site_config_record: Optional[SiteConfigModel] = None
+
+    if body.kind == "site_login" and not site_config_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="site_login credentials require a site_config_id",
+        )
+
+    if body.kind == "site_login":
+        site_config_record = _validate_site_config_assignment(
+            session,
+            current_user,
+            site_config_id=site_config_id,
+            credential_owner_id=owner,
+        )
+        if site_config_record is not None:
+            owner = site_config_record.owner_user_id
+            site_config_id = site_config_record.id
+    elif owner is None:
         allowed_global = has_permission(
             session,
             current_user,
@@ -90,20 +108,6 @@ def create_credential_v1(
             count_stmt=select(func.count())
             .select_from(CredentialModel)
             .where(CredentialModel.owner_user_id == owner),
-        )
-
-    if body.kind == "site_login" and not site_config_id:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="site_login credentials require a site_config_id",
-        )
-
-    if body.kind == "site_login":
-        _validate_site_config_assignment(
-            session,
-            current_user,
-            site_config_id=site_config_id,
-            credential_owner_id=owner,
         )
 
     model = CredentialModel(
