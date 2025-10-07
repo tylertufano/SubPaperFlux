@@ -212,10 +212,10 @@ def test_create_list_get_schedule(client: TestClient):
     assert create_resp.status_code == 201, create_resp.text
     created = create_resp.json()
     assert created["job_type"] == "login"
-    assert created["owner_user_id"] == "primary"
     assert created["is_active"] is True
     assert created["payload"] == _sample_payload()
     assert created["schedule_name"] == "list-schedule"
+    assert "owner_user_id" not in created
 
     list_resp = client.get("/v1/job-schedules")
     assert list_resp.status_code == 200
@@ -223,12 +223,14 @@ def test_create_list_get_schedule(client: TestClient):
     assert listing["total"] == 1
     assert listing["items"][0]["id"] == created["id"]
     assert listing["items"][0]["schedule_name"] == "list-schedule"
+    assert "owner_user_id" not in listing["items"][0]
 
     detail_resp = client.get(f"/v1/job-schedules/{created['id']}")
     assert detail_resp.status_code == 200
     detail = detail_resp.json()
     assert detail["frequency"] == "1h"
     assert detail["schedule_name"] == "list-schedule"
+    assert "owner_user_id" not in detail
 
 
 def test_update_schedule_fields(client: TestClient):
@@ -390,6 +392,36 @@ def test_schedule_name_uniqueness(client: TestClient):
     error_payload = duplicate.json()
     message = error_payload.get("message") or error_payload.get("detail") or ""
     assert "name" in message.lower()
+
+
+def test_owner_scope_parameters_are_rejected(client: TestClient):
+    null_owner = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "null-owner",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+            "owner_user_id": None,
+        },
+    )
+    assert null_owner.status_code == 422
+    null_errors = null_owner.json()["details"]["errors"]
+    assert any("owner_user_id is no longer accepted" in err.get("msg", "") for err in null_errors)
+
+    explicit_owner = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "explicit-owner",
+            "job_type": "login",
+            "payload": _sample_payload(),
+            "frequency": "1h",
+            "ownerUserId": "other",
+        },
+    )
+    assert explicit_owner.status_code == 422
+    explicit_errors = explicit_owner.json()["details"]["errors"]
+    assert any("owner_user_id is no longer accepted" in err.get("msg", "") for err in explicit_errors)
 
 
 def test_run_now_creates_job(client: TestClient):
@@ -739,8 +771,9 @@ def test_rbac_enforcement(client: TestClient):
     forbidden_detail = client.get(f"/v1/job-schedules/{schedule_id}")
     assert forbidden_detail.status_code == 403
 
-    list_forbidden = client.get("/v1/job-schedules", params={"owner_user_id": "other"})
-    assert list_forbidden.status_code == 403
+    list_default = client.get("/v1/job-schedules")
+    assert list_default.status_code == 200
+    assert list_default.json()["total"] == 0
 
     run_forbidden = client.post(f"/v1/job-schedules/{schedule_id}/run-now")
     assert run_forbidden.status_code == 403
@@ -752,9 +785,9 @@ def test_rbac_enforcement(client: TestClient):
     allowed_detail = client.get(f"/v1/job-schedules/{schedule_id}")
     assert allowed_detail.status_code == 200
 
-    allowed_list = client.get("/v1/job-schedules", params={"owner_user_id": "other"})
+    allowed_list = client.get("/v1/job-schedules")
     assert allowed_list.status_code == 200
-    assert allowed_list.json()["total"] == 1
+    assert allowed_list.json()["total"] == 0
 
     allowed_run = client.post(f"/v1/job-schedules/{schedule_id}/run-now")
     assert allowed_run.status_code == 202
