@@ -19,7 +19,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from requests_oauthlib import OAuth1Session
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from bs4 import BeautifulSoup
 
 from app.integrations.instapaper import get_instapaper_tokens
@@ -517,6 +517,27 @@ def get_article_html_with_cookies(url, cookies):
         response = session.get(url, timeout=30)
         response.raise_for_status()
 
+        # Detect whether we were redirected to a login page (indicating auth failure)
+        candidate_urls = [resp.url for resp in response.history if getattr(resp, "url", None)]
+        candidate_urls.append(getattr(response, "url", ""))
+
+        login_path_tokens = {"login", "signin", "sign-in", "log-in"}
+        for candidate in candidate_urls:
+            if not candidate:
+                continue
+
+            parsed = urlparse(candidate)
+            path_tokens = {segment for segment in parsed.path.lower().split("/") if segment}
+            query_string = parsed.query.lower()
+
+            if path_tokens & login_path_tokens or any(token in query_string for token in login_path_tokens):
+                logging.warning(
+                    "Fetched content from %s redirected to login URL %s. Treating as unauthenticated response.",
+                    url,
+                    candidate,
+                )
+                return None
+
         # --- NEW: Check for common paywall indicators ---
         # The log shows a Substact feed, so we'll check for its common paywall classes.
         # This is a good general practice for similar paywalled sites.
@@ -530,10 +551,15 @@ def get_article_html_with_cookies(url, cookies):
             "<h2>Log in or subscribe to read more</h2>",
             '<div class="post-access-notice"',
             'data-testid="paywall-overlay"',
+            "this post is for paid subscribers",
+            "this post is for subscribers only",
+            "only paid subscribers can read this post",
+            "only members can read this post",
         ]
 
         response_text = response.text
-        if any(indicator in response_text for indicator in paywall_indicators):
+        response_text_lower = response_text.lower()
+        if any(indicator in response_text_lower for indicator in paywall_indicators):
             logging.warning(
                 f"Fetched content from {url} appears to be a paywall or login page. Skipping content retrieval."
             )
