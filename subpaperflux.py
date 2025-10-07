@@ -445,6 +445,51 @@ def update_miniflux_feed_with_cookies(
                 logging.debug(f"Miniflux API Response Text: {response.text}")
 
 
+def _apply_cookies_to_session(session, cookies):
+    """Attach serialized cookies (dicts) to a requests.Session."""
+
+    if not cookies:
+        logging.debug("No cookies supplied for session attachment.")
+        return
+
+    for cookie in cookies:
+        name = cookie.get("name")
+        value = cookie.get("value")
+
+        if not name:
+            logging.debug("Encountered cookie without a name. Skipping.")
+            continue
+
+        if value is None:
+            logging.debug(f"Cookie '{name}' is missing a value. Skipping.")
+            continue
+
+        cookie_kwargs = {}
+        domain = cookie.get("domain")
+        path = cookie.get("path")
+        expires = cookie.get("expiry") or cookie.get("expires")
+        secure = cookie.get("secure")
+
+        if domain:
+            cookie_kwargs["domain"] = domain
+        if path:
+            cookie_kwargs["path"] = path
+        if expires:
+            cookie_kwargs["expires"] = expires
+        if secure is not None:
+            cookie_kwargs["secure"] = secure
+
+        logging.debug(
+            "Attaching cookie '%s' (domain=%s, path=%s, expires=%s) to session.",
+            name,
+            cookie_kwargs.get("domain"),
+            cookie_kwargs.get("path"),
+            cookie_kwargs.get("expires"),
+        )
+
+        session.cookies.set(name, value, **cookie_kwargs)
+
+
 def get_article_html_with_cookies(url, cookies):
     """
     Fetches the full HTML content of an article using authentication cookies.
@@ -457,8 +502,16 @@ def get_article_html_with_cookies(url, cookies):
     logging.debug(f"Attempting to fetch full article HTML from URL: {url}")
 
     session = requests.Session()
-    for cookie in cookies:
-        session.cookies.set(cookie["name"], cookie["value"])
+    session.headers.update(
+        {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/127.0.0.0 Safari/537.36"
+            )
+        }
+    )
+    _apply_cookies_to_session(session, cookies)
 
     try:
         response = session.get(url, timeout=30)
@@ -868,8 +921,16 @@ def get_new_rss_entries(
                 f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
             )
             session = requests.Session()
-            for cookie in cookies:
-                session.cookies.set(cookie["name"], cookie["value"])
+            session.headers.update(
+                {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/127.0.0.0 Safari/537.36"
+                    )
+                }
+            )
+            _apply_cookies_to_session(session, cookies)
             feed_response = session.get(feed_url, timeout=30)
         else:
             logging.info(
