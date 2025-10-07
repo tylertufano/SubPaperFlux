@@ -148,12 +148,12 @@ class Feed(BaseModel):
         return _validate_tag_id_sequence(value)
 
     @model_validator(mode="after")
-    def _normalize_lookback(cls, values: "Feed") -> "Feed":  # type: ignore[override]
-        lookback = values.initial_lookback_period
+    def _normalize_lookback(self) -> "Feed":
+        lookback = self.initial_lookback_period
         if isinstance(lookback, str):
             normalized = lookback.strip()
-            values.initial_lookback_period = normalized or None
-        return values
+            self.initial_lookback_period = normalized or None
+        return self
 
 
 class Credential(BaseModel):
@@ -171,13 +171,13 @@ class Credential(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_site_config(cls, values: "Credential") -> "Credential":  # type: ignore[override]
-        if values.kind == "site_login" and not values.site_config_id:
+    def _validate_site_config(self) -> "Credential":
+        if self.kind == "site_login" and not self.site_config_id:
             raise PydanticCustomError(
                 "site_login_site_config_required",
                 "site_login credentials require a site_config_id",
             )
-        return values
+        return self
 
 
 class JobRequest(BaseModel):
