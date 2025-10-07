@@ -558,8 +558,9 @@ def get_article_html_with_cookies(url, cookies):
         ]
 
         response_text = response.text
+        paywall_indicators_lower = [indicator.lower() for indicator in paywall_indicators]
         response_text_lower = response_text.lower()
-        if any(indicator in response_text_lower for indicator in paywall_indicators):
+        if any(indicator in response_text_lower for indicator in paywall_indicators_lower):
             logging.warning(
                 f"Fetched content from {url} appears to be a paywall or login page. Skipping content retrieval."
             )
