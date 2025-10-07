@@ -391,6 +391,8 @@ def update_job_schedule(
 
     was_active = bool(schedule.is_active)
     updates = body.model_dump(exclude_unset=True)
+    updates.pop("site_login_credential_id", None)
+    updates.pop("site_login_config_id", None)
     raw_payload_update = updates.pop("payload", _SENTINEL)
     tags_update = updates.pop("tags", _SENTINEL)
     folder_update = updates.pop("folder_id", _SENTINEL)

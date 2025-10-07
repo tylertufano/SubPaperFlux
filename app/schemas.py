@@ -18,6 +18,53 @@ from .jobs.scheduler import parse_frequency
 from .jobs.validation import scrub_legacy_schedule_payload, validate_job
 
 
+def _merge_site_login_pair_from_fields(model: Any, payload: Dict[str, Any]) -> None:
+    base_payload = dict(getattr(model, "payload", {}) or {})
+    existing_raw = base_payload.get("site_login_pair")
+    existing_pair = ""
+    if existing_raw not in (None, ""):
+        existing_pair = str(existing_raw).strip()
+
+    raw_credential = getattr(model, "site_login_credential_id", None)
+    raw_config = getattr(model, "site_login_config_id", None)
+    credential = ""
+    config = ""
+    if raw_credential not in (None, ""):
+        credential = str(raw_credential).strip()
+    if raw_config not in (None, ""):
+        config = str(raw_config).strip()
+
+    pair_value = existing_pair
+    if credential or config:
+        if not credential or not config:
+            raise PydanticCustomError(
+                "site_login_pair_fields_incomplete",
+                "site_login_credential_id and site_login_config_id must both be provided when specifying a site login pair.",
+            )
+        computed_pair = f"{credential}::{config}"
+        if existing_pair and existing_pair != computed_pair:
+            raise PydanticCustomError(
+                "site_login_pair_conflict",
+                "site_login_pair conflicts with provided site login identifiers.",
+            )
+        pair_value = computed_pair
+
+    if pair_value:
+        payload["site_login_pair"] = pair_value
+        base_payload["site_login_pair"] = pair_value
+        object.__setattr__(model, "payload", base_payload)
+
+    object.__setattr__(model, "site_login_credential_id", None)
+    object.__setattr__(model, "site_login_config_id", None)
+
+    fields_set = set(getattr(model, "__pydantic_fields_set__", set()))
+    if pair_value:
+        fields_set.add("payload")
+    fields_set.discard("site_login_credential_id")
+    fields_set.discard("site_login_config_id")
+    object.__setattr__(model, "__pydantic_fields_set__", fields_set)
+
+
 class User(BaseModel):
     sub: str
     email: Optional[str] = None
@@ -274,6 +321,18 @@ class JobScheduleCreate(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
     tags: List[str] = Field(default_factory=list)
     folder_id: Optional[str] = None
+    site_login_credential_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "site_login_credential_id", "siteLoginCredentialId"
+        ),
+    )
+    site_login_config_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "site_login_config_id", "siteLoginConfigId"
+        ),
+    )
     frequency: constr(strip_whitespace=True, min_length=1)
     next_run_at: Optional[datetime] = None
     is_active: bool = True
@@ -304,6 +363,7 @@ class JobScheduleCreate(BaseModel):
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleCreate":
         combined_payload = dict(self.payload or {})
+        _merge_site_login_pair_from_fields(self, combined_payload)
         if self.tags is not None:
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:
@@ -332,6 +392,18 @@ class JobScheduleUpdate(BaseModel):
     payload: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
     folder_id: Optional[str] = None
+    site_login_credential_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "site_login_credential_id", "siteLoginCredentialId"
+        ),
+    )
+    site_login_config_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "site_login_config_id", "siteLoginConfigId"
+        ),
+    )
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
     next_run_at: Optional[datetime] = None
     is_active: Optional[bool] = None
@@ -365,10 +437,8 @@ class JobScheduleUpdate(BaseModel):
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleUpdate":
         provided_job_type = self.job_type
-        provided_payload = self.payload
-        if provided_payload is None:
-            return self
-        combined_payload = dict(provided_payload or {})
+        combined_payload = dict(self.payload or {})
+        _merge_site_login_pair_from_fields(self, combined_payload)
         if self.tags is not None:
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:
@@ -382,13 +452,12 @@ class JobScheduleUpdate(BaseModel):
                     "Missing payload fields: {missing}",
                     {"missing": ", ".join(missing_values)},
                 )
-        object.__setattr__(
-            self,
-            "payload",
-            None
-            if self.payload is None
-            else scrub_legacy_schedule_payload(self.payload),
-        )
+        if self.payload is not None:
+            object.__setattr__(
+                self,
+                "payload",
+                scrub_legacy_schedule_payload(self.payload),
+            )
         return self
 
 
