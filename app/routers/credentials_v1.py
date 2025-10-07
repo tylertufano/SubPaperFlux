@@ -63,6 +63,7 @@ def create_credential_v1(
         owner = owner.strip()
         if not owner:
             owner = None
+    requested_global = owner is None
     site_config_id = body.site_config_id
     if isinstance(site_config_id, str):
         site_config_id = site_config_id.strip()
@@ -87,6 +88,8 @@ def create_credential_v1(
         if site_config_record is not None:
             owner = site_config_record.owner_user_id
             site_config_id = site_config_record.id
+        if requested_global:
+            _ensure_global_kind(body.kind)
     elif owner is None:
         allowed_global = has_permission(
             session,
