@@ -39,12 +39,6 @@ export interface JobScheduleOut {
     jobType: any | null;
     /**
      * 
-     * @type {any}
-     * @memberof JobScheduleOut
-     */
-    ownerUserId?: any | null;
-    /**
-     * 
      * @type {{ [key: string]: any; }}
      * @memberof JobScheduleOut
      */
@@ -132,7 +126,6 @@ export function JobScheduleOutFromJSONTyped(json: any, ignoreDiscriminator: bool
         'id': json['id'],
         'scheduleName': json['schedule_name'],
         'jobType': json['job_type'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'payload': json['payload'],
         'tags': !exists(json, 'tags') ? undefined : json['tags'],
         'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
@@ -158,7 +151,6 @@ export function JobScheduleOutToJSON(value?: JobScheduleOut | null): any {
         'id': value.id,
         'schedule_name': value.scheduleName,
         'job_type': value.jobType,
-        'owner_user_id': value.ownerUserId,
         'payload': value.payload,
         'tags': value.tags,
         'folder_id': value.folderId,

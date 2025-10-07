@@ -1796,27 +1796,6 @@
         ],
         "parameters": [
           {
-            "name": "owner_user_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter by one or more owner ids. Repeat the parameter for multiple owners. Use 'me' to reference the current user and 'global' for shared schedules.",
-              "title": "Owner User Id"
-            },
-            "description": "Filter by one or more owner ids. Repeat the parameter for multiple owners. Use 'me' to reference the current user and 'global' for shared schedules."
-          },
-          {
             "name": "job_type",
             "in": "query",
             "required": false,
@@ -1957,27 +1936,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "owner_user_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter by one or more owner ids. Repeat the parameter for multiple owners. Use 'me' to reference the current user and 'global' for shared schedules.",
-              "title": "Owner User Id"
-            },
-            "description": "Filter by one or more owner ids. Repeat the parameter for multiple owners. Use 'me' to reference the current user and 'global' for shared schedules."
-          },
           {
             "name": "job_type",
             "in": "query",
@@ -8918,19 +8876,9 @@
             "type": "boolean",
             "title": "Is Active",
             "default": true
-          },
-          "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner User Id"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "schedule_name",
@@ -8952,17 +8900,6 @@
           "job_type": {
             "type": "string",
             "title": "Job Type"
-          },
-          "owner_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner User Id"
           },
           "payload": {
             "additionalProperties": true,
@@ -9165,6 +9102,7 @@
             "title": "Is Active"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "JobScheduleUpdate"
       },

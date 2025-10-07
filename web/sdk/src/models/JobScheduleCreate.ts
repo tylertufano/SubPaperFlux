@@ -19,6 +19,7 @@ import { exists, mapValues } from '../runtime';
  * @interface JobScheduleCreate
  */
 export interface JobScheduleCreate {
+    [key: string]: any | any;
     /**
      * 
      * @type {any}
@@ -67,12 +68,6 @@ export interface JobScheduleCreate {
      * @memberof JobScheduleCreate
      */
     isActive?: any | null;
-    /**
-     * 
-     * @type {any}
-     * @memberof JobScheduleCreate
-     */
-    ownerUserId?: any | null;
 }
 
 /**
@@ -97,6 +92,7 @@ export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: b
     }
     return {
         
+            ...json,
         'scheduleName': json['schedule_name'],
         'jobType': json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
@@ -105,7 +101,6 @@ export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: b
         'frequency': json['frequency'],
         'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
         'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
-        'ownerUserId': !exists(json, 'owner_user_id') ? undefined : json['owner_user_id'],
     };
 }
 
@@ -118,6 +113,7 @@ export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
     }
     return {
         
+            ...value,
         'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,
@@ -126,7 +122,6 @@ export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,
-        'owner_user_id': value.ownerUserId,
     };
 }
 
