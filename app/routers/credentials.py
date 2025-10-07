@@ -185,7 +185,15 @@ def create_credential(body: CredentialSchema, current_user=Depends(get_current_u
         data = encrypt_dict(data)
     description = body.description.strip()
     owner = body.owner_user_id
+    if isinstance(owner, str):
+        owner = owner.strip()
+        if not owner:
+            owner = None
     site_config_id = body.site_config_id
+    if isinstance(site_config_id, str):
+        site_config_id = site_config_id.strip()
+        if not site_config_id:
+            site_config_id = None
     if owner is None:
         allowed_global = _ensure_permission(
             session,
