@@ -5,8 +5,99 @@ import os
 from datetime import datetime, timezone
 
 import pytest
+import requests
 
 from sqlmodel import select
+
+
+def test_get_article_html_with_cookies_attaches_session(monkeypatch):
+    import subpaperflux
+
+    class FakeSession:
+        def __init__(self):
+            self.cookies = requests.cookies.RequestsCookieJar()
+            self.headers = {}
+            self.seen_cookie_snapshot = {}
+
+        def get(self, url, timeout=30):
+            self.seen_cookie_snapshot = requests.utils.dict_from_cookiejar(self.cookies)
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"<html>hello world</html>"
+            response.url = url
+            response.encoding = "utf-8"
+            return response
+
+    fake_session = FakeSession()
+    monkeypatch.setattr("subpaperflux.requests.Session", lambda: fake_session)
+
+    cookies = [
+        {"name": "sessionid", "value": "abc123", "domain": "example.com", "path": "/"},
+    ]
+
+    html = subpaperflux.get_article_html_with_cookies(
+        "https://example.com/articles/paywalled", cookies
+    )
+
+    assert html == "<html>hello world</html>"
+    assert fake_session.seen_cookie_snapshot.get("sessionid") == "abc123"
+
+
+def test_get_article_html_with_cookies_detects_login_redirect(monkeypatch):
+    import subpaperflux
+
+    class FakeSession:
+        def __init__(self):
+            self.cookies = requests.cookies.RequestsCookieJar()
+            self.headers = {}
+
+        def get(self, url, timeout=30):
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"<html>Please log in</html>"
+            response.url = "https://example.com/login"
+            response.encoding = "utf-8"
+            return response
+
+    monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
+
+    cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
+
+    assert (
+        subpaperflux.get_article_html_with_cookies(
+            "https://example.com/articles/paywalled", cookies
+        )
+        is None
+    )
+
+
+def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch):
+    import subpaperflux
+
+    class FakeSession:
+        def __init__(self):
+            self.cookies = requests.cookies.RequestsCookieJar()
+            self.headers = {}
+
+        def get(self, url, timeout=30):
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"<html>This post is for paid subscribers only.</html>"
+            response.url = url
+            response.encoding = "utf-8"
+            return response
+
+    monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
+
+    cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
+
+    assert (
+        subpaperflux.get_article_html_with_cookies(
+            "https://example.com/articles/paywalled", cookies
+        )
+        is None
+    )
+
 
 
 def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
