@@ -366,27 +366,22 @@ class JobScheduleUpdate(BaseModel):
     def _validate_payload(self) -> "JobScheduleUpdate":
         provided_job_type = self.job_type
         provided_payload = self.payload
-        if provided_job_type is None and provided_payload is None:
+        if provided_payload is None:
             return self
-        if provided_job_type is None or provided_payload is None:
-            raise PydanticCustomError(
-                "job_payload_requires_job_type",
-                "job_type and payload must be provided together when updating the payload",
-                {},
-            )
         combined_payload = dict(provided_payload or {})
         if self.tags is not None:
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:
             combined_payload["folder_id"] = self.folder_id
-        result = validate_job(provided_job_type, combined_payload)
-        if not result.get("ok", True):
-            missing_values = result.get("missing", [])
-            raise PydanticCustomError(
-                "job_payload_missing_fields",
-                "Missing payload fields: {missing}",
-                {"missing": ", ".join(missing_values)},
-            )
+        if provided_job_type is not None:
+            result = validate_job(provided_job_type, combined_payload)
+            if not result.get("ok", True):
+                missing_values = result.get("missing", [])
+                raise PydanticCustomError(
+                    "job_payload_missing_fields",
+                    "Missing payload fields: {missing}",
+                    {"missing": ", ".join(missing_values)},
+                )
         object.__setattr__(
             self,
             "payload",
