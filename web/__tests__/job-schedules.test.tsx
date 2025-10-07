@@ -417,7 +417,7 @@ describe("JobSchedulesPage", () => {
       expect(openApiSpies.createSchedule).toHaveBeenCalledTimes(1),
     );
     expect(openApiSpies.createSchedule).toHaveBeenCalledWith({
-      jobScheduleCreate: expect.objectContaining({
+      requestBody: expect.objectContaining({
         jobType: "rss_poll",
         frequency: "2h",
         isActive: true,
@@ -428,7 +428,7 @@ describe("JobSchedulesPage", () => {
       }),
     });
     const createdPayload =
-      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+      openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
     expect(createdPayload.instapaper_id).toBeUndefined();
     expect(createdPayload.is_paywalled).toBeUndefined();
     expect(createdPayload.rss_requires_auth).toBeUndefined();
@@ -468,7 +468,7 @@ describe("JobSchedulesPage", () => {
     );
 
     const createdPayload =
-      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+      openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
     expect(createdPayload.site_login_pair).toBe("cred-login::site-1");
   });
 
@@ -521,7 +521,7 @@ describe("JobSchedulesPage", () => {
     );
     expect(openApiSpies.updateSchedule).toHaveBeenCalledWith({
       scheduleId: "schedule-1",
-      jobScheduleUpdate: expect.objectContaining({
+      requestBody: expect.objectContaining({
         jobType: "rss_poll",
         frequency: "30m",
         isActive: false,
@@ -531,7 +531,7 @@ describe("JobSchedulesPage", () => {
       }),
     });
     const updatedPayload =
-      openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
+      openApiSpies.updateSchedule.mock.calls[0][0].requestBody.payload;
     expect(updatedPayload.site_login_pair).toBeUndefined();
     expect(updatedPayload.lookback).toBeUndefined();
     expect(updatedPayload.is_paywalled).toBeUndefined();
@@ -608,7 +608,7 @@ describe("JobSchedulesPage", () => {
     );
 
     const updatePayload =
-      openApiSpies.updateSchedule.mock.calls[0][0].jobScheduleUpdate.payload;
+      openApiSpies.updateSchedule.mock.calls[0][0].requestBody.payload;
     expect(updatePayload.tags).toContain("tag-new");
     expect(updatePayload.folderId).toBe("folder-new");
   });
@@ -643,7 +643,7 @@ describe("JobSchedulesPage", () => {
     );
 
     const createdPayload =
-      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+      openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
     expect(createdPayload.instapaper_id).toBe("cred-publish");
     expect(createdPayload.feed_id).toBeUndefined();
   });
@@ -695,7 +695,7 @@ describe("JobSchedulesPage", () => {
     );
 
     const createdPayload =
-      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+      openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
     expect(createdPayload.tags).toEqual(["tag-1"]);
     expect(createdPayload.folderId).toBe("folder-1");
 
@@ -844,7 +844,7 @@ describe("JobSchedulesPage", () => {
     );
 
     const createdPayload =
-      openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
+      openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
     expect(createdPayload.instapaper_id).toBe("cred-publish");
     expect(createdPayload.feed_id).toBe("feed-2");
   });

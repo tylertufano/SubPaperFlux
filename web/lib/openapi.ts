@@ -1451,10 +1451,10 @@ export const v1 = {
     params: ListJobSchedulesV1JobSchedulesGetRequest = {},
   ) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(params),
   createJobScheduleV1JobSchedulesPost: async ({
-    jobScheduleCreate,
+    requestBody,
   }: {
-    jobScheduleCreate: JobScheduleCreate
-  }) => (await getClients()).v1.createJobScheduleV1JobSchedulesPost({ jobScheduleCreate }),
+    requestBody: JobScheduleCreate
+  }) => (await getClients()).v1.createJobScheduleV1JobSchedulesPost({ requestBody }),
   getJobScheduleV1JobSchedulesScheduleIdGet: async ({
     scheduleId,
   }: {
@@ -1462,14 +1462,14 @@ export const v1 = {
   }) => (await getClients()).v1.getJobScheduleV1JobSchedulesScheduleIdGet({ scheduleId }),
   updateJobScheduleV1JobSchedulesScheduleIdPatch: async ({
     scheduleId,
-    jobScheduleUpdate,
+    requestBody,
   }: {
     scheduleId: string
-    jobScheduleUpdate: JobScheduleUpdate
+    requestBody: JobScheduleUpdate
   }) =>
     (await getClients()).v1.updateJobScheduleV1JobSchedulesScheduleIdPatch({
       scheduleId,
-      jobScheduleUpdate,
+      requestBody,
     }),
   deleteJobScheduleV1JobSchedulesScheduleIdDelete: async ({
     scheduleId,
