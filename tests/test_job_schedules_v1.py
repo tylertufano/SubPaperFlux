@@ -444,6 +444,43 @@ def test_create_rss_schedule_with_site_login_identifiers(client: TestClient):
     assert schedule["payload"]["site_login_pair"] == "cred-1::site-1"
 
 
+def test_create_schedule_accepts_camel_case_fields(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.org/camel.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "scheduleName": "rss-camel",
+            "jobType": "rss_poll",
+            "payload": {
+                "feed_id": feed_id,
+                "site_login_pair": "cred-1::site-1",
+            },
+            "frequency": "1h",
+            "isActive": False,
+            "nextRunAt": "2024-01-01T00:00:00Z",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    created = create_resp.json()
+    assert created["schedule_name"] == "rss-camel"
+    assert created["job_type"] == "rss_poll"
+    assert created["is_active"] is False
+    assert created["payload"]["site_login_pair"] == "cred-1::site-1"
+
+
 def test_create_rss_schedule_requires_both_site_login_identifiers(client: TestClient):
     from app.db import get_session
     from app.models import Feed
@@ -512,6 +549,48 @@ def test_update_rss_schedule_with_site_login_identifiers(client: TestClient):
     assert update_resp.status_code == 200, update_resp.text
     updated = update_resp.json()
     assert updated["payload"]["site_login_pair"] == "cred-2::site-2"
+
+
+def test_update_schedule_accepts_camel_case_fields(client: TestClient):
+    from app.db import get_session
+    from app.models import Feed
+
+    with next(get_session()) as session:
+        feed = Feed(
+            owner_user_id="primary",
+            url="https://example.org/camel-update.xml",
+            poll_frequency="1h",
+        )
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    create_resp = client.post(
+        "/v1/job-schedules",
+        json={
+            "schedule_name": "rss-camel-update",
+            "job_type": "rss_poll",
+            "payload": {"feed_id": feed_id},
+            "frequency": "1h",
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    schedule_id = create_resp.json()["id"]
+
+    update_resp = client.patch(
+        f"/v1/job-schedules/{schedule_id}",
+        json={
+            "scheduleName": "rss-camel-updated",
+            "jobType": "rss_poll",
+            "isActive": False,
+            "nextRunAt": "2024-01-02T00:00:00Z",
+        },
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    updated = update_resp.json()
+    assert updated["schedule_name"] == "rss-camel-updated"
+    assert updated["is_active"] is False
 
 
 def test_schedule_name_uniqueness(client: TestClient):

@@ -316,11 +316,18 @@ class JobsPage(BaseModel):
 class JobScheduleCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schedule_name: constr(strip_whitespace=True, min_length=1, max_length=255)
-    job_type: constr(strip_whitespace=True, min_length=1)
+    schedule_name: constr(strip_whitespace=True, min_length=1, max_length=255) = Field(
+        validation_alias=AliasChoices("schedule_name", "scheduleName")
+    )
+    job_type: constr(strip_whitespace=True, min_length=1) = Field(
+        validation_alias=AliasChoices("job_type", "jobType")
+    )
     payload: Dict[str, Any] = Field(default_factory=dict)
     tags: List[str] = Field(default_factory=list)
-    folder_id: Optional[str] = None
+    folder_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("folder_id", "folderId"),
+    )
     site_login_credential_id: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices(
@@ -334,8 +341,14 @@ class JobScheduleCreate(BaseModel):
         ),
     )
     frequency: constr(strip_whitespace=True, min_length=1)
-    next_run_at: Optional[datetime] = None
-    is_active: bool = True
+    next_run_at: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("next_run_at", "nextRunAt"),
+    )
+    is_active: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("is_active", "isActive"),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -387,11 +400,20 @@ class JobScheduleCreate(BaseModel):
 class JobScheduleUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schedule_name: Optional[constr(strip_whitespace=True, min_length=1, max_length=255)] = None
-    job_type: Optional[constr(strip_whitespace=True, min_length=1)] = None
+    schedule_name: Optional[constr(strip_whitespace=True, min_length=1, max_length=255)] = Field(
+        default=None,
+        validation_alias=AliasChoices("schedule_name", "scheduleName"),
+    )
+    job_type: Optional[constr(strip_whitespace=True, min_length=1)] = Field(
+        default=None,
+        validation_alias=AliasChoices("job_type", "jobType"),
+    )
     payload: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
-    folder_id: Optional[str] = None
+    folder_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("folder_id", "folderId"),
+    )
     site_login_credential_id: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices(
@@ -405,8 +427,14 @@ class JobScheduleUpdate(BaseModel):
         ),
     )
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
-    next_run_at: Optional[datetime] = None
-    is_active: Optional[bool] = None
+    next_run_at: Optional[datetime] = Field(
+        default=None,
+        validation_alias=AliasChoices("next_run_at", "nextRunAt"),
+    )
+    is_active: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices("is_active", "isActive"),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -443,7 +471,16 @@ class JobScheduleUpdate(BaseModel):
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:
             combined_payload["folder_id"] = self.folder_id
-        if provided_job_type is not None:
+        fields_set = getattr(self, "__pydantic_fields_set__", set())
+        payload_keys = {
+            "payload",
+            "tags",
+            "folder_id",
+            "site_login_credential_id",
+            "site_login_config_id",
+        }
+        payload_supplied = any(field in fields_set for field in payload_keys)
+        if provided_job_type is not None and payload_supplied:
             result = validate_job(provided_job_type, combined_payload)
             if not result.get("ok", True):
                 missing_values = result.get("missing", [])
