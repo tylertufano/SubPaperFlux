@@ -19,6 +19,7 @@ import { exists, mapValues } from '../runtime';
  * @interface JobScheduleUpdate
  */
 export interface JobScheduleUpdate {
+    [key: string]: any | any;
     /**
      * 
      * @type {any}
@@ -88,6 +89,7 @@ export function JobScheduleUpdateFromJSONTyped(json: any, ignoreDiscriminator: b
     }
     return {
         
+            ...json,
         'scheduleName': !exists(json, 'schedule_name') ? undefined : json['schedule_name'],
         'jobType': !exists(json, 'job_type') ? undefined : json['job_type'],
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
@@ -108,6 +110,7 @@ export function JobScheduleUpdateToJSON(value?: JobScheduleUpdate | null): any {
     }
     return {
         
+            ...value,
         'schedule_name': value.scheduleName,
         'job_type': value.jobType,
         'payload': value.payload,

@@ -325,6 +325,8 @@ class JobScheduleCreate(BaseModel):
 
 
 class JobScheduleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schedule_name: Optional[constr(strip_whitespace=True, min_length=1, max_length=255)] = None
     job_type: Optional[constr(strip_whitespace=True, min_length=1)] = None
     payload: Optional[Dict[str, Any]] = None
@@ -333,6 +335,18 @@ class JobScheduleUpdate(BaseModel):
     frequency: Optional[constr(strip_whitespace=True, min_length=1)] = None
     next_run_at: Optional[datetime] = None
     is_active: Optional[bool] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_owner_user_id(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for key in ("owner_user_id", "ownerUserId"):
+                if key in data:
+                    raise PydanticCustomError(
+                        "job_schedule_owner_scope_removed",
+                        "owner_user_id is no longer accepted; schedules are scoped to the authenticated user.",
+                    )
+        return data
 
     @field_validator("tags", mode="before")
     @classmethod

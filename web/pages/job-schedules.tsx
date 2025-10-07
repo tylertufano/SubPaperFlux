@@ -221,7 +221,6 @@ function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
   const rawIsActive = schedule.isActive ?? schedule.is_active;
   const scheduleName =
     schedule.scheduleName ?? schedule.schedule_name ?? "";
-  const ownerUserId = schedule.ownerUserId ?? schedule.owner_user_id;
   const lastJobId = schedule.lastJobId ?? schedule.last_job_id;
   const lastError = schedule.lastError ?? schedule.last_error;
   const nextRunAt = schedule.nextRunAt ?? schedule.next_run_at;
@@ -232,7 +231,6 @@ function normalizeJobSchedule(schedule: RawJobSchedule): ExtendedJobSchedule {
     scheduleName,
     jobType: (jobType ?? schedule.jobType) as JobType,
     isActive: normalizeIsActive(rawIsActive),
-    ownerUserId,
     lastJobId,
     lastError,
     nextRunAt: parseDateValue(nextRunAt),
@@ -1674,7 +1672,7 @@ export default function JobSchedulesPage() {
     setIsCreating(true);
     try {
       await v1.createJobScheduleV1JobSchedulesPost({
-        jobScheduleCreate: {
+        requestBody: {
           scheduleName: values.scheduleName,
           jobType: values.jobType,
           frequency: values.frequency,
@@ -1702,7 +1700,7 @@ export default function JobSchedulesPage() {
     try {
       await v1.updateJobScheduleV1JobSchedulesScheduleIdPatch({
         scheduleId: editingSchedule.id,
-        jobScheduleUpdate: {
+        requestBody: {
           scheduleName: values.scheduleName,
           jobType: values.jobType,
           payload: values.payload,

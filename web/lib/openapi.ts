@@ -1,5 +1,6 @@
 import { Configuration, Middleware, ResponseError, FetchError } from '../sdk/src/runtime'
 import { V1Api } from '../sdk/src/apis/V1Api'
+import type { ListJobSchedulesV1JobSchedulesGetRequest } from '../sdk/src/apis/V1Api'
 import { AdminApi } from '../sdk/src/apis/AdminApi'
 import { BookmarksApi } from '../sdk/src/apis/BookmarksApi'
 import type { Credential } from '../sdk/src/models/Credential'
@@ -1446,12 +1447,14 @@ export const v1 = {
   createCredentialCredentialsPost: async ({ credential }: { credential: any }) =>
     (await getClients()).v1.createCredentialV1V1CredentialsPost({ credential, xCsrfToken: CSRF }),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),
-  listJobSchedulesV1JobSchedulesGet: async (p: any = {}) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(p),
+  listJobSchedulesV1JobSchedulesGet: async (
+    params: ListJobSchedulesV1JobSchedulesGetRequest = {},
+  ) => (await getClients()).v1.listJobSchedulesV1JobSchedulesGet(params),
   createJobScheduleV1JobSchedulesPost: async ({
-    jobScheduleCreate,
+    requestBody,
   }: {
-    jobScheduleCreate: JobScheduleCreate
-  }) => (await getClients()).v1.createJobScheduleV1JobSchedulesPost({ jobScheduleCreate }),
+    requestBody: JobScheduleCreate
+  }) => (await getClients()).v1.createJobScheduleV1JobSchedulesPost({ requestBody }),
   getJobScheduleV1JobSchedulesScheduleIdGet: async ({
     scheduleId,
   }: {
@@ -1459,14 +1462,14 @@ export const v1 = {
   }) => (await getClients()).v1.getJobScheduleV1JobSchedulesScheduleIdGet({ scheduleId }),
   updateJobScheduleV1JobSchedulesScheduleIdPatch: async ({
     scheduleId,
-    jobScheduleUpdate,
+    requestBody,
   }: {
     scheduleId: string
-    jobScheduleUpdate: JobScheduleUpdate
+    requestBody: JobScheduleUpdate
   }) =>
     (await getClients()).v1.updateJobScheduleV1JobSchedulesScheduleIdPatch({
       scheduleId,
-      jobScheduleUpdate,
+      requestBody,
     }),
   deleteJobScheduleV1JobSchedulesScheduleIdDelete: async ({
     scheduleId,

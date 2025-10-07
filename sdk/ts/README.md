@@ -1,14 +1,45 @@
-# Vendored SDK (Do Not Edit)
+## @subpaperflux/sdk@0.1.0
 
-This directory contains a generated TypeScript SDK produced from the server OpenAPI spec.
+This generator creates TypeScript/JavaScript client that utilizes [Fetch API](https://fetch.spec.whatwg.org/). The generated Node module can be used in the following environments:
 
-Source: generated via OpenAPI Generator and copied into `web/sdk` for builds.
+Environment
+* Node.js
+* Webpack
+* Browserify
 
-Do not hand-edit files here; changes will be overwritten on the next vendoring.
+Language level
+* ES5 - you must have a Promises/A+ library installed
+* ES6
 
-Update steps:
-1. Export OpenAPI: `make openapi-export API_BASE=http://localhost:8000`
-2. Generate directly into web: `make sdk-ts-web`
-   - or copy existing generated SDK: `make sdk-vendor-web`
+Module system
+* CommonJS
+* ES6 module system
 
-The vendoring script removes a conflicting apis barrel and tweaks exports for Next.js builds.
+It can be used in both TypeScript and JavaScript. In TypeScript, the definition should be automatically resolved via `package.json`. ([Reference](http://www.typescriptlang.org/docs/handbook/typings-for-npm-packages.html))
+
+### Building
+
+To build and compile the typescript sources to javascript use:
+```
+npm install
+npm run build
+```
+
+### Publishing
+
+First build the package then run ```npm publish```
+
+### Consuming
+
+navigate to the folder of your consuming project and run one of the following commands.
+
+_published:_
+
+```
+npm install @subpaperflux/sdk@0.1.0 --save
+```
+
+_unPublished (not recommended):_
+
+```
+npm install PATH_TO_GENERATED_PACKAGE --save
