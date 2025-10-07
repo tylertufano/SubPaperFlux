@@ -267,6 +267,8 @@ class JobsPage(BaseModel):
 
 
 class JobScheduleCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schedule_name: constr(strip_whitespace=True, min_length=1, max_length=255)
     job_type: constr(strip_whitespace=True, min_length=1)
     payload: Dict[str, Any] = Field(default_factory=dict)
@@ -275,7 +277,18 @@ class JobScheduleCreate(BaseModel):
     frequency: constr(strip_whitespace=True, min_length=1)
     next_run_at: Optional[datetime] = None
     is_active: bool = True
-    owner_user_id: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_owner_user_id(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for key in ("owner_user_id", "ownerUserId"):
+                if key in data:
+                    raise PydanticCustomError(
+                        "job_schedule_owner_scope_removed",
+                        "owner_user_id is no longer accepted; schedules are scoped to the authenticated user.",
+                    )
+        return data
 
     @field_validator("tags", mode="before")
     @classmethod
@@ -374,7 +387,6 @@ class JobScheduleOut(BaseModel):
     id: str
     schedule_name: str
     job_type: str
-    owner_user_id: Optional[str] = None
     payload: Dict[str, Any]
     tags: List[str] = Field(default_factory=list)
     folder_id: Optional[str] = None

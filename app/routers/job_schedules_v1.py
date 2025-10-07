@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, or_
+from sqlalchemy import func
 from sqlmodel import select
 
 from ..auth import PERMISSION_MANAGE_BOOKMARKS, has_permission
@@ -61,37 +61,6 @@ def _get_schedule_or_404(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
     _ensure_manage_permission(session, current_user, owner_id=schedule.owner_user_id)
     return schedule
-
-
-def _normalize_owner_identifiers(
-    raw_values: Iterable[Optional[str]],
-    *,
-    current_user_id: Optional[str],
-) -> List[Optional[str]]:
-    normalized: List[Optional[str]] = []
-    seen: set[str] = set()
-    for raw in raw_values:
-        value: Optional[str]
-        if raw is None:
-            value = current_user_id
-        else:
-            cleaned = str(raw).strip()
-            if not cleaned:
-                value = current_user_id
-            else:
-                lowered = cleaned.lower()
-                if lowered in {"me", "self"}:
-                    value = current_user_id
-                elif lowered in {"global", "none", "null"}:
-                    value = None
-                else:
-                    value = cleaned
-        key = value if value is not None else "__global__"
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(value)
-    return normalized
 
 
 def _compute_next_run_at(frequency: str, *, now: Optional[datetime] = None) -> datetime:
@@ -190,17 +159,14 @@ def _normalize_schedule_targets(payload: Dict[str, Any]) -> Tuple[List[str], Opt
 
 def _validate_publish_targets(
     session,
-    owner_id: Optional[str],
+    owner_id: str,
     *,
     tag_ids: List[str],
     folder_id: Optional[str],
 ) -> None:
     if tag_ids:
         stmt = select(Tag.id).where(Tag.id.in_(tag_ids))
-        if owner_id is None:
-            stmt = stmt.where(Tag.owner_user_id.is_(None))
-        else:
-            stmt = stmt.where(Tag.owner_user_id == owner_id)
+        stmt = stmt.where(Tag.owner_user_id == owner_id)
         rows = session.exec(stmt).all()
         found = {row if isinstance(row, str) else row.id for row in rows}
         missing = [tag_id for tag_id in tag_ids if tag_id not in found]
@@ -236,7 +202,6 @@ def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
         id=schedule.id,
         schedule_name=schedule.schedule_name,
         job_type=schedule.job_type,
-        owner_user_id=schedule.owner_user_id,
         payload=payload,
         tags=tags,
         folder_id=folder_id,
@@ -252,16 +217,13 @@ def _schedule_to_schema(schedule: JobSchedule) -> JobScheduleOut:
 
 def _ensure_unique_schedule_name(
     session,
-    owner_id: Optional[str],
+    owner_id: str,
     schedule_name: str,
     *,
     exclude_schedule_id: Optional[str] = None,
 ) -> None:
     stmt = select(JobSchedule).where(JobSchedule.schedule_name == schedule_name)
-    if owner_id is None:
-        stmt = stmt.where(JobSchedule.owner_user_id.is_(None))
-    else:
-        stmt = stmt.where(JobSchedule.owner_user_id == owner_id)
+    stmt = stmt.where(JobSchedule.owner_user_id == owner_id)
     if exclude_schedule_id:
         stmt = stmt.where(JobSchedule.id != exclude_schedule_id)
     existing = session.exec(stmt).first()
@@ -309,13 +271,6 @@ def _validate_job_type_or_400(job_type: str) -> None:
 def list_job_schedules(
     current_user=Depends(get_current_user),
     session=Depends(get_session),
-    owner_user_id: Optional[List[str]] = Query(
-        None,
-        description=(
-            "Filter by one or more owner ids. Repeat the parameter for multiple owners. "
-            "Use 'me' to reference the current user and 'global' for shared schedules."
-        ),
-    ),
     job_type: Optional[str] = Query(None, description="Filter by job type"),
     is_active: Optional[bool] = Query(None, description="Filter by active state"),
     page: int = Query(1, ge=1),
@@ -325,46 +280,10 @@ def list_job_schedules(
     if not user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
-    requested = owner_user_id or []
-    if not requested:
-        requested = [user_id]
-    normalized = _normalize_owner_identifiers(requested, current_user_id=user_id)
-
-    allowed_owner_ids: List[str] = []
-    include_global = False
-
-    for owner in normalized:
-        if owner is None:
-            _ensure_manage_permission(session, current_user, owner_id=None)
-            include_global = True
-            continue
-        if owner == user_id:
-            if owner not in allowed_owner_ids:
-                allowed_owner_ids.append(owner)
-            continue
-        _ensure_manage_permission(session, current_user, owner_id=owner)
-        if owner not in allowed_owner_ids:
-            allowed_owner_ids.append(owner)
-
-    owner_filters = []
-    if allowed_owner_ids:
-        owner_filters.append(JobSchedule.owner_user_id.in_(allowed_owner_ids))
-    if include_global:
-        owner_filters.append(JobSchedule.owner_user_id.is_(None))
-
-    if not owner_filters:
-        return JobSchedulesPage(items=[], total=0, page=page, size=size, has_next=False, total_pages=1)
-
-    stmt = select(JobSchedule)
-    count_stmt = select(func.count()).select_from(JobSchedule)
-
-    if len(owner_filters) == 1:
-        stmt = stmt.where(owner_filters[0])
-        count_stmt = count_stmt.where(owner_filters[0])
-    else:
-        clause = or_(*owner_filters)
-        stmt = stmt.where(clause)
-        count_stmt = count_stmt.where(clause)
+    stmt = select(JobSchedule).where(JobSchedule.owner_user_id == user_id)
+    count_stmt = select(func.count()).select_from(JobSchedule).where(
+        JobSchedule.owner_user_id == user_id
+    )
 
     if job_type:
         _validate_job_type_or_400(job_type)
@@ -408,8 +327,7 @@ def create_job_schedule(
 
     _validate_job_type_or_400(body.job_type)
 
-    owner_id = body.owner_user_id if body.owner_user_id is not None else user_id
-    _ensure_manage_permission(session, current_user, owner_id=owner_id)
+    owner_id = user_id
 
     _ensure_unique_schedule_name(session, owner_id, body.schedule_name)
 
