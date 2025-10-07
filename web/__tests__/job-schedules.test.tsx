@@ -201,6 +201,7 @@ type RenderOptions = {
   mutate?: ReturnType<typeof vi.fn>;
   tagMutate?: ReturnType<typeof vi.fn>;
   folderMutate?: ReturnType<typeof vi.fn>;
+  useFetcherForSchedules?: boolean;
 };
 
 function renderPage({
@@ -213,12 +214,20 @@ function renderPage({
   mutate = vi.fn().mockResolvedValue(undefined),
   tagMutate = vi.fn().mockResolvedValue(undefined),
   folderMutate = vi.fn().mockResolvedValue(undefined),
+  useFetcherForSchedules = false,
 }: RenderOptions = {}) {
   const handlers = [
     {
       matcher: (key: any) =>
         Array.isArray(key) && key[0] === "/v1/job-schedules",
-      value: makeSWRSuccess(schedules, { mutate }),
+      value: useFetcherForSchedules
+        ? (key: any, fetcher?: any) => {
+            if (typeof fetcher === "function") {
+              void fetcher(key);
+            }
+            return makeSWRSuccess(schedules, { mutate });
+          }
+        : makeSWRSuccess(schedules, { mutate }),
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/credentials",
@@ -307,7 +316,6 @@ describe("JobSchedulesPage", () => {
 
     expect(within(row).getByText("1h")).toBeInTheDocument();
     expect(within(row).getByText("job-123")).toBeInTheDocument();
-    expect(within(row).getByText("User")).toBeInTheDocument();
     expect(within(row).getByText("Active")).toBeInTheDocument();
 
     const detailsButton = within(row).getByRole("button", { name: "Details" });
@@ -839,5 +847,31 @@ describe("JobSchedulesPage", () => {
       openApiSpies.createSchedule.mock.calls[0][0].jobScheduleCreate.payload;
     expect(createdPayload.instapaper_id).toBe("cred-publish");
     expect(createdPayload.feed_id).toBe("feed-2");
+  });
+
+  it("applies job type and status filters without owner scope", async () => {
+    renderPage({ useFetcherForSchedules: true });
+
+    openApiSpies.listSchedules.mockClear();
+
+    const filterForm = await screen.findByRole("search", {
+      name: "Schedule filters",
+    });
+
+    const jobTypeSelect = within(filterForm).getByLabelText("Job type");
+    fireEvent.change(jobTypeSelect, { target: { value: "publish" } });
+
+    const statusSelect = within(filterForm).getByLabelText("Status");
+    fireEvent.change(statusSelect, { target: { value: "paused" } });
+
+    await waitFor(() => {
+      const params = openApiSpies.listSchedules.mock.calls.at(-1)?.[0];
+      expect(params).toEqual({
+        page: 1,
+        size: 20,
+        jobType: "publish",
+        isActive: false,
+      });
+    });
   });
 });
