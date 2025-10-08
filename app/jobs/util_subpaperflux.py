@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from datetime import datetime, timezone
@@ -21,6 +22,14 @@ from ..models import (
     Tag as TagModel,
 )
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
+
+
+class CookieAuthenticationError(RuntimeError):
+    """Raised when stored cookies are unusable for authentication."""
+
+    def __init__(self, message: str, *, site_login_pair_id: Optional[str] = None):
+        super().__init__(message)
+        self.site_login_pair_id = site_login_pair_id
 
 
 class IniSection:
@@ -97,6 +106,67 @@ def _compute_expiry_hint(cookies: List[Dict[str, Any]]) -> Optional[float]:
         if isinstance(exp, (int, float)):
             expiries.append(float(exp))
     return min(expiries) if expiries else None
+
+
+def _normalize_cookie_expiry_value(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        if isinstance(value, float) and math.isnan(value):
+            return None
+        return float(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            return float(text)
+        except ValueError:
+            normalized_text = text
+            if text.endswith("Z"):
+                normalized_text = text[:-1] + "+00:00"
+            try:
+                dt_value = datetime.fromisoformat(normalized_text)
+            except ValueError:
+                return None
+            if dt_value.tzinfo is None:
+                dt_value = dt_value.replace(tzinfo=timezone.utc)
+            return dt_value.timestamp()
+    return None
+
+
+def _normalize_cookie_record(cookie: Dict[str, Any]) -> Dict[str, Any]:
+    normalized: Dict[str, Any] = {}
+    for key, value in cookie.items():
+        if key in {"expiry", "expires"}:
+            normalized_value = _normalize_cookie_expiry_value(value)
+            if normalized_value is not None:
+                normalized[key] = normalized_value
+            elif value is not None:
+                normalized[key] = value
+        else:
+            normalized[key] = value
+    return normalized
+
+
+def _filter_unexpired_cookies(
+    cookies: List[Dict[str, Any]], *, now_ts: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    if now_ts is None:
+        now_ts = datetime.now(timezone.utc).timestamp()
+    valid: List[Dict[str, Any]] = []
+    for cookie in cookies:
+        expiry = cookie.get("expiry")
+        if not isinstance(expiry, (int, float)) or isinstance(expiry, bool):
+            expiry = cookie.get("expires")
+        if isinstance(expiry, (int, float)) and not isinstance(expiry, bool):
+            exp_val = float(expiry)
+            if math.isnan(exp_val) or exp_val <= now_ts:
+                continue
+        valid.append(cookie)
+    return valid
 
 
 def _get_db_credential(
@@ -469,7 +539,12 @@ def _decode_cookie_blob(blob: Optional[Any]) -> List[Dict[str, Any]]:
     if isinstance(payload, dict):
         cookies = payload.get("cookies")
         if isinstance(cookies, list):
-            return cookies
+            normalized: List[Dict[str, Any]] = []
+            for cookie in cookies:
+                if not isinstance(cookie, dict):
+                    continue
+                normalized.append(_normalize_cookie_record(cookie))
+            return normalized
     return []
 
 
@@ -503,7 +578,16 @@ def get_cookies_for_site_login_pair(
             return []
         if cred.site_config_id and cred.site_config_id != site_config_id:
             raise ValueError("site_login_pair references mismatched site config")
-    return _get_cookies_for_pair(credential_id, site_config_id)
+    cookies = _get_cookies_for_pair(credential_id, site_config_id)
+    if not cookies:
+        return []
+    filtered = _filter_unexpired_cookies(cookies)
+    if cookies and not filtered:
+        raise CookieAuthenticationError(
+            "Stored cookies are expired and cannot be used for authentication",
+            site_login_pair_id=site_login_pair_id,
+        )
+    return filtered
 
 
 def parse_lookback_to_seconds(s: str) -> int:
