@@ -140,6 +140,26 @@ class SiteConfigApi(SiteConfigCreateBase):
 SiteConfig = Annotated[Union[SiteConfigSelenium, SiteConfigApi], Field(discriminator="login_type")]
 
 
+class SiteLoginCookie(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+
+    name: Optional[str] = None
+    value: Optional[str] = None
+    domain: Optional[str] = None
+    path: Optional[str] = None
+    expiry: Optional[float] = None
+    expires: Optional[float] = None
+    secure: Optional[bool] = None
+    http_only: Optional[bool] = Field(default=None, alias="httpOnly", serialization_alias="httpOnly")
+    same_site: Optional[str] = Field(default=None, alias="sameSite", serialization_alias="sameSite")
+
+
+class SiteLoginCookiesOut(BaseModel):
+    cookies: List[SiteLoginCookie] = Field(default_factory=list)
+    last_refresh: Optional[str] = None
+    expiry_hint: Optional[float] = None
+
+
 def _validate_tag_id_sequence(raw_value: Any) -> List[str]:
     if raw_value is None:
         return []

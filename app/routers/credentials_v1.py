@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,8 +14,12 @@ from ..auth import (
 )
 from ..config import is_user_mgmt_enforce_enabled
 from ..db import get_session
-from ..models import Credential as CredentialModel, SiteConfig as SiteConfigModel
-from ..schemas import CredentialsPage, Credential as CredentialSchema
+from ..models import Cookie as CookieModel, Credential as CredentialModel, SiteConfig as SiteConfigModel
+from ..schemas import (
+    CredentialsPage,
+    Credential as CredentialSchema,
+    SiteLoginCookiesOut,
+)
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
 from ..security.csrf import csrf_protect
 from ..integrations.instapaper import get_instapaper_tokens
@@ -336,6 +341,70 @@ def get_credential_v1(
         data=_mask_credential(model.kind, plain),
         owner_user_id=model.owner_user_id,
         site_config_id=model.site_config_id,
+    )
+
+
+@router.get(
+    "/{cred_id}/cookies",
+    response_model=SiteLoginCookiesOut,
+    summary="Get cookies for a site login credential",
+)
+def get_credential_cookies_v1(
+    cred_id: str,
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
+):
+    model = session.get(CredentialModel, cred_id)
+    if not model or model.kind != "site_login":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    if model.owner_user_id is None:
+        allowed_global = _ensure_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+        )
+        if not allowed_global:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    elif model.owner_user_id != current_user["sub"]:
+        allowed_cross = has_permission(
+            session,
+            current_user,
+            PERMISSION_READ_GLOBAL_CREDENTIALS,
+            owner_id=model.owner_user_id,
+        )
+        if not allowed_cross:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    site_config_id = model.site_config_id
+    if not site_config_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    stmt = select(CookieModel).where(
+        (CookieModel.credential_id == cred_id)
+        & (CookieModel.site_config_id == site_config_id)
+    )
+    record = session.exec(stmt).first()
+    if not record or not record.encrypted_cookies:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    cookies: list[dict[str, object]] = []
+    try:
+        encrypted_payload = json.loads(record.encrypted_cookies)
+        plain_payload = decrypt_dict(encrypted_payload)
+        raw_cookies = plain_payload.get("cookies") if isinstance(plain_payload, dict) else None
+        if isinstance(raw_cookies, list):
+            cookies = [c for c in raw_cookies if isinstance(c, dict)]
+    except Exception:  # noqa: BLE001 - defensive decoding
+        cookies = []
+
+    if not cookies:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    return SiteLoginCookiesOut(
+        cookies=cookies,
+        last_refresh=record.last_refresh,
+        expiry_hint=record.expiry_hint,
     )
 
 

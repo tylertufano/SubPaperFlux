@@ -67,6 +67,8 @@ src/models/SiteConfigApiOut.ts
 src/models/SiteConfigSelenium.ts
 src/models/SiteConfigSeleniumOut.ts
 src/models/SiteConfigsPage.ts
+src/models/SiteLoginCookie.ts
+src/models/SiteLoginCookiesOut.ts
 src/models/SiteWelcomeContent.ts
 src/models/SiteWelcomeSettingOut.ts
 src/models/SiteWelcomeSettingUpdate.ts

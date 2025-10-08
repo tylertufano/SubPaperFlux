@@ -55,6 +55,18 @@ export interface JobScheduleCreate {
      * @type {any}
      * @memberof JobScheduleCreate
      */
+    siteLoginCredentialId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
+    siteLoginConfigId?: any | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
     frequency: any | null;
     /**
      * 
@@ -98,6 +110,8 @@ export function JobScheduleCreateFromJSONTyped(json: any, ignoreDiscriminator: b
         'payload': !exists(json, 'payload') ? undefined : json['payload'],
         'tags': !exists(json, 'tags') ? undefined : json['tags'],
         'folderId': !exists(json, 'folder_id') ? undefined : json['folder_id'],
+        'siteLoginCredentialId': !exists(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'],
+        'siteLoginConfigId': !exists(json, 'site_login_config_id') ? undefined : json['site_login_config_id'],
         'frequency': json['frequency'],
         'nextRunAt': !exists(json, 'next_run_at') ? undefined : json['next_run_at'],
         'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
@@ -119,6 +133,8 @@ export function JobScheduleCreateToJSON(value?: JobScheduleCreate | null): any {
         'payload': value.payload,
         'tags': value.tags,
         'folder_id': value.folderId,
+        'site_login_credential_id': value.siteLoginCredentialId,
+        'site_login_config_id': value.siteLoginConfigId,
         'frequency': value.frequency,
         'next_run_at': value.nextRunAt,
         'is_active': value.isActive,
