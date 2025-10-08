@@ -1444,6 +1444,8 @@ export const v1 = {
   createFeedFeedsPost: async ({ feed }: { feed: any }) =>
     (await getClients()).v1.createFeedV1V1FeedsPost({ feed, xCsrfToken: CSRF }),
   listCredentialsV1V1CredentialsGet: async (p: any = {}) => (await getClients()).v1.listCredentialsV1V1CredentialsGet(p),
+  getCredentialCookiesV1V1CredentialsCredIdCookiesGet: async ({ credId }: { credId: string }) =>
+    (await getClients()).v1.getCredentialCookiesV1V1CredentialsCredIdCookiesGet({ credId }),
   createCredentialCredentialsPost: async ({ credential }: { credential: any }) =>
     (await getClients()).v1.createCredentialV1V1CredentialsPost({ credential, xCsrfToken: CSRF }),
   listSiteConfigsV1V1SiteConfigsGet: async (p: any = {}) => (await getClients()).v1.listSiteConfigsV1V1SiteConfigsGet(p),

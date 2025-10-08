@@ -15,6 +15,7 @@ const openApiSpies = vi.hoisted(() => ({
   getCredential: vi.fn(),
   testInstapaper: vi.fn(),
   testMiniflux: vi.fn(),
+  getCredentialCookies: vi.fn(),
 }))
 
 vi.mock('next/router', () => ({
@@ -42,6 +43,7 @@ vi.mock('../lib/openapi', () => ({
     listSiteConfigsV1V1SiteConfigsGet: openApiSpies.listSiteConfigs,
     testInstapaperV1IntegrationsInstapaperTestPost: openApiSpies.testInstapaper,
     testMinifluxV1IntegrationsMinifluxTestPost: openApiSpies.testMiniflux,
+    getCredentialCookiesV1V1CredentialsCredIdCookiesGet: openApiSpies.getCredentialCookies,
   },
   creds: {
     createCredentialCredentialsPost: openApiSpies.createCredential,
@@ -61,6 +63,7 @@ export const updateCredentialMock = openApiSpies.updateCredential
 export const getCredentialMock = openApiSpies.getCredential
 export const testInstapaperMock = openApiSpies.testInstapaper
 export const testMinifluxMock = openApiSpies.testMiniflux
+export const getCredentialCookiesMock = openApiSpies.getCredentialCookies
 
 export const defaultCredentialsResponse = { items: [] as any[] }
 export const defaultSiteConfigsResponse = { items: [{ id: 'sc-1', name: 'Example Site', owner_user_id: 'user-123' }] }
