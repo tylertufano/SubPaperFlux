@@ -815,6 +815,53 @@
         }
       }
     },
+    "/v1/credentials/{cred_id}/cookies": {
+      "get": {
+        "tags": [
+          "v1"
+        ],
+        "summary": "Get cookies for a site login credential",
+        "operationId": "get_credential_cookies_v1_v1_credentials__cred_id__cookies_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cred_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cred Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteLoginCookiesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/credentials/{cred_id}/copy": {
       "post": {
         "tags": [
@@ -8855,6 +8902,28 @@
             ],
             "title": "Folder Id"
           },
+          "site_login_credential_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Credential Id"
+          },
+          "site_login_config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Config Id"
+          },
           "frequency": {
             "type": "string",
             "minLength": 1,
@@ -9065,6 +9134,28 @@
               }
             ],
             "title": "Folder Id"
+          },
+          "site_login_credential_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Credential Id"
+          },
+          "site_login_config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Login Config Id"
           },
           "frequency": {
             "anyOf": [
@@ -9694,6 +9785,147 @@
           "size"
         ],
         "title": "SiteConfigsPage"
+      },
+      "SiteLoginCookie": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "expiry": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "secure": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secure"
+          },
+          "httpOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Httponly"
+          },
+          "sameSite": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Samesite"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "SiteLoginCookie"
+      },
+      "SiteLoginCookiesOut": {
+        "properties": {
+          "cookies": {
+            "items": {
+              "$ref": "#/components/schemas/SiteLoginCookie"
+            },
+            "type": "array",
+            "title": "Cookies"
+          },
+          "last_refresh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Refresh"
+          },
+          "expiry_hint": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Hint"
+          }
+        },
+        "type": "object",
+        "title": "SiteLoginCookiesOut"
       },
       "SiteWelcomeContent": {
         "properties": {

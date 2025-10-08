@@ -450,8 +450,8 @@ class V1Api extends runtime.BaseAPI {
      */
     createJobScheduleV1JobSchedulesPostRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.jobScheduleCreate === null || requestParameters.jobScheduleCreate === undefined) {
-                throw new runtime.RequiredError('jobScheduleCreate', 'Required parameter requestParameters.jobScheduleCreate was null or undefined when calling createJobScheduleV1JobSchedulesPost.');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling createJobScheduleV1JobSchedulesPost.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -468,7 +468,7 @@ class V1Api extends runtime.BaseAPI {
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, models_1.JobScheduleCreateToJSON)(requestParameters.jobScheduleCreate),
+                body: requestParameters.requestBody,
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.JobScheduleOutFromJSON)(jsonValue));
         });
@@ -487,8 +487,8 @@ class V1Api extends runtime.BaseAPI {
      */
     createJobScheduleV1JobSchedulesPost_1Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (requestParameters.jobScheduleCreate === null || requestParameters.jobScheduleCreate === undefined) {
-                throw new runtime.RequiredError('jobScheduleCreate', 'Required parameter requestParameters.jobScheduleCreate was null or undefined when calling createJobScheduleV1JobSchedulesPost_1.');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling createJobScheduleV1JobSchedulesPost_1.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -505,7 +505,7 @@ class V1Api extends runtime.BaseAPI {
                 method: 'POST',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, models_1.JobScheduleCreateToJSON)(requestParameters.jobScheduleCreate),
+                body: requestParameters.requestBody,
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.JobScheduleOutFromJSON)(jsonValue));
         });
@@ -2248,9 +2248,6 @@ class V1Api extends runtime.BaseAPI {
     listJobSchedulesV1JobSchedulesGetRaw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters.ownerUserId !== undefined) {
-                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-            }
             if (requestParameters.jobType !== undefined) {
                 queryParameters['job_type'] = requestParameters.jobType;
             }
@@ -2295,9 +2292,6 @@ class V1Api extends runtime.BaseAPI {
     listJobSchedulesV1JobSchedulesGet_5Raw(requestParameters, initOverrides) {
         return __awaiter(this, void 0, void 0, function* () {
             const queryParameters = {};
-            if (requestParameters.ownerUserId !== undefined) {
-                queryParameters['owner_user_id'] = requestParameters.ownerUserId;
-            }
             if (requestParameters.jobType !== undefined) {
                 queryParameters['job_type'] = requestParameters.jobType;
             }
@@ -3384,8 +3378,8 @@ class V1Api extends runtime.BaseAPI {
             if (requestParameters.scheduleId === null || requestParameters.scheduleId === undefined) {
                 throw new runtime.RequiredError('scheduleId', 'Required parameter requestParameters.scheduleId was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch.');
             }
-            if (requestParameters.jobScheduleUpdate === null || requestParameters.jobScheduleUpdate === undefined) {
-                throw new runtime.RequiredError('jobScheduleUpdate', 'Required parameter requestParameters.jobScheduleUpdate was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch.');
+            if (requestParameters.requestBody === null || requestParameters.requestBody === undefined) {
+                throw new runtime.RequiredError('requestBody', 'Required parameter requestParameters.requestBody was null or undefined when calling updateJobScheduleV1JobSchedulesScheduleIdPatch.');
             }
             const queryParameters = {};
             const headerParameters = {};
@@ -3402,7 +3396,7 @@ class V1Api extends runtime.BaseAPI {
                 method: 'PATCH',
                 headers: headerParameters,
                 query: queryParameters,
-                body: (0, models_1.JobScheduleUpdateToJSON)(requestParameters.jobScheduleUpdate),
+                body: requestParameters.requestBody,
             }, initOverrides);
             return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.JobScheduleOutFromJSON)(jsonValue));
         });
