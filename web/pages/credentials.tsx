@@ -13,9 +13,39 @@ import {
   PERMISSION_MANAGE_GLOBAL_CREDENTIALS,
   PERMISSION_READ_GLOBAL_CREDENTIALS,
 } from '../lib/rbac'
+import { useFormatDateTime } from '../lib/format'
+import type { SiteLoginCookie } from '../sdk/src/models/SiteLoginCookie'
+
+type CookieModalLoadingState = {
+  status: 'loading'
+  credentialId: string
+  description: string
+}
+
+type CookieModalErrorState = {
+  status: 'error'
+  credentialId: string
+  description: string
+  error: string
+}
+
+type CookieModalSuccessState = {
+  status: 'success'
+  credentialId: string
+  description: string
+  cookies: SiteLoginCookie[]
+  lastRefresh?: string | number | Date | null
+  expiryHint?: string | number | boolean | null
+}
+
+type CookieModalState =
+  | CookieModalLoadingState
+  | CookieModalErrorState
+  | CookieModalSuccessState
 
 export default function Credentials() {
   const { t } = useI18n()
+  const formatDateTime = useFormatDateTime({ dateStyle: 'medium', timeStyle: 'short' })
   const router = useRouter()
   const { data: session, status } = useSessionReauth()
   const breadcrumbs = useMemo(() => buildBreadcrumbs(router.pathname, t), [router.pathname, t])
@@ -52,6 +82,7 @@ export default function Credentials() {
   const [editSiteConfigId, setEditSiteConfigId] = useState('')
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
   const [editErrors, setEditErrors] = useState<Record<string, string>>({})
+  const [cookieModal, setCookieModal] = useState<CookieModalState | null>(null)
   const createObj = (() => { try { return JSON.parse(jsonData || '{}') } catch { return {} } })() as any
   const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
   const hasDescription = description.trim().length > 0
@@ -77,6 +108,56 @@ export default function Credentials() {
     }
     return map
   }, [siteConfigItems])
+
+  const formatCookieText = (value: unknown): string => {
+    if (value === null || value === undefined) return ''
+    if (value instanceof Date) return value.toISOString()
+    if (typeof value === 'string') return value
+    if (typeof value === 'number') return String(value)
+    if (typeof value === 'boolean') return value ? 'true' : 'false'
+    if (typeof value === 'bigint') return value.toString()
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+
+  const formatExpiryValue = (value: unknown): string => {
+    if (value === null || value === undefined) return ''
+    if (value instanceof Date) {
+      return formatDateTime(value, value.toISOString())
+    }
+    if (typeof value === 'number') {
+      const normalized = Math.abs(value) < 1_000_000_000_000 ? value * 1000 : value
+      return formatDateTime(normalized, String(value))
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!trimmed) return ''
+      return formatDateTime(trimmed, trimmed)
+    }
+    return formatCookieText(value)
+  }
+
+  const formatLastRefresh = (value: string | number | Date | null | undefined): string => {
+    if (value === null || value === undefined) return ''
+    if (value instanceof Date) {
+      return formatDateTime(value, value.toISOString())
+    }
+    if (typeof value === 'number') {
+      const normalized = Math.abs(value) < 1_000_000_000_000 ? value * 1000 : value
+      return formatDateTime(normalized, String(value))
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!trimmed) return ''
+      return formatDateTime(trimmed, trimmed)
+    }
+    return ''
+  }
+
+  const closeCookieModal = () => setCookieModal(null)
 
   useEffect(() => {
     if (kind !== 'site_login') {
@@ -113,6 +194,45 @@ export default function Credentials() {
       }
     } catch (e: any) {
       setBanner({ kind: 'error', message: e.message || String(e) })
+    }
+  }
+
+  async function viewCookies(credential: any) {
+    if (!credential?.id) return
+
+    const descriptionText = typeof credential.description === 'string' ? credential.description : ''
+    setCookieModal({
+      status: 'loading',
+      credentialId: credential.id,
+      description: descriptionText,
+    })
+
+    try {
+      const response = await v1.getCredentialCookiesV1V1CredentialsCredIdCookiesGet({ credId: credential.id })
+      const rawCookies = Array.isArray(response?.cookies) ? response.cookies : []
+      const normalizedCookies = rawCookies.filter((cookie): cookie is SiteLoginCookie => cookie && typeof cookie === 'object')
+      setCookieModal({
+        status: 'success',
+        credentialId: credential.id,
+        description: descriptionText,
+        cookies: normalizedCookies,
+        lastRefresh: (response as any)?.lastRefresh ?? (response as any)?.last_refresh ?? null,
+        expiryHint: (response as any)?.expiryHint ?? (response as any)?.expiry_hint ?? null,
+      })
+    } catch (error) {
+      const fallback = t('credentials_cookies_error_default')
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : fallback
+      setCookieModal({
+        status: 'error',
+        credentialId: credential.id,
+        description: descriptionText,
+        error: message || fallback,
+      })
     }
   }
 
@@ -185,6 +305,7 @@ export default function Credentials() {
 
   async function deleteCred(id: string) {
     if (!confirm(t('credentials_confirm_delete'))) return
+    setCookieModal((current) => (current && current.credentialId === id ? null : current))
     try {
       await creds.deleteCredentialCredentialsCredIdDelete({ credId: id })
       setBanner({ kind: 'success', message: t('credentials_delete_success') })
@@ -619,6 +740,11 @@ export default function Credentials() {
                         {(c.kind === 'instapaper' || c.kind === 'miniflux') && (
                           <button type="button" className="btn" onClick={() => testCred(c)}>{t('btn_test')}</button>
                         )}
+                        {c.kind === 'site_login' && (
+                          <button type="button" className="btn" onClick={() => viewCookies(c)}>
+                            {t('credentials_cookies_view_button')}
+                          </button>
+                        )}
                         <button type="button" className="btn" onClick={() => startEdit(c.id, c.kind)}>{t('btn_edit')}</button>
                         <button type="button" className="btn" onClick={() => deleteCred(c.id)}>{t('btn_delete')}</button>
                       </td>
@@ -628,6 +754,111 @@ export default function Credentials() {
               </table>
             )}
           </div>
+          {cookieModal && (
+            <div
+              className="card p-4 mt-3 md:ml-auto md:max-w-3xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="credential-cookies-heading"
+              aria-describedby="credential-cookies-caption"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-2">
+                  <div>
+                    <h3 id="credential-cookies-heading" className="font-semibold">
+                      {t('credentials_cookies_modal_title', {
+                        description:
+                          cookieModal.description?.trim() || t('credentials_cookies_unknown_description'),
+                      })}
+                    </h3>
+                    <p id="credential-cookies-caption" className="text-sm text-gray-600">
+                      {t('credentials_cookies_modal_caption', { id: cookieModal.credentialId })}
+                    </p>
+                    {cookieModal.status === 'success' && (() => {
+                      const lastRefreshText = formatLastRefresh(cookieModal.lastRefresh ?? null)
+                      const expiryHintText = formatCookieText(cookieModal.expiryHint)
+                      if (!lastRefreshText && !expiryHintText) {
+                        return null
+                      }
+                      return (
+                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                          {lastRefreshText && (
+                            <div>{t('credentials_cookies_last_refresh', { value: lastRefreshText })}</div>
+                          )}
+                          {expiryHintText && (
+                            <div>{t('credentials_cookies_expiry_hint', { value: expiryHintText })}</div>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div className="md:pt-1">
+                  <button type="button" className="btn" onClick={closeCookieModal}>
+                    {t('btn_close')}
+                  </button>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                {cookieModal.status === 'loading' && (
+                  <p className="text-sm text-gray-600">{t('credentials_cookies_loading')}</p>
+                )}
+                {cookieModal.status === 'error' && (
+                  <Alert
+                    kind="error"
+                    message={t('credentials_cookies_error', { message: cookieModal.error })}
+                    onClose={closeCookieModal}
+                  />
+                )}
+                {cookieModal.status === 'success' && (
+                  cookieModal.cookies.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="table" role="table" aria-label={t('credentials_cookies_table_label')}>
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="th" scope="col">
+                              {t('credentials_cookies_column_name')}
+                            </th>
+                            <th className="th" scope="col">
+                              {t('credentials_cookies_column_value')}
+                            </th>
+                            <th className="th" scope="col">
+                              {t('credentials_cookies_column_domain')}
+                            </th>
+                            <th className="th" scope="col">
+                              {t('credentials_cookies_column_path')}
+                            </th>
+                            <th className="th" scope="col">
+                              {t('credentials_cookies_column_expiry')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cookieModal.cookies.map((cookie, index) => {
+                            const rowKeyParts = [cookie?.name, cookie?.domain, cookie?.path]
+                              .map((value) => (typeof value === 'string' ? value : ''))
+                              .filter((value) => value.length > 0)
+                            const rowKey = rowKeyParts.join('|') || `cookie-${index}`
+                            return (
+                              <tr key={rowKey} className="odd:bg-white even:bg-gray-50">
+                                <td className="td">{formatCookieText(cookie?.name)}</td>
+                                <td className="td">{formatCookieText(cookie?.value)}</td>
+                                <td className="td">{formatCookieText(cookie?.domain)}</td>
+                                <td className="td">{formatCookieText(cookie?.path)}</td>
+                                <td className="td">{formatExpiryValue(cookie?.expires ?? cookie?.expiry)}</td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">{t('credentials_cookies_empty')}</p>
+                  )
+                )}
+              </div>
+            </div>
+          )}
           {editing && (
             <div
               className="card p-4 mt-3 md:ml-auto md:max-w-xl"
