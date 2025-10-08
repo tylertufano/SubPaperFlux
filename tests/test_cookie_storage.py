@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -13,11 +14,13 @@ from sqlmodel import select
 
 from app.db import get_session_ctx, init_db
 from app.jobs.util_subpaperflux import (
+    CookieAuthenticationError,
     format_site_login_pair_id,
     get_cookies_for_site_login_pair,
     perform_login_and_save_cookies,
+    poll_rss_and_publish,
 )
-from app.models import Cookie, Credential, SiteConfig, SiteLoginType
+from app.models import Cookie, Credential, Feed, SiteConfig, SiteLoginType
 from app.security.crypto import decrypt_dict
 
 
@@ -328,6 +331,117 @@ def test_perform_login_and_save_cookies_surface_error(monkeypatch, tmp_path):
         )
 
     assert "boom" in str(exc.value)
+
+
+def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    config_dir = tmp_path
+    (config_dir / "credentials.json").write_text(json.dumps({}))
+    (config_dir / "instapaper_app_creds.json").write_text(json.dumps({}))
+    monkeypatch.setenv("SPF_CONFIG_DIR", str(config_dir))
+
+    with get_session_ctx() as session:
+        credential = Credential(
+            id="cred_expired",
+            kind="site_login",
+            description="Expired cookie credential",
+            data={"username": "alice", "password": "wonder"},
+            owner_user_id="user-1",
+            site_config_id="sc_expired",
+        )
+        site_config = SiteConfig(
+            id="sc_expired",
+            name="Example",
+            site_url="https://example.com",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["session"],
+            },
+            success_text_class="alert alert-success",
+            expected_success_text="Signed in",
+            required_cookies=["session"],
+            owner_user_id="user-1",
+        )
+        feed = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+            is_paywalled=True,
+            rss_requires_auth=True,
+            site_config_id="sc_expired",
+            site_login_credential_id="cred_expired",
+        )
+        session.add(credential)
+        session.add(site_config)
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+        feed_id = feed.id
+
+    pair_id = format_site_login_pair_id("cred_expired", "sc_expired")
+
+    expired_cookie = {
+        "name": "session",
+        "value": "stale",
+        "expiry": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp(),
+    }
+    expired_login = DummySPFModule([expired_cookie])
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: expired_login)
+    perform_login_and_save_cookies(
+        site_login_pair_id=pair_id,
+        owner_user_id="user-1",
+    )
+
+    class TrackingSpf:
+        def __init__(self, entries: Optional[list[dict[str, object]]] = None):
+            self.entries = entries or []
+            self.called = False
+
+        def get_new_rss_entries(self, **kwargs):  # type: ignore[override]
+            self.called = True
+            return [dict(entry) for entry in self.entries]
+
+    tracking_spf = TrackingSpf()
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: tracking_spf)
+
+    with pytest.raises(CookieAuthenticationError) as exc:
+        poll_rss_and_publish(
+            feed_id=feed_id,
+            owner_user_id="user-1",
+            site_login_pair_id=pair_id,
+        )
+
+    assert "expired" in str(exc.value)
+    assert tracking_spf.called is False
+
+    fresh_cookie = {
+        "name": "session",
+        "value": "fresh",
+        "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
+    }
+    fresh_login = DummySPFModule([fresh_cookie])
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: fresh_login)
+    perform_login_and_save_cookies(
+        site_login_pair_id=pair_id,
+        owner_user_id="user-1",
+    )
+
+    success_spf = TrackingSpf([])
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: success_spf)
+    res = poll_rss_and_publish(
+        feed_id=feed_id,
+        owner_user_id="user-1",
+        site_login_pair_id=pair_id,
+    )
+
+    assert res == {"stored": 0, "duplicates": 0, "total": 0}
+    assert success_spf.called is True
+    stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
+    assert stored_cookies[0]["value"] == "fresh"
 
 
 class _FakeElement:
