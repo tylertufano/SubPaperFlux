@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+from sqlalchemy.exc import PendingRollbackError
 from sqlmodel import Session, select
 
 from ..models import Job, JobSchedule
@@ -97,7 +98,11 @@ def enqueue_due_schedules(
     if for_update_kwargs:
         stmt = stmt.with_for_update(**for_update_kwargs)
 
-    schedules = session.exec(stmt).all()
+    try:
+        schedules = session.exec(stmt).all()
+    except PendingRollbackError:
+        session.rollback()
+        schedules = session.exec(stmt).all()
     enqueued: List[Job] = []
 
     for schedule in schedules:
