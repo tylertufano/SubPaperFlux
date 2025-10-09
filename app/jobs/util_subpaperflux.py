@@ -267,6 +267,44 @@ def _filter_unexpired_cookies(
     return valid
 
 
+def _enforce_cookie_values(
+    cookies: Sequence[Dict[str, Any]]
+) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Ensure cookies include non-empty values and coerce them to strings."""
+
+    sanitized: List[Dict[str, Any]] = []
+    missing_value_names: List[str] = []
+
+    for cookie in cookies:
+        if not isinstance(cookie, dict):
+            continue
+
+        name = cookie.get("name")
+        if not name:
+            continue
+
+        value = cookie.get("value")
+        if value is None:
+            missing_value_names.append(str(name))
+            continue
+
+        if isinstance(value, str):
+            normalized_value = value
+        else:
+            normalized_value = str(value)
+
+        if normalized_value == "":
+            missing_value_names.append(str(name))
+            continue
+
+        normalized_cookie = dict(cookie)
+        normalized_cookie["name"] = str(name)
+        normalized_cookie["value"] = normalized_value
+        sanitized.append(normalized_cookie)
+
+    return sanitized, missing_value_names
+
+
 def _get_db_credential(
     credential_id: str, owner_user_id: Optional[str]
 ) -> Optional[Dict[str, Any]]:
@@ -550,25 +588,83 @@ def perform_login_and_save_cookies(
 
     cookies = cookies_payload
     if cookies_to_store_names:
-        available_cookie_names = {
-            cookie.get("name") for cookie in cookies_payload if cookie.get("name")
-        }
         cookies = [
             cookie
             for cookie in cookies_payload
             if cookie.get("name") in cookies_to_store_names
         ]
+
+    cookies, missing_value_names = _enforce_cookie_values(cookies)
+    missing_value_name_set = set(missing_value_names)
+    if missing_value_name_set:
+        logging.warning(
+            "Dropping cookies with missing values for site_config=%s: %s",
+            site_config_id,
+            ", ".join(sorted(missing_value_name_set)),
+        )
+
+    if cookies_to_store_names:
+        available_cookie_names = {cookie["name"] for cookie in cookies}
         missing_for_storage = [
             name
             for name in cookies_to_store_names
             if name and name not in available_cookie_names
         ]
+        missing_storage_due_to_value = [
+            name for name in missing_for_storage if name in missing_value_name_set
+        ]
+        if missing_storage_due_to_value:
+            raise RuntimeError(
+                "{} login failed for site_config={}: missing cookie values for: {}".format(
+                    resolved_login_type,
+                    site_config_id,
+                    ", ".join(sorted(set(missing_storage_due_to_value))),
+                )
+            )
         if missing_for_storage:
             raise RuntimeError(
                 "{} login failed for site_config={}: missing cookies required for storage: {}".format(
                     resolved_login_type,
                     site_config_id,
                     ", ".join(missing_for_storage),
+                )
+            )
+
+    required_cookie_names = list(site_config.get("required_cookies") or [])
+    if not required_cookie_names and cookies_to_store_names:
+        required_cookie_names = list(cookies_to_store_names)
+
+    if cookies_to_store_names:
+        required_names_for_storage = [
+            name for name in required_cookie_names if name in cookies_to_store_names
+        ]
+    else:
+        required_names_for_storage = list(required_cookie_names)
+
+    if required_names_for_storage:
+        missing_required_due_to_value = [
+            name for name in required_names_for_storage if name in missing_value_name_set
+        ]
+        if missing_required_due_to_value:
+            raise RuntimeError(
+                "{} login failed for site_config={}: missing cookie values for: {}".format(
+                    resolved_login_type,
+                    site_config_id,
+                    ", ".join(sorted(set(missing_required_due_to_value))),
+                )
+            )
+        available_cookie_names = {cookie["name"] for cookie in cookies}
+        missing_required = [
+            name
+            for name in required_names_for_storage
+            if name and name not in available_cookie_names
+        ]
+        if missing_required:
+            raise RuntimeError(
+                "{} login failed for site_config={}: missing required cookies: {}".format(
+                    resolved_login_type,
+                    site_config_id,
+                    ", ".join(missing_required),
                 )
             )
 
@@ -668,6 +764,8 @@ def get_cookies_for_site_login_pair(
     if not site_login_pair_id:
         return []
     credential_id, site_config_id = parse_site_login_pair_id(site_login_pair_id)
+    required_cookie_names: List[str] = []
+    cookies_to_store_names: List[str] = []
     with get_session_ctx() as session:
         cred = session.get(CredentialModel, credential_id)
         if not cred or cred.kind != "site_login":
@@ -676,6 +774,31 @@ def get_cookies_for_site_login_pair(
             return []
         if cred.site_config_id and cred.site_config_id != site_config_id:
             raise ValueError("site_login_pair references mismatched site config")
+        sc_record = session.get(SiteConfigModel, site_config_id)
+        if sc_record:
+            selenium_cfg = sc_record.selenium_config or {}
+            selenium_cookies = []
+            if isinstance(selenium_cfg, dict):
+                selenium_cookies = list(selenium_cfg.get("cookies_to_store") or [])
+
+            api_cfg = sc_record.api_config or {}
+            api_cookies: List[str] = []
+            if isinstance(api_cfg, dict):
+                api_cookies = list(api_cfg.get("cookies_to_store") or [])
+                if not api_cookies:
+                    cookie_map = api_cfg.get("cookies") or {}
+                    if isinstance(cookie_map, dict):
+                        api_cookies = list(cookie_map.keys())
+
+            combined_cookies: List[str] = []
+            for name in selenium_cookies + api_cookies:
+                if name and name not in combined_cookies:
+                    combined_cookies.append(name)
+
+            cookies_to_store_names = combined_cookies
+            required_cookie_names = list(sc_record.required_cookies or [])
+            if not required_cookie_names:
+                required_cookie_names = list(cookies_to_store_names)
     cookies = _get_cookies_for_pair(credential_id, site_config_id)
     if not cookies:
         return []
@@ -685,7 +808,81 @@ def get_cookies_for_site_login_pair(
             "Stored cookies are expired and cannot be used for authentication",
             site_login_pair_id=site_login_pair_id,
         )
-    return filtered
+    sanitized, missing_value_names = _enforce_cookie_values(filtered)
+    missing_value_name_set = set(missing_value_names)
+    if missing_value_name_set:
+        logging.warning(
+            "Stored cookies for pair=%s have missing values for: %s",
+            site_login_pair_id,
+            ", ".join(sorted(missing_value_name_set)),
+        )
+
+    available_names = {cookie["name"] for cookie in sanitized}
+
+    if cookies_to_store_names:
+        missing_storage_due_to_value = [
+            name for name in cookies_to_store_names if name in missing_value_name_set
+        ]
+        if missing_storage_due_to_value:
+            raise CookieAuthenticationError(
+                "Stored cookies are missing values for configured cookies: {}".format(
+                    ", ".join(sorted(set(missing_storage_due_to_value)))
+                ),
+                site_login_pair_id=site_login_pair_id,
+            )
+        missing_storage = [
+            name
+            for name in cookies_to_store_names
+            if name and name not in available_names
+        ]
+        if missing_storage:
+            raise CookieAuthenticationError(
+                "Stored cookies are missing configured cookies: {}".format(
+                    ", ".join(missing_storage)
+                ),
+                site_login_pair_id=site_login_pair_id,
+            )
+
+    if cookies_to_store_names:
+        required_names_for_storage = [
+            name for name in required_cookie_names if name in cookies_to_store_names
+        ]
+    else:
+        required_names_for_storage = list(required_cookie_names)
+
+    if required_names_for_storage:
+        missing_required = [
+            name
+            for name in required_names_for_storage
+            if name and name not in available_names
+        ]
+        if missing_required:
+            missing_due_to_value = [
+                name for name in missing_required if name in missing_value_name_set
+            ]
+            other_missing = sorted(
+                set(missing_required) - set(missing_due_to_value)
+            )
+            reasons: List[str] = []
+            if missing_due_to_value:
+                reasons.append(
+                    "missing values for: {}".format(
+                        ", ".join(sorted(set(missing_due_to_value)))
+                    )
+                )
+            if other_missing:
+                reasons.append(
+                    "missing cookies: {}".format(", ".join(other_missing))
+                )
+            message = "Stored cookies are missing required authentication cookies"
+            if reasons:
+                message = f"{message} ({'; '.join(reasons)})"
+            raise CookieAuthenticationError(
+                message,
+                site_login_pair_id=site_login_pair_id,
+            )
+
+    return sanitized
 
 
 def invalidate_cookies_for_site_login_pair(

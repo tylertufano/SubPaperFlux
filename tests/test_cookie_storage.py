@@ -146,6 +146,140 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     assert helper_cookies == updated_cookies
 
 
+def test_perform_login_and_save_cookies_rejects_blank_values(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    blank_cookie_spf = DummySPFModule(
+        [
+            {"name": "session", "value": ""},
+        ]
+    )
+    monkeypatch.setattr(
+        "app.jobs.util_subpaperflux._import_spf", lambda: blank_cookie_spf
+    )
+
+    with get_session_ctx() as session:
+        credential = Credential(
+            id="cred_blank",
+            kind="site_login",
+            description="Test credential",
+            data={"username": "alice", "password": "wonder"},
+            owner_user_id="user-1",
+            site_config_id="sc_blank",
+        )
+        site_config = SiteConfig(
+            id="sc_blank",
+            name="Example",
+            site_url="https://example.com",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["session"],
+            },
+            success_text_class="alert alert-success",
+            expected_success_text="Signed in",
+            required_cookies=["session"],
+            owner_user_id="user-1",
+        )
+        session.add(credential)
+        session.add(site_config)
+        session.commit()
+
+    pair_id = format_site_login_pair_id("cred_blank", "sc_blank")
+
+    with pytest.raises(RuntimeError) as exc:
+        perform_login_and_save_cookies(
+            site_login_pair_id=pair_id,
+            owner_user_id="user-1",
+        )
+
+    assert "missing cookie values" in str(exc.value)
+
+
+def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    future_expiry = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+
+    with get_session_ctx() as session:
+        credential = Credential(
+            id="cred_header",
+            kind="site_login",
+            description="Header credential",
+            data={"username": "user", "password": "pass"},
+            owner_user_id="user-1",
+            site_config_id="sc_header",
+        )
+        site_config = SiteConfig(
+            id="sc_header",
+            name="Header Site",
+            site_url="https://member.democracydocket.com",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={"cookies_to_store": ["__hsmem"]},
+            required_cookies=["__hsmem"],
+            owner_user_id="user-1",
+        )
+        encrypted = encrypt_dict(
+            {
+                "cookies": [
+                    {
+                        "name": "__hsmem",
+                        "value": "abc123",
+                        "domain": ".member.democracydocket.com",
+                        "path": "/",
+                        "expiry": future_expiry,
+                    }
+                ]
+            }
+        )
+        cookie_record = Cookie(
+            credential_id="cred_header",
+            site_config_id="sc_header",
+            owner_user_id="user-1",
+            encrypted_cookies=json.dumps(encrypted),
+            last_refresh=datetime.now(timezone.utc).isoformat(),
+            expiry_hint=future_expiry,
+        )
+        session.add(credential)
+        session.add(site_config)
+        session.add(cookie_record)
+        session.commit()
+
+    pair_id = format_site_login_pair_id("cred_header", "sc_header")
+
+    cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
+    assert cookies == [
+        {
+            "name": "__hsmem",
+            "value": "abc123",
+            "domain": ".member.democracydocket.com",
+            "path": "/",
+            "expiry": future_expiry,
+        }
+    ]
+
+    import subpaperflux
+    import requests
+
+    session = requests.Session()
+    try:
+        subpaperflux._apply_cookies_to_session(session, cookies)
+        prepared = session.prepare_request(
+            requests.Request(
+                "GET",
+                "https://member.democracydocket.com/trumps-illinois-invasion-",
+            )
+        )
+        cookie_header = prepared.headers.get("Cookie")
+    finally:
+        session.close()
+
+    assert cookie_header is not None
+    assert "__hsmem=abc123" in cookie_header.split("; ")
+
+
 def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 
@@ -444,6 +578,56 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
     assert success_spf.called is True
     stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert stored_cookies[0]["value"] == "fresh"
+
+
+def test_get_cookies_for_site_login_pair_rejects_blank_values(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    with get_session_ctx() as session:
+        credential = Credential(
+            id="cred_blank_value",
+            kind="site_login",
+            description="Blank cookie credential",
+            data={"username": "alice", "password": "wonder"},
+            owner_user_id="user-1",
+            site_config_id="sc_blank_value",
+        )
+        site_config = SiteConfig(
+            id="sc_blank_value",
+            name="Example",
+            site_url="https://example.com",
+            login_type=SiteLoginType.SELENIUM,
+            selenium_config={
+                "username_selector": "#user",
+                "password_selector": "#pass",
+                "login_button_selector": "#submit",
+                "cookies_to_store": ["session"],
+            },
+            success_text_class="alert alert-success",
+            expected_success_text="Signed in",
+            required_cookies=["session"],
+            owner_user_id="user-1",
+        )
+        cookie_payload = encrypt_dict({"cookies": [{"name": "session", "value": ""}]})
+        cookie_record = Cookie(
+            credential_id="cred_blank_value",
+            site_config_id="sc_blank_value",
+            owner_user_id="user-1",
+            encrypted_cookies=json.dumps(cookie_payload),
+        )
+        session.add(credential)
+        session.add(site_config)
+        session.add(cookie_record)
+        session.commit()
+
+    pair_id = format_site_login_pair_id("cred_blank_value", "sc_blank_value")
+
+    with pytest.raises(CookieAuthenticationError) as exc:
+        get_cookies_for_site_login_pair(pair_id, "user-1")
+
+    message = str(exc.value)
+    assert "missing values for configured cookies" in message
+    assert "session" in message
 
 
 def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
