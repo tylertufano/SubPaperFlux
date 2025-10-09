@@ -266,6 +266,9 @@ def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_pa
     session = requests.Session()
     try:
         subpaperflux._apply_cookies_to_session(session, cookies)
+        session_cookie_header = session.headers.get("Cookie")
+        assert session_cookie_header is not None
+        assert "__hsmem=abc123" in session_cookie_header.split("; ")
         prepared = session.prepare_request(
             requests.Request(
                 "GET",

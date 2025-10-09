@@ -450,9 +450,15 @@ def _apply_cookies_to_session(session, cookies):
 
     if not cookies:
         logging.debug("No cookies supplied for session attachment.")
+        session.headers.pop("Cookie", None)
         return
 
+    header_pairs = []
+
     for cookie in cookies:
+        if not isinstance(cookie, dict):
+            continue
+
         name = cookie.get("name")
         value = cookie.get("value")
 
@@ -462,6 +468,11 @@ def _apply_cookies_to_session(session, cookies):
 
         if value is None:
             logging.debug(f"Cookie '{name}' is missing a value. Skipping.")
+            continue
+
+        value_str = value if isinstance(value, str) else str(value)
+        if value_str == "":
+            logging.debug(f"Cookie '{name}' has an empty value. Skipping.")
             continue
 
         cookie_kwargs = {}
@@ -487,7 +498,14 @@ def _apply_cookies_to_session(session, cookies):
             cookie_kwargs.get("expires"),
         )
 
-        session.cookies.set(name, value, **cookie_kwargs)
+        session.cookies.set(name, value_str, **cookie_kwargs)
+        header_pairs.append(f"{name}={value_str}")
+
+    header_value = "; ".join(header_pairs)
+    if header_value:
+        session.headers["Cookie"] = header_value
+    else:
+        session.headers.pop("Cookie", None)
 
 
 def _coerce_header_mapping(value):
