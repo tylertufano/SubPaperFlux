@@ -1946,10 +1946,10 @@ export default function JobSchedulesPage() {
                 }
                 message={
                   <div className="space-y-1">
-                    <p className="text-lg font-semibold text-gray-700">
+                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
                       {t("job_schedules_empty_title")}
                     </p>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                       {t("job_schedules_empty_desc")}
                     </p>
                   </div>
@@ -1966,7 +1966,7 @@ export default function JobSchedulesPage() {
               className="table"
               aria-label={t("job_schedules_table_label")}
             >
-              <thead className="bg-gray-100">
+              <thead className="bg-gray-100 dark:bg-gray-800">
                 <tr>
                   <th className="th" scope="col">
                     {t("job_schedules_column_name")}
@@ -2012,7 +2012,7 @@ export default function JobSchedulesPage() {
                   return (
                     <React.Fragment key={schedule.id}>
                       <tr
-                        className="odd:bg-white even:bg-gray-50"
+                        className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900"
                         id={`schedule-${schedule.id}`}
                       >
                         <td className="td">{schedule.scheduleName}</td>
@@ -2088,14 +2088,14 @@ export default function JobSchedulesPage() {
                         </td>
                       </tr>
                       {isExpanded && (
-                        <tr className="bg-gray-50">
+                        <tr className="bg-gray-50 dark:bg-gray-900/40">
                           <td className="td" colSpan={8}>
                             <div className="p-4 space-y-3">
                               <div>
-                                <h3 className="text-sm font-semibold text-gray-800 mb-2">
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                                   {t("job_schedules_metadata_heading")}
                                 </h3>
-                                <dl className="grid gap-2 md:grid-cols-2 text-sm text-gray-700">
+                                <dl className="grid gap-2 md:grid-cols-2 text-sm text-gray-700 dark:text-gray-300">
                                   <div>
                                     <dt className="font-medium">
                                       {t("job_schedules_field_schedule_name")}
