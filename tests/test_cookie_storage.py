@@ -266,9 +266,10 @@ def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_pa
     session = requests.Session()
     try:
         subpaperflux._apply_cookies_to_session(session, cookies)
-        session_cookie_header = session.headers.get("Cookie")
-        assert session_cookie_header is not None
-        assert "__hsmem=abc123" in session_cookie_header.split("; ")
+        # The session should rely on `requests`' cookie jar to set headers on
+        # a per-request basis, so the default session headers must remain
+        # untouched here. This ensures domain/path scoping remains intact.
+        assert "Cookie" not in session.headers
         prepared = session.prepare_request(
             requests.Request(
                 "GET",

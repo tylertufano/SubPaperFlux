@@ -453,8 +453,6 @@ def _apply_cookies_to_session(session, cookies):
         session.headers.pop("Cookie", None)
         return
 
-    header_pairs = []
-
     for cookie in cookies:
         if not isinstance(cookie, dict):
             continue
@@ -499,13 +497,12 @@ def _apply_cookies_to_session(session, cookies):
         )
 
         session.cookies.set(name, value_str, **cookie_kwargs)
-        header_pairs.append(f"{name}={value_str}")
 
-    header_value = "; ".join(header_pairs)
-    if header_value:
-        session.headers["Cookie"] = header_value
-    else:
-        session.headers.pop("Cookie", None)
+    # Ensure the session's default `Cookie` header remains unset so that
+    # `requests` continues to apply domain/path scoping logic when preparing
+    # individual requests. Any stale header is removed above when no cookies
+    # are supplied.
+    session.headers.pop("Cookie", None)
 
 
 def _coerce_header_mapping(value):
