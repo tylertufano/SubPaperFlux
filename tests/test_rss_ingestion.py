@@ -12,6 +12,22 @@ import requests
 from sqlmodel import select
 
 
+def test_sanitize_headers_for_logging_redacts_sensitive_fields():
+    import subpaperflux
+
+    headers = {
+        "Authorization": "secret-token",
+        "Cookie": "session=abc",
+        "User-Agent": "ExampleAgent/1.0",
+    }
+
+    sanitized = subpaperflux._sanitize_headers_for_logging(headers)
+
+    assert sanitized["Authorization"] == "<redacted>"
+    assert sanitized["Cookie"] == "<redacted>"
+    assert sanitized["User-Agent"] == "ExampleAgent/1.0"
+
+
 def test_get_article_html_with_cookies_attaches_session(monkeypatch):
     import subpaperflux
 
