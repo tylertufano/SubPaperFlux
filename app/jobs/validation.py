@@ -7,8 +7,33 @@ RequiredField = Union[str, Sequence[str]]
 LEGACY_SCHEDULE_PAYLOAD_KEYS = {"lookback"}
 
 
+PAYLOAD_KEY_ALIASES = {
+    "feedId": "feed_id",
+    "feedIds": "feed_ids",
+    "instapaperId": "instapaper_id",
+    "instapaperCredentialId": "instapaper_credential_id",
+    "minifluxId": "miniflux_id",
+    "olderThan": "older_than",
+    "siteLoginPair": "site_login_pair",
+    "siteLoginCredentialId": "site_login_credential_id",
+    "siteLoginConfigId": "site_login_config_id",
+}
+
+
+def _normalize_payload_key(key: str) -> str:
+    return PAYLOAD_KEY_ALIASES.get(key, key)
+
+
 def scrub_legacy_schedule_payload(payload: Mapping[str, Any] | None) -> Dict[str, Any]:
-    sanitized = dict(payload or {})
+    sanitized: Dict[str, Any] = {}
+    for raw_key, value in (payload or {}).items():
+        key = _normalize_payload_key(raw_key)
+        if key in LEGACY_SCHEDULE_PAYLOAD_KEYS:
+            continue
+        # Preserve existing snake_case values when both variants are supplied.
+        if key in sanitized and key != raw_key:
+            continue
+        sanitized[key] = value
     for legacy_key in LEGACY_SCHEDULE_PAYLOAD_KEYS:
         sanitized.pop(legacy_key, None)
     return sanitized
