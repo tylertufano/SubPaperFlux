@@ -359,7 +359,7 @@ export default function Admin() {
             {integrationEntries.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="table" role="table" aria-label={t('admin_integrations_table_label')}>
-                  <thead className="bg-gray-100">
+                  <thead className="bg-gray-100 dark:bg-gray-800">
                     <tr>
                       <th className="th">{t('admin_integrations_column_integration')}</th>
                       <th className="th">{t('admin_integrations_column_connectivity')}</th>
@@ -406,7 +406,7 @@ export default function Admin() {
                       const backoffDescription = describeBackoff(detail, locale, t)
                       const endpoint = pickFirst<string>(detail, ['endpoint', 'url'])
                       return (
-                        <tr key={normalizedName} className="odd:bg-white even:bg-gray-50 align-top">
+                        <tr key={normalizedName} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900 align-top">
                           <td className="td">
                             <div className="font-semibold text-gray-900">{label}</div>
                             {credentialId && (
@@ -487,7 +487,7 @@ export default function Admin() {
                 <li>{t('admin_overall_label')}: {rls.ok ? t('status_ok') : t('status_check')}</li>
               </ul>
               <table className="table mt-2" role="table" aria-label={t('admin_rls_table_label')}>
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
                     <th className="th">{t('admin_rls_table_col')}</th>
                     <th className="th">{t('admin_rls_enabled_col')}</th>
@@ -497,7 +497,7 @@ export default function Admin() {
                 </thead>
                 <tbody>
                   {Object.entries(rls.details?.tables || {}).map(([tbl, info]: any) => (
-                    <tr key={tbl} className="odd:bg-white even:bg-gray-50">
+                    <tr key={tbl} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                       <td className="td">{tbl}</td>
                       <td className="td">{t((info as any).enabled ? 'boolean_yes' : 'boolean_no')}</td>
                       <td className="td text-sm">

@@ -140,17 +140,17 @@ function TrendCard({
     <section className="card p-4 space-y-4">
       <header className="space-y-1">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
-        <p className="text-3xl font-semibold text-gray-900" aria-live="polite">
+        <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
+        <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100" aria-live="polite">
           {formattedTotal}
         </p>
-        <p className="text-sm text-gray-600">{totalLabel}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{totalLabel}</p>
       </header>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-600">{emptyMessage}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{emptyMessage}</p>
       ) : (
         <table className="table" aria-label={tableLabel}>
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
               {columns.map((column, columnIndex) => (
                 <th
@@ -164,7 +164,7 @@ function TrendCard({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id} className="odd:bg-white even:bg-gray-50">
+              <tr key={row.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                 {row.values.map((value, valueIndex) => {
                   const column = columns[valueIndex]
                   const alignment = column?.numeric ? 'text-right' : 'text-left'
@@ -183,7 +183,7 @@ function TrendCard({
           </tbody>
         </table>
       )}
-      {footer ? <div className="text-sm text-gray-600">{footer}</div> : null}
+      {footer ? <div className="text-sm text-gray-600 dark:text-gray-300">{footer}</div> : null}
     </section>
   )
 }
@@ -223,10 +223,10 @@ function HistogramSection({
     <section className="card p-4 space-y-4">
       <header>
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
       </header>
       {series.length === 0 ? (
-        <p className="text-sm text-gray-600">{emptyMessage}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">{emptyMessage}</p>
       ) : (
         <div className="space-y-6">
           {series.map((item) => {
@@ -234,9 +234,9 @@ function HistogramSection({
             const sumText = sumLabel(item, sumFormatter)
             return (
               <div key={label} className="space-y-3">
-                <h4 className="font-semibold text-gray-800">{label}</h4>
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200">{label}</h4>
                 <table className="table" role="table" aria-label={tableLabel}>
-                  <thead className="bg-gray-100">
+                  <thead className="bg-gray-100 dark:bg-gray-800">
                     <tr>
                       <th className="th text-left">{bucketHeading}</th>
                       <th className="th text-right">{countHeading}</th>
@@ -244,14 +244,14 @@ function HistogramSection({
                   </thead>
                   <tbody>
                     {item.buckets.map((bucket) => (
-                      <tr key={bucket.rawUpperBound} className="odd:bg-white even:bg-gray-50">
+                      <tr key={bucket.rawUpperBound} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                         <td className="td">{formatBucket(bucket)}</td>
                         <td className="td text-right">{formatCount(bucket.cumulativeCount, countFormatter)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p>{totalLabel(item, countFormatter)}</p>
                   {sumText ? <p>{sumText}</p> : null}
                 </div>

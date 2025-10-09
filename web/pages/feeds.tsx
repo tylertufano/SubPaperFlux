@@ -545,7 +545,7 @@ export default function Feeds() {
                   icon={<span>📰</span>}
                   message={(
                     <div className="space-y-1">
-                      <p className="text-lg font-semibold text-gray-700">{t('empty_feeds_title')}</p>
+                      <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_feeds_title')}</p>
                       <p>{t('empty_feeds_desc')}</p>
                     </div>
                   )}
@@ -553,7 +553,7 @@ export default function Feeds() {
               </div>
             ) : (
             <table className="table" role="table" aria-label={t('feeds_table_label')}>
-              <thead className="bg-gray-100">
+              <thead className="bg-gray-100 dark:bg-gray-800">
                 <tr>
                   <th className="th">{t('url_label')}</th>
                   <th className="th">{t('poll_label')}</th>
@@ -568,7 +568,7 @@ export default function Feeds() {
               </thead>
               <tbody>
                 {(data.items || data).map((f: any) => (
-                  <tr key={f.id} className="odd:bg-white even:bg-gray-50">
+                  <tr key={f.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                     {editingId === f.id ? (
                       <>
                         <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} aria-label={t('feeds_field_url_placeholder')} /></td>

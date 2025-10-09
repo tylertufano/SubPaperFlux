@@ -63,7 +63,7 @@ export default function JobsDead() {
                     icon={<span>💤</span>}
                     message={(
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">{t('jobs_dead_empty_title')}</p>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('jobs_dead_empty_title')}</p>
                         <p>{t('jobs_dead_empty_desc')}</p>
                       </div>
                     )}
@@ -71,7 +71,7 @@ export default function JobsDead() {
                 </div>
               ) : (
               <table className="table" role="table" aria-label={t('jobs_dead_table_label')}>
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
                     <th className="th" scope="col">{t('jobs_column_schedule')}</th>
                     <th className="th" scope="col">{t('id_label')}</th>
@@ -94,7 +94,7 @@ export default function JobsDead() {
 
                     return (
                       <React.Fragment key={j.id}>
-                        <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                        <tr key={j.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td">
                             {j.schedule_name ? (
                               j.schedule_id ? (
@@ -150,16 +150,16 @@ export default function JobsDead() {
                             >{t('btn_retry')}</button>
                           </td>
                         </tr>
-                      {expanded[j.id] && (
-                        <tr key={`${j.id}-details`} id={`dead-job-details-${j.id}`} className="bg-gray-50">
+                        {expanded[j.id] && (
+                          <tr key={`${j.id}-details`} id={`dead-job-details-${j.id}`} className="bg-gray-50 dark:bg-gray-900/40">
                           <td className="td" colSpan={8}>
                             <div className="p-3">
-                              <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
-                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+                                <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('jobs_details_heading')}</h4>
+                                <pre className="text-sm bg-white p-3 rounded border overflow-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
 {JSON.stringify(detailsCache[j.id]?.details ?? j.details ?? {}, null, 2)}
                               </pre>
-                              <h4 className="font-semibold my-2">{t('jobs_payload_heading')}</h4>
-                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+                                <h4 className="font-semibold my-2 text-gray-800 dark:text-gray-200">{t('jobs_payload_heading')}</h4>
+                                <pre className="text-sm bg-white p-3 rounded border overflow-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
 {JSON.stringify(detailsCache[j.id]?.payload ?? j.payload ?? {}, null, 2)}
                               </pre>
                             </div>
@@ -175,7 +175,7 @@ export default function JobsDead() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">
+              <span className="text-gray-700 dark:text-gray-200">
                 {t('pagination_status', {
                   page: numberFormatter.format(page),
                   total: numberFormatter.format(data.totalPages ?? 1),

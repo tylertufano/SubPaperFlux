@@ -338,13 +338,13 @@ export default function AdminAudit() {
             <div className="card p-0 overflow-hidden">
               {data.items && data.items.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
-                    <p className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {t('audit_total_count', { count: numberFormatter.format(data.total) })}
                     </p>
                   </div>
                   <table className="table" role="table" aria-label={t('audit_table_label')}>
-                    <thead className="bg-gray-100">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
                       <tr>
                         <th className="th" scope="col">{t('audit_column_entity')}</th>
                         <th className="th" scope="col">{t('audit_column_action')}</th>
@@ -356,7 +356,7 @@ export default function AdminAudit() {
                     </thead>
                     <tbody>
                       {data.items.map((item) => (
-                        <tr key={item.id} className="odd:bg-white even:bg-gray-50">
+                        <tr key={item.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td align-top">
                             <div className="font-medium text-gray-900">{item.entity_type}</div>
                             <div className="text-sm text-gray-600 break-all">{item.entity_id}</div>
@@ -387,7 +387,7 @@ export default function AdminAudit() {
                       ))}
                     </tbody>
                   </table>
-                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
                     <button
                       type="button"
                       className="btn"
@@ -396,7 +396,7 @@ export default function AdminAudit() {
                     >
                       {t('pagination_prev')}
                     </button>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       {t('pagination_status', { page: data.page, total: totalPages })}
                     </div>
                     <button
@@ -415,7 +415,7 @@ export default function AdminAudit() {
                     icon={<span aria-hidden="true">📜</span>}
                     message={(
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">{t('empty_admin_audit_title')}</p>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_admin_audit_title')}</p>
                         <p>{t('audit_empty_description')}</p>
                       </div>
                     )}

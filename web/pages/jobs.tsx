@@ -175,7 +175,7 @@ export default function Jobs() {
                     icon={<span>🧾</span>}
                     message={(
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">{t('empty_jobs_title')}</p>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_jobs_title')}</p>
                         <p>{t('empty_jobs_desc')}</p>
                       </div>
                     )}
@@ -188,7 +188,7 @@ export default function Jobs() {
                 </div>
               ) : (
               <table className="table" role="table" aria-label={t('jobs_table_label')}>
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
                     <th className="th" scope="col">{t('jobs_column_schedule')}</th>
                     <th className="th" scope="col">{t('jobs_run_at_label')}</th>
@@ -224,7 +224,7 @@ export default function Jobs() {
 
                     return (
                       <React.Fragment key={j.id}>
-                        <tr key={j.id} className="odd:bg-white even:bg-gray-50">
+                        <tr key={j.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td">
                             {j.schedule_name ? (
                               j.schedule_id ? (
@@ -244,10 +244,10 @@ export default function Jobs() {
                           <td className="td">
                             {j.status}
                             {j.type === 'publish' && (j.details?.deduped === true) && (
-                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">{t('jobs_badge_deduped')}</span>
+                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">{t('jobs_badge_deduped')}</span>
                             )}
                             {showRssPollBadge && (
-                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">
+                              <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                                 {t('jobs_badge_rss_poll', {
                                   stored: formattedStored,
                                   total: formattedTotal,
@@ -260,7 +260,7 @@ export default function Jobs() {
                           <td className="td">
                             {j.last_error || ''}
                             {(j.status === 'queued' && j.available_at && j.available_at > now) && (
-                              <span className="ml-2 text-gray-600">
+                              <span className="ml-2 text-gray-600 dark:text-gray-300">
                                 {t('jobs_retry_in', {
                                   seconds: formatNumberValue(
                                     Math.max(0, Math.floor(j.available_at - now)),
@@ -310,16 +310,16 @@ export default function Jobs() {
                             )}
                           </td>
                         </tr>
-                      {expanded[j.id] && (
-                        <tr key={`${j.id}-details`} id={`job-row-details-${j.id}`} className="bg-gray-50">
+                        {expanded[j.id] && (
+                          <tr key={`${j.id}-details`} id={`job-row-details-${j.id}`} className="bg-gray-50 dark:bg-gray-900/40">
                           <td className="td" colSpan={7}>
                             <div className="p-3">
-                              <h4 className="font-semibold mb-2">{t('jobs_details_heading')}</h4>
-                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+                                <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('jobs_details_heading')}</h4>
+                                <pre className="text-sm bg-white p-3 rounded border overflow-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
 {JSON.stringify(detailsCache[j.id]?.details ?? j.details ?? {}, null, 2)}
                               </pre>
-                              <h4 className="font-semibold my-2">{t('jobs_payload_heading')}</h4>
-                              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
+                                <h4 className="font-semibold my-2 text-gray-800 dark:text-gray-200">{t('jobs_payload_heading')}</h4>
+                                <pre className="text-sm bg-white p-3 rounded border overflow-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
 {JSON.stringify(detailsCache[j.id]?.payload ?? j.payload ?? {}, null, 2)}
                               </pre>
                             </div>
@@ -335,7 +335,7 @@ export default function Jobs() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">
+              <span className="text-gray-700 dark:text-gray-200">
                 {t('pagination_status', {
                   page: numberFormatter.format(page),
                   total: numberFormatter.format(data.totalPages ?? 1),

@@ -431,13 +431,13 @@ export default function AdminOrgs() {
             <div className="card p-0 overflow-hidden">
               {data.items && data.items.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
-                    <p className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {t('admin_orgs_total_count', { count: numberFormatter.format(data.total) })}
                     </p>
                   </div>
                   <table className="table" role="table" aria-label={t('admin_orgs_table_label')}>
-                    <thead className="bg-gray-100">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
                       <tr>
                         <th className="th" scope="col">
                           {t('admin_orgs_column_name')}
@@ -458,7 +458,7 @@ export default function AdminOrgs() {
                     </thead>
                     <tbody>
                       {data.items.map((organization) => (
-                        <tr key={organization.id} className="odd:bg-white even:bg-gray-50">
+                        <tr key={organization.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td align-top">
                             <div className="space-y-1">
                               <div className="font-medium text-gray-900">
@@ -479,8 +479,8 @@ export default function AdminOrgs() {
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                                 organization.is_default
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-gray-100 text-gray-700'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
+                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
                               }`}
                             >
                               {organization.is_default
@@ -505,7 +505,7 @@ export default function AdminOrgs() {
                       ))}
                     </tbody>
                   </table>
-                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
                     <button
                       type="button"
                       className="btn"
@@ -514,7 +514,7 @@ export default function AdminOrgs() {
                     >
                       {t('pagination_prev')}
                     </button>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       {t('pagination_status', { page: data.page, total: totalPages })}
                     </div>
                     <button
@@ -533,7 +533,7 @@ export default function AdminOrgs() {
                     icon={<span aria-hidden="true">🏢</span>}
                     message={
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
                           {t('admin_orgs_empty_title')}
                         </p>
                         <p>{t('admin_orgs_empty_description')}</p>

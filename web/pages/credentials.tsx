@@ -698,7 +698,7 @@ export default function Credentials() {
                   icon={<span>🔐</span>}
                   message={(
                     <div className="space-y-1">
-                      <p className="text-lg font-semibold text-gray-700">{t('empty_credentials_title')}</p>
+                      <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_credentials_title')}</p>
                       <p>{t('empty_credentials_desc')}</p>
                     </div>
                   )}
@@ -706,7 +706,7 @@ export default function Credentials() {
               </div>
             ) : (
               <table className="table" role="table" aria-label={t('credentials_table_label')}>
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
                     <th className="th" scope="col">{t('credentials_table_column_credential')}</th>
                     <th className="th" scope="col">{t('kind_label')}</th>
@@ -716,7 +716,7 @@ export default function Credentials() {
                 </thead>
                 <tbody>
                   {(data.items ?? data).map((c: any) => (
-                    <tr key={c.id} className="odd:bg-white even:bg-gray-50">
+                    <tr key={c.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                       <td className="td">
                         <div className="font-medium text-gray-900">{c.description}</div>
                         <div className="text-sm text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
@@ -814,7 +814,7 @@ export default function Credentials() {
                   cookieModal.cookies.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="table" role="table" aria-label={t('credentials_cookies_table_label')}>
-                        <thead className="bg-gray-100">
+                        <thead className="bg-gray-100 dark:bg-gray-800">
                           <tr>
                             <th className="th" scope="col">
                               {t('credentials_cookies_column_name')}
@@ -840,7 +840,7 @@ export default function Credentials() {
                               .filter((value) => value.length > 0)
                             const rowKey = rowKeyParts.join('|') || `cookie-${index}`
                             return (
-                              <tr key={rowKey} className="odd:bg-white even:bg-gray-50">
+                              <tr key={rowKey} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                                 <td className="td">{formatCookieText(cookie?.name)}</td>
                                 <td className="td">{formatCookieText(cookie?.value)}</td>
                                 <td className="td">{formatCookieText(cookie?.domain)}</td>

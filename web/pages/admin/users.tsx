@@ -83,9 +83,15 @@ function displayName(user: AdminUser): string {
 
 function statusBadge(user: AdminUser, t: ReturnType<typeof useI18n>['t']): { label: string; className: string } {
   if (user.is_active) {
-    return { label: t('admin_users_status_active_badge'), className: 'bg-green-100 text-green-800' }
+    return {
+      label: t('admin_users_status_active_badge'),
+      className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100',
+    }
   }
-  return { label: t('admin_users_status_inactive_badge'), className: 'bg-red-100 text-red-800' }
+  return {
+    label: t('admin_users_status_inactive_badge'),
+    className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
+  }
 }
 
 function organizationDisplayNameFromRecord(record: {
@@ -863,13 +869,13 @@ export default function AdminUsers() {
             <div className="card p-0 overflow-hidden">
               {data.items && data.items.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
-                    <p className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {t('admin_users_total_count', { count: numberFormatter.format(data.total) })}
                     </p>
                   </div>
                   <table className="table" role="table" aria-label={t('admin_users_table_label')}>
-                    <thead className="bg-gray-100">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
                       <tr>
                         <th className="th" scope="col">{t('admin_users_column_identity')}</th>
                         <th className="th" scope="col">{t('admin_users_column_roles')}</th>
@@ -884,10 +890,10 @@ export default function AdminUsers() {
                       {data.items.map((user) => {
                         const badge = statusBadge(user, t)
                         return (
-                          <tr key={user.id} className="odd:bg-white even:bg-gray-50">
+                          <tr key={user.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                             <td className="td align-top">
                               <div className="flex items-start gap-3">
-                                <div className="mt-1 h-10 w-10 flex-none overflow-hidden rounded-full bg-gray-200 text-center text-sm font-semibold leading-10 text-gray-600">
+                                <div className="mt-1 h-10 w-10 flex-none overflow-hidden rounded-full bg-gray-200 text-center text-sm font-semibold leading-10 text-gray-600 dark:bg-gray-700 dark:text-gray-200">
                                   {user.picture_url ? (
                                     <img
                                       src={user.picture_url}
@@ -908,7 +914,7 @@ export default function AdminUsers() {
                             <td className="td align-top">
                               <div className="flex flex-wrap gap-1">
                                 {user.roles.length === 0 && (
-                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                                     {t('admin_users_roles_empty')}
                                   </span>
                                 )}
@@ -916,14 +922,14 @@ export default function AdminUsers() {
                                   <button
                                     key={role}
                                     type="button"
-                                    className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-blue-900/40 dark:text-blue-200 dark:hover:bg-blue-900/60"
                                     onClick={() => applyRoleFilter(role)}
                                   >
                                     {role}
                                   </button>
                                 ))}
                                 {user.is_admin && (
-                                  <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
+                                  <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
                                     {t('admin_users_role_admin_badge')}
                                   </span>
                                 )}
@@ -932,14 +938,14 @@ export default function AdminUsers() {
                             <td className="td align-top">
                               <div className="flex flex-wrap gap-1">
                                 {user.groups.length === 0 && (
-                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                                     {t('admin_users_groups_empty')}
                                   </span>
                                 )}
                                 {user.groups.map((group) => (
                                   <span
                                     key={group}
-                                    className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                                    className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                                   >
                                     {group}
                                   </span>
@@ -949,14 +955,14 @@ export default function AdminUsers() {
                             <td className="td align-top">
                               <div className="flex flex-wrap gap-1">
                                 {user.organizations.length === 0 && (
-                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                                     {t('admin_users_organizations_empty')}
                                   </span>
                                 )}
                                 {sortUserOrganizations(user.organizations).map((organization) => (
                                   <span
                                     key={organization.id}
-                                    className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                                    className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                                   >
                                     {organizationDisplayNameFromRecord(organization)}
                                   </span>
@@ -996,7 +1002,7 @@ export default function AdminUsers() {
                       })}
                     </tbody>
                   </table>
-                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
                     <button
                       type="button"
                       className="btn"
@@ -1005,7 +1011,7 @@ export default function AdminUsers() {
                     >
                       {t('pagination_prev')}
                     </button>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       {t('pagination_status', { page: data.page, total: totalPages })}
                     </div>
                     <button
@@ -1024,7 +1030,7 @@ export default function AdminUsers() {
                     icon={<span aria-hidden="true">🧑‍🤝‍🧑</span>}
                     message={(
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">{t('empty_admin_users_title')}</p>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_admin_users_title')}</p>
                         <p>{t('admin_users_empty_description')}</p>
                       </div>
                     )}
@@ -1109,14 +1115,14 @@ export default function AdminUsers() {
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-1">
                       {selected.organizations.length === 0 && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                           {t('admin_users_organizations_empty')}
                         </span>
                       )}
                       {sortUserOrganizations(selected.organizations).map((organization) => (
                         <span
                           key={organization.id}
-                          className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700"
+                          className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                         >
                           {organizationDisplayNameFromRecord(organization)}
                         </span>
@@ -1174,7 +1180,7 @@ export default function AdminUsers() {
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-1">
                       {selected.roles.length === 0 && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                           {t('admin_users_roles_empty')}
                         </span>
                       )}
@@ -1192,7 +1198,7 @@ export default function AdminUsers() {
                           </button>
                           <button
                             type="button"
-                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-900/60"
                             onClick={() => handleRoleRemove(role)}
                             disabled={pendingUserId === selected.id}
                           >
@@ -1201,7 +1207,7 @@ export default function AdminUsers() {
                         </div>
                       ))}
                       {selected.is_admin && (
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800">
+                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
                           {t('admin_users_role_admin_badge')}
                         </span>
                       )}
@@ -1283,18 +1289,18 @@ export default function AdminUsers() {
                   <div className="mt-3 space-y-3">
                     <div className="flex flex-wrap gap-1">
                       {selected.role_overrides.preserve.length === 0 && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                           {t('admin_users_overrides_empty')}
                         </span>
                       )}
                       {selected.role_overrides.preserve.map((role) => (
                         <div key={role} className="flex items-center gap-1">
-                          <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                          <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
                             {role}
                           </span>
                           <button
                             type="button"
-                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-900/60"
                             onClick={() => handleOverrideRemove(role)}
                             disabled={pendingUserId === selected.id}
                           >
@@ -1339,12 +1345,15 @@ export default function AdminUsers() {
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_details_groups')}</h4>
                   <div className="flex flex-wrap gap-1">
                     {selected.groups.length === 0 && (
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-200">
                         {t('admin_users_groups_empty')}
                       </span>
                     )}
                     {selected.groups.map((group) => (
-                      <span key={group} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700">
+                      <span
+                        key={group}
+                        className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                      >
                         {group}
                       </span>
                     ))}

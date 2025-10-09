@@ -816,7 +816,7 @@ export default function SiteConfigs() {
                   icon={<span>🛠️</span>}
                   message={(
                     <div className="space-y-1">
-                      <p className="text-lg font-semibold text-gray-700">{t('empty_site_configs_title')}</p>
+                      <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_site_configs_title')}</p>
                       <p>{t('empty_site_configs_desc')}</p>
                     </div>
                   )}
@@ -824,7 +824,7 @@ export default function SiteConfigs() {
               </div>
             ) : (
               <table className="table" role="table" aria-label={t('site_configs_table_label')}>
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-800">
                   <tr>
                     <th className="th" scope="col">{t('name_label')}</th>
                     <th className="th" scope="col">{t('url_label')}</th>
@@ -836,7 +836,7 @@ export default function SiteConfigs() {
                   {listItems.map((sc: SiteConfigRecord) => {
                     const loginType = resolveLoginType(sc)
                     return (
-                      <tr key={sc.id} className="odd:bg-white even:bg-gray-50">
+                      <tr key={sc.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                         <td className="td">{sc.name}</td>
                         <td className="td">{sc.siteUrl}</td>
                         <td className="td">{resolveLoginTypeLabel(loginType)}</td>

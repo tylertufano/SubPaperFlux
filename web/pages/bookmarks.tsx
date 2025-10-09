@@ -615,7 +615,7 @@ export default function Bookmarks() {
                     icon={<span>📭</span>}
                     message={(
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold text-gray-700">{t('empty_bookmarks_title')}</p>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('empty_bookmarks_title')}</p>
                         <p>{t('empty_bookmarks_desc')}</p>
                       </div>
                     )}
@@ -630,7 +630,7 @@ export default function Bookmarks() {
                 <div className="border-t border-gray-200">
                   <div className="overflow-x-auto p-4">
                     <table className="table" role="table" aria-label={t('bookmarks_table_label')}>
-                      <thead className="bg-gray-100">
+                      <thead className="bg-gray-100 dark:bg-gray-800">
                         <tr>
                           <th className="th" scope="col">
                             <input
@@ -695,7 +695,7 @@ export default function Bookmarks() {
                               aria-expanded={isActive && isPreviewOpen}
                               onClick={(event) => handleRowClick(event, b.id)}
                               onKeyDown={(event) => handleRowKeyDown(event, index, b.id)}
-                              className={`odd:bg-white even:bg-gray-50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isActive ? 'bg-blue-50 dark:bg-blue-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                              className={`odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isActive ? 'bg-blue-50 dark:bg-blue-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                             >
                               <td className="td">
                                 <input

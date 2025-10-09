@@ -309,9 +309,9 @@ export default function Debug() {
               </div>
             </dl>
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">{t('me_debug_oidc_claims_label')}</h4>
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('me_debug_oidc_claims_label')}</h4>
               {claimsJson ? (
-                <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words dark:bg-gray-900/40 dark:border-gray-700 dark:text-gray-100">
                   {claimsJson}
                 </pre>
               ) : (
@@ -321,31 +321,31 @@ export default function Debug() {
           </section>
 
           <section className="card p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('me_debug_access_heading')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('me_debug_access_heading')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{t('me_debug_access_roles_label')}</h4>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{t('me_debug_access_roles_label')}</h4>
                 {renderStringList(roles, noneLabel)}
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{t('me_debug_access_groups_label')}</h4>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{t('me_debug_access_groups_label')}</h4>
                 {renderStringList(groups, noneLabel)}
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{t('me_debug_access_permissions_label')}</h4>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{t('me_debug_access_permissions_label')}</h4>
                 {renderStringList(permissions, noneLabel)}
               </div>
             </div>
           </section>
 
           <section className="card p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('me_debug_tokens_heading')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('me_debug_tokens_heading')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{t('me_debug_tokens_id_token_label')}</h4>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{t('me_debug_tokens_id_token_label')}</h4>
                 <div className="text-xs text-gray-500 mb-1">{t('me_debug_token_length_label', { value: idTokenLength })}</div>
                 {session?.idToken ? (
-                  <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                  <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words dark:bg-gray-900/40 dark:border-gray-700 dark:text-gray-100">
                     {session.idToken}
                   </pre>
                 ) : (
@@ -353,10 +353,10 @@ export default function Debug() {
                 )}
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-600 mb-1">{t('me_debug_tokens_access_token_label')}</h4>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">{t('me_debug_tokens_access_token_label')}</h4>
                 <div className="text-xs text-gray-500 mb-1">{t('me_debug_token_length_label', { value: accessTokenLength })}</div>
                 {session?.accessToken ? (
-                  <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                  <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words dark:bg-gray-900/40 dark:border-gray-700 dark:text-gray-100">
                     {session.accessToken}
                   </pre>
                 ) : (
@@ -389,9 +389,9 @@ export default function Debug() {
               </div>
             </dl>
             <div>
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">{t('me_debug_session_raw_label')}</h4>
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('me_debug_session_raw_label')}</h4>
               {sessionJson ? (
-                <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                <pre className="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap break-words dark:bg-gray-900/40 dark:border-gray-700 dark:text-gray-100">
                   {sessionJson}
                 </pre>
               ) : (
