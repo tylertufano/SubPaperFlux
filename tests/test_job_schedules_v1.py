@@ -218,7 +218,7 @@ def test_patch_payload_without_job_type(client: TestClient):
     )
     assert update_resp.status_code == 200, update_resp.text
     updated = update_resp.json()
-    assert updated["payload"]["site_login_pair"] == "cred-2::site-2"
+    assert "site_login_pair" not in updated["payload"]
 
 
 def test_patch_payload_missing_required_field(client: TestClient):
@@ -439,9 +439,10 @@ def test_create_rss_schedule_with_site_login_identifiers(client: TestClient):
             "frequency": "1h",
         },
     )
-    assert create_resp.status_code == 201, create_resp.text
-    schedule = create_resp.json()
-    assert schedule["payload"]["site_login_pair"] == "cred-1::site-1"
+    assert create_resp.status_code == 422
+    detail = create_resp.json()
+    errors = detail["details"]["errors"]
+    assert any("site login" in err.get("msg", "") for err in errors)
 
 
 def test_create_schedule_accepts_camel_case_fields(client: TestClient):
@@ -465,8 +466,7 @@ def test_create_schedule_accepts_camel_case_fields(client: TestClient):
             "scheduleName": "rss-camel",
             "jobType": "rss_poll",
             "payload": {
-                "feed_id": feed_id,
-                "site_login_pair": "cred-1::site-1",
+                "feedId": feed_id,
             },
             "frequency": "1h",
             "isActive": False,
@@ -478,38 +478,7 @@ def test_create_schedule_accepts_camel_case_fields(client: TestClient):
     assert created["schedule_name"] == "rss-camel"
     assert created["job_type"] == "rss_poll"
     assert created["is_active"] is False
-    assert created["payload"]["site_login_pair"] == "cred-1::site-1"
-
-
-def test_create_rss_schedule_requires_both_site_login_identifiers(client: TestClient):
-    from app.db import get_session
-    from app.models import Feed
-
-    with next(get_session()) as session:
-        feed = Feed(
-            owner_user_id="primary",
-            url="https://example.net/rss.xml",
-            poll_frequency="1h",
-        )
-        session.add(feed)
-        session.commit()
-        session.refresh(feed)
-        feed_id = feed.id
-
-    create_resp = client.post(
-        "/v1/job-schedules",
-        json={
-            "schedule_name": "rss-with-login-missing",
-            "job_type": "rss_poll",
-            "payload": {"feed_id": feed_id},
-            "site_login_credential_id": "cred-only",
-            "frequency": "1h",
-        },
-    )
-    assert create_resp.status_code == 422
-    detail = create_resp.json()
-    errors = detail["details"]["errors"]
-    assert any("site_login" in err.get("msg", "") for err in errors)
+    assert created["payload"].get("site_login_pair") is None
 
 
 def test_update_rss_schedule_with_site_login_identifiers(client: TestClient):
@@ -548,7 +517,7 @@ def test_update_rss_schedule_with_site_login_identifiers(client: TestClient):
     )
     assert update_resp.status_code == 200, update_resp.text
     updated = update_resp.json()
-    assert updated["payload"]["site_login_pair"] == "cred-2::site-2"
+    assert "site_login_pair" not in updated["payload"]
 
 
 def test_update_schedule_accepts_camel_case_fields(client: TestClient):

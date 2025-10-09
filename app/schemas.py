@@ -65,6 +65,34 @@ def _merge_site_login_pair_from_fields(model: Any, payload: Dict[str, Any]) -> N
     object.__setattr__(model, "__pydantic_fields_set__", fields_set)
 
 
+def _reject_site_login_pair_fields(model: Any, payload: Dict[str, Any]) -> None:
+    base_payload = dict(getattr(model, "payload", {}) or {})
+    existing_raw = base_payload.pop("site_login_pair", None)
+    payload.pop("site_login_pair", None)
+
+    raw_credential = getattr(model, "site_login_credential_id", None)
+    raw_config = getattr(model, "site_login_config_id", None)
+
+    has_existing_pair = isinstance(existing_raw, str) and existing_raw.strip() != ""
+    has_credential = raw_credential not in (None, "")
+    has_config = raw_config not in (None, "")
+
+    if has_existing_pair or has_credential or has_config:
+        raise PydanticCustomError(
+            "site_login_pair_not_allowed",
+            "rss_poll schedules inherit authentication from the feed; site login identifiers are not allowed.",
+        )
+
+    object.__setattr__(model, "payload", base_payload)
+    object.__setattr__(model, "site_login_credential_id", None)
+    object.__setattr__(model, "site_login_config_id", None)
+
+    fields_set = set(getattr(model, "__pydantic_fields_set__", set()))
+    fields_set.discard("site_login_credential_id")
+    fields_set.discard("site_login_config_id")
+    object.__setattr__(model, "__pydantic_fields_set__", fields_set)
+
+
 class User(BaseModel):
     sub: str
     email: Optional[str] = None
@@ -396,7 +424,10 @@ class JobScheduleCreate(BaseModel):
     @model_validator(mode="after")
     def _validate_payload(self) -> "JobScheduleCreate":
         combined_payload = dict(self.payload or {})
-        _merge_site_login_pair_from_fields(self, combined_payload)
+        if self.job_type == "rss_poll":
+            _reject_site_login_pair_fields(self, combined_payload)
+        else:
+            _merge_site_login_pair_from_fields(self, combined_payload)
         if self.tags is not None:
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:
@@ -486,7 +517,10 @@ class JobScheduleUpdate(BaseModel):
     def _validate_payload(self) -> "JobScheduleUpdate":
         provided_job_type = self.job_type
         combined_payload = dict(self.payload or {})
-        _merge_site_login_pair_from_fields(self, combined_payload)
+        if provided_job_type == "rss_poll":
+            _reject_site_login_pair_fields(self, combined_payload)
+        else:
+            _merge_site_login_pair_from_fields(self, combined_payload)
         if self.tags is not None:
             combined_payload["tags"] = self.tags
         if self.folder_id is not None or "folder_id" in combined_payload:

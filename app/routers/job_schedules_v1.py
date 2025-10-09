@@ -332,6 +332,8 @@ def create_job_schedule(
     _ensure_unique_schedule_name(session, owner_id, body.schedule_name)
 
     payload = scrub_legacy_schedule_payload(body.payload)
+    if body.job_type == "rss_poll":
+        payload.pop("site_login_pair", None)
     if body.tags is not None:
         payload["tags"] = body.tags
     if body.folder_id is not None or "folder_id" in payload:
@@ -422,6 +424,9 @@ def update_job_schedule(
         base_payload["tags"] = tags_update or []
     if folder_update is not _SENTINEL:
         base_payload["folder_id"] = folder_update
+
+    if prospective_job_type == "rss_poll":
+        base_payload.pop("site_login_pair", None)
 
     normalized_tags, normalized_folder_id = _normalize_schedule_targets(base_payload)
 

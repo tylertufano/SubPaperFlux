@@ -79,7 +79,6 @@ const defaultSchedule = {
   jobType: "rss_poll",
   payload: {
     feed_id: "feed-1",
-    site_login_pair: "cred-login::site-1",
   },
   frequency: "1h",
   nextRunAt: new Date("2024-02-01T10:00:00Z"),
@@ -263,19 +262,6 @@ function renderPage({
   return { mutate, tagMutate, folderMutate };
 }
 
-function getSiteLoginSelect(form?: HTMLFormElement): HTMLSelectElement | null {
-  const elements = Array.from(
-    document.querySelectorAll<HTMLSelectElement>("#schedule-rss-site-login"),
-  );
-  if (form) {
-    const match = elements.find(
-      (element) => element.closest("form") === form,
-    );
-    return match ?? null;
-  }
-  return elements[0] ?? null;
-}
-
 describe("JobSchedulesPage", () => {
   beforeEach(() => {
     cleanup();
@@ -323,9 +309,8 @@ describe("JobSchedulesPage", () => {
 
     expect(await screen.findByText("Metadata")).toBeInTheDocument();
     expect(screen.getByText("Payload")).toBeInTheDocument();
-    expect(
-      screen.getByText(/"site_login_pair": "cred-login::site-1"/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/"feed_id": "feed-1"/)).toBeInTheDocument();
+    expect(screen.queryByText(/"site_login_pair"/)).not.toBeInTheDocument();
   });
 
   it("renders localized calendar label for the empty state icon", async () => {
@@ -404,12 +389,9 @@ describe("JobSchedulesPage", () => {
     )) as HTMLSelectElement;
     fireEvent.change(feedSelect, { target: { value: "feed-1" } });
 
-    const siteLoginSelect = getSiteLoginSelect();
-    expect(siteLoginSelect).not.toBeNull();
-
-    await waitFor(() =>
-      expect(siteLoginSelect!.value).toBe("cred-login::site-1"),
-    );
+    expect(
+      screen.queryByLabelText("Site login credential"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Create schedule" }));
 
@@ -423,12 +405,12 @@ describe("JobSchedulesPage", () => {
         isActive: true,
         payload: expect.objectContaining({
           feed_id: "feed-1",
-          site_login_pair: "cred-login::site-1",
         }),
       }),
     });
     const createdPayload =
       openApiSpies.createSchedule.mock.calls[0][0].requestBody.payload;
+    expect(createdPayload.site_login_pair).toBeUndefined();
     expect(createdPayload.instapaper_id).toBeUndefined();
     expect(createdPayload.is_paywalled).toBeUndefined();
     expect(createdPayload.rss_requires_auth).toBeUndefined();
@@ -496,17 +478,12 @@ describe("JobSchedulesPage", () => {
     const feedSelect = within(editForm).getByLabelText(
       "Saved feed",
     ) as HTMLSelectElement;
-    const siteLoginSelect = getSiteLoginSelect(editForm);
-    expect(siteLoginSelect).not.toBeNull();
-
-    await waitFor(() =>
-      expect(siteLoginSelect!.value).toBe("cred-login::site-1"),
-    );
+    expect(
+      within(editForm).queryByLabelText("Site login credential"),
+    ).not.toBeInTheDocument();
 
     fireEvent.change(frequencyInput, { target: { value: "30m" } });
     fireEvent.change(feedSelect, { target: { value: "feed-2" } });
-
-    await waitFor(() => expect(siteLoginSelect!.value).toBe(""));
 
     const activeCheckbox = within(editForm).getByRole("checkbox", {
       name: "Schedule is active",
