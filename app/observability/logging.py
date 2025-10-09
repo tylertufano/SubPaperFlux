@@ -17,10 +17,14 @@ class ContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:  # noqa: D401
         rid = request_id_ctx.get()
         jid = job_id_ctx.get()
-        if rid:
-            record.request_id = rid
-        if jid:
-            record.job_id = jid
+        # Ensure the formatter always has fields available. When the request/job
+        # context is not yet bound (e.g. startup logs, background tasks without
+        # a job id), the previous implementation left the attributes undefined.
+        # Our JSON formatter expects ``request_id`` and ``job_id`` unconditionally;
+        # when they were missing Python's logging system would raise a
+        # ``KeyError`` during formatting and drop the log record altogether.
+        record.request_id = rid or ""
+        record.job_id = jid or ""
         return True
 
 
