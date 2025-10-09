@@ -103,6 +103,54 @@ def _collect_header_sources_from_model(
     return candidates
 
 
+def _coerce_header_mapping_like(value: Any) -> Dict[str, str]:
+    if not value:
+        return {}
+
+    if isinstance(value, dict):
+        normalized: Dict[str, str] = {}
+        for key, header_value in value.items():
+            if header_value is None:
+                continue
+            header_name = str(key).strip()
+            if not header_name:
+                continue
+            normalized[header_name] = str(header_value)
+        return normalized
+
+    if isinstance(value, (list, tuple)):
+        normalized: Dict[str, str] = {}
+        for item in value:
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                continue
+            header_name = str(item[0]).strip()
+            header_value = item[1]
+            if not header_name or header_value is None:
+                continue
+            normalized[header_name] = str(header_value)
+        return normalized
+
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, dict):
+            return _coerce_header_mapping_like(parsed)
+        return {}
+
+    return {}
+
+
+def _merge_header_overrides_local(*candidates: Any) -> Dict[str, str]:
+    merged: Dict[str, str] = {}
+    for candidate in candidates:
+        headers = _coerce_header_mapping_like(candidate)
+        if headers:
+            merged.update(headers)
+    return merged
+
+
 def _import_spf():
     # Lazy import to avoid heavy init until needed
     import importlib
@@ -640,6 +688,34 @@ def get_cookies_for_site_login_pair(
     return filtered
 
 
+def invalidate_cookies_for_site_login_pair(
+    site_login_pair_id: str, owner_user_id: Optional[str] = None
+) -> bool:
+    """Delete stored cookies for the provided site login pair."""
+
+    if not site_login_pair_id:
+        return False
+
+    credential_id, site_config_id = parse_site_login_pair_id(site_login_pair_id)
+
+    with get_session_ctx() as session:
+        stmt = select(CookieModel).where(
+            (CookieModel.credential_id == credential_id)
+            & (CookieModel.site_config_id == site_config_id)
+        )
+        if owner_user_id is not None:
+            stmt = stmt.where(CookieModel.owner_user_id == owner_user_id)
+        record = session.exec(stmt).first()
+        if not record:
+            return False
+
+        session.delete(record)
+        session.commit()
+
+    logging.info("Invalidated cookies for site_login_pair=%s", site_login_pair_id)
+    return True
+
+
 def parse_lookback_to_seconds(s: str) -> int:
     import re
 
@@ -796,7 +872,26 @@ def poll_rss_and_publish(
             if prefixed:
                 header_candidates.append(prefixed)
 
-    header_overrides = spf.merge_header_overrides(*header_candidates)
+    merge_headers = getattr(spf, "merge_header_overrides", None)
+    if not callable(merge_headers):
+        merge_headers = _merge_header_overrides_local
+
+    header_overrides = merge_headers(*header_candidates)
+
+    cookie_invalidator = None
+    if site_login_pair_id:
+        def _invalidate_cookies(exc: Exception) -> None:
+            reason = getattr(exc, "indicator", None)
+            logging.info(
+                "Invalidating cookies for pair=%s after paywall detection%s",
+                site_login_pair_id,
+                f" (indicator={reason})" if reason else "",
+            )
+            invalidate_cookies_for_site_login_pair(
+                site_login_pair_id, owner_user_id
+            )
+
+        cookie_invalidator = _invalidate_cookies
 
     new_entries = spf.get_new_rss_entries(
         config_file=os.path.join(resolved_dir, "adhoc.ini"),
@@ -809,6 +904,7 @@ def poll_rss_and_publish(
         state=state,
         site_config=site_cfg,
         header_overrides=header_overrides,
+        cookie_invalidator=cookie_invalidator,
     )
 
     stored = 0
