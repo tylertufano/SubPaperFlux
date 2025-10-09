@@ -573,6 +573,52 @@ def merge_header_overrides(*candidates):
     return merged
 
 
+def _summarize_cookie_metadata(cookies):
+    """Return a list of cookie metadata strings without exposing values."""
+
+    summaries = []
+    for cookie in cookies or []:
+        name = cookie.get("name") or "<unnamed>"
+        domain = cookie.get("domain") or "<no-domain>"
+        summaries.append(f"{name} (domain={domain})")
+    return summaries
+
+
+def _sanitize_body_preview(body, limit=200):
+    """Collapse whitespace and clip the body for safe logging."""
+
+    if body is None:
+        return ""
+
+    collapsed = " ".join(body.split())
+    if len(collapsed) > limit:
+        return f"{collapsed[:limit]}…"
+    return collapsed
+
+
+def _extract_key_response_headers(response):
+    """Select a small, non-sensitive subset of response headers for diagnostics."""
+
+    key_names = ["Content-Type", "WWW-Authenticate", "Location", "Cache-Control", "Content-Length"]
+    headers = getattr(response, "headers", {}) or {}
+    sanitized = {}
+
+    for header in key_names:
+        value = headers.get(header)
+        if value is not None:
+            sanitized[header] = value
+
+    if sanitized:
+        return sanitized
+
+    for header, value in headers.items():
+        if "cookie" in header.lower():
+            continue
+        sanitized[header] = value
+
+    return sanitized
+
+
 def get_article_html_with_cookies(url, cookies, header_overrides=None):
     """
     Fetches the full HTML content of an article using authentication cookies.
@@ -583,6 +629,12 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
         return None
 
     logging.debug(f"Attempting to fetch full article HTML from URL: {url}")
+    cookie_metadata = _summarize_cookie_metadata(cookies)
+    if cookie_metadata:
+        logging.debug(
+            "Applying cookies to request: %s",
+            ", ".join(cookie_metadata),
+        )
 
     session = requests.Session()
     session_headers = merge_header_overrides(
@@ -603,6 +655,19 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
         response = session.get(url, timeout=30)
         response.raise_for_status()
 
+        history_chain = [resp.url for resp in response.history if getattr(resp, "url", None)]
+        if getattr(response, "url", None):
+            history_chain.append(response.url)
+        logging.debug(
+            "Received response from %s with status %s. Redirect chain: %s",
+            url,
+            response.status_code,
+            " -> ".join(history_chain) if history_chain else "<none>",
+        )
+
+        response_text = response.text
+        response_text_lower = response_text.lower()
+
         # Detect whether we were redirected to a login page (indicating auth failure)
         candidate_urls = [resp.url for resp in response.history if getattr(resp, "url", None)]
         candidate_urls.append(getattr(response, "url", ""))
@@ -621,6 +686,14 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
                     "Fetched content from %s redirected to login URL %s. Treating as unauthenticated response.",
                     url,
                     candidate,
+                )
+                logging.warning(
+                    "Login redirect response preview (sanitized): %s",
+                    _sanitize_body_preview(response_text),
+                )
+                logging.warning(
+                    "Login redirect key headers: %s",
+                    _extract_key_response_headers(response),
                 )
                 return None
 
@@ -643,8 +716,6 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
             "only members can read this post",
         ]
 
-        response_text = response.text
-        response_text_lower = response_text.lower()
         for indicator in paywall_indicators:
             indicator_lower = indicator.lower()
             if indicator_lower in response_text_lower:
@@ -652,6 +723,14 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
                     "Fetched content from %s appears to be a paywall or login page (indicator=%s).",
                     url,
                     indicator,
+                )
+                logging.warning(
+                    "Paywall response preview (sanitized): %s",
+                    _sanitize_body_preview(response_text),
+                )
+                logging.warning(
+                    "Paywall key headers: %s",
+                    _extract_key_response_headers(response),
                 )
                 raise PaywalledContentError(url, indicator=indicator)
 
