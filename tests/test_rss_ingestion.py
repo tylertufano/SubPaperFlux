@@ -3,6 +3,7 @@ from __future__ import annotations
 import configparser
 import json
 import os
+import logging
 from datetime import datetime, timezone
 
 import pytest
@@ -72,7 +73,7 @@ def test_get_article_html_with_cookies_detects_login_redirect(monkeypatch):
     )
 
 
-def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch):
+def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch, caplog):
     import subpaperflux
 
     class FakeSession:
@@ -86,19 +87,30 @@ def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch):
             response._content = b"<html>This post is for paid subscribers only.</html>"
             response.url = url
             response.encoding = "utf-8"
+            response.headers = {"Content-Type": "text/html; charset=utf-8"}
             return response
 
     monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
 
     cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
 
-    with pytest.raises(subpaperflux.PaywalledContentError) as exc:
-        subpaperflux.get_article_html_with_cookies(
-            "https://example.com/articles/paywalled", cookies
-        )
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(subpaperflux.PaywalledContentError) as exc:
+            subpaperflux.get_article_html_with_cookies(
+                "https://example.com/articles/paywalled", cookies
+            )
 
     assert "paywalled" in str(exc.value).lower()
     assert exc.value.indicator == "this post is for paid subscribers"
+    paywall_preview_logs = [
+        msg for msg in caplog.messages if "Paywall response preview" in msg
+    ]
+    assert paywall_preview_logs, "Expected sanitized paywall preview log."
+    assert "This post is for paid subscribers only." in paywall_preview_logs[0]
+
+    header_logs = [msg for msg in caplog.messages if "Paywall key headers" in msg]
+    assert header_logs, "Expected paywall header diagnostics log."
+    assert "Content-Type" in header_logs[0]
 
 
 def test_get_article_html_with_cookies_merges_header_overrides(monkeypatch):
