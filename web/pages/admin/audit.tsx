@@ -229,7 +229,7 @@ export default function AdminAudit() {
             onSubmit={handleSubmit}
           >
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-entity-type">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-entity-type">
                 {t('audit_entity_type_label')}
                 <input
                   id="audit-entity-type"
@@ -239,7 +239,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, entityType: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-entity-id">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-entity-id">
                 {t('audit_entity_id_label')}
                 <input
                   id="audit-entity-id"
@@ -249,7 +249,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, entityId: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-action">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-action">
                 {t('audit_action_label')}
                 <input
                   id="audit-action"
@@ -259,7 +259,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, action: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-owner-user">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-owner-user">
                 {t('audit_owner_user_label')}
                 <input
                   id="audit-owner-user"
@@ -269,7 +269,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, ownerUserId: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-actor-user">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-actor-user">
                 {t('audit_actor_user_label')}
                 <input
                   id="audit-actor-user"
@@ -279,7 +279,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, actorUserId: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-since">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-since">
                 {t('audit_since_label')}
                 <input
                   id="audit-since"
@@ -289,7 +289,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, since: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-until">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-until">
                 {t('audit_until_label')}
                 <input
                   id="audit-until"
@@ -299,7 +299,7 @@ export default function AdminAudit() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, until: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="audit-page-size">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="audit-page-size">
                 {t('audit_page_size_label')}
                 <select
                   id="audit-page-size"
@@ -358,11 +358,11 @@ export default function AdminAudit() {
                       {data.items.map((item) => (
                         <tr key={item.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td align-top">
-                            <div className="font-medium text-gray-900">{item.entity_type}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{item.entity_type}</div>
                             <div className="text-sm text-gray-600 break-all">{item.entity_id}</div>
                           </td>
                           <td className="td align-top">
-                            <span className="font-medium text-gray-900">{item.action}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{item.action}</span>
                           </td>
                           <td className="td align-top">
                             <span className="text-sm text-gray-800">{item.owner_user_id || '—'}</span>
@@ -446,7 +446,7 @@ export default function AdminAudit() {
             >
               <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
                 <div>
-                  <h3 id="audit-drawer-title" className="text-lg font-semibold text-gray-900">
+                  <h3 id="audit-drawer-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {t('audit_details_heading')}
                   </h3>
                   <p className="text-sm text-gray-600">{formatDateTime(selected.created_at, '—')}</p>
@@ -459,37 +459,37 @@ export default function AdminAudit() {
                 <dl className="space-y-3">
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_id_label')}</dt>
-                    <dd className="text-sm text-gray-900 break-all">{selected.id}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100 break-all">{selected.id}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_entity_type')}</dt>
-                    <dd className="text-sm text-gray-900">{selected.entity_type}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{selected.entity_type}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_entity_id')}</dt>
-                    <dd className="text-sm text-gray-900 break-all">{selected.entity_id}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100 break-all">{selected.entity_id}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_action')}</dt>
-                    <dd className="text-sm text-gray-900">{selected.action}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{selected.action}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_owner')}</dt>
-                    <dd className="text-sm text-gray-900">{selected.owner_user_id || '—'}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{selected.owner_user_id || '—'}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_actor')}</dt>
-                    <dd className="text-sm text-gray-900">{selected.actor_user_id || '—'}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{selected.actor_user_id || '—'}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('audit_details_created')}</dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(selected.created_at, '—')}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(selected.created_at, '—')}</dd>
                   </div>
                 </dl>
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('audit_details_metadata')}</h4>
                   {selected.details && Object.keys(selected.details).length > 0 ? (
-                    <pre className="max-h-80 overflow-auto rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-900">
+                    <pre className="max-h-80 overflow-auto rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-900 dark:text-gray-100">
                       {JSON.stringify(selected.details, null, 2)}
                     </pre>
                   ) : (

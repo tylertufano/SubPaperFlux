@@ -230,7 +230,7 @@ export default function AdminSiteSettings() {
                 <p className="text-gray-600 text-sm">{t('admin_site_settings_form_description')}</p>
               </div>
 
-              <label className="block text-sm font-medium text-gray-700" htmlFor="welcome-headline">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="welcome-headline">
                 {t('admin_site_settings_headline_label')}
                 <input
                   id="welcome-headline"
@@ -242,7 +242,7 @@ export default function AdminSiteSettings() {
                 />
               </label>
 
-              <label className="block text-sm font-medium text-gray-700" htmlFor="welcome-subheadline">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="welcome-subheadline">
                 {t('admin_site_settings_subheadline_label')}
                 <input
                   id="welcome-subheadline"
@@ -254,7 +254,7 @@ export default function AdminSiteSettings() {
                 />
               </label>
 
-              <label className="block text-sm font-medium text-gray-700" htmlFor="welcome-body">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="welcome-body">
                 {t('admin_site_settings_body_label')}
                 <textarea
                   id="welcome-body"
@@ -267,7 +267,7 @@ export default function AdminSiteSettings() {
               </label>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="block text-sm font-medium text-gray-700" htmlFor="welcome-cta-text">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="welcome-cta-text">
                   {t('admin_site_settings_cta_text_label')}
                   <input
                     id="welcome-cta-text"
@@ -279,7 +279,7 @@ export default function AdminSiteSettings() {
                   />
                 </label>
 
-                <label className="block text-sm font-medium text-gray-700" htmlFor="welcome-cta-url">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="welcome-cta-url">
                   {t('admin_site_settings_cta_url_label')}
                   <input
                     id="welcome-cta-url"

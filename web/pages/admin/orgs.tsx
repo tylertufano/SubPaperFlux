@@ -356,7 +356,7 @@ export default function AdminOrgs() {
             onSubmit={handleSubmit}
           >
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-orgs-search">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-orgs-search">
                 {t('admin_orgs_search_label')}
                 <input
                   id="admin-orgs-search"
@@ -369,7 +369,7 @@ export default function AdminOrgs() {
                   }
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-orgs-default-filter">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-orgs-default-filter">
                 {t('admin_orgs_default_filter_label')}
                 <select
                   id="admin-orgs-default-filter"
@@ -387,7 +387,7 @@ export default function AdminOrgs() {
                   <option value="nondefault">{t('admin_orgs_default_filter_nondefault')}</option>
                 </select>
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-orgs-page-size">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-orgs-page-size">
                 {t('admin_orgs_page_size_label')}
                 <select
                   id="admin-orgs-page-size"
@@ -461,7 +461,7 @@ export default function AdminOrgs() {
                         <tr key={organization.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td align-top">
                             <div className="space-y-1">
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {organizationDisplayName(organization)}
                               </div>
                               <div className="text-sm text-gray-600">{organization.slug}</div>
@@ -566,7 +566,7 @@ export default function AdminOrgs() {
             >
               <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
                 <div>
-                  <h3 id="admin-orgs-drawer-title" className="text-lg font-semibold text-gray-900">
+                  <h3 id="admin-orgs-drawer-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {detailName}
                   </h3>
                   <p className="text-sm text-gray-600">{detailSlug}</p>
@@ -581,7 +581,7 @@ export default function AdminOrgs() {
                     <dt className="text-sm font-semibold text-gray-600">
                       {t('admin_orgs_details_description')}
                     </dt>
-                    <dd className="text-sm text-gray-900 whitespace-pre-line break-words">
+                    <dd className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line break-words">
                       {detailDescription || t('admin_orgs_details_description_none')}
                     </dd>
                   </div>
@@ -589,7 +589,7 @@ export default function AdminOrgs() {
                     <dt className="text-sm font-semibold text-gray-600">
                       {t('admin_orgs_details_default')}
                     </dt>
-                    <dd className="text-sm text-gray-900">
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">
                       {detailDefault ? t('admin_orgs_details_default_yes') : t('admin_orgs_details_default_no')}
                     </dd>
                   </div>
@@ -597,7 +597,7 @@ export default function AdminOrgs() {
                     <dt className="text-sm font-semibold text-gray-600">
                       {t('admin_orgs_details_member_count')}
                     </dt>
-                    <dd className="text-sm text-gray-900">
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">
                       {numberFormatter.format(detailCount)}
                     </dd>
                   </div>
@@ -605,21 +605,21 @@ export default function AdminOrgs() {
                     <dt className="text-sm font-semibold text-gray-600">
                       {t('admin_orgs_details_created')}
                     </dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(detailCreated, '—')}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(detailCreated, '—')}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">
                       {t('admin_orgs_details_updated')}
                     </dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(detailUpdated, '—')}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(detailUpdated, '—')}</dd>
                   </div>
                 </dl>
                 <section>
-                  <h4 className="text-md font-semibold text-gray-900">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">
                     {t('admin_orgs_members_heading')}
                   </h4>
                   <form className="mt-3 flex flex-col gap-3" onSubmit={handleAddMember}>
-                    <label className="text-sm font-medium text-gray-700" htmlFor="admin-orgs-member-input">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-orgs-member-input">
                       {t('admin_orgs_members_add_label')}
                       <input
                         id="admin-orgs-member-input"
@@ -649,7 +649,7 @@ export default function AdminOrgs() {
                       {members.map((member) => (
                         <li key={member.id} className="flex items-start justify-between gap-3 p-3">
                           <div>
-                            <div className="font-medium text-gray-900">{memberDisplayName(member)}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{memberDisplayName(member)}</div>
                             {member.email && (
                               <div className="text-sm text-gray-600">{member.email}</div>
                             )}

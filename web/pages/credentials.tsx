@@ -386,7 +386,7 @@ export default function Credentials() {
       <div>
         <Nav />
         <main className="container py-12">
-          <p className="text-gray-700">{t('loading_text')}</p>
+          <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
         </main>
       </div>
     )
@@ -397,8 +397,8 @@ export default function Credentials() {
       <Nav />
       <main className="container py-12">
         <div className="max-w-xl space-y-2">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="text-gray-700">{message}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
+          <p className="text-gray-700 dark:text-gray-300">{message}</p>
         </div>
       </main>
     </div>
@@ -478,7 +478,7 @@ export default function Credentials() {
             {kind === 'site_login' && (
               <div className="space-y-2">
                 <div>
-                  <label htmlFor="create-credential-site-config" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="create-credential-site-config" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('site_config_label')}
                   </label>
                   <select
@@ -718,7 +718,7 @@ export default function Credentials() {
                   {(data.items ?? data).map((c: any) => (
                     <tr key={c.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                       <td className="td">
-                        <div className="font-medium text-gray-900">{c.description}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{c.description}</div>
                         <div className="text-sm text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
                       </td>
                       <td className="td">{c.kind}</td>
@@ -730,7 +730,7 @@ export default function Credentials() {
                           const displayName = entry?.name || scId
                           return (
                             <div className="space-y-0.5">
-                              <div className="text-gray-900">{displayName}</div>
+                              <div className="text-gray-900 dark:text-gray-100">{displayName}</div>
                               <div className="text-xs text-gray-500">{t('credentials_table_id_caption', { id: scId })}</div>
                             </div>
                           )
@@ -878,7 +878,7 @@ export default function Credentials() {
                 <h3 id="edit-credential-heading" className="font-semibold">
                   {t('credentials_edit_heading', { id: editing.id })}
                 </h3>
-                <div className="text-sm text-gray-700">{t('credentials_kind_display', { kind: editing.kind })}</div>
+                <div className="text-sm text-gray-700 dark:text-gray-300">{t('credentials_kind_display', { kind: editing.kind })}</div>
                 <div>
                   <input
                     id="edit-credential-description"
@@ -906,7 +906,7 @@ export default function Credentials() {
                 {editing.kind === 'site_login' && (
                   <div className="space-y-2">
                     <div>
-                      <label htmlFor="edit-credential-site-config" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="edit-credential-site-config" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {t('site_config_label')}
                       </label>
                       <select

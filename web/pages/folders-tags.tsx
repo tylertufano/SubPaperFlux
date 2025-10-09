@@ -72,7 +72,7 @@ export default function FoldersTagsPage() {
       <div>
         <Nav />
         <main className="container py-12">
-          <p className="text-gray-700">{t('loading_text')}</p>
+          <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
         </main>
       </div>
     )
@@ -83,8 +83,8 @@ export default function FoldersTagsPage() {
       <Nav />
       <main className="container py-12">
         <div className="max-w-xl space-y-2">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="text-gray-700">{message}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
+          <p className="text-gray-700 dark:text-gray-300">{message}</p>
         </div>
       </main>
     </div>

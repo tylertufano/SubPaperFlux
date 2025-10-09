@@ -96,7 +96,7 @@ function renderStringList(values: string[], emptyLabel: string) {
     return <span className="text-sm text-gray-500">{emptyLabel}</span>
   }
   return (
-    <ul className="text-sm text-gray-900 list-disc pl-5 space-y-1">
+    <ul className="text-sm text-gray-900 dark:text-gray-100 list-disc pl-5 space-y-1">
       {values.map((value, index) => (
         <li key={`${value}-${index}`} className="font-mono break-all">
           {value}
@@ -120,7 +120,7 @@ export default function Debug() {
           <Nav />
           <Breadcrumbs items={breadcrumbs} />
           <main className="container py-6">
-            <p className="text-gray-700">{t('loading_text')}</p>
+            <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
           </main>
         </div>
       </ErrorBoundary>
@@ -136,7 +136,7 @@ export default function Debug() {
           <main className="container py-6">
             <section className="card p-4 max-w-2xl">
               <h2 className="text-xl font-semibold mb-2">{t('me_debug_title')}</h2>
-              <p className="text-gray-700 mb-4">{t('me_debug_sign_in_message')}</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{t('me_debug_sign_in_message')}</p>
               <button type="button" className="btn" onClick={() => signIn('oidc')}>
                 {t('btn_sign_in')}
               </button>
@@ -190,34 +190,34 @@ export default function Debug() {
         <Breadcrumbs items={breadcrumbs} />
         <main className="container py-6 space-y-4">
           <header className="space-y-1">
-            <h2 className="text-2xl font-semibold text-gray-900">{t('me_debug_title')}</h2>
-            <p className="text-gray-700">{t('me_debug_description')}</p>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{t('me_debug_title')}</h2>
+            <p className="text-gray-700 dark:text-gray-300">{t('me_debug_description')}</p>
           </header>
 
           <section className="card p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('me_debug_identity_heading')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('me_debug_identity_heading')}</h3>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_identity_display_name')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {displayName ? <span className="break-all">{displayName}</span> : <span className="text-gray-500">{noneLabel}</span>}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_identity_name')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {name ? <span className="break-all">{name}</span> : <span className="text-gray-500">{noneLabel}</span>}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_identity_email')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {email ? <span className="break-all">{email}</span> : <span className="text-gray-500">{noneLabel}</span>}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_identity_user_id')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {userId ? <code className="font-mono break-all">{userId}</code> : <span className="text-gray-500">{noneLabel}</span>}
                 </dd>
               </div>
@@ -225,11 +225,11 @@ export default function Debug() {
           </section>
 
           <section className="card p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('me_debug_oidc_heading')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('me_debug_oidc_heading')}</h3>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_oidc_sub_label')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {subjectClaim ? (
                     <code className="font-mono break-all">{subjectClaim}</code>
                   ) : userId ? (
@@ -241,7 +241,7 @@ export default function Debug() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_oidc_iss_label')}</dt>
-                <dd className="text-sm text-gray-900">
+                <dd className="text-sm text-gray-900 dark:text-gray-100">
                   {issuerClaim ? (
                     <span className="break-all">{issuerClaim}</span>
                   ) : (
@@ -255,7 +255,7 @@ export default function Debug() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_oidc_iat_label')}</dt>
-                <dd className="text-sm text-gray-900 space-y-1">
+                <dd className="text-sm text-gray-900 dark:text-gray-100 space-y-1">
                   {iatSeconds !== null ? (
                     <>
                       <code className="font-mono break-all">{iatSeconds}</code>
@@ -273,7 +273,7 @@ export default function Debug() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_oidc_exp_label')}</dt>
-                <dd className="text-sm text-gray-900 space-y-1">
+                <dd className="text-sm text-gray-900 dark:text-gray-100 space-y-1">
                   {expSeconds !== null ? (
                     <>
                       <code className="font-mono break-all">{expSeconds}</code>
@@ -291,7 +291,7 @@ export default function Debug() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_oidc_auth_time_label')}</dt>
-                <dd className="text-sm text-gray-900 space-y-1">
+                <dd className="text-sm text-gray-900 dark:text-gray-100 space-y-1">
                   {authTimeSeconds !== null ? (
                     <>
                       <code className="font-mono break-all">{authTimeSeconds}</code>
@@ -367,11 +367,11 @@ export default function Debug() {
           </section>
 
           <section className="card p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('me_debug_session_heading')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('me_debug_session_heading')}</h3>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <dt className="text-sm font-medium text-gray-600">{t('me_debug_session_expires_label')}</dt>
-                <dd className="text-sm text-gray-900 space-y-1">
+                <dd className="text-sm text-gray-900 dark:text-gray-100 space-y-1">
                   {session?.expires ? (
                     <>
                       <code className="font-mono break-all">{session.expires}</code>

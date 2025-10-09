@@ -154,10 +154,10 @@ export default function Me() {
             )}
             {error && <Alert kind="error" message={error} />}
             <section className="card p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('me_locale_heading')}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('me_locale_heading')}</h3>
               <p className="text-sm text-gray-600 mb-4">{t('me_locale_description')}</p>
               <form className="space-y-4" onSubmit={handleLocaleSubmit}>
-                <label className="block text-sm font-medium text-gray-700" htmlFor="locale-select">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="locale-select">
                   {t('me_locale_label')}
                   <select
                     id="locale-select"
@@ -182,11 +182,11 @@ export default function Me() {
               </form>
             </section>
             <section className="card p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('me_notifications_heading')}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('me_notifications_heading')}</h3>
               <p className="text-sm text-gray-600 mb-4">{t('me_notifications_description')}</p>
               <form className="space-y-4" onSubmit={handleNotificationsSubmit}>
                 <div className="space-y-3">
-                  <label className="flex items-start gap-2 text-sm text-gray-700">
+                  <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       className="mt-1"
@@ -198,7 +198,7 @@ export default function Me() {
                     />
                     <span>{t('me_notifications_email_job_updates')}</span>
                   </label>
-                  <label className="flex items-start gap-2 text-sm text-gray-700">
+                  <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       className="mt-1"

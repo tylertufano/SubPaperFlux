@@ -144,10 +144,10 @@ export default function Tokens() {
           )}
           <div className="space-y-4">
             <section className="card p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('me_tokens_create_heading')}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('me_tokens_create_heading')}</h3>
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="token-name">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="token-name">
                     {t('me_tokens_name_label')}
                     <input
                       id="token-name"
@@ -161,7 +161,7 @@ export default function Tokens() {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="token-description">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="token-description">
                     {t('me_tokens_description_label')}
                     <input
                       id="token-description"
@@ -174,7 +174,7 @@ export default function Tokens() {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="token-scopes">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="token-scopes">
                     {t('me_tokens_scopes_label')}
                     <input
                       id="token-scopes"
@@ -188,7 +188,7 @@ export default function Tokens() {
                   <p className="mt-1 text-xs text-gray-600">{t('me_tokens_scopes_help')}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="token-expires">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="token-expires">
                     {t('me_tokens_expires_label')}
                     <input
                       id="token-expires"
@@ -249,10 +249,10 @@ export default function Tokens() {
                       {data.items.map((token) => (
                         <tr key={token.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                           <td className="td align-top">
-                            <div className="font-medium text-gray-900">{token.name}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{token.name}</div>
                             <div className="text-xs text-gray-500">{token.id}</div>
                             {token.description && (
-                              <div className="text-sm text-gray-700">{token.description}</div>
+                              <div className="text-sm text-gray-700 dark:text-gray-300">{token.description}</div>
                             )}
                           </td>
                           <td className="td align-top">

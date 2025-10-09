@@ -435,7 +435,7 @@ export default function Bookmarks() {
       <div>
         <Nav />
         <main className="container py-12">
-          <p className="text-gray-700">{t('loading_text')}</p>
+          <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
         </main>
       </div>
     )
@@ -445,8 +445,8 @@ export default function Bookmarks() {
       <Nav />
       <main className="container py-12">
         <div className="max-w-xl space-y-2">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="text-gray-700">{message}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
+          <p className="text-gray-700 dark:text-gray-300">{message}</p>
         </div>
       </main>
     </div>
@@ -728,7 +728,7 @@ export default function Bookmarks() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('pagination_prev')}</button>
-              <span className="text-gray-700">
+              <span className="text-gray-700 dark:text-gray-300">
                 {t('pagination_status', {
                   page: numberFormatter.format(page),
                   total: numberFormatter.format(data.totalPages ?? 1),
