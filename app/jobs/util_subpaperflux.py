@@ -53,6 +53,56 @@ class IniSection:
         return s in ("1", "true", "yes", "on")
 
 
+_HEADER_FIELD_NAMES: Tuple[str, ...] = (
+    "article_headers",
+    "content_headers",
+    "http_headers",
+    "header_overrides",
+    "article_header_overrides",
+)
+
+
+def _collect_header_sources_from_site_dict(
+    site_config: Optional[Dict[str, Any]]
+) -> List[Any]:
+    candidates: List[Any] = []
+    if not isinstance(site_config, dict):
+        return candidates
+
+    for key in _HEADER_FIELD_NAMES:
+        value = site_config.get(key)
+        if value:
+            candidates.append(value)
+
+    for nested_key in ("selenium_config", "api_config"):
+        nested = site_config.get(nested_key)
+        if isinstance(nested, dict):
+            for key in _HEADER_FIELD_NAMES:
+                value = nested.get(key)
+                if value:
+                    candidates.append(value)
+
+    return candidates
+
+
+def _collect_header_sources_from_model(
+    site_config: Optional[SiteConfigModel],
+) -> List[Any]:
+    candidates: List[Any] = []
+    if site_config is None:
+        return candidates
+
+    for cfg in (site_config.selenium_config or {}, site_config.api_config or {}):
+        if not isinstance(cfg, dict):
+            continue
+        for key in _HEADER_FIELD_NAMES:
+            value = cfg.get(key)
+            if value:
+                candidates.append(value)
+
+    return candidates
+
+
 def _import_spf():
     # Lazy import to avoid heavy init until needed
     import importlib
@@ -632,6 +682,7 @@ def poll_rss_and_publish(
             or app_creds_file
         )
 
+    feed_site_header_sources: List[Any] = []
     with get_session_ctx() as session:
         feed = session.get(FeedModel, feed_id)
         if not feed:
@@ -653,6 +704,7 @@ def poll_rss_and_publish(
                 feed_site_config = {
                     "sanitizing_criteria": sc.cookies_to_store or [],
                 }
+                feed_site_header_sources = _collect_header_sources_from_model(sc)
 
     if not site_login_pair_id and feed_site_login_credential_id and feed_site_config_id:
         site_login_pair_id = format_site_login_pair_id(
@@ -705,6 +757,7 @@ def poll_rss_and_publish(
 
     # Site config (for sanitization hints)
     site_cfg = None
+    site_header_sources: List[Any] = []
     cookies: List[Dict[str, Any]] = []
     if site_login_pair_id:
         _, resolved_site_config_id, resolved_login_type, _, resolved_site_config = (
@@ -722,10 +775,28 @@ def poll_rss_and_publish(
         site_cfg = {
             "sanitizing_criteria": cookies_to_store,
         }
+        site_header_sources = _collect_header_sources_from_site_dict(
+            resolved_site_config
+        )
         cookies = get_cookies_for_site_login_pair(site_login_pair_id, owner_user_id)
     elif feed_site_config:
         site_cfg = feed_site_config
         cookies = []
+        site_header_sources = list(feed_site_header_sources)
+
+    header_candidates: List[Any] = list(site_header_sources)
+    if rss_ini:
+        for key in _HEADER_FIELD_NAMES:
+            value = rss_ini.get(key)
+            if value:
+                header_candidates.append(value)
+        extract_prefixed = getattr(spf, "_extract_prefixed_headers", None)
+        if callable(extract_prefixed):
+            prefixed = extract_prefixed(rss_ini)
+            if prefixed:
+                header_candidates.append(prefixed)
+
+    header_overrides = spf.merge_header_overrides(*header_candidates)
 
     new_entries = spf.get_new_rss_entries(
         config_file=os.path.join(resolved_dir, "adhoc.ini"),
@@ -737,6 +808,7 @@ def poll_rss_and_publish(
         cookies=cookies,
         state=state,
         site_config=site_cfg,
+        header_overrides=header_overrides,
     )
 
     stored = 0

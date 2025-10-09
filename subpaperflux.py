@@ -490,7 +490,78 @@ def _apply_cookies_to_session(session, cookies):
         session.cookies.set(name, value, **cookie_kwargs)
 
 
-def get_article_html_with_cookies(url, cookies):
+def _coerce_header_mapping(value):
+    """Normalize various header mapping representations into a dict."""
+
+    if not value:
+        return {}
+
+    if isinstance(value, dict):
+        normalized = {}
+        for key, header_value in value.items():
+            if header_value is None:
+                continue
+            header_name = str(key).strip()
+            if not header_name:
+                continue
+            normalized[header_name] = str(header_value)
+        return normalized
+
+    if isinstance(value, (list, tuple)):
+        normalized = {}
+        for item in value:
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                continue
+            header_name = str(item[0]).strip()
+            header_value = item[1]
+            if not header_name or header_value is None:
+                continue
+            normalized[header_name] = str(header_value)
+        return normalized
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return {}
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            logging.warning(
+                "Failed to parse header overrides JSON. Value will be ignored: %s",
+                text,
+            )
+            return {}
+        if isinstance(parsed, dict):
+            return _coerce_header_mapping(parsed)
+        logging.warning(
+            "Header overrides JSON must be an object of key/value pairs. Ignoring value."
+        )
+        return {}
+
+    return {}
+
+
+HEADER_OVERRIDE_KEYS = (
+    "article_headers",
+    "content_headers",
+    "http_headers",
+    "header_overrides",
+    "article_header_overrides",
+)
+
+
+def merge_header_overrides(*candidates):
+    """Merge one or more header override sources into a single mapping."""
+
+    merged: Dict[str, str] = {}
+    for candidate in candidates:
+        headers = _coerce_header_mapping(candidate)
+        if headers:
+            merged.update(headers)
+    return merged
+
+
+def get_article_html_with_cookies(url, cookies, header_overrides=None):
     """
     Fetches the full HTML content of an article using authentication cookies.
     Returns the HTML content or None on failure.
@@ -502,15 +573,18 @@ def get_article_html_with_cookies(url, cookies):
     logging.debug(f"Attempting to fetch full article HTML from URL: {url}")
 
     session = requests.Session()
-    session.headers.update(
+    session_headers = merge_header_overrides(
         {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/127.0.0.0 Safari/537.36"
             )
-        }
+        },
+        header_overrides,
     )
+    if session_headers:
+        session.headers.update(session_headers)
     _apply_cookies_to_session(session, cookies)
 
     try:
@@ -886,6 +960,40 @@ def publish_to_instapaper(
         return None
 
 
+def _extract_prefixed_headers(section, prefix="article_header"):
+    """Extract headers from INI sections using `article_header.X` style keys."""
+
+    if not section:
+        return {}
+
+    items = []
+    if hasattr(section, "items"):
+        try:
+            items = list(section.items())
+        except TypeError:
+            items = []
+    elif hasattr(section, "_data") and isinstance(section._data, dict):
+        items = list(section._data.items())
+
+    collected = {}
+    for raw_key, value in items:
+        if value is None:
+            continue
+        key = str(raw_key)
+        key_lower = key.lower()
+        if key_lower.startswith(f"{prefix}."):
+            header_name = key.split(".", 1)[1]
+        elif key_lower.startswith(f"{prefix}_"):
+            header_name = key[len(prefix) + 1 :]
+        else:
+            continue
+        header_name = header_name.replace("_", "-").strip()
+        if not header_name:
+            continue
+        collected[header_name] = str(value)
+    return collected
+
+
 def get_new_rss_entries(
     config_file,
     feed_url,
@@ -896,10 +1004,12 @@ def get_new_rss_entries(
     cookies,
     state,
     site_config,
+    header_overrides=None,
 ):
     """
     Fetches the RSS feed from a given URL and returns a list of new entries.
-    Accepts an optional `cookies` argument for authenticated content fetching.
+    Accepts optional `cookies` and `header_overrides` arguments for authenticated
+    content fetching.
     """
     last_run_dt = state["last_rss_timestamp"]
     new_entries = []
@@ -934,6 +1044,33 @@ def get_new_rss_entries(
         requires_authenticated_access = rss_requires_auth or is_paywalled
         has_cookies = bool(cookies)
 
+        site_header_candidates = []
+        if isinstance(site_config, dict):
+            for key in HEADER_OVERRIDE_KEYS:
+                if key in site_config:
+                    site_header_candidates.append(site_config.get(key))
+            selenium_cfg = site_config.get("selenium_config")
+            if isinstance(selenium_cfg, dict):
+                for key in HEADER_OVERRIDE_KEYS:
+                    if key in selenium_cfg:
+                        site_header_candidates.append(selenium_cfg.get(key))
+
+        feed_header_candidates = []
+        if rss_feed_config:
+            for key in HEADER_OVERRIDE_KEYS:
+                value = rss_feed_config.get(key)
+                if value:
+                    feed_header_candidates.append(value)
+            prefixed = _extract_prefixed_headers(rss_feed_config)
+            if prefixed:
+                feed_header_candidates.append(prefixed)
+
+        article_header_overrides = merge_header_overrides(
+            header_overrides,
+            *site_header_candidates,
+            *feed_header_candidates,
+        )
+
         if requires_authenticated_access and not has_cookies:
             logging.error(
                 "Feed or content is marked as private/paywalled but no cookies are available."
@@ -943,10 +1080,10 @@ def get_new_rss_entries(
             )
 
         # Determine if we need to use a session with cookies for the RSS feed
-        if rss_requires_auth and has_cookies:
-            logging.info(
-                f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
-            )
+                if rss_requires_auth and has_cookies:
+                    logging.info(
+                        f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
+                    )
             session = requests.Session()
             session.headers.update(
                 {
@@ -1091,7 +1228,9 @@ def get_new_rss_entries(
                     logging.info(
                         f"Article is paywalled. Attempting to fetch full HTML body with cookies."
                     )
-                    raw_html_content = get_article_html_with_cookies(url, cookies)
+                    raw_html_content = get_article_html_with_cookies(
+                        url, cookies, header_overrides=article_header_overrides
+                    )
                 else:
                     logging.info(
                         "Article is not paywalled. Sending URL-only request to Instapaper."
