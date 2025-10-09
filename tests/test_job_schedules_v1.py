@@ -478,6 +478,7 @@ def test_create_schedule_accepts_camel_case_fields(client: TestClient):
     assert created["schedule_name"] == "rss-camel"
     assert created["job_type"] == "rss_poll"
     assert created["is_active"] is False
+    assert created["payload"]["feed_id"] == feed_id
     assert created["payload"].get("site_login_pair") is None
 
 
