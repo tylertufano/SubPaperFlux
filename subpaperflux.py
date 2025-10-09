@@ -7,7 +7,7 @@ import time
 import requests
 import re
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Callable
 from datetime import datetime, timedelta, timezone
 from glob import glob
 from selenium import webdriver
@@ -550,6 +550,18 @@ HEADER_OVERRIDE_KEYS = (
 )
 
 
+class PaywalledContentError(RuntimeError):
+    """Raised when a fetched article response indicates paywalled content."""
+
+    def __init__(self, url: str, *, indicator: Optional[str] = None):
+        self.url = url
+        self.indicator = indicator
+        message = "Fetched content appears to be paywalled"
+        if indicator:
+            message = f"{message} (indicator={indicator})"
+        super().__init__(f"{message}: {url}")
+
+
 def merge_header_overrides(*candidates):
     """Merge one or more header override sources into a single mapping."""
 
@@ -632,13 +644,16 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
         ]
 
         response_text = response.text
-        paywall_indicators_lower = [indicator.lower() for indicator in paywall_indicators]
         response_text_lower = response_text.lower()
-        if any(indicator in response_text_lower for indicator in paywall_indicators_lower):
-            logging.warning(
-                f"Fetched content from {url} appears to be a paywall or login page. Skipping content retrieval."
-            )
-            return None
+        for indicator in paywall_indicators:
+            indicator_lower = indicator.lower()
+            if indicator_lower in response_text_lower:
+                logging.warning(
+                    "Fetched content from %s appears to be a paywall or login page (indicator=%s).",
+                    url,
+                    indicator,
+                )
+                raise PaywalledContentError(url, indicator=indicator)
 
         logging.debug(f"Successfully fetched article content from {url}.")
         return response_text
@@ -990,7 +1005,9 @@ def _extract_prefixed_headers(section, prefix="article_header"):
         header_name = header_name.replace("_", "-").strip()
         if not header_name:
             continue
-        collected[header_name] = str(value)
+        normalized_parts = [part.capitalize() for part in header_name.split("-") if part]
+        normalized_name = "-".join(normalized_parts) if normalized_parts else header_name
+        collected[normalized_name or header_name] = str(value)
     return collected
 
 
@@ -1005,6 +1022,7 @@ def get_new_rss_entries(
     state,
     site_config,
     header_overrides=None,
+    cookie_invalidator: Optional[Callable[[PaywalledContentError], None]] = None,
 ):
     """
     Fetches the RSS feed from a given URL and returns a list of new entries.
@@ -1080,10 +1098,10 @@ def get_new_rss_entries(
             )
 
         # Determine if we need to use a session with cookies for the RSS feed
-                if rss_requires_auth and has_cookies:
-                    logging.info(
-                        f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
-                    )
+        if rss_requires_auth and has_cookies:
+            logging.info(
+                f"Feed is marked as private. Fetching RSS feed from {feed_url} with cookies."
+            )
             session = requests.Session()
             session.headers.update(
                 {
@@ -1228,9 +1246,24 @@ def get_new_rss_entries(
                     logging.info(
                         f"Article is paywalled. Attempting to fetch full HTML body with cookies."
                     )
-                    raw_html_content = get_article_html_with_cookies(
-                        url, cookies, header_overrides=article_header_overrides
-                    )
+                    try:
+                        raw_html_content = get_article_html_with_cookies(
+                            url, cookies, header_overrides=article_header_overrides
+                        )
+                    except PaywalledContentError as exc:
+                        logging.warning(
+                            "Detected paywall while fetching %s; marking cookies for refresh.",
+                            url,
+                        )
+                        if callable(cookie_invalidator):
+                            try:
+                                cookie_invalidator(exc)
+                            except Exception:  # noqa: BLE001
+                                logging.exception(
+                                    "Failed to invalidate cookies after paywall detection for %s",
+                                    url,
+                                )
+                        raw_html_content = None
                 else:
                     logging.info(
                         "Article is not paywalled. Sending URL-only request to Instapaper."

@@ -92,12 +92,13 @@ def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch):
 
     cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
 
-    assert (
+    with pytest.raises(subpaperflux.PaywalledContentError) as exc:
         subpaperflux.get_article_html_with_cookies(
             "https://example.com/articles/paywalled", cookies
         )
-        is None
-    )
+
+    assert "paywalled" in str(exc.value).lower()
+    assert exc.value.indicator == "this post is for paid subscribers"
 
 
 def test_get_article_html_with_cookies_merges_header_overrides(monkeypatch):

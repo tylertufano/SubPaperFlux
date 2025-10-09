@@ -21,7 +21,7 @@ from app.jobs.util_subpaperflux import (
     poll_rss_and_publish,
 )
 from app.models import Cookie, Credential, Feed, SiteConfig, SiteLoginType
-from app.security.crypto import decrypt_dict
+from app.security.crypto import decrypt_dict, encrypt_dict
 
 
 class DummySPFModule:
@@ -53,9 +53,10 @@ def _setup_env(monkeypatch, tmp_path: Path) -> None:
 def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 
+    future_expiry = (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
     dummy_spf = DummySPFModule(
         [
-            {"name": "session", "value": "abc", "expiry": 123.0},
+            {"name": "session", "value": "abc", "expiry": future_expiry},
         ]
     )
     monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: dummy_spf)
@@ -114,16 +115,17 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
             else {}
         )
         assert decrypted.get("cookies") == [
-            {"name": "session", "value": "abc", "expiry": 123.0},
+            {"name": "session", "value": "abc", "expiry": future_expiry},
         ]
 
     stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert stored_cookies == [
-        {"name": "session", "value": "abc", "expiry": 123.0},
+        {"name": "session", "value": "abc", "expiry": future_expiry},
     ]
 
+    new_expiry = (datetime.now(timezone.utc) + timedelta(hours=2)).timestamp()
     dummy_spf.cookies = [
-        {"name": "session", "value": "xyz", "expiry": 456.0},
+        {"name": "session", "value": "xyz", "expiry": new_expiry},
     ]
     perform_login_and_save_cookies(
         site_login_pair_id=pair_id,
@@ -137,7 +139,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
 
     updated_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert updated_cookies == [
-        {"name": "session", "value": "xyz", "expiry": 456.0},
+        {"name": "session", "value": "xyz", "expiry": new_expiry},
     ]
 
     helper_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
@@ -442,6 +444,125 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
     assert success_spf.called is True
     stored_cookies = get_cookies_for_site_login_pair(pair_id, "user-1")
     assert stored_cookies[0]["value"] == "fresh"
+
+
+def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
+    _setup_env(monkeypatch, tmp_path)
+
+    config_dir = tmp_path
+    (config_dir / "instapaper_app_creds.json").write_text(json.dumps({}))
+    (config_dir / "credentials.json").write_text(json.dumps({}))
+    monkeypatch.setenv("SPF_CONFIG_DIR", str(config_dir))
+
+    with get_session_ctx() as session:
+        site_config = SiteConfig(
+            id="sc_paywall",
+            name="Paywall Site",
+            site_url="https://example.com",
+            owner_user_id="user-1",
+            selenium_config={"cookies_to_store": ["session"]},
+            required_cookies=["session"],
+        )
+        credential = Credential(
+            id="cred_paywall",
+            kind="site_login",
+            description="Paywall Login",
+            data=encrypt_dict(
+                {
+                    "username": "user",
+                    "password": "pass",
+                    "site_config_id": site_config.id,
+                }
+            ),
+            owner_user_id="user-1",
+            site_config_id=site_config.id,
+        )
+        feed = Feed(
+            owner_user_id="user-1",
+            url="https://example.com/rss.xml",
+            poll_frequency="1h",
+            is_paywalled=True,
+            site_config_id=site_config.id,
+            site_login_credential_id=credential.id,
+        )
+        session.add(site_config)
+        session.add(credential)
+        session.add(feed)
+        session.commit()
+        session.refresh(feed)
+
+        encrypted = encrypt_dict({"cookies": [{"name": "session", "value": "abc"}]})
+        session.add(
+            Cookie(
+                credential_id=credential.id,
+                site_config_id=site_config.id,
+                owner_user_id="user-1",
+                encrypted_cookies=json.dumps(encrypted),
+            )
+        )
+        session.commit()
+
+    class FakeFeedResponse:
+        def __init__(self):
+            self.status_code = 200
+            self._content = b"<rss></rss>"
+
+        @property
+        def content(self):
+            return self._content
+
+        def raise_for_status(self):
+            return None
+
+    published = datetime.now(timezone.utc)
+
+    class FakeEntry:
+        title = "Paywalled Story"
+        link = "https://example.com/articles/paywalled"
+        summary = ""
+        tags = []
+        enclosures = []
+        published_parsed = published.timetuple()
+
+    class FakeFeed:
+        def __init__(self):
+            self.feed = type(
+                "FeedMeta",
+                (),
+                {"title": "Example", "link": "", "language": "en"},
+            )()
+            self.entries = [FakeEntry()]
+
+    monkeypatch.setattr("subpaperflux.requests.get", lambda *_, **__: FakeFeedResponse())
+    monkeypatch.setattr("subpaperflux.feedparser.parse", lambda _: FakeFeed())
+
+    fetch_calls = []
+
+    def fake_fetch(url, cookies, header_overrides=None):
+        fetch_calls.append((url, cookies))
+        raise subpaperflux.PaywalledContentError(url, indicator="simulated")
+
+    monkeypatch.setattr("subpaperflux.get_article_html_with_cookies", fake_fetch)
+    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: subpaperflux)
+
+    pair_id = format_site_login_pair_id("cred_paywall", "sc_paywall")
+
+    res = poll_rss_and_publish(
+        feed_id=feed.id,
+        owner_user_id="user-1",
+        site_login_pair_id=pair_id,
+    )
+
+    assert res == {"stored": 0, "duplicates": 0, "total": 0}
+    assert fetch_calls, "expected article fetch to be attempted"
+
+    with get_session_ctx() as session:
+        stmt = select(Cookie).where(
+            (Cookie.credential_id == "cred_paywall")
+            & (Cookie.site_config_id == "sc_paywall")
+        )
+        record = session.exec(stmt).first()
+        assert record is None, "cookies should be invalidated after paywall detection"
 
 
 class _FakeElement:
