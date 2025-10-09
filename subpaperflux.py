@@ -634,6 +634,33 @@ def _extract_key_response_headers(response):
     return sanitized
 
 
+def _sanitize_headers_for_logging(headers):
+    """Redact sensitive headers before emitting them to logs."""
+
+    if not headers:
+        return {}
+
+    try:
+        iterable = headers.items()
+    except AttributeError:
+        return {}
+
+    redacted_names = {"cookie", "set-cookie", "authorization", "proxy-authorization"}
+    sanitized = {}
+
+    for name, value in iterable:
+        if name is None:
+            continue
+
+        lower_name = str(name).lower()
+        if lower_name in redacted_names:
+            sanitized[str(name)] = "<redacted>"
+        else:
+            sanitized[str(name)] = value
+
+    return sanitized
+
+
 def get_article_html_with_cookies(url, cookies, header_overrides=None):
     """
     Fetches the full HTML content of an article using authentication cookies.
@@ -664,6 +691,10 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
     )
     if session_headers:
         session.headers.update(session_headers)
+        logging.debug(
+            "Constructed article request headers (sanitized): %s",
+            _sanitize_headers_for_logging(session_headers),
+        )
     _apply_cookies_to_session(session, cookies)
 
     try:
@@ -680,8 +711,25 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
             " -> ".join(history_chain) if history_chain else "<none>",
         )
 
+        request_headers = getattr(getattr(response, "request", None), "headers", {}) or {}
+        if request_headers:
+            logging.debug(
+                "Article fetch sent headers (sanitized): %s",
+                _sanitize_headers_for_logging(request_headers),
+            )
+
+        logging.debug(
+            "Article fetch response headers: %s",
+            _extract_key_response_headers(response),
+        )
+
         response_text = response.text
         response_text_lower = response_text.lower()
+
+        logging.debug(
+            "Article fetch response preview (sanitized): %s",
+            _sanitize_body_preview(response_text),
+        )
 
         # Detect whether we were redirected to a login page (indicating auth failure)
         candidate_urls = [resp.url for resp in response.history if getattr(resp, "url", None)]
