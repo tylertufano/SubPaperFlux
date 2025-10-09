@@ -325,7 +325,7 @@ export default function Admin() {
               <p className="text-sm text-gray-600">{t('admin_integrations_help')}</p>
             </div>
             <form className="flex flex-col gap-3 md:flex-row md:items-end" onSubmit={handleIntegrationSubmit}>
-              <label className="flex flex-col gap-1 text-sm text-gray-700 md:w-1/3">
+              <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-300 md:w-1/3">
                 <span className="font-medium">{t('admin_integrations_instapaper_label')}</span>
                 <input
                   type="text"
@@ -336,7 +336,7 @@ export default function Admin() {
                 />
                 <span className="text-xs text-gray-500">{t('admin_integrations_credential_hint')}</span>
               </label>
-              <label className="flex flex-col gap-1 text-sm text-gray-700 md:w-1/3">
+              <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-300 md:w-1/3">
                 <span className="font-medium">{t('admin_integrations_miniflux_label')}</span>
                 <input
                   type="text"
@@ -393,7 +393,7 @@ export default function Admin() {
                       ])
                       const lastChecked = formatTimestamp(lastCheckedRaw, locale)
                       const error = pickFirst<string>(detail, ['error', 'message', 'last_error', 'lastError'])
-                      const connectivityClass = ok === true ? 'text-green-600' : ok === false ? 'text-red-600' : 'text-gray-700'
+                      const connectivityClass = ok === true ? 'text-green-600' : ok === false ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
                       const connectivityLabel =
                         ok === true
                           ? t('admin_integrations_connectivity_ok')
@@ -408,7 +408,7 @@ export default function Admin() {
                       return (
                         <tr key={normalizedName} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900 align-top">
                           <td className="td">
-                            <div className="font-semibold text-gray-900">{label}</div>
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">{label}</div>
                             {credentialId && (
                               <div className="text-xs text-gray-500">{t('admin_integrations_credential_value', { id: credentialId })}</div>
                             )}
@@ -422,7 +422,7 @@ export default function Admin() {
                           <td className="td">
                             <div className={`font-medium ${connectivityClass}`}>{connectivityLabel}</div>
                             {statusCode != null && (
-                              <div className="text-sm text-gray-700">{t('admin_integrations_status_code', { status: statusCode })}</div>
+                              <div className="text-sm text-gray-700 dark:text-gray-300">{t('admin_integrations_status_code', { status: statusCode })}</div>
                             )}
                             {lastChecked && (
                               <div className="text-xs text-gray-500">{t('admin_integrations_last_checked', { time: lastChecked })}</div>

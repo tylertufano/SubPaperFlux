@@ -282,7 +282,7 @@ export default function AdminRoles() {
             onSubmit={handleSubmit}
           >
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-roles-search">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-roles-search">
                 {t('admin_roles_search_label')}
                 <input
                   id="admin-roles-search"
@@ -293,7 +293,7 @@ export default function AdminRoles() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, search: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-roles-page-size">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-roles-page-size">
                 {t('admin_roles_page_size_label')}
                 <select
                   id="admin-roles-page-size"
@@ -366,7 +366,7 @@ export default function AdminRoles() {
                           <tr key={role.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                             <td className="td align-top">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-gray-900">{role.name}</span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{role.name}</span>
                                 {role.is_system ? (
                                   <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
                                     {t('admin_roles_system_badge')}
@@ -374,10 +374,10 @@ export default function AdminRoles() {
                                 ) : null}
                               </div>
                             </td>
-                            <td className="td align-top text-sm text-gray-700">
+                            <td className="td align-top text-sm text-gray-700 dark:text-gray-300">
                               {role.description ? role.description : <span className="text-gray-400">—</span>}
                             </td>
-                            <td className="td align-top text-sm text-gray-700">
+                            <td className="td align-top text-sm text-gray-700 dark:text-gray-300">
                               {numberFormatter.format(assignedCount)}
                             </td>
                             <td className="td align-top">
@@ -464,7 +464,7 @@ export default function AdminRoles() {
               className="card w-full max-w-lg space-y-4 p-6"
             >
               <div className="flex items-start justify-between">
-                <h3 id="admin-role-create-title" className="text-lg font-semibold text-gray-900">
+                <h3 id="admin-role-create-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {t('admin_roles_create_heading')}
                 </h3>
                 <button type="button" className="btn" onClick={closeCreateDialog} disabled={isSubmitting}>
@@ -473,7 +473,7 @@ export default function AdminRoles() {
               </div>
               <form className="space-y-4" onSubmit={handleCreateSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="admin-role-create-name">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-role-create-name">
                     {t('admin_roles_name_label')}
                     <input
                       id="admin-role-create-name"
@@ -488,7 +488,7 @@ export default function AdminRoles() {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="admin-role-create-description">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-role-create-description">
                     {t('admin_roles_description_label')}
                     <input
                       id="admin-role-create-description"
@@ -528,7 +528,7 @@ export default function AdminRoles() {
               className="card w-full max-w-lg space-y-4 p-6"
             >
               <div className="flex items-start justify-between">
-                <h3 id="admin-role-edit-title" className="text-lg font-semibold text-gray-900">
+                <h3 id="admin-role-edit-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {t('admin_roles_edit_heading', { name: selectedRole.name })}
                 </h3>
                 <button type="button" className="btn" onClick={closeEditDialog} disabled={isUpdating}>
@@ -537,7 +537,7 @@ export default function AdminRoles() {
               </div>
               <form className="space-y-4" onSubmit={handleEditSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="admin-role-edit-name">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-role-edit-name">
                     {t('admin_roles_name_label')}
                     <input
                       id="admin-role-edit-name"
@@ -552,7 +552,7 @@ export default function AdminRoles() {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700" htmlFor="admin-role-edit-description">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-role-edit-description">
                     {t('admin_roles_description_label')}
                     <input
                       id="admin-role-edit-description"

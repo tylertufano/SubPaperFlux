@@ -777,7 +777,7 @@ export default function AdminUsers() {
             onSubmit={handleSubmit}
           >
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-search">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-users-search">
                 {t('admin_users_search_label')}
                 <input
                   id="admin-users-search"
@@ -788,7 +788,7 @@ export default function AdminUsers() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, search: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-role">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-users-role">
                 {t('admin_users_role_filter_label')}
                 <input
                   id="admin-users-role"
@@ -799,7 +799,7 @@ export default function AdminUsers() {
                   onChange={(event) => setFormState((prev) => ({ ...prev, role: event.target.value }))}
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-organization">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-users-organization">
                 {t('admin_users_organization_filter_label')}
                 <input
                   id="admin-users-organization"
@@ -812,7 +812,7 @@ export default function AdminUsers() {
                   }
                 />
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-status">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-users-status">
                 {t('admin_users_status_filter_label')}
                 <select
                   id="admin-users-status"
@@ -825,7 +825,7 @@ export default function AdminUsers() {
                   <option value="inactive">{t('admin_users_status_inactive')}</option>
                 </select>
               </label>
-              <label className="block text-sm font-medium text-gray-700" htmlFor="admin-users-page-size">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="admin-users-page-size">
                 {t('admin_users_page_size_label')}
                 <select
                   id="admin-users-page-size"
@@ -905,7 +905,7 @@ export default function AdminUsers() {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-medium text-gray-900">{displayName(user)}</div>
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">{displayName(user)}</div>
                                   <div className="text-sm text-gray-600">{user.email || t('admin_users_email_unknown')}</div>
                                   <div className="text-xs text-gray-500">{user.id}</div>
                                 </div>
@@ -1061,7 +1061,7 @@ export default function AdminUsers() {
             >
               <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
               <div>
-                <h3 id="admin-user-drawer-title" className="text-lg font-semibold text-gray-900">
+                <h3 id="admin-user-drawer-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {displayName(selected)}
                 </h3>
                 <p className="text-sm text-gray-600">{selected.email || t('admin_users_email_unknown')}</p>
@@ -1081,27 +1081,27 @@ export default function AdminUsers() {
                 <dl className="space-y-3">
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_id_label')}</dt>
-                    <dd className="text-sm text-gray-900 break-all">{selected.id}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100 break-all">{selected.id}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_status')}</dt>
-                    <dd className="text-sm text-gray-900">{statusBadge(selected, t).label}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{statusBadge(selected, t).label}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_created')}</dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(selected.created_at, '—')}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(selected.created_at, '—')}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_updated')}</dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(selected.updated_at, '—')}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(selected.updated_at, '—')}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_details_last_login')}</dt>
-                    <dd className="text-sm text-gray-900">{formatDateTime(selected.last_login_at, t('admin_users_last_login_unknown'))}</dd>
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">{formatDateTime(selected.last_login_at, t('admin_users_last_login_unknown'))}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-semibold text-gray-600">{t('admin_users_overrides_status_label')}</dt>
-                    <dd className="text-sm text-gray-900">
+                    <dd className="text-sm text-gray-900 dark:text-gray-100">
                       {selected.role_overrides.enabled
                         ? t('admin_users_overrides_status_enabled')
                         : t('admin_users_overrides_status_disabled')}
@@ -1130,7 +1130,7 @@ export default function AdminUsers() {
                     </div>
                     <form className="space-y-3" onSubmit={handleOrganizationSubmit}>
                       <label
-                        className="block text-sm font-medium text-gray-700"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         htmlFor="admin-user-organization-input"
                       >
                         {t('admin_users_organization_input_label')}
@@ -1215,7 +1215,7 @@ export default function AdminUsers() {
                     <form className="space-y-3" onSubmit={handleRoleSubmit}>
                       <div className="grid gap-3">
                         <label
-                          className="block text-sm font-medium text-gray-700"
+                          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                           htmlFor="admin-user-role-name"
                         >
                           {t('admin_users_roles_add_role_label')}
@@ -1232,7 +1232,7 @@ export default function AdminUsers() {
                           />
                         </label>
                         <label
-                          className="block text-sm font-medium text-gray-700"
+                          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                           htmlFor="admin-user-role-description"
                         >
                           {t('admin_users_roles_add_description_label')}
@@ -1248,7 +1248,7 @@ export default function AdminUsers() {
                             disabled={pendingUserId === selected.id}
                           />
                         </label>
-                        <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                           <input
                             type="checkbox"
                             className="h-4 w-4"
@@ -1272,7 +1272,7 @@ export default function AdminUsers() {
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-600">{t('admin_users_overrides_heading')}</h4>
                   <p className="mb-3 text-sm text-gray-600">{t('admin_users_overrides_description')}</p>
-                  <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -1365,7 +1365,7 @@ export default function AdminUsers() {
                   <form className="space-y-3" onSubmit={handleQuotaSubmit}>
                     <div className="grid gap-3">
                       {quotaFields.map((field) => (
-                        <label key={field} className="block text-sm font-medium text-gray-700" htmlFor={`quota-${field}`}>
+                        <label key={field} className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`quota-${field}`}>
                           {t(quotaFieldLabelKeys[field])}
                           <input
                             id={`quota-${field}`}

@@ -682,7 +682,7 @@ function ScheduleForm({
         return (
           <div className="flex flex-col">
             <label
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
               htmlFor="schedule-login-site-login"
             >
               {t("job_schedules_field_site_login_pair")}
@@ -721,7 +721,7 @@ function ScheduleForm({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-miniflux-credential"
               >
                 {t("job_schedules_field_miniflux_credential")}
@@ -756,7 +756,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col md:col-span-2">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-miniflux-feed-select"
               >
                 {t("job_schedules_field_miniflux_feeds")}
@@ -803,7 +803,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-miniflux-site-login"
               >
                 {t("job_schedules_field_site_login_pair")}
@@ -843,7 +843,7 @@ function ScheduleForm({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-rss-feed-select"
               >
                 {t("job_schedules_field_saved_feed")}
@@ -941,7 +941,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-rss-site-login"
               >
                 {t("job_schedules_field_site_login_optional")}
@@ -1010,7 +1010,7 @@ function ScheduleForm({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-publish-instapaper"
               >
                 {t("job_schedules_field_instapaper_credential")}
@@ -1045,7 +1045,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col md:col-span-2">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-publish-feed"
               >
                 {t("job_schedules_field_publish_feed")}
@@ -1148,7 +1148,7 @@ function ScheduleForm({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-retention-instapaper"
               >
                 {t("job_schedules_field_instapaper_credential")}
@@ -1195,7 +1195,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-retention-feed"
               >
                 {t("job_schedules_field_retention_feed")}
@@ -1216,7 +1216,7 @@ function ScheduleForm({
             </div>
             <div className="flex flex-col md:col-span-2">
               <label
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 htmlFor="schedule-retention-older-than"
               >
                 {t("job_schedules_field_retention")}
@@ -1254,7 +1254,7 @@ function ScheduleForm({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col md:col-span-2">
           <label
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
             htmlFor="schedule-name"
           >
             {t("job_schedules_field_schedule_name")}
@@ -1277,7 +1277,7 @@ function ScheduleForm({
         </div>
         <div className="flex flex-col">
           <label
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
             htmlFor="schedule-job-type"
           >
             {t("job_schedules_field_job_type")}
@@ -1309,7 +1309,7 @@ function ScheduleForm({
         </div>
         <div className="flex flex-col">
           <label
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
             htmlFor="schedule-frequency"
           >
             {t("job_schedules_field_frequency")}
@@ -1335,7 +1335,7 @@ function ScheduleForm({
         </div>
         <div className="flex flex-col">
           <label
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300"
             htmlFor="schedule-next-run"
           >
             {t("job_schedules_field_next_run")}
@@ -1370,7 +1370,7 @@ function ScheduleForm({
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-gray-700 dark:text-gray-300">
             {t("job_schedules_field_active")}
           </span>
         </label>
@@ -1628,7 +1628,7 @@ export default function JobSchedulesPage() {
       <div>
         <Nav />
         <main className="container py-12">
-          <p className="text-gray-700">{t("loading_text")}</p>
+          <p className="text-gray-700 dark:text-gray-300">{t("loading_text")}</p>
         </main>
       </div>
     );
@@ -1639,8 +1639,8 @@ export default function JobSchedulesPage() {
       <Nav />
       <main className="container py-12">
         <div className="max-w-xl space-y-2">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="text-gray-700">{message}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
+          <p className="text-gray-700 dark:text-gray-300">{message}</p>
         </div>
       </main>
     </div>
@@ -1815,7 +1815,7 @@ export default function JobSchedulesPage() {
       <Breadcrumbs items={breadcrumbs} />
       <main className="container py-6">
         <div className="flex items-center gap-2 mb-4">
-          <h1 className="text-xl font-semibold text-gray-900">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {t("job_schedules_title")}
           </h1>
         </div>
@@ -1830,7 +1830,7 @@ export default function JobSchedulesPage() {
           aria-label={t("job_schedules_filters_label")}
         >
           <label
-            className="text-sm text-gray-700"
+            className="text-sm text-gray-700 dark:text-gray-300"
             htmlFor="job-schedule-filter-type"
           >
             {t("job_schedules_filter_job_type_label")}
@@ -1850,7 +1850,7 @@ export default function JobSchedulesPage() {
           </select>
 
           <label
-            className="text-sm text-gray-700"
+            className="text-sm text-gray-700 dark:text-gray-300"
             htmlFor="job-schedule-filter-active"
           >
             {t("job_schedules_filter_active_label")}
@@ -1890,7 +1890,7 @@ export default function JobSchedulesPage() {
 
         {canManageSchedules ? (
           <div className="card p-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
               {t("job_schedules_create_heading")}
             </h2>
             <ScheduleForm
@@ -1911,7 +1911,7 @@ export default function JobSchedulesPage() {
 
         {editingSchedule ? (
           <div className="card p-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
               {t("job_schedules_edit_heading", { id: editingSchedule.id })}
             </h2>
             <ScheduleForm
@@ -2164,7 +2164,7 @@ export default function JobSchedulesPage() {
           >
             {t("pagination_prev")}
           </button>
-          <span className="text-gray-700">
+          <span className="text-gray-700 dark:text-gray-300">
             {t("pagination_status", {
               page: numberFormatter.format(page),
               total: numberFormatter.format(totalPages || 1),

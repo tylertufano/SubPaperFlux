@@ -119,7 +119,7 @@ export default function Home() {
         <div>
           <Nav />
           <main className="container py-12">
-            <p className="text-gray-700">{t('loading_text')}</p>
+            <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
           </main>
         </div>
       </ErrorBoundary>
@@ -147,7 +147,7 @@ export default function Home() {
         <main className="container py-6">
           <div className="mb-4">
             <h1 className="text-2xl font-semibold">{t('dashboard_title')}</h1>
-            <p className="text-gray-700">{t('dashboard_description')}</p>
+            <p className="text-gray-700 dark:text-gray-300">{t('dashboard_description')}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">

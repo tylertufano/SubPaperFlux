@@ -79,7 +79,7 @@ export default function Jobs() {
       <div>
         <Nav />
         <main className="container py-12">
-          <p className="text-gray-700">{t('loading_text')}</p>
+          <p className="text-gray-700 dark:text-gray-300">{t('loading_text')}</p>
         </main>
       </div>
     )
@@ -90,8 +90,8 @@ export default function Jobs() {
       <Nav />
       <main className="container py-12">
         <div className="max-w-xl space-y-2">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="text-gray-700">{message}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
+          <p className="text-gray-700 dark:text-gray-300">{message}</p>
         </div>
       </main>
     </div>
@@ -122,7 +122,7 @@ export default function Jobs() {
           aria-labelledby="jobs-heading"
           onSubmit={(e) => { e.preventDefault(); mutate() }}
         >
-          <label className="text-gray-700" htmlFor="jobs-status-filter">{t('status_label')}:</label>
+          <label className="text-gray-700 dark:text-gray-300" htmlFor="jobs-status-filter">{t('status_label')}:</label>
           <select id="jobs-status-filter" className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">{t('jobs_filter_all')}</option>
             <option value="queued">{t('jobs_status_queued')}</option>
@@ -131,7 +131,7 @@ export default function Jobs() {
             <option value="failed">{t('jobs_status_failed')}</option>
             <option value="dead">{t('jobs_status_dead')}</option>
           </select>
-          <label className="text-gray-700" htmlFor="jobs-order-direction">{t('jobs_order_label')}:</label>
+          <label className="text-gray-700 dark:text-gray-300" htmlFor="jobs-order-direction">{t('jobs_order_label')}:</label>
           <select
             id="jobs-order-direction"
             className="input"
