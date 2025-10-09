@@ -312,7 +312,6 @@ function initPayloadState(
     case "rss_poll":
       return {
         feed_id: payload?.feed_id ?? "",
-        site_login_pair: initialSiteLoginPair,
       };
     case "publish":
       return {
@@ -534,14 +533,7 @@ function ScheduleForm({
       const feedId = (payloadState.feed_id || "").toString().trim();
       if (!feedId)
         nextErrors["payload.feed_id"] = t("job_schedules_error_feed_selection");
-      const siteLoginValue = (payloadState.site_login_pair || "")
-        .toString()
-        .trim();
-      const siteLogin = parseSiteLoginKey(siteLoginValue);
       if (feedId) payload.feed_id = feedId;
-      if (siteLogin) {
-        payload.site_login_pair = toSiteLoginKey(siteLogin);
-      }
 
     } else if (jobType === "publish") {
       const instapaperId = (payloadState.instapaper_id || "").toString().trim();
@@ -840,7 +832,7 @@ function ScheduleForm({
         );
       case "rss_poll":
         return (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col">
             <div className="flex flex-col">
               <label
                 className="text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -855,57 +847,6 @@ function ScheduleForm({
                 onChange={(e) => {
                   const value = e.target.value;
                   updatePayload("feed_id", value);
-                  const selected = feeds.find((feed) => {
-                    const candidateId = feed.id ? String(feed.id) : null;
-                    return Boolean(candidateId && candidateId === value);
-                  });
-                  if (selected) {
-                    const selectedWithLegacyFields = selected as FeedOut & {
-                      siteConfigId?: string | null;
-                      siteLoginCredentialId?: string | null;
-                      site_config_id?: string | null;
-                      site_login_credential_id?: string | null;
-                    };
-                    const selectedConfigId =
-                      selectedWithLegacyFields.site_config_id ??
-                      selectedWithLegacyFields.siteConfigId ??
-                      null;
-                    const selectedCredentialId =
-                      selectedWithLegacyFields.site_login_credential_id ??
-                      selectedWithLegacyFields.siteLoginCredentialId ??
-                      null;
-                    if (selectedConfigId) {
-                      const normalizedConfig = String(selectedConfigId);
-                      let autoPair = undefined as SiteLoginOption | undefined;
-                      if (selectedCredentialId) {
-                        const normalizedCredential = String(selectedCredentialId);
-                        autoPair = siteLoginOptions.find(
-                          (option) =>
-                            option.siteConfigId === normalizedConfig &&
-                            option.credentialId === normalizedCredential,
-                        );
-                      }
-                      if (!autoPair) {
-                        autoPair = siteLoginOptions.find(
-                          (option) =>
-                            option.siteConfigId === normalizedConfig &&
-                            option.type === "pair",
-                        );
-                      }
-                      if (!autoPair) {
-                        autoPair = siteLoginOptions.find(
-                          (option) => option.siteConfigId === normalizedConfig,
-                        );
-                      }
-                      if (!payloadState.site_login_pair && autoPair) {
-                        updatePayload("site_login_pair", autoPair.value);
-                      }
-                    } else if (payloadState.site_login_pair) {
-                      updatePayload("site_login_pair", "");
-                    }
-                  } else if (payloadState.site_login_pair) {
-                    updatePayload("site_login_pair", "");
-                  }
                 }}
                 aria-label={t("job_schedules_field_saved_feed")}
                 aria-invalid={Boolean(errors["payload.feed_id"])}
@@ -938,27 +879,6 @@ function ScheduleForm({
                   {errors["payload.feed_id"]}
                 </p>
               )}
-            </div>
-            <div className="flex flex-col">
-              <label
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                htmlFor="schedule-rss-site-login"
-              >
-                {t("job_schedules_field_site_login_optional")}
-              </label>
-              <select
-                id="schedule-rss-site-login"
-                className="input"
-                value={payloadState.site_login_pair || ""}
-                onChange={(e) => updatePayload("site_login_pair", e.target.value)}
-              >
-                <option value="">{t("job_schedules_option_select_pair")}</option>
-                {siteLoginOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         );
