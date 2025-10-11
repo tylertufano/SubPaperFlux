@@ -599,6 +599,31 @@ def _summarize_cookie_metadata(cookies):
     return summaries
 
 
+def _summarize_requests_cookie_jar(cookie_jar):
+    """Generate cookie metadata summaries from a RequestsCookieJar."""
+
+    if not cookie_jar:
+        return []
+
+    cookie_dicts = []
+    try:
+        iterator = iter(cookie_jar)
+    except TypeError:
+        iterator = []
+
+    for cookie in iterator:
+        if cookie is None:
+            continue
+        name = getattr(cookie, "name", None) or "<unnamed>"
+        domain = getattr(cookie, "domain", None) or "<no-domain>"
+        cookie_dicts.append({"name": name, "domain": domain})
+
+    if not cookie_dicts:
+        return []
+
+    return _summarize_cookie_metadata(cookie_dicts)
+
+
 def _sanitize_body_preview(body, limit=200):
     """Collapse whitespace and clip the body for safe logging."""
 
@@ -696,6 +721,12 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
             _sanitize_headers_for_logging(session_headers),
         )
     _apply_cookies_to_session(session, cookies)
+    session_cookie_summaries = _summarize_requests_cookie_jar(session.cookies)
+    if session_cookie_summaries:
+        logging.debug(
+            "Article fetch session cookies: %s",
+            ", ".join(session_cookie_summaries),
+        )
 
     try:
         response = session.get(url, timeout=30)
@@ -716,6 +747,13 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
             logging.debug(
                 "Article fetch sent headers (sanitized): %s",
                 _sanitize_headers_for_logging(request_headers),
+            )
+        prepared_request_cookies = getattr(getattr(response, "request", None), "_cookies", None)
+        prepared_cookie_summaries = _summarize_requests_cookie_jar(prepared_request_cookies)
+        if prepared_cookie_summaries:
+            logging.debug(
+                "Article fetch sent cookies: %s",
+                ", ".join(prepared_cookie_summaries),
             )
 
         logging.debug(
@@ -1255,7 +1293,31 @@ def get_new_rss_entries(
                 }
             )
             _apply_cookies_to_session(session, cookies)
+            logging.debug(
+                "Authenticated feed session headers (sanitized): %s",
+                _sanitize_headers_for_logging(session.headers),
+            )
+            session_cookie_summaries = _summarize_requests_cookie_jar(session.cookies)
+            if session_cookie_summaries:
+                logging.debug(
+                    "Authenticated feed session cookies: %s",
+                    ", ".join(session_cookie_summaries),
+                )
             feed_response = session.get(feed_url, timeout=30)
+            prepared_request = getattr(feed_response, "request", None)
+            request_headers = getattr(prepared_request, "headers", {}) or {}
+            if request_headers:
+                logging.debug(
+                    "Authenticated feed fetch sent headers (sanitized): %s",
+                    _sanitize_headers_for_logging(request_headers),
+                )
+            prepared_cookies = getattr(prepared_request, "_cookies", None)
+            prepared_cookie_summaries = _summarize_requests_cookie_jar(prepared_cookies)
+            if prepared_cookie_summaries:
+                logging.debug(
+                    "Authenticated feed fetch sent cookies: %s",
+                    ", ".join(prepared_cookie_summaries),
+                )
         else:
             logging.info(
                 f"Feed is public. Fetching RSS feed from {feed_url} without cookies."
@@ -1264,6 +1326,12 @@ def get_new_rss_entries(
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/533.36"
             }
             feed_response = requests.get(feed_url, headers=headers, timeout=30)
+            request_headers = getattr(getattr(feed_response, "request", None), "headers", {}) or {}
+            if request_headers:
+                logging.debug(
+                    "Public feed fetch sent headers (sanitized): %s",
+                    _sanitize_headers_for_logging(request_headers),
+                )
 
         feed_response.raise_for_status()
         feed = feedparser.parse(feed_response.content)
