@@ -183,6 +183,11 @@ def _normalize_login_payload_update(payload_update: Dict[str, Any]) -> Tuple[Dic
         else:
             sanitized_update["site_login_pair"] = raw_value
 
+    if not remove_existing_pair:
+        has_split_ids = "credential_id" in sanitized_update and "site_config_id" in sanitized_update
+        if has_split_ids:
+            remove_existing_pair = True
+
     return sanitized_update, remove_existing_pair
 
 
