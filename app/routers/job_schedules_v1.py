@@ -12,6 +12,7 @@ from ..auth.oidc import get_current_user
 from ..db import get_session
 from ..jobs import known_job_types
 from ..jobs.scheduler import parse_frequency
+from ..jobs.util_subpaperflux import parse_site_login_pair_id
 from ..jobs.validation import scrub_legacy_schedule_payload, validate_job
 from ..models import Folder, Job, JobSchedule, Tag
 from ..schemas import (
@@ -155,6 +156,39 @@ def _normalize_schedule_targets(payload: Dict[str, Any]) -> Tuple[List[str], Opt
     else:
         payload["folder_id"] = folder_id
     return tags, folder_id
+
+
+def _normalize_login_payload_update(payload_update: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+    sanitized_update = dict(payload_update)
+    remove_existing_pair = False
+
+    if "site_login_pair" in sanitized_update:
+        raw_value = sanitized_update["site_login_pair"]
+        if isinstance(raw_value, str):
+            pair_text = raw_value.strip()
+        elif raw_value in (None, ""):
+            pair_text = ""
+        else:
+            pair_text = str(raw_value).strip()
+        if pair_text:
+            try:
+                credential_id, site_config_id = parse_site_login_pair_id(pair_text)
+            except ValueError:
+                sanitized_update["site_login_pair"] = pair_text
+            else:
+                sanitized_update.pop("site_login_pair", None)
+                sanitized_update["credential_id"] = credential_id
+                sanitized_update["site_config_id"] = site_config_id
+                remove_existing_pair = True
+        else:
+            sanitized_update["site_login_pair"] = raw_value
+
+    if not remove_existing_pair:
+        has_split_ids = "credential_id" in sanitized_update and "site_config_id" in sanitized_update
+        if has_split_ids:
+            remove_existing_pair = True
+
+    return sanitized_update, remove_existing_pair
 
 
 def _validate_publish_targets(
@@ -417,9 +451,16 @@ def update_job_schedule(
 
     prospective_job_type = updates.get("job_type", schedule.job_type)
 
-    base_payload = scrub_legacy_schedule_payload(schedule.payload)
+    original_payload = scrub_legacy_schedule_payload(schedule.payload)
+    base_payload = dict(original_payload)
     if raw_payload_update is not _SENTINEL:
-        base_payload.update(scrub_legacy_schedule_payload(raw_payload_update))
+        payload_update = scrub_legacy_schedule_payload(raw_payload_update)
+        pair_removed = False
+        if prospective_job_type == "login":
+            payload_update, pair_removed = _normalize_login_payload_update(payload_update)
+        if pair_removed:
+            base_payload.pop("site_login_pair", None)
+        base_payload.update(payload_update)
     if tags_update is not _SENTINEL:
         base_payload["tags"] = tags_update or []
     if folder_update is not _SENTINEL:
@@ -430,16 +471,13 @@ def update_job_schedule(
 
     normalized_tags, normalized_folder_id = _normalize_schedule_targets(base_payload)
 
-    payload_changed = (
-        raw_payload_update is not _SENTINEL
-        or tags_update is not _SENTINEL
-        or folder_update is not _SENTINEL
-    )
+    sanitized_payload = scrub_legacy_schedule_payload(base_payload)
+    payload_changed = sanitized_payload != original_payload
 
     validation_required = payload_changed or ("job_type" in updates)
 
     if validation_required:
-        validation_result = validate_job(prospective_job_type, dict(base_payload))
+        validation_result = validate_job(prospective_job_type, dict(sanitized_payload))
         if not validation_result.get("ok", True):
             missing_values = validation_result.get("missing", [])
             raise HTTPException(
@@ -468,7 +506,7 @@ def update_job_schedule(
     if "job_type" in updates:
         schedule.job_type = updates["job_type"]
     if payload_changed:
-        schedule.payload = scrub_legacy_schedule_payload(base_payload)
+        schedule.payload = sanitized_payload
     if "frequency" in updates:
         schedule.frequency = updates["frequency"]
     if "next_run_at" in updates:
