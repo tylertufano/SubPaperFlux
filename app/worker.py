@@ -169,8 +169,33 @@ def mark_failed(job: Job, error: str) -> None:
     logging.warning("Job error", extra={"event": "job_error", "job_id": job.id, "type": job.type, "error": error})
 
 
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+
+
+def _env_enabled(name: str) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return False
+    return value.strip().lower() in _TRUE_VALUES
+
+
+def _resolve_log_level() -> int:
+    log_level = os.getenv("LOG_LEVEL")
+    if log_level:
+        try:
+            return getattr(logging, log_level.strip().upper())
+        except AttributeError:
+            logging.warning("Invalid LOG_LEVEL '%s', falling back to INFO", log_level)
+            return logging.INFO
+    if _env_enabled("DEBUG_LOGGING"):
+        return logging.DEBUG
+    return logging.INFO
+
+
 def run_forever():
-    logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=_resolve_log_level(), format="[%(asctime)s] %(levelname)s: %(message)s"
+    )
     logging.info("Worker started")
     try:
         while True:
