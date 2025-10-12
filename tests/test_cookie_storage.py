@@ -198,6 +198,30 @@ def test_perform_login_and_save_cookies_rejects_blank_values(monkeypatch, tmp_pa
     assert "missing cookie values" in str(exc.value)
 
 
+def test_apply_cookies_clones_domain_for_subdomain_requests():
+    session = requests.Session()
+    cookies = [
+        {"name": "sessionid", "value": "abc123", "domain": "substack.com"},
+    ]
+
+    subpaperflux._apply_cookies_to_session(
+        session,
+        cookies,
+        hostname="newsletter.substack.com",
+    )
+
+    prepared = session.prepare_request(
+        requests.Request(
+            "GET",
+            "https://newsletter.substack.com/api/content",
+        )
+    )
+
+    cookie_header = prepared.headers.get("Cookie")
+    assert cookie_header is not None
+    assert "sessionid=abc123" in cookie_header
+
+
 def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 

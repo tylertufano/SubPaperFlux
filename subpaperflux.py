@@ -445,7 +445,26 @@ def update_miniflux_feed_with_cookies(
                 logging.debug(f"Miniflux API Response Text: {response.text}")
 
 
-def _apply_cookies_to_session(session, cookies):
+def _cookie_domain_matches(hostname: str | None, cookie_domain: str | None) -> bool:
+    """Return True if the cookie domain already matches the supplied hostname."""
+
+    if not cookie_domain:
+        return True
+
+    if not hostname:
+        return False
+
+    host = hostname.lower()
+    domain = str(cookie_domain).lower()
+
+    if domain.startswith("."):
+        domain = domain.lstrip(".")
+        return host == domain or host.endswith(f".{domain}")
+
+    return host == domain
+
+
+def _apply_cookies_to_session(session, cookies, hostname=None):
     """Attach serialized cookies (dicts) to a requests.Session."""
 
     if not cookies:
@@ -473,30 +492,50 @@ def _apply_cookies_to_session(session, cookies):
             logging.debug(f"Cookie '{name}' has an empty value. Skipping.")
             continue
 
-        cookie_kwargs = {}
+        cookie_variants = [cookie]
+
         domain = cookie.get("domain")
-        path = cookie.get("path")
-        expires = cookie.get("expiry") or cookie.get("expires")
-        secure = cookie.get("secure")
+        domain_str = str(domain) if domain is not None else None
 
-        if domain:
-            cookie_kwargs["domain"] = domain
-        if path:
-            cookie_kwargs["path"] = path
-        if expires:
-            cookie_kwargs["expires"] = expires
-        if secure is not None:
-            cookie_kwargs["secure"] = secure
+        if hostname and domain_str and not _cookie_domain_matches(hostname, domain_str):
+            cloned_cookie = dict(cookie)
+            if hostname:
+                cloned_cookie["domain"] = hostname
+            else:
+                cloned_cookie.pop("domain", None)
+            cookie_variants.append(cloned_cookie)
+            logging.debug(
+                "Cookie '%s' domain '%s' does not match hostname '%s'; adding host-specific variant.",
+                name,
+                domain_str,
+                hostname,
+            )
 
-        logging.debug(
-            "Attaching cookie '%s' (domain=%s, path=%s, expires=%s) to session.",
-            name,
-            cookie_kwargs.get("domain"),
-            cookie_kwargs.get("path"),
-            cookie_kwargs.get("expires"),
-        )
+        for cookie_variant in cookie_variants:
+            cookie_kwargs = {}
+            variant_domain = cookie_variant.get("domain")
+            path = cookie_variant.get("path")
+            expires = cookie_variant.get("expiry") or cookie_variant.get("expires")
+            secure = cookie_variant.get("secure")
 
-        session.cookies.set(name, value_str, **cookie_kwargs)
+            if variant_domain:
+                cookie_kwargs["domain"] = variant_domain
+            if path:
+                cookie_kwargs["path"] = path
+            if expires:
+                cookie_kwargs["expires"] = expires
+            if secure is not None:
+                cookie_kwargs["secure"] = secure
+
+            logging.debug(
+                "Attaching cookie '%s' (domain=%s, path=%s, expires=%s) to session.",
+                name,
+                cookie_kwargs.get("domain"),
+                cookie_kwargs.get("path"),
+                cookie_kwargs.get("expires"),
+            )
+
+            session.cookies.set(name, value_str, **cookie_kwargs)
 
     # Ensure the session's default `Cookie` header remains unset so that
     # `requests` continues to apply domain/path scoping logic when preparing
@@ -704,6 +743,8 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
         )
 
     session = requests.Session()
+    parsed_url = urlparse(url)
+    hostname = parsed_url.hostname if parsed_url else None
     session_headers = merge_header_overrides(
         {
             "User-Agent": (
@@ -720,7 +761,7 @@ def get_article_html_with_cookies(url, cookies, header_overrides=None):
             "Constructed article request headers (sanitized): %s",
             _sanitize_headers_for_logging(session_headers),
         )
-    _apply_cookies_to_session(session, cookies)
+    _apply_cookies_to_session(session, cookies, hostname=hostname)
     session_cookie_summaries = _summarize_requests_cookie_jar(session.cookies)
     if session_cookie_summaries:
         logging.debug(
