@@ -663,6 +663,51 @@ def _summarize_requests_cookie_jar(cookie_jar):
     return _summarize_cookie_metadata(cookie_dicts)
 
 
+def _merge_cookie_dicts(existing_cookies, new_cookies):
+    """Combine cookie dictionaries, deduplicating by (name, domain, path)."""
+
+    merged = []
+    index_by_key = {}
+
+    def _normalized_key(cookie_dict):
+        if not isinstance(cookie_dict, dict):
+            return None
+
+        name = cookie_dict.get("name")
+        if not name:
+            return None
+
+        domain = cookie_dict.get("domain")
+        path = cookie_dict.get("path")
+
+        return (
+            str(name),
+            str(domain) if domain is not None else None,
+            str(path) if path is not None else None,
+        )
+
+    for cookie in existing_cookies or []:
+        key = _normalized_key(cookie)
+        if key is None:
+            continue
+        index_by_key[key] = len(merged)
+        merged.append(dict(cookie))
+
+    for cookie in new_cookies or []:
+        key = _normalized_key(cookie)
+        if key is None:
+            continue
+        cookie_payload = dict(cookie)
+        existing_index = index_by_key.get(key)
+        if existing_index is not None:
+            merged[existing_index] = cookie_payload
+        else:
+            index_by_key[key] = len(merged)
+            merged.append(cookie_payload)
+
+    return merged
+
+
 def _sanitize_body_preview(body, limit=200):
     """Collapse whitespace and clip the body for safe logging."""
 
@@ -1345,6 +1390,47 @@ def get_new_rss_entries(
                     ", ".join(session_cookie_summaries),
                 )
             feed_response = session.get(feed_url, timeout=30)
+
+            existing_cookie_dicts = list(cookies or [])
+            before_name_set = {
+                str(cookie.get("name"))
+                for cookie in existing_cookie_dicts
+                if isinstance(cookie, dict) and cookie.get("name")
+            }
+
+            session_cookie_dicts = []
+            session_cookie_jar = getattr(session, "cookies", None)
+            if session_cookie_jar:
+                try:
+                    iterator = iter(session_cookie_jar)
+                except TypeError:
+                    iterator = []
+                for cookie in iterator:
+                    if cookie is None:
+                        continue
+                    try:
+                        serialized = _serialize_requests_cookie(cookie)
+                    except AttributeError:
+                        continue
+                    session_cookie_dicts.append(serialized)
+
+            cookies = _merge_cookie_dicts(existing_cookie_dicts, session_cookie_dicts)
+            has_cookies = bool(cookies)
+
+            after_name_set = {
+                str(cookie.get("name"))
+                for cookie in cookies
+                if isinstance(cookie, dict) and cookie.get("name")
+            }
+
+            logging.debug(
+                "Authenticated feed cookie names before merge: %s",
+                sorted(before_name_set),
+            )
+            logging.debug(
+                "Authenticated feed cookie names after merge: %s",
+                sorted(after_name_set),
+            )
             prepared_request = getattr(feed_response, "request", None)
             request_headers = getattr(prepared_request, "headers", {}) or {}
             if request_headers:

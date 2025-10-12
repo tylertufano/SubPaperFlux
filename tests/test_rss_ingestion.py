@@ -269,6 +269,111 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
 
 
 
+def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
+    import subpaperflux
+
+    published = datetime(2024, 1, 2, tzinfo=timezone.utc)
+
+    class FakeSession:
+        def __init__(self):
+            self.headers = {}
+            self.cookies = requests.cookies.RequestsCookieJar()
+
+        def get(self, url, timeout=30):
+            self.cookies.set(
+                "cf_clearance",
+                "fresh-token",
+                domain=".example.com",
+                path="/",
+            )
+            response = requests.Response()
+            response.status_code = 200
+            response._content = b"<rss></rss>"
+            response.url = url
+            response.encoding = "utf-8"
+            return response
+
+    fake_session = FakeSession()
+    monkeypatch.setattr("subpaperflux.requests.Session", lambda: fake_session)
+
+    class FakeEntry:
+        title = "Paywalled Story"
+        link = "https://example.com/article"
+        summary = ""
+        tags = []
+        enclosures = []
+        published_parsed = published.timetuple()
+
+    class FakeFeed:
+        def __init__(self):
+            self.feed = type(
+                "FeedMeta",
+                (),
+                {"title": "Example", "link": "", "language": "en"},
+            )()
+            self.entries = [FakeEntry()]
+
+    monkeypatch.setattr("subpaperflux.feedparser.parse", lambda _: FakeFeed())
+
+    captured_cookies: list[dict[str, object]] | None = None
+
+    def fake_article_fetch(url, cookies, header_overrides=None):
+        nonlocal captured_cookies
+        captured_cookies = list(cookies or [])
+        return "<html>full content</html>"
+
+    monkeypatch.setattr(
+        "subpaperflux.get_article_html_with_cookies", fake_article_fetch
+    )
+
+    config = configparser.ConfigParser()
+    config.add_section("RSS_FEED_CONFIG")
+    config.set("RSS_FEED_CONFIG", "feed_url", "https://example.com/rss.xml")
+    config.set("RSS_FEED_CONFIG", "poll_frequency", "1h")
+    config.set("RSS_FEED_CONFIG", "is_paywalled", "true")
+    config.set("RSS_FEED_CONFIG", "rss_requires_auth", "true")
+    rss_section = config["RSS_FEED_CONFIG"]
+
+    state = {
+        "last_rss_timestamp": datetime(2024, 1, 1, tzinfo=timezone.utc),
+        "last_rss_poll_time": datetime(2024, 1, 1, tzinfo=timezone.utc),
+        "last_miniflux_refresh_time": datetime(2024, 1, 1, tzinfo=timezone.utc),
+        "force_run": False,
+        "force_sync_and_purge": False,
+        "bookmarks": {},
+    }
+
+    existing_cookies = [
+        {"name": "sessionid", "value": "abc", "domain": "example.com"},
+        {
+            "name": "cf_clearance",
+            "value": "stale-token",
+            "domain": ".example.com",
+            "path": "/",
+        },
+    ]
+
+    entries = subpaperflux.get_new_rss_entries(
+        config_file="/tmp/config.ini",
+        feed_url="https://example.com/rss.xml",
+        instapaper_config={},
+        app_creds={},
+        rss_feed_config=rss_section,
+        instapaper_ini_config={},
+        cookies=existing_cookies,
+        state=state,
+        site_config={},
+    )
+
+    assert entries and entries[0]["raw_html_content"] == "<html>full content</html>"
+    assert captured_cookies is not None
+    cf_cookies = [
+        cookie
+        for cookie in captured_cookies
+        if isinstance(cookie, dict) and cookie.get("name") == "cf_clearance"
+    ]
+    assert cf_cookies, "Expected cf_clearance cookie to be forwarded to article fetch."
+    assert any(cookie.get("value") == "fresh-token" for cookie in cf_cookies)
 
 
 def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
