@@ -95,11 +95,13 @@ const defaultFolders = {
   ],
 };
 
-const defaultCredentials = {
+type SimpleList<T = any> = { items: T[] };
+
+const defaultCredentials: SimpleList = {
   items: [],
 };
 
-const defaultSiteConfigs = {
+const defaultSiteConfigs: SimpleList = {
   items: [],
 };
 
@@ -107,6 +109,8 @@ type RenderOptions = {
   feeds?: typeof defaultFeeds;
   tags?: typeof defaultTags;
   folders?: typeof defaultFolders;
+  credentials?: SimpleList;
+  siteConfigs?: SimpleList;
   mutate?: ReturnType<typeof vi.fn>;
   tagMutate?: ReturnType<typeof vi.fn>;
   folderMutate?: ReturnType<typeof vi.fn>;
@@ -116,6 +120,8 @@ function renderPage({
   feeds = defaultFeeds,
   tags = defaultTags,
   folders = defaultFolders,
+  credentials = defaultCredentials,
+  siteConfigs = defaultSiteConfigs,
   mutate = vi.fn().mockResolvedValue(undefined),
   tagMutate = vi.fn().mockResolvedValue(undefined),
   folderMutate = vi.fn().mockResolvedValue(undefined),
@@ -127,11 +133,11 @@ function renderPage({
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/site-configs",
-      value: makeSWRSuccess(defaultSiteConfigs),
+      value: makeSWRSuccess(siteConfigs),
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/credentials",
-      value: makeSWRSuccess(defaultCredentials),
+      value: makeSWRSuccess(credentials),
     },
     {
       matcher: (key: any) => Array.isArray(key) && key[0] === "/v1/bookmarks/tags",
@@ -273,6 +279,108 @@ describe("FeedsPage", () => {
     const payload = openApiSpies.createFeed.mock.calls[0][0].feed;
     expect(payload.tagIds).toContain("tag-new");
     expect(payload.folderId).toBe("folder-new");
+  });
+
+  it("requires a site login pair when marking a new feed as paywalled", async () => {
+    const siteConfigs = {
+      items: [{ id: "config-1", name: "Example Site" }],
+    };
+    const credentials = {
+      items: [
+        {
+          id: "cred-1",
+          description: "Example Credential",
+          kind: "site_login",
+          data: { site_config_id: "config-1" },
+        },
+      ],
+    };
+    const { mutate } = renderPage({ siteConfigs, credentials });
+
+    const urlInput = screen.getByLabelText("Feed URL") as HTMLInputElement;
+    fireEvent.change(urlInput, { target: { value: "https://example.com/paywalled" } });
+
+    const paywalledCheckbox = screen.getByLabelText("Paywalled") as HTMLInputElement;
+    expect(paywalledCheckbox.checked).toBe(false);
+    fireEvent.click(paywalledCheckbox);
+    expect(paywalledCheckbox.checked).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await screen.findByText(
+      "Site login credentials are required when RSS requires authentication or content is paywalled",
+    );
+    expect(openApiSpies.createFeed).not.toHaveBeenCalled();
+
+    const siteLoginSelect = screen.getByLabelText(
+      "Select a site login or configuration (optional)",
+    ) as HTMLSelectElement;
+    fireEvent.change(siteLoginSelect, { target: { value: "cred-1::config-1" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => expect(openApiSpies.createFeed).toHaveBeenCalledTimes(1));
+    const payload = openApiSpies.createFeed.mock.calls[0][0].feed;
+    expect(payload.siteConfigId).toBe("config-1");
+    expect(payload.siteLoginCredentialId).toBe("cred-1");
+    await waitFor(() => expect(mutate).toHaveBeenCalled());
+  });
+
+  it("blocks editing when paywall is enabled without a credential/config pair", async () => {
+    const siteConfigs = {
+      items: [{ id: "config-1", name: "Example Site" }],
+    };
+    const credentials = {
+      items: [
+        {
+          id: "cred-1",
+          description: "Example Credential",
+          kind: "site_login",
+          data: { site_config_id: "config-1" },
+        },
+      ],
+    };
+    const feeds = {
+      items: [
+        {
+          ...defaultFeeds.items[0],
+          id: "feed-no-login",
+          siteConfigId: "",
+          siteLoginCredentialId: "",
+        },
+      ],
+    };
+    const { mutate } = renderPage({ feeds, siteConfigs, credentials });
+
+    const table = await screen.findByRole("table", { name: "Feeds table" });
+    const row = within(table).getByText("https://news.example.com/rss").closest("tr") as HTMLTableRowElement;
+
+    fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
+
+    const editPaywalledCheckbox = within(row).getByLabelText("Paywalled") as HTMLInputElement;
+    expect(editPaywalledCheckbox.checked).toBe(false);
+    fireEvent.click(editPaywalledCheckbox);
+    expect(editPaywalledCheckbox.checked).toBe(true);
+
+    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+
+    await screen.findByText(
+      "Site login credentials are required when RSS requires authentication or content is paywalled",
+    );
+    expect(openApiSpies.updateFeed).not.toHaveBeenCalled();
+
+    const editSelect = within(row).getByLabelText(
+      "Select a site login or configuration (optional)",
+    ) as HTMLSelectElement;
+    fireEvent.change(editSelect, { target: { value: "cred-1::config-1" } });
+
+    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(openApiSpies.updateFeed).toHaveBeenCalledTimes(1));
+    const updatePayload = openApiSpies.updateFeed.mock.calls[0][0].feed;
+    expect(updatePayload.siteConfigId).toBe("config-1");
+    expect(updatePayload.siteLoginCredentialId).toBe("cred-1");
+    await waitFor(() => expect(mutate).toHaveBeenCalled());
   });
 
   it("prevents editing the initial lookback after the first poll", async () => {
