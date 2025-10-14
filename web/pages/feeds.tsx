@@ -315,6 +315,11 @@ export default function Feeds() {
 
   async function createFeed() {
     if (!url.trim()) { setBanner({ kind: 'error', message: t('feeds_error_url_required') }); return }
+    const requiresSiteLogin = paywalled || rssAuth
+    if (requiresSiteLogin && (!siteConfigId || !siteLoginCredentialId)) {
+      setBanner({ kind: 'error', message: t('feeds_error_site_login_required') })
+      return
+    }
     try {
       await feedsApi.createFeedFeedsPost({ feed: {
         url,
@@ -376,6 +381,11 @@ export default function Feeds() {
   async function saveEdit(id: string) {
     try {
       const lookbackLocked = Boolean(editRow?.lastRssPollAt)
+      const requiresSiteLogin = Boolean(editRow?.isPaywalled || editRow?.rssRequiresAuth)
+      if (requiresSiteLogin && (!editRow?.siteConfigId || !editRow?.siteLoginCredentialId)) {
+        setBanner({ kind: 'error', message: t('feeds_error_site_login_required') })
+        return
+      }
       const payload: any = {
         url: editRow.url,
         pollFrequency: editRow.pollFrequency,
@@ -480,6 +490,7 @@ export default function Feeds() {
             id="create-feed-site-config"
             className="input md:col-span-2"
             aria-label={t('feeds_field_site_login_select')}
+            aria-required={paywalled || rssAuth}
             value={siteLoginSelection}
             onChange={e => {
               const value = e.target.value
@@ -619,6 +630,7 @@ export default function Feeds() {
                           <select
                             className="input w-full"
                             value={editRow.siteLoginSelection || ''}
+                            aria-required={Boolean(editRow.isPaywalled || editRow.rssRequiresAuth)}
                             onChange={e => {
                               const value = e.target.value
                               const option = siteLoginOptions.find(opt => opt.value === value)

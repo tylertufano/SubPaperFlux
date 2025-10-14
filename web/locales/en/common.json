@@ -401,6 +401,7 @@
   "jobs_dead_table_label": "Dead-letter Jobs",
   "jobs_dead_retry_success": "Job requeued",
   "feeds_error_url_required": "URL is required",
+  "feeds_error_site_login_required": "Site login credentials are required when RSS requires authentication or content is paywalled",
   "feeds_create_success": "Feed created",
   "feeds_confirm_delete": "Delete feed?",
   "feeds_delete_success": "Feed deleted",
