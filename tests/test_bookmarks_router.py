@@ -4,7 +4,6 @@ import json
 import time
 from uuid import uuid4
 
-import httpx
 import pytest
 from datetime import datetime
 from fastapi.testclient import TestClient
@@ -623,12 +622,11 @@ def test_bulk_publish_stream_cancellation(monkeypatch):
     assert processed == ["https://example.com/one"]
 
 
-def test_bookmark_preview_sanitizes_html(monkeypatch):
+def test_bookmark_preview_sanitizes_html():
     from app.db import init_db, get_session
     from app.main import create_app
     from app.models import Bookmark
     from app.auth.oidc import get_current_user
-    from app.routers import bookmarks as bookmarks_router
 
     app = create_app()
     init_db()
@@ -643,7 +641,6 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
         "<img src=\"https://allowed.example/image.jpg\" alt=\"Legit\" />"
         "<p>Content</p></div></body></html>"
     )
-    monkeypatch.setattr(bookmarks_router, "_fetch_html", lambda url: sample_html)
 
     with next(get_session()) as session:
         bm = Bookmark(
@@ -652,6 +649,7 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
             title="Gamma",
             url="https://example.com/article",
             content_location="https://example.com/content",
+            raw_html_content=sample_html,
         )
         session.add(bm)
         session.commit()
@@ -677,44 +675,6 @@ def test_bookmark_preview_sanitizes_html(monkeypatch):
     assert resp.headers["content-type"].startswith("text/html")
 
 
-def test_bookmark_preview_uses_url_when_content_location_missing(monkeypatch):
-    from app.db import init_db, get_session
-    from app.main import create_app
-    from app.models import Bookmark
-    from app.auth.oidc import get_current_user
-    from app.routers import bookmarks as bookmarks_router
-
-    app = create_app()
-    init_db()
-    app.dependency_overrides[get_current_user] = lambda: {"sub": "u42"}
-
-    calls: list[str] = []
-
-    def fake_fetch(url: str) -> str:
-        calls.append(url)
-        return "<p>OK</p>"
-
-    monkeypatch.setattr(bookmarks_router, "_fetch_html", fake_fetch)
-
-    with next(get_session()) as session:
-        bm = Bookmark(
-            owner_user_id="u42",
-            instapaper_bookmark_id="105",
-            title="Delta",
-            url="https://fallback.test/article",
-            content_location=None,
-        )
-        session.add(bm)
-        session.commit()
-        bookmark_id = bm.id
-
-    client = TestClient(app)
-    resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
-    assert resp.status_code == 200
-    assert calls == ["https://fallback.test/article"]
-    assert "OK" in resp.text
-
-
 def test_bookmark_preview_handles_missing_content():
     from app.db import init_db, get_session
     from app.main import create_app
@@ -736,27 +696,21 @@ def test_bookmark_preview_handles_missing_content():
     assert resp.status_code == 404
 
 
-def test_bookmark_preview_fetch_error(monkeypatch):
+def test_bookmark_preview_handles_empty_html_content():
     from app.db import init_db, get_session
     from app.main import create_app
     from app.models import Bookmark
     from app.auth.oidc import get_current_user
-    from app.routers import bookmarks as bookmarks_router
 
     app = create_app()
     init_db()
-    app.dependency_overrides[get_current_user] = lambda: {"sub": "ufail"}
-
-    def fake_fetch(url: str) -> str:
-        raise httpx.RequestError("boom", request=httpx.Request("GET", url))
-
-    monkeypatch.setattr(bookmarks_router, "_fetch_html", fake_fetch)
+    app.dependency_overrides[get_current_user] = lambda: {"sub": "u10"}
 
     with next(get_session()) as session:
         bm = Bookmark(
-            owner_user_id="ufail",
-            instapaper_bookmark_id="404",
-            url="https://example.net/article",
+            owner_user_id="u10",
+            instapaper_bookmark_id="334",
+            raw_html_content="",
         )
         session.add(bm)
         session.commit()
@@ -764,4 +718,4 @@ def test_bookmark_preview_fetch_error(monkeypatch):
 
     client = TestClient(app)
     resp = client.get(f"/v1/bookmarks/{bookmark_id}/preview")
-    assert resp.status_code == 502
+    assert resp.status_code == 404
