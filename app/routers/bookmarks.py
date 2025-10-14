@@ -8,10 +8,8 @@ import shlex
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, Iterable, List, Optional
-from urllib.parse import urlparse
 from uuid import uuid4
 
-import httpx
 from bleach.sanitizer import Cleaner
 from bs4 import BeautifulSoup, Doctype
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -67,8 +65,6 @@ router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
 
 
 ALLOWED_REGEX_FLAGS = {"i"}
-
-_FETCHABLE_SCHEMES = {"http", "https"}
 
 _ALLOWED_PREVIEW_TAGS = {
     "a",
@@ -236,38 +232,6 @@ def _require_owner_or_permission(
         status.HTTP_403_FORBIDDEN,
         detail=forbidden_detail or "Forbidden",
     )
-
-
-def _normalize_preview_url(url: str) -> Optional[str]:
-    if not url:
-        return None
-    try:
-        parsed = urlparse(url)
-    except Exception:  # pragma: no cover - defensive
-        return None
-    if parsed.scheme:
-        return url if parsed.scheme.lower() in _FETCHABLE_SCHEMES else None
-    if parsed.netloc:
-        return parsed._replace(scheme="https").geturl()
-    return None
-
-
-def _resolve_preview_source(bookmark: "Bookmark") -> Optional[str]:
-    for candidate in (bookmark.content_location, bookmark.url):
-        normalized = _normalize_preview_url(candidate) if candidate else None
-        if normalized:
-            return normalized
-    return None
-
-
-def _fetch_html(url: str) -> str:
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; SubPaperFlux/1.0)"}
-    with httpx.Client(timeout=10.0, follow_redirects=True, headers=headers) as client:
-        response = client.get(url)
-        response.raise_for_status()
-        return response.text
-
-
 def _sanitize_html_content(html: str) -> str:
     if not html:
         return ""
@@ -1039,27 +1003,9 @@ def preview_bookmark(
         attempted_action="preview",
         permission=PERMISSION_READ_BOOKMARKS,
     )
-    preview_url = _resolve_preview_source(bm)
-    if not preview_url:
+    if not bm.raw_html_content:
         raise HTTPException(status_code=404, detail="No content available for preview")
-    try:
-        raw_html = _fetch_html(preview_url)
-    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
-        logging.warning(
-            "Failed to fetch bookmark preview bookmark_id=%s url=%s: %s",
-            bookmark_id,
-            preview_url,
-            exc,
-        )
-        raise HTTPException(status_code=502, detail="Unable to fetch bookmark content") from exc
-    except Exception as exc:  # pragma: no cover - defensive
-        logging.exception(
-            "Unexpected error fetching bookmark preview bookmark_id=%s url=%s",
-            bookmark_id,
-            preview_url,
-        )
-        raise HTTPException(status_code=502, detail="Unable to fetch bookmark content") from exc
-    sanitized = _sanitize_html_content(raw_html)
+    sanitized = _sanitize_html_content(bm.raw_html_content)
     return HTMLResponse(content=sanitized or "")
 
 
