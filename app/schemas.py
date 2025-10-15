@@ -145,7 +145,7 @@ class SiteConfigBase(BaseModel):
 
     name: str
     site_url: AnyHttpUrl
-    owner_user_id: constr(strip_whitespace=True, min_length=1)
+    owner_user_id: constr(strip_whitespace=True, min_length=1) | None
     success_text_class: str = ""
     expected_success_text: str = ""
     required_cookies: List[str] = Field(default_factory=list)
@@ -153,6 +153,7 @@ class SiteConfigBase(BaseModel):
 
 class SiteConfigCreateBase(SiteConfigBase):
     id: Optional[str] = None
+    owner_user_id: constr(strip_whitespace=True, min_length=1) | None = None
 
 
 class SiteConfigSelenium(SiteConfigCreateBase):
@@ -581,6 +582,7 @@ class SiteConfigOutBase(SiteConfigBase):
     model_config = ConfigDict(extra="ignore")
 
     id: str
+    owner_user_id: constr(strip_whitespace=True, min_length=1)
 
 
 class SiteConfigSeleniumOut(SiteConfigOutBase):

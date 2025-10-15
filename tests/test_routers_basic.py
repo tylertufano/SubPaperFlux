@@ -349,6 +349,25 @@ def test_credentials_and_siteconfigs(client):
             "delete",
         ]
 
+
+def test_create_api_site_config_without_owner_id_uses_current_user(client):
+    payload = {
+        "name": "API Without Owner",
+        "site_url": "https://ownerless.example.com",
+        "login_type": "api",
+        "api_config": {
+            "endpoint": "https://ownerless.example.com/login",
+            "method": "POST",
+            "body": {"username": "{{username}}", "password": "{{password}}"},
+        },
+        "required_cookies": ["session"],
+    }
+
+    response = client.post("/v1/site-configs", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["owner_user_id"] == "u1"
+
     r_admin_audit = client.get("/v1/admin/audit")
     assert r_admin_audit.status_code == 200
     audit_payload = r_admin_audit.json()

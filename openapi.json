@@ -9500,8 +9500,15 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9546,7 +9553,6 @@
         "required": [
           "name",
           "site_url",
-          "owner_user_id",
           "api_config"
         ],
         "title": "SiteConfigApi"
@@ -9622,8 +9628,15 @@
             "title": "Site Url"
           },
           "owner_user_id": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Owner User Id"
           },
           "success_text_class": {
@@ -9668,7 +9681,6 @@
         "required": [
           "name",
           "site_url",
-          "owner_user_id",
           "selenium_config"
         ],
         "title": "SiteConfigSelenium"
