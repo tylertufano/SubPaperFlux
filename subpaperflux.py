@@ -7,6 +7,7 @@ import time
 import requests
 import re
 import logging
+import pprint
 from typing import Any, Dict, Optional, Callable
 from datetime import datetime, timedelta, timezone
 from glob import glob
@@ -1875,6 +1876,70 @@ def _extract_json_pointer(document, pointer):
     return current
 
 
+_SENSITIVE_LOG_KEYS = {
+    "password",
+    "pass",
+    "passwd",
+    "pwd",
+    "token",
+    "secret",
+    "authorization",
+    "cookie",
+    "set-cookie",
+    "x-api-key",
+    "api-key",
+    "access_token",
+    "refresh_token",
+}
+
+
+def _redact_sensitive_data(value):
+    if isinstance(value, dict):
+        redacted = {}
+        for key, inner_value in value.items():
+            if isinstance(key, str) and key.lower() in _SENSITIVE_LOG_KEYS:
+                redacted[key] = "***REDACTED***"
+            else:
+                redacted[key] = _redact_sensitive_data(inner_value)
+        return redacted
+    if isinstance(value, list):
+        return [_redact_sensitive_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_data(item) for item in value)
+    if isinstance(value, bytes):
+        return f"<bytes:{len(value)}>"
+    if isinstance(value, str) and len(value) > 256:
+        return value[:253] + "..."
+    return value
+
+
+def _build_request_log_snapshot(response):
+    if response is None:
+        return {}
+    request = getattr(response, "request", None)
+    if request is None:
+        return {}
+
+    snapshot = {}
+    method = getattr(request, "method", None)
+    if method:
+        snapshot["method"] = method
+    url = getattr(request, "url", None)
+    if url:
+        snapshot["url"] = url
+    headers = getattr(request, "headers", None)
+    if headers:
+        try:
+            snapshot["headers"] = dict(headers)
+        except Exception:
+            snapshot["headers"] = {k: v for k, v in headers.items()}
+    body = getattr(request, "body", None)
+    if body not in (None, b""):
+        snapshot["body"] = body
+
+    return _redact_sensitive_data(snapshot)
+
+
 def _execute_api_step(session, step_config, context, config_name, step_name):
     endpoint = step_config.get("endpoint")
     method = (step_config.get("method") or "GET").upper()
@@ -1933,6 +1998,19 @@ def _execute_api_step(session, step_config, context, config_name, step_name):
     logging.info(
         f"Performing API {step_name} step for {config_name}: {method} {endpoint}"
     )
+
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        sanitized_request = {}
+        for key in ("headers", "params", "json", "data"):
+            if key in request_kwargs:
+                sanitized_request[key] = _redact_sensitive_data(request_kwargs[key])
+        if sanitized_request:
+            logging.debug(
+                "API %s request details for %s: %s",
+                step_name,
+                config_name,
+                pprint.pformat(sanitized_request),
+            )
 
     try:
         response = session.request(method, endpoint, **request_kwargs)
@@ -2024,11 +2102,30 @@ def _login_with_api(config_name, site_config, login_credentials):
             message = f"API login request failed for {config_name}."
             return {"cookies": [], "login_type": "api", "error": message}
         details["status_code"] = response.status_code
+        request_snapshot = _build_request_log_snapshot(response)
+        if request_snapshot:
+            details["request"] = request_snapshot
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                logging.debug(
+                    "API login request snapshot for %s: %s",
+                    config_name,
+                    pprint.pformat(request_snapshot),
+                )
         if response.status_code >= 400:
             message = (
                 f"API login returned status {response.status_code} for {config_name}."
             )
             logging.error(message)
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                body_preview = getattr(response, "text", "")
+                if isinstance(body_preview, str) and len(body_preview) > 1024:
+                    body_preview = body_preview[:1021] + "..."
+                logging.debug(
+                    "API login response body for %s (status %s): %s",
+                    config_name,
+                    response.status_code,
+                    body_preview,
+                )
             return {"cookies": [], "login_type": "api", "error": message}
 
         jar_cookies = {cookie.name: cookie for cookie in session.cookies}
