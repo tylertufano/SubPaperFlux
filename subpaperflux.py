@@ -1891,10 +1891,18 @@ def _execute_api_step(session, step_config, context, config_name, step_name):
     rendered_body = _render_template(body, context) if body is not None else None
 
     request_kwargs = {"headers": rendered_headers}
-    if method in ("GET", "DELETE") and isinstance(rendered_body, dict):
-        request_kwargs["params"] = rendered_body
-    elif rendered_body is not None:
-        request_kwargs["json"] = rendered_body
+
+    if rendered_body is not None:
+        if method in ("GET", "DELETE"):
+            if isinstance(rendered_body, dict):
+                request_kwargs["params"] = rendered_body
+            else:
+                request_kwargs["data"] = rendered_body
+        else:
+            if isinstance(rendered_body, (dict, list)):
+                request_kwargs["json"] = rendered_body
+            else:
+                request_kwargs["data"] = rendered_body
 
     logging.info(
         f"Performing API {step_name} step for {config_name}: {method} {endpoint}"
