@@ -31,7 +31,7 @@ function JobScheduleUpdateFromJSONTyped(json, ignoreDiscriminator) {
     if ((json === undefined) || (json === null)) {
         return json;
     }
-    return Object.assign(Object.assign({}, json), { 'scheduleName': !(0, runtime_1.exists)(json, 'schedule_name') ? undefined : json['schedule_name'], 'jobType': !(0, runtime_1.exists)(json, 'job_type') ? undefined : json['job_type'], 'payload': !(0, runtime_1.exists)(json, 'payload') ? undefined : json['payload'], 'tags': !(0, runtime_1.exists)(json, 'tags') ? undefined : json['tags'], 'folderId': !(0, runtime_1.exists)(json, 'folder_id') ? undefined : json['folder_id'], 'frequency': !(0, runtime_1.exists)(json, 'frequency') ? undefined : json['frequency'], 'nextRunAt': !(0, runtime_1.exists)(json, 'next_run_at') ? undefined : json['next_run_at'], 'isActive': !(0, runtime_1.exists)(json, 'is_active') ? undefined : json['is_active'] });
+    return Object.assign(Object.assign({}, json), { 'scheduleName': !(0, runtime_1.exists)(json, 'schedule_name') ? undefined : json['schedule_name'], 'jobType': !(0, runtime_1.exists)(json, 'job_type') ? undefined : json['job_type'], 'payload': !(0, runtime_1.exists)(json, 'payload') ? undefined : json['payload'], 'tags': !(0, runtime_1.exists)(json, 'tags') ? undefined : json['tags'], 'folderId': !(0, runtime_1.exists)(json, 'folder_id') ? undefined : json['folder_id'], 'siteLoginCredentialId': !(0, runtime_1.exists)(json, 'site_login_credential_id') ? undefined : json['site_login_credential_id'], 'siteLoginConfigId': !(0, runtime_1.exists)(json, 'site_login_config_id') ? undefined : json['site_login_config_id'], 'frequency': !(0, runtime_1.exists)(json, 'frequency') ? undefined : json['frequency'], 'nextRunAt': !(0, runtime_1.exists)(json, 'next_run_at') ? undefined : json['next_run_at'], 'isActive': !(0, runtime_1.exists)(json, 'is_active') ? undefined : json['is_active'] });
 }
 exports.JobScheduleUpdateFromJSONTyped = JobScheduleUpdateFromJSONTyped;
 function JobScheduleUpdateToJSON(value) {
@@ -41,6 +41,6 @@ function JobScheduleUpdateToJSON(value) {
     if (value === null) {
         return null;
     }
-    return Object.assign(Object.assign({}, value), { 'schedule_name': value.scheduleName, 'job_type': value.jobType, 'payload': value.payload, 'tags': value.tags, 'folder_id': value.folderId, 'frequency': value.frequency, 'next_run_at': value.nextRunAt, 'is_active': value.isActive });
+    return Object.assign(Object.assign({}, value), { 'schedule_name': value.scheduleName, 'job_type': value.jobType, 'payload': value.payload, 'tags': value.tags, 'folder_id': value.folderId, 'site_login_credential_id': value.siteLoginCredentialId, 'site_login_config_id': value.siteLoginConfigId, 'frequency': value.frequency, 'next_run_at': value.nextRunAt, 'is_active': value.isActive });
 }
 exports.JobScheduleUpdateToJSON = JobScheduleUpdateToJSON;

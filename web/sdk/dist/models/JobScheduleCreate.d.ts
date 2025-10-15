@@ -53,6 +53,18 @@ export interface JobScheduleCreate {
      * @type {any}
      * @memberof JobScheduleCreate
      */
+    siteLoginCredentialId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
+    siteLoginConfigId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobScheduleCreate
+     */
     frequency: any | null;
     /**
      *

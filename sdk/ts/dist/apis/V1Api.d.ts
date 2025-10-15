@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 import * as runtime from '../runtime';
-import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkOut, BookmarksPage, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleOut, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
+import type { AdminOrganizationCreate, AdminOrganizationDetail, AdminOrganizationMembershipChange, AdminOrganizationUpdate, AdminOrganizationsPage, AdminRoleCreate, AdminRoleDetail, AdminRoleUpdate, AdminRolesPage, AdminUserOut, AdminUserRoleOverridesUpdate, AdminUserUpdate, AdminUsersPage, ApiTokenCreate, ApiTokenOut, ApiTokenWithSecret, ApiTokensPage, AuditLogsPage, BookmarkOut, BookmarksPage, Credential, CredentialsPage, Feed, FeedOut, FeedsPage, FolderCreate, FolderOut, FolderUpdate, InstapaperLoginRequest, JobOut, JobRequest, JobScheduleOut, JobSchedulesPage, JobsPage, MeOut, MeUpdate, SiteConfigsPage, SiteLoginCookiesOut, SiteWelcomeSettingOut, StatusResponse, TagCreate, TagOut, TagUpdate, TemplateListResponse } from '../models';
 export interface AddOrganizationMemberV1AdminOrgsOrganizationIdMembersPostRequest {
     organizationId: any;
     adminOrganizationMembershipChange: AdminOrganizationMembershipChange;
@@ -145,6 +145,9 @@ export interface ExportBookmarksV1BookmarksExportGetRequest {
 }
 export interface GetBookmarkV1BookmarksBookmarkIdGetRequest {
     bookmarkId: any;
+}
+export interface GetCredentialCookiesV1V1CredentialsCredIdCookiesGetRequest {
+    credId: any;
 }
 export interface GetCredentialV1V1CredentialsCredIdGetRequest {
     credId: any;
@@ -700,6 +703,14 @@ export declare class V1Api extends runtime.BaseAPI {
      * Get Bookmark
      */
     getBookmarkV1BookmarksBookmarkIdGet(requestParameters: GetBookmarkV1BookmarksBookmarkIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookmarkOut>;
+    /**
+     * Get cookies for a site login credential
+     */
+    getCredentialCookiesV1V1CredentialsCredIdCookiesGetRaw(requestParameters: GetCredentialCookiesV1V1CredentialsCredIdCookiesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SiteLoginCookiesOut>>;
+    /**
+     * Get cookies for a site login credential
+     */
+    getCredentialCookiesV1V1CredentialsCredIdCookiesGet(requestParameters: GetCredentialCookiesV1V1CredentialsCredIdCookiesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SiteLoginCookiesOut>;
     /**
      * Get credential
      */

@@ -32,29 +32,23 @@ export interface ApiConfig {
      */
     method: ApiConfigMethodEnum;
     /**
-     *
+     * 
      * @type {{ [key: string]: any; }}
      * @memberof ApiConfig
      */
     headers?: { [key: string]: any; } | null;
     /**
-     *
+     * 
      * @type {any}
      * @memberof ApiConfig
      */
     body?: any | null;
     /**
-     *
+     * 
      * @type {{ [key: string]: any; }}
      * @memberof ApiConfig
      */
     cookies?: { [key: string]: any; } | null;
-    /**
-     *
-     * @type {any}
-     * @memberof ApiConfig
-     */
-    cookiesToStore?: any | null;
 }
 
 
@@ -97,7 +91,6 @@ export function ApiConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'headers': !exists(json, 'headers') ? undefined : json['headers'],
         'body': !exists(json, 'body') ? undefined : json['body'],
         'cookies': !exists(json, 'cookies') ? undefined : json['cookies'],
-        'cookiesToStore': !exists(json, 'cookies_to_store') ? undefined : json['cookies_to_store'],
     };
 }
 
@@ -115,7 +108,6 @@ export function ApiConfigToJSON(value?: ApiConfig | null): any {
         'headers': value.headers,
         'body': value.body,
         'cookies': value.cookies,
-        'cookies_to_store': value.cookiesToStore,
     };
 }
 

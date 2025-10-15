@@ -1248,6 +1248,41 @@ class V1Api extends runtime.BaseAPI {
         });
     }
     /**
+     * Get cookies for a site login credential
+     */
+    getCredentialCookiesV1V1CredentialsCredIdCookiesGetRaw(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (requestParameters.credId === null || requestParameters.credId === undefined) {
+                throw new runtime.RequiredError('credId', 'Required parameter requestParameters.credId was null or undefined when calling getCredentialCookiesV1V1CredentialsCredIdCookiesGet.');
+            }
+            const queryParameters = {};
+            const headerParameters = {};
+            if (this.configuration && this.configuration.accessToken) {
+                const token = this.configuration.accessToken;
+                const tokenString = yield token("HTTPBearer", []);
+                if (tokenString) {
+                    headerParameters["Authorization"] = `Bearer ${tokenString}`;
+                }
+            }
+            const response = yield this.request({
+                path: `/v1/credentials/{cred_id}/cookies`.replace(`{${"cred_id"}}`, encodeURIComponent(String(requestParameters.credId))),
+                method: 'GET',
+                headers: headerParameters,
+                query: queryParameters,
+            }, initOverrides);
+            return new runtime.JSONApiResponse(response, (jsonValue) => (0, models_1.SiteLoginCookiesOutFromJSON)(jsonValue));
+        });
+    }
+    /**
+     * Get cookies for a site login credential
+     */
+    getCredentialCookiesV1V1CredentialsCredIdCookiesGet(requestParameters, initOverrides) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.getCredentialCookiesV1V1CredentialsCredIdCookiesGetRaw(requestParameters, initOverrides);
+            return yield response.value();
+        });
+    }
+    /**
      * Get credential
      */
     getCredentialV1V1CredentialsCredIdGetRaw(requestParameters, initOverrides) {
