@@ -33,7 +33,23 @@ export type SiteConfigRequest =
 
 export function serializeSiteConfigRequest(body: SiteConfigRequest) {
   if ('apiConfig' in body) {
-    return SiteConfigApiToJSON(body as SiteConfigApi)
+    const payload = SiteConfigApiToJSON(body as SiteConfigApi)
+    const apiConfig = (body as SiteConfigApi).apiConfig as SiteConfigApi['apiConfig'] & {
+      cookiesToStore?: string[]
+      cookies_to_store?: string[]
+    }
+
+    const cookiesToStore =
+      apiConfig?.cookiesToStore ?? apiConfig?.cookies_to_store ?? (payload as any)?.api_config?.cookies_to_store
+
+    if (cookiesToStore !== undefined) {
+      payload.api_config = {
+        ...payload.api_config,
+        cookies_to_store: cookiesToStore,
+      }
+    }
+
+    return payload
   }
   if ('seleniumConfig' in body) {
     return SiteConfigSeleniumToJSON(body as SiteConfigSelenium)
