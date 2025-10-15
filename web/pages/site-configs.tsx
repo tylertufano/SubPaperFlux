@@ -61,11 +61,11 @@ function createEmptyForm(loginType: LoginType): SiteConfigFormState {
     required_cookies: '',
     login_type: 'api',
     api_config: {
-      endpoint: '',
+      login_url: '',
       method: 'POST',
-      headers: '',
-      body: '',
-      cookies: '',
+      login_id_param: '',
+      password_param: '',
+      cookies_to_store: '',
     },
   }
   return base
@@ -107,15 +107,47 @@ function normalizeSeleniumConfig(config: SiteConfigSeleniumOut): SiteConfigFormS
 }
 
 function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
-  const stringify = (value: Record<string, any> | null | undefined) => {
-    if (value == null) return value === null ? 'null' : ''
-    try {
-      return JSON.stringify(value, null, 2)
-    } catch {
-      return ''
+  const apiConfig = config.apiConfig || ({} as any)
+  const cookiesToStoreRaw =
+    (Array.isArray((apiConfig as any).cookiesToStore)
+      ? (apiConfig as any).cookiesToStore
+      : Array.isArray((apiConfig as any).cookies_to_store)
+      ? (apiConfig as any).cookies_to_store
+      : null) || null
+  const cookiesToStore = Array.isArray(cookiesToStoreRaw)
+    ? (cookiesToStoreRaw as string[])
+    : null
+
+  const body = apiConfig.body
+  let loginIdParam = ''
+  let passwordParam = ''
+  const additionalBody: Record<string, any> = {}
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    for (const [key, value] of Object.entries(body as Record<string, any>)) {
+      if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (!loginIdParam && (trimmed === '{{username}}' || trimmed === '{{credential.username}}')) {
+          loginIdParam = key
+          continue
+        }
+        if (!passwordParam && (trimmed === '{{password}}' || trimmed === '{{credential.password}}')) {
+          passwordParam = key
+          continue
+        }
+      }
+      additionalBody[key] = value
     }
   }
-  return {
+
+  const cookieMapRaw = apiConfig.cookies as Record<string, string> | undefined
+  const cookieNamesFromMap = cookieMapRaw && Object.keys(cookieMapRaw).length > 0 ? Object.keys(cookieMapRaw) : []
+  const cookiesToStoreString = cookiesToStore?.length
+    ? cookiesToStore.join(',')
+    : cookieNamesFromMap.length
+    ? cookieNamesFromMap.join(',')
+    : ''
+
+  const result: SiteConfigFormState = {
     id: config.id,
     ownerUserId: config.ownerUserId ?? null,
     name: config.name,
@@ -125,13 +157,28 @@ function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
     required_cookies: config.requiredCookies?.length ? config.requiredCookies.join(',') : '',
     login_type: 'api',
     api_config: {
-      endpoint: config.apiConfig?.endpoint ?? '',
-      method: (config.apiConfig?.method ?? 'POST').toUpperCase(),
-      headers: stringify(config.apiConfig?.headers as Record<string, string> | undefined),
-      body: stringify(config.apiConfig?.body as Record<string, any> | null | undefined),
-      cookies: stringify(config.apiConfig?.cookies as Record<string, string> | undefined),
+      login_url: apiConfig.endpoint ?? '',
+      method: (apiConfig.method ?? 'POST').toUpperCase(),
+      login_id_param: loginIdParam,
+      password_param: passwordParam,
+      cookies_to_store: cookiesToStoreString,
     },
   }
+
+  const headers = apiConfig.headers as Record<string, string> | undefined
+  if (headers && Object.keys(headers).length > 0) {
+    ;(result.api_config as ApiFormState['api_config']).headers_object = headers
+  }
+
+  if (Object.keys(additionalBody).length > 0) {
+    ;(result.api_config as ApiFormState['api_config']).additional_body = additionalBody
+  }
+
+  if (cookieMapRaw && Object.keys(cookieMapRaw).length > 0) {
+    ;(result.api_config as ApiFormState['api_config']).cookie_map = cookieMapRaw
+  }
+
+  return result
 }
 
 function toFormState(config: SiteConfigSeleniumOut | SiteConfigApiOut): SiteConfigFormState {
@@ -173,12 +220,19 @@ function isFormReady(form: SiteConfigFormState): boolean {
     return hasStoredCookies || hasRequiredCookies
   }
   const config = form.api_config
-  const endpoint = config?.endpoint?.trim()
+  const endpoint = config?.login_url?.trim()
   const method = config?.method?.trim().toUpperCase()
   if (!endpoint || !isValidUrl(endpoint)) return false
   if (!method || !API_METHOD_SET.has(method as (typeof API_METHOD_OPTIONS)[number])) return false
-  const storedCookiesRaw = config?.cookies ?? ''
-  const hasStoredCookies = Boolean(storedCookiesRaw.trim())
+  const loginIdParam = config?.login_id_param?.trim()
+  const passwordParam = config?.password_param?.trim()
+  if (!loginIdParam) return false
+  if (!passwordParam) return false
+  const storedCookiesRaw = config?.cookies_to_store ?? ''
+  const hasStoredCookies = storedCookiesRaw
+    .split(',')
+    .map((value) => value.trim())
+    .some((value) => value.length > 0)
   return hasStoredCookies || hasRequiredCookies
 }
 
@@ -309,8 +363,8 @@ export default function SiteConfigs() {
       const storedRaw = overrides.stored ?? state.selenium_config?.cookies_to_store ?? ''
       return hasCommaSeparatedValues(storedRaw)
     }
-    const storedRaw = overrides.stored ?? state.api_config?.cookies ?? ''
-    return Boolean(storedRaw.trim())
+    const storedRaw = overrides.stored ?? state.api_config?.cookies_to_store ?? ''
+    return hasCommaSeparatedValues(storedRaw)
   }
 
   const renderSeleniumFields = (
@@ -450,34 +504,44 @@ export default function SiteConfigs() {
     return (
       <>
         <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-login-url`}>
+            {t('site_configs_field_login_url_label')}
+          </label>
           <input
-            id={`${idPrefix}-endpoint`}
+            id={`${idPrefix}-login-url`}
             className="input"
-            placeholder={t('site_configs_field_endpoint_placeholder')}
-            aria-label={t('site_configs_field_endpoint_placeholder')}
-            aria-invalid={Boolean(errors['api.endpoint'])}
-            aria-describedby={errors['api.endpoint'] ? `${idPrefix}-endpoint-error` : undefined}
-            value={config?.endpoint ?? ''}
-          onChange={(e) => {
-            const value = e.target.value
-            update((prev) => ({ ...prev, api_config: { ...prev.api_config, endpoint: value } }))
-            const trimmed = value.trim()
-            let message = ''
-            if (!trimmed) {
-              message = t('site_configs_error_endpoint_required')
-            } else if (!isValidUrl(trimmed)) {
-              message = t('site_configs_error_endpoint_invalid')
-            }
-            setErrors((prev) => ({ ...prev, 'api.endpoint': message }))
-          }}
-        />
-          {errors['api.endpoint'] && (
-            <div id={`${idPrefix}-endpoint-error`} className="text-sm text-red-600">{errors['api.endpoint']}</div>
+            placeholder={t('site_configs_field_login_url_placeholder')}
+            aria-invalid={Boolean(errors['api.login_url'])}
+            aria-describedby={[
+              `${idPrefix}-login-url-help`,
+              errors['api.login_url'] ? `${idPrefix}-login-url-error` : null,
+            ]
+              .filter(Boolean)
+              .join(' ') || undefined}
+            value={config?.login_url ?? ''}
+            onChange={(e) => {
+              const value = e.target.value
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, login_url: value } }))
+              const trimmed = value.trim()
+              let message = ''
+              if (!trimmed) {
+                message = t('site_configs_error_login_url_required')
+              } else if (!isValidUrl(trimmed)) {
+                message = t('site_configs_error_login_url_invalid')
+              }
+              setErrors((prev) => ({ ...prev, 'api.login_url': message }))
+            }}
+          />
+          <p id={`${idPrefix}-login-url-help`} className="text-xs text-gray-500">
+            {t('site_configs_field_login_url_help')}
+          </p>
+          {errors['api.login_url'] && (
+            <div id={`${idPrefix}-login-url-error`} className="text-sm text-red-600">{errors['api.login_url']}</div>
           )}
         </div>
         <div>
-          <label className="sr-only" htmlFor={`${idPrefix}-method`}>
-            {t('site_configs_field_method_placeholder')}
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-method`}>
+            {t('site_configs_field_method_label')}
           </label>
           <select
             id={`${idPrefix}-method`}
@@ -500,66 +564,82 @@ export default function SiteConfigs() {
           )}
         </div>
         <div className="md:col-span-2">
-          <textarea
-            id={`${idPrefix}-headers`}
-            className="input h-28"
-            placeholder={t('site_configs_field_headers_placeholder')}
-            aria-label={t('site_configs_field_headers_placeholder')}
-            aria-invalid={Boolean(errors['api.headers'])}
-            aria-describedby={errors['api.headers'] ? `${idPrefix}-headers-error` : undefined}
-            value={config?.headers ?? ''}
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-login-id`}>
+            {t('site_configs_field_login_id_param_label')}
+          </label>
+          <input
+            id={`${idPrefix}-login-id`}
+            className="input"
+            placeholder={t('site_configs_field_login_id_param_placeholder')}
+            aria-invalid={Boolean(errors['api.login_id_param'])}
+            aria-describedby={errors['api.login_id_param'] ? `${idPrefix}-login-id-error` : undefined}
+            value={config?.login_id_param ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              update((prev) => ({ ...prev, api_config: { ...prev.api_config, headers: value } }))
-              setErrors((prev) => ({ ...prev, 'api.headers': '' }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, login_id_param: value } }))
+              setErrors((prev) => ({ ...prev, 'api.login_id_param': value.trim() ? '' : t('site_configs_error_login_id_required') }))
             }}
           />
-          {errors['api.headers'] && (
-            <div id={`${idPrefix}-headers-error`} className="text-sm text-red-600">{errors['api.headers']}</div>
+          {errors['api.login_id_param'] && (
+            <div id={`${idPrefix}-login-id-error`} className="text-sm text-red-600">{errors['api.login_id_param']}</div>
           )}
         </div>
         <div className="md:col-span-2">
-          <textarea
-            id={`${idPrefix}-body`}
-            className="input h-28"
-            placeholder={t('site_configs_field_body_placeholder')}
-            aria-label={t('site_configs_field_body_placeholder')}
-            aria-invalid={Boolean(errors['api.body'])}
-            aria-describedby={errors['api.body'] ? `${idPrefix}-body-error` : undefined}
-            value={config?.body ?? ''}
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-password-param`}>
+            {t('site_configs_field_password_param_label')}
+          </label>
+          <input
+            id={`${idPrefix}-password-param`}
+            className="input"
+            placeholder={t('site_configs_field_password_param_placeholder')}
+            aria-invalid={Boolean(errors['api.password_param'])}
+            aria-describedby={errors['api.password_param'] ? `${idPrefix}-password-param-error` : undefined}
+            value={config?.password_param ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              update((prev) => ({ ...prev, api_config: { ...prev.api_config, body: value } }))
-              setErrors((prev) => ({ ...prev, 'api.body': '' }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, password_param: value } }))
+              setErrors((prev) => ({ ...prev, 'api.password_param': value.trim() ? '' : t('site_configs_error_password_param_required') }))
             }}
           />
-          {errors['api.body'] && (
-            <div id={`${idPrefix}-body-error`} className="text-sm text-red-600">{errors['api.body']}</div>
+          {errors['api.password_param'] && (
+            <div id={`${idPrefix}-password-param-error`} className="text-sm text-red-600">{errors['api.password_param']}</div>
           )}
         </div>
         <div className="md:col-span-2">
-          <textarea
-            id={`${idPrefix}-cookies-json`}
-            className="input h-28"
-            placeholder={t('site_configs_field_cookies_json_placeholder')}
-            aria-label={t('site_configs_field_cookies_json_placeholder')}
-            aria-invalid={Boolean(errors['api.cookies'])}
-            aria-describedby={errors['api.cookies'] ? `${idPrefix}-cookies-json-error` : undefined}
-            value={config?.cookies ?? ''}
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-api-cookies`}>
+            {t('site_configs_field_api_cookies_label')}
+          </label>
+          <input
+            id={`${idPrefix}-api-cookies`}
+            className="input"
+            placeholder={t('site_configs_field_api_cookies_placeholder')}
+            aria-invalid={Boolean(errors['api.cookies_to_store'])}
+            aria-describedby={[
+              `${idPrefix}-api-cookies-help`,
+              errors['api.cookies_to_store'] ? `${idPrefix}-api-cookies-error` : null,
+            ]
+              .filter(Boolean)
+              .join(' ') || undefined}
+            value={config?.cookies_to_store ?? ''}
             onChange={(e) => {
               const value = e.target.value
-              update((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies: value } }))
+              update((prev) => ({ ...prev, api_config: { ...prev.api_config, cookies_to_store: value } }))
               setErrors((prev) => ({
                 ...prev,
-                'api.cookies': '',
+                'api.cookies_to_store': hasAnyCookies(current, { stored: value })
+                  ? ''
+                  : t('site_configs_error_required_cookies'),
                 required_cookies: hasAnyCookies(current, { stored: value })
                   ? ''
                   : t('site_configs_error_required_cookies'),
               }))
             }}
           />
-          {errors['api.cookies'] && (
-            <div id={`${idPrefix}-cookies-json-error`} className="text-sm text-red-600">{errors['api.cookies']}</div>
+          <p id={`${idPrefix}-api-cookies-help`} className="text-xs text-gray-500">
+            {t('site_configs_field_api_cookies_help')}
+          </p>
+          {errors['api.cookies_to_store'] && (
+            <div id={`${idPrefix}-api-cookies-error`} className="text-sm text-red-600">{errors['api.cookies_to_store']}</div>
           )}
         </div>
       </>

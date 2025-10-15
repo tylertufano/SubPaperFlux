@@ -51,6 +51,18 @@ export interface JobScheduleUpdate {
      * @type {any}
      * @memberof JobScheduleUpdate
      */
+    siteLoginCredentialId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobScheduleUpdate
+     */
+    siteLoginConfigId?: any | null;
+    /**
+     *
+     * @type {any}
+     * @memberof JobScheduleUpdate
+     */
     frequency?: any | null;
     /**
      *
