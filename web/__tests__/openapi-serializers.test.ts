@@ -44,9 +44,8 @@ describe('serializeSiteConfigRequest', () => {
       apiConfig: {
         endpoint: 'https://api.example/login',
         method: 'POST',
-        headers: { 'X-Test': 'value' },
-        body: { username: '{{credential.username}}' },
-        cookies: { session: '{{credential.password}}' },
+        body: { username: '{{username}}', password: '{{password}}' },
+        cookiesToStore: ['session'],
       },
     })
 
@@ -56,9 +55,8 @@ describe('serializeSiteConfigRequest', () => {
       api_config: {
         endpoint: 'https://api.example/login',
         method: 'POST',
-        headers: { 'X-Test': 'value' },
-        body: { username: '{{credential.username}}' },
-        cookies: { session: '{{credential.password}}' },
+        body: { username: '{{username}}', password: '{{password}}' },
+        cookies_to_store: ['session'],
       },
       required_cookies: ['session'],
     })

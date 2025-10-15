@@ -75,11 +75,14 @@ export type SeleniumSiteConfigForm = SiteConfigCommonForm & {
 export type ApiSiteConfigForm = SiteConfigCommonForm & {
   login_type: 'api'
   api_config: {
-    endpoint: string
+    login_url: string
     method: string
-    headers?: string
-    body?: string
-    cookies?: string
+    login_id_param: string
+    password_param: string
+    cookies_to_store: string
+    headers_object?: Record<string, string>
+    additional_body?: Record<string, any>
+    cookie_map?: Record<string, string>
   }
 }
 
@@ -116,6 +119,7 @@ export type NormalizedSiteConfigPayload =
         headers?: Record<string, string>
         body?: Record<string, any> | null
         cookies?: Record<string, string>
+        cookiesToStore?: string[]
       }
     })
 
@@ -222,15 +226,21 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     return { errors, payload }
   }
 
-  const api = form.api_config || { endpoint: '', method: '' }
-  const endpoint = api.endpoint?.trim() ?? ''
+  const api = form.api_config || {
+    login_url: '',
+    method: '',
+    login_id_param: '',
+    password_param: '',
+    cookies_to_store: '',
+  }
+  const endpoint = api.login_url?.trim() ?? ''
   const methodRaw = api.method?.trim().toUpperCase() ?? ''
   let method: SupportedHttpMethod | undefined
 
   if (!endpoint) {
-    errors['api.endpoint'] = 'site_configs_error_endpoint_required'
+    errors['api.login_url'] = 'site_configs_error_login_url_required'
   } else if (!isValidUrl(endpoint)) {
-    errors['api.endpoint'] = 'site_configs_error_endpoint_invalid'
+    errors['api.login_url'] = 'site_configs_error_login_url_invalid'
   }
 
   if (!methodRaw) {
@@ -241,58 +251,29 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     method = methodRaw
   }
 
-  let headersObject: Record<string, string> | undefined
-  const headersRaw = api.headers?.trim()
-  if (headersRaw) {
-    const parsed = parseJsonSafe(headersRaw)
-    if (!parsed.ok || typeof parsed.data !== 'object' || parsed.data === null || Array.isArray(parsed.data)) {
-      errors['api.headers'] = 'site_configs_error_headers_object'
-    } else {
-      const candidate = parsed.data as Record<string, unknown>
-      const invalidEntry = Object.entries(candidate).find(([, value]) => typeof value !== 'string')
-      if (invalidEntry) {
-        errors['api.headers'] = 'site_configs_error_headers_object'
-      } else if (Object.keys(candidate).length > 0) {
-        headersObject = candidate as Record<string, string>
-      }
-    }
+  const loginIdParam = api.login_id_param?.trim() ?? ''
+  if (!loginIdParam) {
+    errors['api.login_id_param'] = 'site_configs_error_login_id_required'
   }
 
-  let cookiesObject: Record<string, string> | undefined
-  const cookiesRaw = api.cookies?.trim()
-  if (cookiesRaw) {
-    const parsed = parseJsonSafe(cookiesRaw)
-    if (!parsed.ok || typeof parsed.data !== 'object' || parsed.data === null || Array.isArray(parsed.data)) {
-      errors['api.cookies'] = 'site_configs_error_cookies_object'
-    } else {
-      const candidate = parsed.data as Record<string, unknown>
-      const invalidEntry = Object.entries(candidate).find(([, value]) => typeof value !== 'string')
-      if (invalidEntry) {
-        errors['api.cookies'] = 'site_configs_error_cookies_object'
-      } else if (Object.keys(candidate).length > 0) {
-        cookiesObject = candidate as Record<string, string>
-      }
-    }
+  const passwordParam = api.password_param?.trim() ?? ''
+  if (!passwordParam) {
+    errors['api.password_param'] = 'site_configs_error_password_param_required'
   }
 
-  const storedCookieNames = cookiesObject ? Object.keys(cookiesObject) : []
-  if (storedCookieNames.length === 0 && requiredCookies.length === 0) {
+  const cookiesRaw = api.cookies_to_store ?? ''
+  const cookiesList = Array.from(
+    new Set(
+      cookiesRaw
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  )
+
+  if (cookiesList.length === 0 && requiredCookies.length === 0) {
+    errors['api.cookies_to_store'] = 'site_configs_error_required_cookies'
     errors.required_cookies = 'site_configs_error_required_cookies'
-  }
-
-  let bodyObject: Record<string, any> | null | undefined
-  const bodyRaw = api.body?.trim()
-  if (bodyRaw) {
-    const parsed = parseJsonSafe(bodyRaw)
-    if (!parsed.ok) {
-      errors['api.body'] = 'site_configs_error_body_object'
-    } else if (parsed.data === null) {
-      bodyObject = null
-    } else if (typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
-      errors['api.body'] = 'site_configs_error_body_object'
-    } else {
-      bodyObject = parsed.data as Record<string, any>
-    }
   }
 
   const hasErrors = Object.values(errors).some(Boolean)
@@ -304,6 +285,13 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     throw new Error('Invalid state: HTTP method should be defined when no validation errors are present')
   }
 
+  const baseBody: Record<string, any> = {
+    [loginIdParam]: '{{username}}',
+    [passwordParam]: '{{password}}',
+  }
+  const additionalBody = api.additional_body && Object.keys(api.additional_body).length > 0 ? api.additional_body : undefined
+  const bodyPayload = additionalBody ? { ...additionalBody, ...baseBody } : baseBody
+
   const payload: NormalizedSiteConfigPayload = {
     loginType: 'api',
     name: trimmedName,
@@ -311,17 +299,18 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     apiConfig: {
       endpoint,
       method,
+      body: bodyPayload,
     },
   }
 
-  if (headersObject) {
-    payload.apiConfig.headers = headersObject
+  if (api.headers_object && Object.keys(api.headers_object).length > 0) {
+    payload.apiConfig.headers = { ...api.headers_object }
   }
-  if (cookiesObject) {
-    payload.apiConfig.cookies = cookiesObject
+  if (api.cookie_map && Object.keys(api.cookie_map).length > 0) {
+    payload.apiConfig.cookies = { ...api.cookie_map }
   }
-  if (bodyObject !== undefined) {
-    payload.apiConfig.body = bodyObject
+  if (cookiesList.length > 0) {
+    payload.apiConfig.cookiesToStore = cookiesList
   }
 
   if (successTextClass) {

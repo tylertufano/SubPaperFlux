@@ -94,8 +94,9 @@ const apiItem: SiteConfigApiOut = {
     endpoint: 'https://example.com/api/login',
     method: 'POST',
     headers: { 'X-Test': 'value' },
-    body: { ok: true },
-    cookies: { session: 'abc' },
+    body: { login: '{{username}}', pass: '{{password}}', remember_me: true },
+    cookiesToStore: ['session'],
+    cookies: { refresh: '$.tokens.refresh' },
   },
 }
 
@@ -126,11 +127,11 @@ export type SiteConfigFormControls = {
   loginSelector?: HTMLInputElement
   postLoginSelector?: HTMLInputElement
   cookiesText?: HTMLInputElement
-  apiEndpoint?: HTMLInputElement
+  apiLoginUrl?: HTMLInputElement
   apiMethod?: HTMLSelectElement
-  apiHeaders?: HTMLTextAreaElement
-  apiBody?: HTMLTextAreaElement
-  apiCookies?: HTMLTextAreaElement
+  apiLoginIdParam?: HTMLInputElement
+  apiPasswordParam?: HTMLInputElement
+  apiCookiesToStore?: HTMLInputElement
 }
 
 export type SiteConfigsSetupResult = RenderResult & {
@@ -160,13 +161,13 @@ function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormCon
     base.postLoginSelector = withinForm.getByLabelText(/Post-login selector/i) as HTMLInputElement
     base.cookiesText = withinForm.getByLabelText(/Cookies to store/i) as HTMLInputElement
   }
-  const apiEndpoint = withinForm.queryByLabelText(/API endpoint URL/i) as HTMLInputElement | null
-  if (apiEndpoint) {
-    base.apiEndpoint = apiEndpoint
+  const apiLoginUrl = withinForm.queryByLabelText(/Login URL/i) as HTMLInputElement | null
+  if (apiLoginUrl) {
+    base.apiLoginUrl = apiLoginUrl
     base.apiMethod = withinForm.getByLabelText(/HTTP method/i, { selector: 'select' }) as HTMLSelectElement
-    base.apiHeaders = withinForm.getByLabelText(/Headers JSON/i) as HTMLTextAreaElement
-    base.apiBody = withinForm.getByLabelText(/Request body JSON/i) as HTMLTextAreaElement
-    base.apiCookies = withinForm.getByLabelText(/Cookies JSON/i) as HTMLTextAreaElement
+    base.apiLoginIdParam = withinForm.getByLabelText(/Login ID parameter name/i) as HTMLInputElement
+    base.apiPasswordParam = withinForm.getByLabelText(/Password parameter name/i) as HTMLInputElement
+    base.apiCookiesToStore = withinForm.getByLabelText(/^Cookies to store$/i) as HTMLInputElement
   }
   return base
 }
@@ -329,7 +330,7 @@ describe('site configs creation validation', () => {
     }
   })
 
-  it('validates API configs including JSON payloads', async () => {
+  it('validates API configs including structured inputs', async () => {
     const { form, withinForm, inputs, unmount } = await setup()
 
     try {
@@ -343,9 +344,17 @@ describe('site configs creation validation', () => {
 
       fireEvent.submit(form)
 
-      expect(apiInputs.apiEndpoint).toHaveAttribute('aria-describedby', 'create-site-config-endpoint-error')
+      const loginUrlDescribedBy = apiInputs.apiLoginUrl?.getAttribute('aria-describedby') ?? ''
+      expect(loginUrlDescribedBy.split(' ')).toContain('create-site-config-login-url-error')
+      expect(apiInputs.apiLoginIdParam).toHaveAttribute('aria-describedby', 'create-site-config-login-id-error')
+      expect(apiInputs.apiPasswordParam).toHaveAttribute('aria-describedby', 'create-site-config-password-param-error')
+      const cookiesDescribedBy = apiInputs.apiCookiesToStore?.getAttribute('aria-describedby') ?? ''
+      expect(cookiesDescribedBy.split(' ')).toContain('create-site-config-api-cookies-error')
       expect(apiInputs.requiredCookies).toHaveAttribute('aria-describedby', 'create-site-config-required-cookies-error')
-      expect(withinForm.getByText('Add at least one cookie to store or require')).toBeInTheDocument()
+      expect(withinForm.getByText('Login URL is required')).toBeInTheDocument()
+      expect(withinForm.getByText('Enter a login ID parameter name')).toBeInTheDocument()
+      expect(withinForm.getByText('Enter a password parameter name')).toBeInTheDocument()
+      expect(withinForm.getAllByText('Add at least one cookie to store or require')).toHaveLength(2)
 
       fireEvent.change(apiInputs.successTextClass, { target: { value: 'alert-success' } })
       fireEvent.submit(form)
@@ -360,22 +369,19 @@ describe('site configs creation validation', () => {
 
       fireEvent.change(apiInputs.successTextClass, { target: { value: 'alert-success' } })
 
-      fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'notaurl' } })
+      fireEvent.change(apiInputs.apiLoginUrl!, { target: { value: 'notaurl' } })
       fireEvent.submit(form)
-      expect(withinForm.getByText('Enter a valid URL')).toBeInTheDocument()
+      expect(withinForm.getByText('Enter a valid login URL')).toBeInTheDocument()
 
-      fireEvent.change(apiInputs.apiEndpoint!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(apiInputs.apiLoginUrl!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(apiInputs.apiLoginIdParam!, { target: { value: 'user' } })
+      fireEvent.change(apiInputs.apiPasswordParam!, { target: { value: 'pass' } })
+      fireEvent.change(apiInputs.apiCookiesToStore!, { target: { value: 'session' } })
       fireEvent.change(apiInputs.apiMethod!, { target: { value: 'TRACE' } })
-      fireEvent.change(apiInputs.apiHeaders!, { target: { value: '{"X-Test": 123}' } })
-      fireEvent.change(apiInputs.apiCookies!, { target: { value: '{"sid": 42}' } })
-      fireEvent.change(apiInputs.apiBody!, { target: { value: '{ invalid json' } })
 
       fireEvent.submit(form)
 
       expect(withinForm.getByText(/Method is required|Choose a supported HTTP method/)).toBeInTheDocument()
-      expect(withinForm.getByText('Headers must be a JSON object of string values')).toBeInTheDocument()
-      expect(withinForm.getByText('Cookies must be a JSON object of string values')).toBeInTheDocument()
-      expect(withinForm.getByText('Body must be a JSON object or null')).toBeInTheDocument()
       expect(apiInputs.apiMethod).toHaveAttribute('aria-describedby', 'create-site-config-method-error')
       expect(createSiteConfigMock).not.toHaveBeenCalled()
     } finally {
@@ -438,11 +444,11 @@ describe('site configs creation success path', () => {
 
       fireEvent.change(inputs.name, { target: { value: 'API Login' } })
       fireEvent.change(inputs.siteUrl, { target: { value: 'https://api.example/login' } })
-      fireEvent.change(inputs.apiEndpoint!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(inputs.apiLoginUrl!, { target: { value: 'https://example.com/api/login' } })
       fireEvent.change(inputs.apiMethod!, { target: { value: 'POST' } })
-      fireEvent.change(inputs.apiHeaders!, { target: { value: '{"X-Test":"value"}' } })
-      fireEvent.change(inputs.apiBody!, { target: { value: '{"username":"{{credential.username}}"}' } })
-      fireEvent.change(inputs.apiCookies!, { target: { value: '{"session":"{{credential.password}}"}' } })
+      fireEvent.change(inputs.apiLoginIdParam!, { target: { value: 'user_id' } })
+      fireEvent.change(inputs.apiPasswordParam!, { target: { value: 'passcode' } })
+      fireEvent.change(inputs.apiCookiesToStore!, { target: { value: 'session, refresh' } })
       fireEvent.change(inputs.successTextClass, { target: { value: 'toast-success' } })
       fireEvent.change(inputs.expectedSuccessText, { target: { value: 'API login ok' } })
       fireEvent.change(inputs.requiredCookies, { target: { value: 'session, refresh' } })
@@ -463,9 +469,8 @@ describe('site configs creation success path', () => {
         apiConfig: {
           endpoint: 'https://example.com/api/login',
           method: 'POST',
-          headers: { 'X-Test': 'value' },
-          body: { username: '{{credential.username}}' },
-          cookies: { session: '{{credential.password}}' },
+          body: { user_id: '{{username}}', passcode: '{{password}}' },
+          cookiesToStore: ['session', 'refresh'],
         },
       })
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
