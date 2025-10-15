@@ -1890,7 +1890,30 @@ def _execute_api_step(session, step_config, context, config_name, step_name):
     rendered_headers = _render_template(headers, context) if headers else {}
     rendered_body = _render_template(body, context) if body is not None else None
 
-    request_kwargs = {"headers": rendered_headers}
+    request_kwargs: Dict[str, Any] = {}
+    if rendered_headers:
+        request_kwargs["headers"] = rendered_headers
+
+    def _header_value(name: str) -> Optional[str]:
+        lookup = name.lower()
+        if not rendered_headers:
+            return None
+        for key, value in rendered_headers.items():
+            if isinstance(key, str) and key.lower() == lookup:
+                return value
+        return None
+
+    content_type = None
+    header_value = _header_value("content-type")
+    if isinstance(header_value, str):
+        content_type = header_value.lower()
+
+    def _use_form_payload() -> bool:
+        if method in ("GET", "DELETE"):
+            return False
+        if not content_type:
+            return False
+        return "application/x-www-form-urlencoded" in content_type
 
     if rendered_body is not None:
         if method in ("GET", "DELETE"):
@@ -1900,7 +1923,10 @@ def _execute_api_step(session, step_config, context, config_name, step_name):
                 request_kwargs["data"] = rendered_body
         else:
             if isinstance(rendered_body, (dict, list)):
-                request_kwargs["json"] = rendered_body
+                if _use_form_payload():
+                    request_kwargs["data"] = rendered_body
+                else:
+                    request_kwargs["json"] = rendered_body
             else:
                 request_kwargs["data"] = rendered_body
 
