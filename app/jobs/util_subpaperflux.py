@@ -2,8 +2,9 @@ import json
 import logging
 import math
 import os
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+from urllib.parse import parse_qsl
 
 from sqlmodel import select
 
@@ -156,6 +157,258 @@ def _import_spf():
     import importlib
 
     return importlib.import_module("subpaperflux")
+
+
+_API_LOGGING_PATCH_ATTR = "__subpaperflux_api_logging_patched__"
+_SENSITIVE_KEYWORDS: Tuple[str, ...] = (
+    "password",
+    "pass",
+    "token",
+    "secret",
+    "authorization",
+    "cookie",
+    "session",
+    "key",
+)
+
+
+def _is_sensitive_key(name: Optional[str]) -> bool:
+    if not name:
+        return False
+    lowered = str(name).strip().lower()
+    return any(keyword in lowered for keyword in _SENSITIVE_KEYWORDS)
+
+
+def _redact_string_payload(value: str) -> str:
+    if not value:
+        return value
+
+    stripped = value.strip()
+    if not stripped:
+        return value
+
+    # Try JSON payloads first
+    try:
+        parsed_json = json.loads(value)
+    except json.JSONDecodeError:
+        parsed_json = None
+
+    if isinstance(parsed_json, (dict, list)):
+        return json.dumps(_redact_sensitive_data(parsed_json))
+
+    # Fall back to form/query payload parsing
+    if "=" in value:
+        try:
+            parts = parse_qsl(value, keep_blank_values=True)
+        except ValueError:
+            parts = []
+        if parts:
+            redacted_parts = []
+            for key, raw_val in parts:
+                if _is_sensitive_key(key):
+                    redacted_parts.append(f"{key}=***REDACTED***")
+                else:
+                    redacted_parts.append(f"{key}={raw_val}")
+            return "&".join(redacted_parts)
+
+    # Unknown format – avoid leaking long values by truncating
+    if len(value) > 256:
+        return value[:253] + "..."
+
+    return value
+
+
+def _redact_sensitive_data(value: Any) -> Any:
+    if isinstance(value, dict):
+        redacted: Dict[str, Any] = {}
+        for key, item in value.items():
+            if _is_sensitive_key(key):
+                redacted[key] = "***REDACTED***"
+            else:
+                redacted[key] = _redact_sensitive_data(item)
+        return redacted
+    if isinstance(value, list):
+        return [_redact_sensitive_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_data(item) for item in value)
+    if isinstance(value, str):
+        return _redact_string_payload(value)
+    return value
+
+
+def _normalize_headers_for_logging(headers: Any) -> Dict[str, Any]:
+    if isinstance(headers, dict):
+        return dict(headers)
+    if isinstance(headers, (list, tuple)):
+        normalized: Dict[str, Any] = {}
+        for item in headers:
+            if isinstance(item, (list, tuple)) and len(item) == 2:
+                key = item[0]
+                if key is None:
+                    continue
+                normalized[str(key)] = item[1]
+        return normalized
+    return {}
+
+
+def _build_api_request_preview(
+    spf_module: Any,
+    step_config: Dict[str, Any],
+    context: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    endpoint = (step_config or {}).get("endpoint")
+    if not endpoint:
+        return None
+
+    method = (step_config.get("method") or "GET").upper()
+    headers = step_config.get("headers") or {}
+    body = step_config.get("body")
+
+    render = getattr(spf_module, "_render_template", None)
+    if callable(render):
+        rendered_headers = render(headers, context) if headers else {}
+        rendered_body = render(body, context) if body is not None else None
+    else:
+        rendered_headers = headers
+        rendered_body = body
+
+    normalized_headers = _normalize_headers_for_logging(rendered_headers)
+
+    content_type = None
+    for header_name, header_value in normalized_headers.items():
+        if isinstance(header_name, str) and header_name.lower() == "content-type":
+            if isinstance(header_value, str):
+                content_type = header_value.lower()
+            break
+
+    payload_kind: Optional[str] = None
+    payload_value: Any = None
+
+    if rendered_body is not None:
+        if method in ("GET", "DELETE"):
+            if isinstance(rendered_body, dict):
+                payload_kind = "params"
+                payload_value = rendered_body
+            else:
+                payload_kind = "data"
+                payload_value = rendered_body
+        else:
+            if isinstance(rendered_body, (dict, list)):
+                if content_type and "application/x-www-form-urlencoded" in content_type:
+                    payload_kind = "data"
+                    payload_value = rendered_body
+                else:
+                    payload_kind = "json"
+                    payload_value = rendered_body
+            else:
+                payload_kind = "data"
+                payload_value = rendered_body
+
+    return {
+        "method": method,
+        "endpoint": endpoint,
+        "headers": normalized_headers,
+        "payload_kind": payload_kind,
+        "payload": payload_value,
+    }
+
+
+def _sanitize_request_preview(
+    preview: Optional[Dict[str, Any]]
+) -> Optional[Dict[str, Any]]:
+    if not preview:
+        return None
+
+    sanitized_headers = _redact_sensitive_data(preview.get("headers") or {})
+    payload = preview.get("payload")
+    sanitized_payload = _redact_sensitive_data(payload)
+
+    return {
+        "method": preview.get("method"),
+        "endpoint": preview.get("endpoint"),
+        "payload_kind": preview.get("payload_kind"),
+        "headers": sanitized_headers,
+        "payload": sanitized_payload,
+    }
+
+
+def _log_api_request_preview(
+    *,
+    spf_module: Any,
+    step_config: Dict[str, Any],
+    context: Dict[str, Any],
+    config_name: str,
+    step_name: str,
+) -> None:
+    try:
+        preview = _build_api_request_preview(spf_module, step_config, context)
+        sanitized = _sanitize_request_preview(preview)
+        if not sanitized:
+            return
+        payload_kind = sanitized.get("payload_kind") or "body"
+        payload = sanitized.get("payload")
+        payload_repr = payload if payload is not None else "<empty>"
+        logging.info(
+            "API %s request details for %s: %s %s, headers=%s, %s=%s",
+            step_name,
+            config_name,
+            sanitized.get("method"),
+            sanitized.get("endpoint"),
+            sanitized.get("headers"),
+            payload_kind,
+            payload_repr,
+        )
+    except Exception:
+        logging.debug(
+            "Failed to log API request details for %s (%s step)",
+            config_name,
+            step_name,
+            exc_info=True,
+        )
+
+
+def _ensure_api_logging_patch(spf_module: Any) -> None:
+    if not spf_module or getattr(spf_module, _API_LOGGING_PATCH_ATTR, False):
+        return
+
+    original_execute = getattr(spf_module, "_execute_api_step", None)
+    if not callable(original_execute):
+        return
+
+    def patched_execute(session, step_config, context, config_name, step_name):
+        _log_api_request_preview(
+            spf_module=spf_module,
+            step_config=step_config or {},
+            context=context or {},
+            config_name=config_name,
+            step_name=step_name,
+        )
+
+        response = original_execute(
+            session, step_config, context, config_name, step_name
+        )
+
+        if response is not None:
+            status_code = getattr(response, "status_code", None)
+            if isinstance(status_code, int) and status_code >= 400:
+                try:
+                    body_text = response.text
+                    if isinstance(body_text, str) and len(body_text) > 512:
+                        body_text = body_text[:509] + "..."
+                except Exception:
+                    body_text = "<unavailable>"
+                logging.info(
+                    "API %s response for %s returned status %s with body snippet: %s",
+                    step_name,
+                    config_name,
+                    status_code,
+                    body_text,
+                )
+
+        return response
+
+    setattr(spf_module, "_execute_api_step", patched_execute)
+    setattr(spf_module, _API_LOGGING_PATCH_ATTR, True)
 
 
 def _load_json(path: str) -> Dict[str, Any]:
@@ -542,6 +795,7 @@ def perform_login_and_save_cookies(
     owner_user_id: Optional[str],
 ) -> Dict[str, Any]:
     spf = _import_spf()
+    _ensure_api_logging_patch(spf)
 
     (
         credential_id,
