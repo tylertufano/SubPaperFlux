@@ -54,6 +54,13 @@ class IniSection:
         return s in ("1", "true", "yes", "on")
 
 
+_DEFAULT_API_LOGIN_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/127.0.0.0 Safari/537.36"
+)
+
+
 _HEADER_FIELD_NAMES: Tuple[str, ...] = (
     "article_headers",
     "content_headers",
@@ -150,6 +157,25 @@ def _merge_header_overrides_local(*candidates: Any) -> Dict[str, str]:
         if headers:
             merged.update(headers)
     return merged
+
+
+def _ensure_default_api_user_agent(api_config: Optional[Dict[str, Any]]) -> None:
+    if not isinstance(api_config, dict):
+        return
+
+    headers_source = api_config.get("headers")
+    normalized_headers = _coerce_header_mapping_like(headers_source)
+
+    has_user_agent = any(
+        isinstance(name, str) and name.lower() == "user-agent"
+        for name in normalized_headers
+    )
+
+    if not has_user_agent:
+        normalized_headers["User-Agent"] = _DEFAULT_API_LOGIN_USER_AGENT
+
+    if normalized_headers:
+        api_config["headers"] = normalized_headers
 
 
 def _import_spf():
@@ -732,10 +758,14 @@ def _resolve_site_login_context(
     elif login_type == "api":
         api_payload = site_config.setdefault("api_config", {})
         if isinstance(api_payload, dict):
-            site_config["api_config"] = dict(api_payload)
-            cookies_to_store_names = list(api_payload.get("cookies_to_store") or [])
+            normalized_api_payload = dict(api_payload)
+            _ensure_default_api_user_agent(normalized_api_payload)
+            site_config["api_config"] = normalized_api_payload
+            cookies_to_store_names = list(
+                normalized_api_payload.get("cookies_to_store") or []
+            )
             if not cookies_to_store_names:
-                cookie_map = api_payload.get("cookies") or {}
+                cookie_map = normalized_api_payload.get("cookies") or {}
                 if cookie_map:
                     cookies_to_store_names = list(cookie_map.keys())
 
