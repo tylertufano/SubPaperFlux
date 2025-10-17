@@ -100,6 +100,25 @@ const apiItem: SiteConfigApiOut = {
   },
 }
 
+const rawApiItemResponse = {
+  id: 'api-config-raw',
+  login_type: 'api',
+  name: 'Raw API Example',
+  site_url: 'https://raw.example/login',
+  owner_user_id: null,
+  success_text_class: 'toast toast-success',
+  expected_success_text: 'Raw API signed in',
+  required_cookies: ['session'],
+  api_config: {
+    endpoint: 'https://raw.example/api/login',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: { login: '{{username}}', pass: '{{password}}' },
+    cookies_to_store: ['session', 'refresh'],
+    cookies: { refresh: '$.tokens.refresh' },
+  },
+}
+
 export const defaultSiteConfigsResponse: SiteConfigsPage = {
   items: [seleniumItem],
   total: 1,
@@ -686,6 +705,30 @@ describe('site configs edit form', () => {
       expect(valueInputs).toHaveLength(1)
       expect(keyInputs[0].value).toBe('remember_me')
       expect(valueInputs[0].value).toBe('true')
+    } finally {
+      unmount()
+    }
+  })
+
+  it('hydrates api cookies to store values provided in snake_case responses', async () => {
+    const tableData: SiteConfigsPage = {
+      items: [rawApiItemResponse as any],
+      total: 1,
+      page: 1,
+      size: 25,
+      hasNext: false,
+      totalPages: 1,
+    }
+    const { unmount } = await setup({ data: tableData })
+
+    try {
+      const editButton = await screen.findByRole('button', { name: 'Edit' })
+      fireEvent.click(editButton)
+
+      const editForm = await screen.findByRole('form', { name: /edit site config/i })
+      const withinEditForm = within(editForm)
+      const cookiesInput = withinEditForm.getByLabelText('Cookies to store') as HTMLInputElement
+      expect(cookiesInput.value).toBe('session,refresh')
     } finally {
       unmount()
     }
