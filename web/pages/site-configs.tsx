@@ -9,6 +9,8 @@ import {
   type SeleniumSiteConfigForm,
   type ApiSiteConfigForm,
   type NormalizedSiteConfigPayload,
+  type ApiCustomBodyEntry,
+  type ApiPayloadMode,
   SUPPORTED_HTTP_METHODS,
 } from '../lib/validate'
 import { useI18n } from '../lib/i18n'
@@ -22,6 +24,30 @@ import { SiteConfigSeleniumOutFromJSON } from '../sdk/src/models/SiteConfigSelen
 
 const API_METHOD_OPTIONS = SUPPORTED_HTTP_METHODS
 const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
+const DEFAULT_JSON_CONTENT_TYPE = 'application/json'
+const FORM_URLENCODED_CONTENT_TYPE = 'application/x-www-form-urlencoded'
+
+function createCustomBodyEntry(key = '', value = ''): ApiCustomBodyEntry {
+  return {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+    key,
+    value,
+  }
+}
+
+function resolveContentTypeValue(mode: ApiPayloadMode): string {
+  return mode === 'form' ? FORM_URLENCODED_CONTENT_TYPE : DEFAULT_JSON_CONTENT_TYPE
+}
+
+function customEntriesToAdditionalBody(entries: ApiCustomBodyEntry[]): Record<string, string> {
+  const record: Record<string, string> = {}
+  for (const entry of entries) {
+    const key = entry.key?.trim()
+    if (!key) continue
+    record[key] = entry.value
+  }
+  return record
+}
 
 type SiteConfigFormState = (SiteConfigFormInput & { id?: string; ownerUserId?: string | null })
 
@@ -66,6 +92,10 @@ function createEmptyForm(loginType: LoginType): SiteConfigFormState {
       login_id_param: '',
       password_param: '',
       cookies_to_store: '',
+      headers_object: { 'Content-Type': DEFAULT_JSON_CONTENT_TYPE },
+      additional_body: {},
+      payload_mode: 'json',
+      custom_body_entries: [],
     },
   }
   return base
@@ -162,16 +192,60 @@ function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
       login_id_param: loginIdParam,
       password_param: passwordParam,
       cookies_to_store: cookiesToStoreString,
+      payload_mode: 'json',
+      custom_body_entries: [],
     },
   }
 
+  const customEntries: ApiCustomBodyEntry[] = []
+  for (const [key, value] of Object.entries(additionalBody)) {
+    const normalizedKey = typeof key === 'string' ? key : String(key)
+    const normalizedValue =
+      typeof value === 'string' ? value : value != null ? JSON.stringify(value) : ''
+    customEntries.push(createCustomBodyEntry(normalizedKey, normalizedValue))
+  }
+  ;(result.api_config as ApiFormState['api_config']).custom_body_entries = customEntries
+  ;(result.api_config as ApiFormState['api_config']).additional_body = customEntriesToAdditionalBody(customEntries)
+
   const headers = apiConfig.headers as Record<string, string> | undefined
+  let resolvedPayloadMode: ApiPayloadMode = 'json'
+  let normalizedHeaders: Record<string, string> | undefined
   if (headers && Object.keys(headers).length > 0) {
-    ;(result.api_config as ApiFormState['api_config']).headers_object = headers
+    normalizedHeaders = {}
+    for (const [key, rawValue] of Object.entries(headers)) {
+      const normalizedValue = typeof rawValue === 'string' ? rawValue : String(rawValue)
+      if (key.toLowerCase() === 'content-type') {
+        normalizedHeaders['Content-Type'] = normalizedValue
+        const lowered = normalizedValue.toLowerCase()
+        if (lowered.includes('x-www-form-urlencoded')) {
+          resolvedPayloadMode = 'form'
+        } else if (lowered.includes('json')) {
+          resolvedPayloadMode = 'json'
+        }
+      } else {
+        normalizedHeaders[key] = normalizedValue
+      }
+    }
   }
 
-  if (Object.keys(additionalBody).length > 0) {
-    ;(result.api_config as ApiFormState['api_config']).additional_body = additionalBody
+  const contentTypeValue = resolveContentTypeValue(resolvedPayloadMode)
+  if (!normalizedHeaders) {
+    normalizedHeaders = { 'Content-Type': contentTypeValue }
+  } else if (!normalizedHeaders['Content-Type']) {
+    normalizedHeaders['Content-Type'] = contentTypeValue
+  } else {
+    const lowered = normalizedHeaders['Content-Type'].toLowerCase()
+    if (resolvedPayloadMode === 'form' && !lowered.includes('x-www-form-urlencoded')) {
+      normalizedHeaders['Content-Type'] = contentTypeValue
+    }
+    if (resolvedPayloadMode === 'json' && !lowered.includes('json')) {
+      normalizedHeaders['Content-Type'] = contentTypeValue
+    }
+  }
+
+  ;(result.api_config as ApiFormState['api_config']).payload_mode = resolvedPayloadMode
+  if (normalizedHeaders && Object.keys(normalizedHeaders).length > 0) {
+    ;(result.api_config as ApiFormState['api_config']).headers_object = normalizedHeaders
   }
 
   if (cookieMapRaw && Object.keys(cookieMapRaw).length > 0) {
@@ -500,6 +574,83 @@ export default function SiteConfigs() {
     const update = (updater: (prev: ApiFormState) => ApiFormState) => {
       onChange((prev) => updater(prev as ApiFormState))
     }
+    const ensureHeadersForMode = (prevConfig: ApiFormState['api_config'], mode: ApiPayloadMode) => {
+      const headers = { ...(prevConfig.headers_object ?? {}) }
+      let contentTypeKey: string | null = null
+      for (const key of Object.keys(headers)) {
+        if (key.toLowerCase() === 'content-type') {
+          contentTypeKey = key
+          break
+        }
+      }
+      if (contentTypeKey && contentTypeKey !== 'Content-Type') {
+        headers['Content-Type'] = headers[contentTypeKey] as string
+        delete headers[contentTypeKey]
+      }
+      headers['Content-Type'] = resolveContentTypeValue(mode)
+      return headers
+    }
+    const setPayloadMode = (mode: ApiPayloadMode) => {
+      update((prev) => {
+        const prevConfig = prev.api_config
+        const headers = ensureHeadersForMode(prevConfig, mode)
+        return {
+          ...prev,
+          api_config: {
+            ...prevConfig,
+            payload_mode: mode,
+            headers_object: headers,
+          },
+        }
+      })
+    }
+    const addCustomEntry = () => {
+      update((prev) => {
+        const prevConfig = prev.api_config
+        const entries = prevConfig.custom_body_entries ?? []
+        const nextEntries = [...entries, createCustomBodyEntry()]
+        return {
+          ...prev,
+          api_config: {
+            ...prevConfig,
+            custom_body_entries: nextEntries,
+            additional_body: customEntriesToAdditionalBody(nextEntries),
+          },
+        }
+      })
+    }
+    const updateCustomEntry = (id: string, updates: Partial<ApiCustomBodyEntry>) => {
+      update((prev) => {
+        const prevConfig = prev.api_config
+        const entries = prevConfig.custom_body_entries ?? []
+        const nextEntries = entries.map((entry) => (entry.id === id ? { ...entry, ...updates } : entry))
+        return {
+          ...prev,
+          api_config: {
+            ...prevConfig,
+            custom_body_entries: nextEntries,
+            additional_body: customEntriesToAdditionalBody(nextEntries),
+          },
+        }
+      })
+    }
+    const removeCustomEntry = (id: string) => {
+      update((prev) => {
+        const prevConfig = prev.api_config
+        const entries = prevConfig.custom_body_entries ?? []
+        const nextEntries = entries.filter((entry) => entry.id !== id)
+        return {
+          ...prev,
+          api_config: {
+            ...prevConfig,
+            custom_body_entries: nextEntries,
+            additional_body: customEntriesToAdditionalBody(nextEntries),
+          },
+        }
+      })
+    }
+    const customEntries = config?.custom_body_entries ?? []
+    const payloadMode = config?.payload_mode ?? 'json'
     const idPrefix = `${prefix}-site-config`
     return (
       <>
@@ -562,6 +713,24 @@ export default function SiteConfigs() {
           {errors['api.method'] && (
             <div id={`${idPrefix}-method-error`} className="text-sm text-red-600">{errors['api.method']}</div>
           )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-payload-mode`}>
+            {t('site_configs_field_payload_mode_label')}
+          </label>
+          <select
+            id={`${idPrefix}-payload-mode`}
+            className="input"
+            value={payloadMode}
+            onChange={(e) => {
+              const value = e.target.value === 'form' ? 'form' : 'json'
+              setPayloadMode(value)
+            }}
+          >
+            <option value="json">{t('site_configs_field_payload_mode_json')}</option>
+            <option value="form">{t('site_configs_field_payload_mode_form')}</option>
+          </select>
+          <p className="text-xs text-gray-500">{t('site_configs_field_payload_mode_help')}</p>
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-login-id`}>
@@ -641,6 +810,70 @@ export default function SiteConfigs() {
           {errors['api.cookies_to_store'] && (
             <div id={`${idPrefix}-api-cookies-error`} className="text-sm text-red-600">{errors['api.cookies_to_store']}</div>
           )}
+        </div>
+        <div className="md:col-span-2">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-gray-700" htmlFor={`${idPrefix}-custom-body`}>
+              {t('site_configs_field_custom_body_label')}
+            </label>
+            <button type="button" className="btn btn-compact" onClick={addCustomEntry}>
+              {t('site_configs_field_custom_body_add')}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-2">{t('site_configs_field_custom_body_help')}</p>
+          <div className="flex flex-col gap-2" id={`${idPrefix}-custom-body`}>
+            {customEntries.length === 0 && (
+              <div className="text-sm text-gray-500">{t('site_configs_field_custom_body_empty')}</div>
+            )}
+            {customEntries.map((entry, index) => {
+              const keyId = `${idPrefix}-custom-body-key-${entry.id}`
+              const valueId = `${idPrefix}-custom-body-value-${entry.id}`
+              return (
+                <div key={entry.id} className="flex flex-col md:flex-row gap-2">
+                  <div className="flex-1">
+                    <label className="sr-only" htmlFor={keyId}>
+                      {t('site_configs_field_custom_body_key_label', { index: index + 1 })}
+                    </label>
+                    <input
+                      id={keyId}
+                      className="input"
+                      placeholder={t('site_configs_field_custom_body_key_placeholder')}
+                      aria-label={t('site_configs_field_custom_body_key_label', { index: index + 1 })}
+                      value={entry.key}
+                      onChange={(e) => {
+                        updateCustomEntry(entry.id, { key: e.target.value })
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="sr-only" htmlFor={valueId}>
+                      {t('site_configs_field_custom_body_value_label', { index: index + 1 })}
+                    </label>
+                    <input
+                      id={valueId}
+                      className="input"
+                      placeholder={t('site_configs_field_custom_body_value_placeholder')}
+                      aria-label={t('site_configs_field_custom_body_value_label', { index: index + 1 })}
+                      value={entry.value}
+                      onChange={(e) => {
+                        updateCustomEntry(entry.id, { value: e.target.value })
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      className="btn btn-compact"
+                      aria-label={t('site_configs_field_custom_body_remove', { index: index + 1 })}
+                      onClick={() => removeCustomEntry(entry.id)}
+                    >
+                      {t('site_configs_field_custom_body_remove_button')}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </>
     )

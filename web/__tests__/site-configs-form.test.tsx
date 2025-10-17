@@ -93,7 +93,7 @@ const apiItem: SiteConfigApiOut = {
   apiConfig: {
     endpoint: 'https://example.com/api/login',
     method: 'POST',
-    headers: { 'X-Test': 'value' },
+    headers: { 'Content-Type': 'application/json', 'X-Test': 'value' },
     body: { login: '{{username}}', pass: '{{password}}', remember_me: true },
     cookiesToStore: ['session'],
     cookies: { refresh: '$.tokens.refresh' },
@@ -129,9 +129,13 @@ export type SiteConfigFormControls = {
   cookiesText?: HTMLInputElement
   apiLoginUrl?: HTMLInputElement
   apiMethod?: HTMLSelectElement
+  apiPayloadMode?: HTMLSelectElement
   apiLoginIdParam?: HTMLInputElement
   apiPasswordParam?: HTMLInputElement
   apiCookiesToStore?: HTMLInputElement
+  apiAddCustomFieldButton?: HTMLButtonElement
+  apiCustomKeyInputs?: HTMLInputElement[]
+  apiCustomValueInputs?: HTMLInputElement[]
 }
 
 export type SiteConfigsSetupResult = RenderResult & {
@@ -165,9 +169,15 @@ function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormCon
   if (apiLoginUrl) {
     base.apiLoginUrl = apiLoginUrl
     base.apiMethod = withinForm.getByLabelText(/HTTP method/i, { selector: 'select' }) as HTMLSelectElement
+    base.apiPayloadMode = withinForm.getByLabelText(/Payload encoding/i, {
+      selector: 'select',
+    }) as HTMLSelectElement
     base.apiLoginIdParam = withinForm.getByLabelText(/Login ID parameter name/i) as HTMLInputElement
     base.apiPasswordParam = withinForm.getByLabelText(/Password parameter name/i) as HTMLInputElement
     base.apiCookiesToStore = withinForm.getByLabelText(/^Cookies to store$/i) as HTMLInputElement
+    base.apiAddCustomFieldButton = withinForm.getByRole('button', { name: /Add payload field/i }) as HTMLButtonElement
+    base.apiCustomKeyInputs = withinForm.queryAllByLabelText(/Custom payload key/i) as HTMLInputElement[]
+    base.apiCustomValueInputs = withinForm.queryAllByLabelText(/Custom payload value/i) as HTMLInputElement[]
   }
   return base
 }
@@ -471,8 +481,63 @@ describe('site configs creation success path', () => {
           method: 'POST',
           body: { user_id: '{{username}}', passcode: '{{password}}' },
           cookiesToStore: ['session', 'refresh'],
+          headers: { 'Content-Type': 'application/json' },
         },
       })
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
+    } finally {
+      unmount()
+    }
+  })
+
+  it('supports custom payload fields and urlencoded mode', async () => {
+    const { form, withinForm, mutate, unmount } = await setup()
+
+    try {
+      fireEvent.click(withinForm.getByRole('radio', { name: /Direct API/i }))
+      let inputs = resolveInputs(withinForm)
+
+      fireEvent.change(inputs.name, { target: { value: 'API Login' } })
+      fireEvent.change(inputs.siteUrl, { target: { value: 'https://api.example/login' } })
+      fireEvent.change(inputs.apiLoginUrl!, { target: { value: 'https://example.com/api/login' } })
+      fireEvent.change(inputs.apiMethod!, { target: { value: 'POST' } })
+      fireEvent.change(inputs.apiLoginIdParam!, { target: { value: 'user_id' } })
+      fireEvent.change(inputs.apiPasswordParam!, { target: { value: 'passcode' } })
+      fireEvent.change(inputs.apiCookiesToStore!, { target: { value: 'session' } })
+      fireEvent.change(inputs.requiredCookies, { target: { value: 'session' } })
+
+      fireEvent.click(inputs.apiAddCustomFieldButton!)
+      inputs = resolveInputs(withinForm)
+
+      const [keyInput] = inputs.apiCustomKeyInputs ?? []
+      const [valueInput] = inputs.apiCustomValueInputs ?? []
+      expect(keyInput).toBeDefined()
+      expect(valueInput).toBeDefined()
+      fireEvent.change(keyInput!, { target: { value: 'remember_me' } })
+      fireEvent.change(valueInput!, { target: { value: 'true' } })
+
+      fireEvent.change(inputs.apiPayloadMode!, { target: { value: 'form' } })
+
+      createSiteConfigMock.mockResolvedValueOnce({})
+
+      fireEvent.submit(form)
+
+      await waitFor(() => expect(createSiteConfigMock).toHaveBeenCalledTimes(1))
+      const payload = createSiteConfigMock.mock.calls[0][0].body
+      expect(payload).toMatchObject({
+        loginType: 'api',
+        apiConfig: {
+          endpoint: 'https://example.com/api/login',
+          method: 'POST',
+          body: {
+            user_id: '{{username}}',
+            passcode: '{{password}}',
+            remember_me: 'true',
+          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        },
+      })
+
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
     } finally {
       unmount()
@@ -590,6 +655,37 @@ describe('site configs edit form', () => {
       expect(bannerUtils?.getByText('Site config updated')).toBeInTheDocument()
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
       await waitFor(() => expect(screen.queryByRole('form', { name: /edit site config/i })).not.toBeInTheDocument())
+    } finally {
+      unmount()
+    }
+  })
+
+  it('hydrates api-specific fields including payload mode and custom payload rows', async () => {
+    const tableData: SiteConfigsPage = {
+      items: [apiItem],
+      total: 1,
+      page: 1,
+      size: 25,
+      hasNext: false,
+      totalPages: 1,
+    }
+    const { unmount } = await setup({ data: tableData })
+
+    try {
+      const editButton = await screen.findByRole('button', { name: 'Edit' })
+      fireEvent.click(editButton)
+
+      const editForm = await screen.findByRole('form', { name: /edit site config/i })
+      const withinEditForm = within(editForm)
+      const payloadMode = withinEditForm.getByLabelText('Payload encoding') as HTMLSelectElement
+      expect(payloadMode.value).toBe('json')
+
+      const keyInputs = withinEditForm.getAllByLabelText(/Custom payload key/i) as HTMLInputElement[]
+      const valueInputs = withinEditForm.getAllByLabelText(/Custom payload value/i) as HTMLInputElement[]
+      expect(keyInputs).toHaveLength(1)
+      expect(valueInputs).toHaveLength(1)
+      expect(keyInputs[0].value).toBe('remember_me')
+      expect(valueInputs[0].value).toBe('true')
     } finally {
       unmount()
     }

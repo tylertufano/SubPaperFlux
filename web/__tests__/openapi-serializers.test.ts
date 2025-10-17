@@ -45,6 +45,7 @@ describe('serializeSiteConfigRequest', () => {
         endpoint: 'https://api.example/login',
         method: 'POST',
         body: { username: '{{username}}', password: '{{password}}' },
+        headers: { 'Content-Type': 'application/json' },
         cookiesToStore: ['session'],
       },
     })
@@ -52,12 +53,13 @@ describe('serializeSiteConfigRequest', () => {
     expect(payload).toMatchObject({
       login_type: 'api',
       site_url: 'https://api.example/login',
-      api_config: {
-        endpoint: 'https://api.example/login',
-        method: 'POST',
-        body: { username: '{{username}}', password: '{{password}}' },
-        cookies_to_store: ['session'],
-      },
+        api_config: {
+          endpoint: 'https://api.example/login',
+          method: 'POST',
+          body: { username: '{{username}}', password: '{{password}}' },
+          headers: { 'Content-Type': 'application/json' },
+          cookies_to_store: ['session'],
+        },
       required_cookies: ['session'],
     })
   })
