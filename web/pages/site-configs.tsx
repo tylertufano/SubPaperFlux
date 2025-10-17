@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import {
   isValidUrl,
   validateSiteConfig,
+  coerceCustomBodyEntryValue,
   type SiteConfigFormInput,
   type SeleniumSiteConfigForm,
   type ApiSiteConfigForm,
@@ -27,11 +28,14 @@ const API_METHOD_SET = new Set(API_METHOD_OPTIONS)
 const DEFAULT_JSON_CONTENT_TYPE = 'application/json'
 const FORM_URLENCODED_CONTENT_TYPE = 'application/x-www-form-urlencoded'
 
-function createCustomBodyEntry(key = '', value = ''): ApiCustomBodyEntry {
+type CustomBodyEntryOptions = Partial<Pick<ApiCustomBodyEntry, 'valueType'>>
+
+function createCustomBodyEntry(key = '', value = '', options: CustomBodyEntryOptions = {}): ApiCustomBodyEntry {
   return {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
     key,
     value,
+    ...options,
   }
 }
 
@@ -39,12 +43,12 @@ function resolveContentTypeValue(mode: ApiPayloadMode): string {
   return mode === 'form' ? FORM_URLENCODED_CONTENT_TYPE : DEFAULT_JSON_CONTENT_TYPE
 }
 
-function customEntriesToAdditionalBody(entries: ApiCustomBodyEntry[]): Record<string, string> {
-  const record: Record<string, string> = {}
+function customEntriesToAdditionalBody(entries: ApiCustomBodyEntry[]): Record<string, any> {
+  const record: Record<string, any> = {}
   for (const entry of entries) {
     const key = entry.key?.trim()
     if (!key) continue
-    record[key] = entry.value
+    record[key] = coerceCustomBodyEntryValue(entry)
   }
   return record
 }
@@ -136,6 +140,21 @@ function normalizeSeleniumConfig(config: SiteConfigSeleniumOut): SiteConfigFormS
   }
 }
 
+function inferCustomBodyValueType(value: unknown): ApiCustomBodyEntry['valueType'] | undefined {
+  if (value === null) return 'null'
+  if (Array.isArray(value)) return 'array'
+  switch (typeof value) {
+    case 'boolean':
+      return 'boolean'
+    case 'number':
+      return 'number'
+    case 'object':
+      return 'object'
+    default:
+      return undefined
+  }
+}
+
 function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
   const apiConfig = config.apiConfig || ({} as any)
   const cookiesToStoreRaw =
@@ -202,7 +221,9 @@ function normalizeApiConfig(config: SiteConfigApiOut): SiteConfigFormState {
     const normalizedKey = typeof key === 'string' ? key : String(key)
     const normalizedValue =
       typeof value === 'string' ? value : value != null ? JSON.stringify(value) : ''
-    customEntries.push(createCustomBodyEntry(normalizedKey, normalizedValue))
+    const inferredType = inferCustomBodyValueType(value)
+    const options = inferredType ? { valueType: inferredType } : undefined
+    customEntries.push(createCustomBodyEntry(normalizedKey, normalizedValue, options))
   }
   ;(result.api_config as ApiFormState['api_config']).custom_body_entries = customEntries
   ;(result.api_config as ApiFormState['api_config']).additional_body = customEntriesToAdditionalBody(customEntries)

@@ -74,10 +74,13 @@ export type SeleniumSiteConfigForm = SiteConfigCommonForm & {
 
 export type ApiPayloadMode = 'json' | 'form'
 
+export type ApiCustomBodyValueType = 'string' | 'number' | 'boolean' | 'null' | 'object' | 'array'
+
 export type ApiCustomBodyEntry = {
   id: string
   key: string
   value: string
+  valueType?: ApiCustomBodyValueType
 }
 
 export type ApiSiteConfigForm = SiteConfigCommonForm & {
@@ -93,6 +96,44 @@ export type ApiSiteConfigForm = SiteConfigCommonForm & {
     cookie_map?: Record<string, string>
     payload_mode: ApiPayloadMode
     custom_body_entries: ApiCustomBodyEntry[]
+  }
+}
+
+export function coerceCustomBodyEntryValue(entry: ApiCustomBodyEntry): any {
+  const value = typeof entry.value === 'string' ? entry.value : ''
+  const trimmed = value.trim()
+  const type = entry.valueType
+
+  switch (type) {
+    case 'boolean':
+      if (trimmed === 'true') return true
+      if (trimmed === 'false') return false
+      return value
+    case 'number': {
+      if (!trimmed) return value
+      const parsed = Number(trimmed)
+      return Number.isFinite(parsed) ? parsed : value
+    }
+    case 'null':
+      if (!trimmed || trimmed.toLowerCase() === 'null') return null
+      return value
+    case 'array':
+    case 'object':
+      if (!trimmed) return value
+      try {
+        const parsed = JSON.parse(value)
+        if (type === 'array') {
+          return Array.isArray(parsed) ? parsed : value
+        }
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return parsed
+        }
+        return value
+      } catch (error) {
+        return value
+      }
+    default:
+      return value
   }
 }
 
@@ -306,7 +347,7 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
   for (const entry of customEntries) {
     const key = typeof entry?.key === 'string' ? entry.key.trim() : ''
     if (!key) continue
-    additionalBody[key] = entry?.value ?? ''
+    additionalBody[key] = coerceCustomBodyEntryValue(entry)
   }
   const mergedAdditionalBody =
     api.additional_body && Object.keys(api.additional_body).length > 0
