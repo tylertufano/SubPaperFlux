@@ -72,6 +72,14 @@ export type SeleniumSiteConfigForm = SiteConfigCommonForm & {
   }
 }
 
+export type ApiPayloadMode = 'json' | 'form'
+
+export type ApiCustomBodyEntry = {
+  id: string
+  key: string
+  value: string
+}
+
 export type ApiSiteConfigForm = SiteConfigCommonForm & {
   login_type: 'api'
   api_config: {
@@ -83,6 +91,8 @@ export type ApiSiteConfigForm = SiteConfigCommonForm & {
     headers_object?: Record<string, string>
     additional_body?: Record<string, any>
     cookie_map?: Record<string, string>
+    payload_mode: ApiPayloadMode
+    custom_body_entries: ApiCustomBodyEntry[]
   }
 }
 
@@ -232,6 +242,8 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     login_id_param: '',
     password_param: '',
     cookies_to_store: '',
+    payload_mode: 'json' as ApiPayloadMode,
+    custom_body_entries: [],
   }
   const endpoint = api.login_url?.trim() ?? ''
   const methodRaw = api.method?.trim().toUpperCase() ?? ''
@@ -289,8 +301,36 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     [loginIdParam]: '{{username}}',
     [passwordParam]: '{{password}}',
   }
-  const additionalBody = api.additional_body && Object.keys(api.additional_body).length > 0 ? api.additional_body : undefined
-  const bodyPayload = additionalBody ? { ...additionalBody, ...baseBody } : baseBody
+  const customEntries = Array.isArray(api.custom_body_entries) ? api.custom_body_entries : []
+  const additionalBody: Record<string, any> = {}
+  for (const entry of customEntries) {
+    const key = typeof entry?.key === 'string' ? entry.key.trim() : ''
+    if (!key) continue
+    additionalBody[key] = entry?.value ?? ''
+  }
+  const mergedAdditionalBody =
+    api.additional_body && Object.keys(api.additional_body).length > 0
+      ? { ...api.additional_body, ...additionalBody }
+      : additionalBody
+  const bodyPayload = Object.keys(mergedAdditionalBody).length > 0 ? { ...mergedAdditionalBody, ...baseBody } : baseBody
+
+  const payloadMode: ApiPayloadMode = api.payload_mode === 'form' ? 'form' : 'json'
+
+  const desiredContentType =
+    payloadMode === 'form' ? 'application/x-www-form-urlencoded' : 'application/json'
+  const headerEntries = { ...(api.headers_object ?? {}) }
+  let contentTypeKey: string | null = null
+  for (const key of Object.keys(headerEntries)) {
+    if (key.toLowerCase() === 'content-type') {
+      contentTypeKey = key
+      break
+    }
+  }
+  if (contentTypeKey && contentTypeKey !== 'Content-Type') {
+    headerEntries['Content-Type'] = headerEntries[contentTypeKey]
+    delete headerEntries[contentTypeKey]
+  }
+  headerEntries['Content-Type'] = desiredContentType
 
   const payload: NormalizedSiteConfigPayload = {
     loginType: 'api',
@@ -303,8 +343,8 @@ export function validateSiteConfig(form: SiteConfigFormInput): {
     },
   }
 
-  if (api.headers_object && Object.keys(api.headers_object).length > 0) {
-    payload.apiConfig.headers = { ...api.headers_object }
+  if (Object.keys(headerEntries).length > 0) {
+    payload.apiConfig.headers = headerEntries
   }
   if (api.cookie_map && Object.keys(api.cookie_map).length > 0) {
     payload.apiConfig.cookies = { ...api.cookie_map }
