@@ -1026,7 +1026,16 @@ export default function SiteConfigs() {
     }
     if (value && typeof value === 'object') {
       if ('api_config' in value) {
-        return normalizeListItem(SiteConfigApiOutFromJSON(value))
+        const rawApiConfig = (value as Record<string, any>).api_config || {}
+        const cookiesToStore = Array.isArray(rawApiConfig?.cookies_to_store)
+          ? rawApiConfig.cookies_to_store
+          : undefined
+        const normalizedValue = SiteConfigApiOutFromJSON(value)
+        if (cookiesToStore) {
+          ;(normalizedValue.apiConfig as Record<string, any>).cookiesToStore = cookiesToStore
+          ;(normalizedValue.apiConfig as Record<string, any>).cookies_to_store = cookiesToStore
+        }
+        return normalizeListItem(normalizedValue)
       }
       if ('selenium_config' in value) {
         return normalizeListItem(SiteConfigSeleniumOutFromJSON(value))
