@@ -279,7 +279,8 @@ def test_credentials_and_siteconfigs(client):
             "endpoint": "https://api.example.com/login",
             "method": "POST",
             "headers": {"X-Env": "prod"},
-            "cookies": {"sid": "abc"},
+            "cookies": {"session": "$.session", "refresh": "$.refresh"},
+            "cookies_to_store": ["session", "refresh"],
         },
         "success_text_class": "toast toast-success",
         "expected_success_text": "API login ok",
@@ -292,6 +293,7 @@ def test_credentials_and_siteconfigs(client):
     assert api_sc["success_text_class"] == api_payload["success_text_class"]
     assert api_sc["expected_success_text"] == api_payload["expected_success_text"]
     assert api_sc["required_cookies"] == api_payload["required_cookies"]
+    assert api_sc["api_config"]["cookies_to_store"] == ["session", "refresh"]
 
     api_update_payload = {
         **api_sc,
@@ -299,6 +301,7 @@ def test_credentials_and_siteconfigs(client):
             **api_sc["api_config"],
             "method": "PUT",
             "headers": {"X-Env": "stage"},
+            "cookies_to_store": ["session"],
         },
         "expected_success_text": "API login updated",
         "success_text_class": "toast toast-info",
@@ -307,6 +310,7 @@ def test_credentials_and_siteconfigs(client):
     r_api_update = client.put(f"/v1/site-configs/{api_sc['id']}", json=api_update_payload)
     assert r_api_update.status_code == 200
     assert r_api_update.json()["api_config"]["method"] == "PUT"
+    assert r_api_update.json()["api_config"]["cookies_to_store"] == ["session"]
     assert r_api_update.json()["expected_success_text"] == "API login updated"
     assert r_api_update.json()["success_text_class"] == "toast toast-info"
     assert r_api_update.json()["required_cookies"] == ["sid", "refresh"]

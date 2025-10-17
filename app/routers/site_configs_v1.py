@@ -81,6 +81,14 @@ def _normalize_login_payload(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="api_config.headers must be an object",
             )
+        cookies_to_store = config.get("cookies_to_store")
+        if cookies_to_store is not None and not isinstance(cookies_to_store, list):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="api_config.cookies_to_store must be a list",
+            )
+        if cookies_to_store is not None:
+            config["cookies_to_store"] = list(cookies_to_store or [])
         cookies = config.get("cookies")
         if cookies is not None and not isinstance(cookies, dict):
             raise HTTPException(
@@ -117,13 +125,16 @@ def _summarize_login_payload(
         }
 
     api = api_config or {}
+    cookies_to_store = list(api.get("cookies_to_store") or [])
+    if not cookies_to_store:
+        cookies_to_store = list((api.get("cookies") or {}).keys())
     return {
         "login_type": _login_type_value(login_type),
         "endpoint": api.get("endpoint"),
         "method": api.get("method"),
         "has_headers": bool(api.get("headers")),
         "has_body": bool(api.get("body")),
-        "cookies_to_store": list((api.get("cookies") or {}).keys()),
+        "cookies_to_store": cookies_to_store,
     }
 
 

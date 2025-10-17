@@ -7724,6 +7724,13 @@
             },
             "type": "object",
             "title": "Cookies"
+          },
+          "cookies_to_store": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cookies To Store"
           }
         },
         "type": "object",

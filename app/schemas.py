@@ -138,6 +138,7 @@ class ApiConfig(BaseModel):
     headers: Dict[str, str] = Field(default_factory=dict)
     body: Optional[Dict[str, Any]] = None
     cookies: Dict[str, str] = Field(default_factory=dict)
+    cookies_to_store: List[str] = Field(default_factory=list)
 
 
 class SiteConfigBase(BaseModel):
