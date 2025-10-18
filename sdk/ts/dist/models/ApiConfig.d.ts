@@ -49,6 +49,12 @@ export interface ApiConfig {
     cookies?: {
         [key: string]: any;
     } | null;
+    /**
+     *
+     * @type {any}
+     * @memberof ApiConfig
+     */
+    cookiesToStore?: any | null;
 }
 /**
  * @export
