@@ -23,7 +23,6 @@ function instanceOfSiteConfigSelenium(value) {
     let isInstance = true;
     isInstance = isInstance && "name" in value;
     isInstance = isInstance && "siteUrl" in value;
-    isInstance = isInstance && "ownerUserId" in value;
     isInstance = isInstance && "seleniumConfig" in value;
     return isInstance;
 }
@@ -39,7 +38,7 @@ function SiteConfigSeleniumFromJSONTyped(json, ignoreDiscriminator) {
     return {
         'name': json['name'],
         'siteUrl': json['site_url'],
-        'ownerUserId': json['owner_user_id'],
+        'ownerUserId': !(0, runtime_1.exists)(json, 'owner_user_id') ? undefined : json['owner_user_id'],
         'successTextClass': !(0, runtime_1.exists)(json, 'success_text_class') ? undefined : json['success_text_class'],
         'expectedSuccessText': !(0, runtime_1.exists)(json, 'expected_success_text') ? undefined : json['expected_success_text'],
         'requiredCookies': !(0, runtime_1.exists)(json, 'required_cookies') ? undefined : json['required_cookies'],

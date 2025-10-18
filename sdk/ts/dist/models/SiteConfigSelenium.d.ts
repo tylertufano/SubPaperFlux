@@ -33,7 +33,7 @@ export interface SiteConfigSelenium {
      * @type {any}
      * @memberof SiteConfigSelenium
      */
-    ownerUserId: any | null;
+    ownerUserId?: any | null;
     /**
      *
      * @type {any}

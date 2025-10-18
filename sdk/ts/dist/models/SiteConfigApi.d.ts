@@ -33,7 +33,7 @@ export interface SiteConfigApi {
      * @type {any}
      * @memberof SiteConfigApi
      */
-    ownerUserId: any | null;
+    ownerUserId?: any | null;
     /**
      *
      * @type {any}

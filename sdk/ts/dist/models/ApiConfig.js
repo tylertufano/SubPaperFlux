@@ -49,6 +49,7 @@ function ApiConfigFromJSONTyped(json, ignoreDiscriminator) {
         'headers': !(0, runtime_1.exists)(json, 'headers') ? undefined : json['headers'],
         'body': !(0, runtime_1.exists)(json, 'body') ? undefined : json['body'],
         'cookies': !(0, runtime_1.exists)(json, 'cookies') ? undefined : json['cookies'],
+        'cookiesToStore': !(0, runtime_1.exists)(json, 'cookies_to_store') ? undefined : json['cookies_to_store'],
     };
 }
 exports.ApiConfigFromJSONTyped = ApiConfigFromJSONTyped;
@@ -65,6 +66,7 @@ function ApiConfigToJSON(value) {
         'headers': value.headers,
         'body': value.body,
         'cookies': value.cookies,
+        'cookies_to_store': value.cookiesToStore,
     };
 }
 exports.ApiConfigToJSON = ApiConfigToJSON;
