@@ -464,15 +464,15 @@ export default function AdminOrgs() {
                               <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {organizationDisplayName(organization)}
                               </div>
-                              <div className="text-sm text-gray-600">{organization.slug}</div>
+                              <div className="text-gray-600">{organization.slug}</div>
                               {organization.description ? (
-                                <div className="text-sm text-gray-500 line-clamp-2">
+                                <div className="text-gray-500 line-clamp-2">
                                   {organization.description}
                                 </div>
                               ) : null}
                             </div>
                           </td>
-                          <td className="td align-top text-sm text-gray-800">
+                          <td className="td align-top text-gray-800">
                             {numberFormatter.format(organization.member_count ?? 0)}
                           </td>
                           <td className="td align-top">
@@ -488,7 +488,7 @@ export default function AdminOrgs() {
                                 : t('admin_orgs_custom_badge')}
                             </span>
                           </td>
-                          <td className="td align-top text-sm text-gray-800">
+                          <td className="td align-top text-gray-800">
                             {formatDateTime(organization.updated_at, '—')}
                           </td>
                           <td className="td align-top">

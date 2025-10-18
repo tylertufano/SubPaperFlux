@@ -366,7 +366,7 @@ export default function AdminRoles() {
                           <tr key={role.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                             <td className="td align-top">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{role.name}</span>
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">{role.name}</span>
                                 {role.is_system ? (
                                   <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
                                     {t('admin_roles_system_badge')}
@@ -374,10 +374,10 @@ export default function AdminRoles() {
                                 ) : null}
                               </div>
                             </td>
-                            <td className="td align-top text-sm text-gray-700 dark:text-gray-300">
+                            <td className="td align-top text-gray-700 dark:text-gray-300">
                               {role.description ? role.description : <span className="text-gray-400">—</span>}
                             </td>
-                            <td className="td align-top text-sm text-gray-700 dark:text-gray-300">
+                            <td className="td align-top text-gray-700 dark:text-gray-300">
                               {numberFormatter.format(assignedCount)}
                             </td>
                             <td className="td align-top">

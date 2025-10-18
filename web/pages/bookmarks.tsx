@@ -707,7 +707,7 @@ export default function Bookmarks() {
                                 />
                               </td>
                               <td className="td">
-                                <span className="text-left text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <span className="font-medium">
                                   {b.title}
                                 </span>
                               </td>

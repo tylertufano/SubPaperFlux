@@ -252,7 +252,7 @@ export default function Tokens() {
                             <div className="font-medium text-gray-900 dark:text-gray-100">{token.name}</div>
                             <div className="text-xs text-gray-500">{token.id}</div>
                             {token.description && (
-                              <div className="text-sm text-gray-700 dark:text-gray-300">{token.description}</div>
+                              <div className="text-gray-700 dark:text-gray-300">{token.description}</div>
                             )}
                           </td>
                           <td className="td align-top">
@@ -272,13 +272,13 @@ export default function Tokens() {
                               ))}
                             </div>
                           </td>
-                          <td className="td align-top text-sm text-gray-800">
+                          <td className="td align-top text-gray-800">
                             {formatDateTime(token.created_at, '—')}
                           </td>
-                          <td className="td align-top text-sm text-gray-800">
+                          <td className="td align-top text-gray-800">
                             {formatDateTime(token.last_used_at, t('me_tokens_last_used_never'))}
                           </td>
-                          <td className="td align-top text-sm text-gray-800">
+                          <td className="td align-top text-gray-800">
                             {token.expires_at ? formatDateTime(token.expires_at, '—') : t('me_tokens_expires_never')}
                           </td>
                           <td className="td align-top">
