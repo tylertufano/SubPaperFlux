@@ -407,6 +407,7 @@
   "feeds_delete_success": "Feed deleted",
   "feeds_update_success": "Feed updated",
   "feeds_create_heading": "Create Feed",
+  "feeds_edit_heading": "Edit Feed",
   "feeds_field_url_placeholder": "Feed URL",
   "feeds_field_poll_placeholder": "Poll frequency (e.g., 1h)",
   "feeds_field_lookback_placeholder": "Initial lookback (first poll only)",

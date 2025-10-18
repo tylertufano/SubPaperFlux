@@ -1,4 +1,6 @@
 {
+  "feeds_create_heading": "Feed erstellen",
+  "feeds_edit_heading": "Feed bearbeiten",
   "feeds_field_tags_label": "Tags",
   "feeds_field_tags_placeholder": "Tags suchen",
   "feeds_field_tags_help": "Wählen Sie Tags aus, die neuen Artikeln dieses Feeds zugewiesen werden. Die Reihenfolge entspricht der Auswahl.",

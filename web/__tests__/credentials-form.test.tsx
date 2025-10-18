@@ -241,8 +241,8 @@ describe('credential editing', () => {
     const editButton = within(row).getByRole('button', { name: 'Edit' })
     fireEvent.click(editButton)
     await waitFor(() => expect(getCredentialMock).toHaveBeenCalledWith({ credId: existingCredential.id }))
-    const dialog = await screen.findByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })
-    return dialog
+    const form = await screen.findByRole('form', { name: `Edit Credential ${existingCredential.id}` })
+    return form
   }
 
   it('omits masked values when saving and resets state on success', async () => {
@@ -252,13 +252,13 @@ describe('credential editing', () => {
       getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
       updateCredentialMock.mockResolvedValueOnce({})
 
-      const editDialog = await openEditForm()
-      const usernameInput = within(editDialog).getByLabelText('Username') as HTMLInputElement
+      const editForm = await openEditForm()
+      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
       expect(usernameInput).toHaveValue('alice')
-      const siteConfigSelect = within(editDialog).getByLabelText('Site Config') as HTMLSelectElement
+      const siteConfigSelect = within(editForm).getByLabelText('Site Config') as HTMLSelectElement
       expect(siteConfigSelect).toHaveValue('sc-1')
 
-      const descriptionInput = within(editDialog).getByLabelText('Description') as HTMLInputElement
+      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
       expect(descriptionInput).toHaveValue('Existing credential')
 
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
@@ -267,7 +267,7 @@ describe('credential editing', () => {
       fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
       expect(descriptionInput).toHaveValue('Updated credential')
 
-      const saveButton = within(editDialog).getByRole('button', { name: 'Save' })
+      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
 
       await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
@@ -284,7 +284,7 @@ describe('credential editing', () => {
       const successMessage = await screen.findByText('Credential updated')
       expect(successMessage.closest('[role="status"]')).toBeInTheDocument()
       await waitFor(() =>
-        expect(screen.queryByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('form', { name: `Edit Credential ${existingCredential.id}` })).not.toBeInTheDocument(),
       )
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1))
     } finally {
@@ -292,28 +292,28 @@ describe('credential editing', () => {
     }
   })
 
-  it('keeps the dialog open and shows an error banner when the update fails', async () => {
+  it('keeps the edit form open and shows an error banner when the update fails', async () => {
     const { mutate, unmount } = await setup({ data: { items: [existingCredential] } })
 
     try {
       getCredentialMock.mockResolvedValueOnce(maskedCredentialResponse)
       updateCredentialMock.mockRejectedValueOnce(new Error('Update failed'))
 
-      const editDialog = await openEditForm()
-      const usernameInput = within(editDialog).getByLabelText('Username') as HTMLInputElement
+      const editForm = await openEditForm()
+      const usernameInput = within(editForm).getByLabelText('Username') as HTMLInputElement
       fireEvent.change(usernameInput, { target: { value: 'bob' } })
 
-      const descriptionInput = within(editDialog).getByLabelText('Description') as HTMLInputElement
+      const descriptionInput = within(editForm).getByLabelText('Description') as HTMLInputElement
       fireEvent.change(descriptionInput, { target: { value: 'Updated credential' } })
 
-      const saveButton = within(editDialog).getByRole('button', { name: 'Save' })
+      const saveButton = within(editForm).getByRole('button', { name: 'Save' })
       fireEvent.click(saveButton)
 
       await waitFor(() => expect(updateCredentialMock).toHaveBeenCalledTimes(1))
       const errorMessage = await screen.findByText('Update failed')
       expect(errorMessage.closest('[role="alert"]')).toBeInTheDocument()
 
-      expect(screen.getByRole('dialog', { name: `Edit Credential ${existingCredential.id}` })).toBeInTheDocument()
+      expect(screen.getByRole('form', { name: `Edit Credential ${existingCredential.id}` })).toBeInTheDocument()
       expect(mutate).not.toHaveBeenCalled()
     } finally {
       unmount()

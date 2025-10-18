@@ -175,6 +175,8 @@
   "job_schedules_filter_active_true": "Activas ✨",
   "job_schedules_filter_active_false": "Pausadas ✨",
   "job_schedules_option_select": "Selecciona… ✨",
+  "feeds_create_heading": "Crear feed ✨",
+  "feeds_edit_heading": "Editar feed ✨",
   "feeds_field_site_login_select": "Selecciona login o configuración (opcional) ✨",
   "feeds_field_site_config_only": "solo configuración ✨",
   "feeds_field_tags_label": "Etiquetas ✨",

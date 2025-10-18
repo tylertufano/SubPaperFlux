@@ -1,5 +1,5 @@
 import useSWR from 'swr'
-import { Alert, Breadcrumbs, EmptyState, InlineTip, Nav } from '../components'
+import { Alert, Breadcrumbs, ConfigEditorPanel, EmptyState, InlineTip, Nav } from '../components'
 import { v1, creds, createInstapaperCredentialFromLogin } from '../lib/openapi'
 import { useEffect, useMemo, useState } from 'react'
 import { parseJsonSafe, validateCredential, isValidUrl } from '../lib/validate'
@@ -87,6 +87,43 @@ export default function Credentials() {
   const editingObj = editing ? (() => { try { return JSON.parse(editing.json || '{}') } catch { return {} } })() as any : null
   const hasDescription = description.trim().length > 0
   const hasEditDescription = editDescription.trim().length > 0
+  const trimString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+  const canSubmitCreate = Boolean(
+    hasDescription &&
+      ((
+        kind === 'site_login' &&
+        Boolean(
+          siteConfigId.trim() &&
+            trimString(createObj.username) &&
+            trimString(createObj.password),
+        )
+      ) ||
+        (kind === 'miniflux' &&
+          Boolean(
+            (typeof createObj.miniflux_url === 'string' && isValidUrl(createObj.miniflux_url)) &&
+              trimString(createObj.api_key),
+          )) ||
+        (kind === 'instapaper' &&
+          Boolean(
+            trimString(createObj.username) && trimString(createObj.password),
+          )) ||
+        (kind === 'instapaper_app' &&
+          Boolean(
+            trimString(createObj.consumer_key) && trimString(createObj.consumer_secret),
+          )))
+  )
+  const canSubmitEdit = Boolean(
+    editing &&
+      hasEditDescription &&
+      ((
+        editing.kind === 'site_login' &&
+        Boolean(editSiteConfigId.trim() && trimString(editingObj?.username))
+      ) ||
+        (editing.kind === 'miniflux' &&
+          Boolean(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
+        editing.kind === 'instapaper' ||
+        (editing.kind === 'instapaper_app' && Boolean(trimString(editingObj?.consumer_key))))
+  )
   const siteConfigItems = useMemo(() => {
     if (!siteConfigsData) return [] as any[]
     if (Array.isArray(siteConfigsData)) return siteConfigsData as any[]
@@ -423,274 +460,259 @@ export default function Credentials() {
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
         {data && (
           <>
-          <form
+          <ConfigEditorPanel
             id="create-credential"
-            className="card p-4 mb-4 flex flex-col gap-2"
-            role="form"
             aria-labelledby="create-credential-heading"
+            title={<span id="create-credential-heading">{t('credentials_create_heading')}</span>}
+            role="form"
             onSubmit={(e) => { e.preventDefault(); createCred() }}
+            submitLabel={t('btn_create')}
+            submitButtonProps={{ disabled: !canSubmitCreate, title: t('form_fill_required') }}
+            contentClassName="gap-3"
           >
-            <h3 id="create-credential-heading" className="font-semibold">{t('credentials_create_heading')}</h3>
-            <div>
-              <input
-                id="create-credential-description"
-                className="input"
-                placeholder={t('credentials_field_description_placeholder')}
-                aria-label={t('credentials_field_description_placeholder')}
-                aria-invalid={Boolean(createErrors.description)}
-                aria-describedby={createErrors.description ? 'create-credential-description-error' : undefined}
-                value={description}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setDescription(v)
-                  setCreateErrors((prev) => ({
-                    ...prev,
-                    description: v.trim() ? '' : t('credentials_error_description_required'),
-                  }))
-                }}
-              />
-              {createErrors.description && (
-                <div id="create-credential-description-error" className="text-sm text-red-600">
-                  {createErrors.description}
+            <div className="md:col-span-full flex flex-col gap-2">
+              <div>
+                <input
+                  id="create-credential-description"
+                  className="input"
+                  placeholder={t('credentials_field_description_placeholder')}
+                  aria-label={t('credentials_field_description_placeholder')}
+                  aria-invalid={Boolean(createErrors.description)}
+                  aria-describedby={createErrors.description ? 'create-credential-description-error' : undefined}
+                  value={description}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setDescription(v)
+                    setCreateErrors((prev) => ({
+                      ...prev,
+                      description: v.trim() ? '' : t('credentials_error_description_required'),
+                    }))
+                  }}
+                  data-config-editor-initial-focus
+                />
+                {createErrors.description && (
+                  <div id="create-credential-description-error" className="text-sm text-red-600">
+                    {createErrors.description}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="credential-kind-select">{t('credentials_kind_label')}:</label>
+                  <InlineTip className="ml-1" message={t('credentials_kind_tip')} />
+                </div>
+                <select
+                  id="credential-kind-select"
+                  className="input"
+                  value={kind}
+                  onChange={(e) => {
+                    const nextKind = e.target.value
+                    setKind(nextKind)
+                  }}
+                >
+                  <option value="site_login">{t('credentials_kind_site_login')}</option>
+                  <option value="miniflux">{t('credentials_kind_miniflux')}</option>
+                  <option value="instapaper">{t('credentials_kind_instapaper')}</option>
+                  <option value="instapaper_app">{t('credentials_kind_instapaper_app')}</option>
+                </select>
+              </div>
+              {kind === 'site_login' && (
+                <div className="space-y-2">
+                  <div>
+                    <label htmlFor="create-credential-site-config" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('site_config_label')}
+                    </label>
+                    <select
+                      id="create-credential-site-config"
+                      className="input"
+                      value={siteConfigId}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setSiteConfigId(value)
+                        setCreateErrors((prev) => ({
+                          ...prev,
+                          site_config_id: value ? '' : t('credentials_error_site_config_required'),
+                        }))
+                      }}
+                      aria-invalid={Boolean(createErrors.site_config_id)}
+                      aria-describedby={createErrors.site_config_id ? 'create-credential-site-config-error' : undefined}
+                      disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
+                      aria-disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
+                    >
+                      <option value="">
+                        {t('credentials_field_site_config_placeholder')}
+                      </option>
+                      {siteConfigOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {isLoadingSiteConfigs && (
+                      <div className="text-sm text-gray-500">{t('loading_text')}</div>
+                    )}
+                    {siteConfigsError && (
+                      <div className="text-sm text-red-600">
+                        {siteConfigsError instanceof Error ? siteConfigsError.message : String(siteConfigsError)}
+                      </div>
+                    )}
+                    {!isLoadingSiteConfigs && !siteConfigsError && siteConfigOptions.length === 0 && (
+                      <div className="text-sm text-gray-500">{t('credentials_site_config_empty')}</div>
+                    )}
+                    {createErrors.site_config_id && (
+                      <div id="create-credential-site-config-error" className="text-sm text-red-600">
+                        {createErrors.site_config_id}
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        id="create-credential-username"
+                        className="input"
+                        placeholder={t('credentials_field_username_placeholder')}
+                        aria-label={t('credentials_field_username_placeholder')}
+                        aria-invalid={Boolean(createErrors.username)}
+                        aria-describedby={createErrors.username ? 'create-credential-username-error' : undefined}
+                        value={createObj.username || ''}
+                        onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: v, password: createObj.password || '' })); setCreateErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
+                      />
+                      {createErrors.username && <div id="create-credential-username-error" className="text-sm text-red-600">{createErrors.username}</div>}
+                    </div>
+                    <div>
+                      <input
+                        id="create-credential-password"
+                        className="input"
+                        placeholder={t('credentials_field_password_placeholder')}
+                        type="password"
+                        aria-label={t('credentials_field_password_placeholder')}
+                        aria-invalid={Boolean(createErrors.password)}
+                        aria-describedby={createErrors.password ? 'create-credential-password-error' : undefined}
+                        value={createObj.password || ''}
+                        onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: createObj.username || '', password: v })); setCreateErrors(prev=>({ ...prev, password: v.trim()? '' : t('credentials_error_password_required') })) }}
+                      />
+                      {createErrors.password && <div id="create-credential-password-error" className="text-sm text-red-600">{createErrors.password}</div>}
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label htmlFor="credential-kind-select">{t('credentials_kind_label')}:</label>
-                <InlineTip className="ml-1" message={t('credentials_kind_tip')} />
-              </div>
-              <select
-                id="credential-kind-select"
-                className="input"
-                value={kind}
-                onChange={(e) => {
-                  const nextKind = e.target.value
-                  setKind(nextKind)
-                }}
-              >
-                <option value="site_login">{t('credentials_kind_site_login')}</option>
-                <option value="miniflux">{t('credentials_kind_miniflux')}</option>
-                <option value="instapaper">{t('credentials_kind_instapaper')}</option>
-                <option value="instapaper_app">{t('credentials_kind_instapaper_app')}</option>
-              </select>
-            </div>
-            {kind === 'site_login' && (
-              <div className="space-y-2">
-                <div>
-                  <label htmlFor="create-credential-site-config" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('site_config_label')}
-                  </label>
-                  <select
-                    id="create-credential-site-config"
-                    className="input"
-                    value={siteConfigId}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      setSiteConfigId(value)
-                      setCreateErrors((prev) => ({
-                        ...prev,
-                        site_config_id: value ? '' : t('credentials_error_site_config_required'),
-                      }))
-                    }}
-                    aria-invalid={Boolean(createErrors.site_config_id)}
-                    aria-describedby={createErrors.site_config_id ? 'create-credential-site-config-error' : undefined}
-                    disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
-                    aria-disabled={isLoadingSiteConfigs || siteConfigOptions.length === 0}
-                  >
-                    <option value="">
-                      {t('credentials_field_site_config_placeholder')}
-                    </option>
-                    {siteConfigOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {isLoadingSiteConfigs && (
-                    <div className="text-sm text-gray-500">{t('loading_text')}</div>
-                  )}
-                  {siteConfigsError && (
-                    <div className="text-sm text-red-600">
-                      {siteConfigsError instanceof Error ? siteConfigsError.message : String(siteConfigsError)}
-                    </div>
-                  )}
-                  {!isLoadingSiteConfigs && !siteConfigsError && siteConfigOptions.length === 0 && (
-                    <div className="text-sm text-gray-500">{t('credentials_site_config_empty')}</div>
-                  )}
-                  {createErrors.site_config_id && (
-                    <div id="create-credential-site-config-error" className="text-sm text-red-600">
-                      {createErrors.site_config_id}
-                    </div>
-                  )}
-                </div>
+              {kind === 'miniflux' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <input
-                      id="create-credential-username"
+                      id="create-credential-miniflux-url"
                       className="input"
-                      placeholder={t('credentials_field_username_placeholder')}
-                      aria-label={t('credentials_field_username_placeholder')}
-                      aria-invalid={Boolean(createErrors.username)}
-                      aria-describedby={createErrors.username ? 'create-credential-username-error' : undefined}
-                      value={createObj.username || ''}
-                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: v, password: createObj.password || '' })); setCreateErrors(prev=>({ ...prev, username: v.trim()? '' : t('credentials_error_username_required') })) }}
+                      placeholder={t('credentials_field_miniflux_url_placeholder')}
+                      aria-label={t('credentials_field_miniflux_url_placeholder')}
+                      aria-invalid={Boolean(createErrors.miniflux_url)}
+                      aria-describedby={createErrors.miniflux_url ? 'create-credential-miniflux-url-error' : undefined}
+                      value={createObj.miniflux_url || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: v, api_key: createObj.api_key || '' })); setCreateErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : t('credentials_error_miniflux_url_invalid') })) }}
                     />
-                    {createErrors.username && <div id="create-credential-username-error" className="text-sm text-red-600">{createErrors.username}</div>}
+                    {createErrors.miniflux_url && <div id="create-credential-miniflux-url-error" className="text-sm text-red-600">{createErrors.miniflux_url}</div>}
                   </div>
                   <div>
                     <input
-                      id="create-credential-password"
+                      id="create-credential-api-key"
                       className="input"
-                      placeholder={t('credentials_field_password_placeholder')}
-                      type="password"
-                      aria-label={t('credentials_field_password_placeholder')}
-                      aria-invalid={Boolean(createErrors.password)}
-                      aria-describedby={createErrors.password ? 'create-credential-password-error' : undefined}
-                      value={createObj.password || ''}
-                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ username: createObj.username || '', password: v })); setCreateErrors(prev=>({ ...prev, password: v.trim()? '' : t('credentials_error_password_required') })) }}
+                      placeholder={t('credentials_field_api_key_placeholder')}
+                      aria-label={t('credentials_field_api_key_placeholder')}
+                      aria-invalid={Boolean(createErrors.api_key)}
+                      aria-describedby={createErrors.api_key ? 'create-credential-api-key-error' : undefined}
+                      value={createObj.api_key || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: createObj.miniflux_url || '', api_key: v })); setCreateErrors(prev=>({ ...prev, api_key: v.trim()? '' : t('credentials_error_api_key_required') })) }}
                     />
-                    {createErrors.password && <div id="create-credential-password-error" className="text-sm text-red-600">{createErrors.password}</div>}
+                    {createErrors.api_key && <div id="create-credential-api-key-error" className="text-sm text-red-600">{createErrors.api_key}</div>}
                   </div>
                 </div>
-              </div>
-            )}
-            {kind === 'miniflux' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <input
-                    id="create-credential-miniflux-url"
-                    className="input"
-                    placeholder={t('credentials_field_miniflux_url_placeholder')}
-                    aria-label={t('credentials_field_miniflux_url_placeholder')}
-                    aria-invalid={Boolean(createErrors.miniflux_url)}
-                    aria-describedby={createErrors.miniflux_url ? 'create-credential-miniflux-url-error' : undefined}
-                    value={createObj.miniflux_url || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: v, api_key: createObj.api_key || '' })); setCreateErrors(prev=>({ ...prev, miniflux_url: isValidUrl(v)? '' : t('credentials_error_miniflux_url_invalid') })) }}
-                  />
-                  {createErrors.miniflux_url && <div id="create-credential-miniflux-url-error" className="text-sm text-red-600">{createErrors.miniflux_url}</div>}
+              )}
+              {kind === 'instapaper' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      id="create-credential-instapaper-username"
+                      className="input"
+                      placeholder={t('credentials_field_instapaper_username_placeholder')}
+                      aria-label={t('credentials_field_instapaper_username_placeholder')}
+                      aria-invalid={Boolean(createErrors.username)}
+                      aria-describedby={createErrors.username ? 'create-credential-instapaper-username-error' : undefined}
+                      autoComplete="username"
+                      value={createObj.username || ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setJsonData(JSON.stringify({ username: v, password: createObj.password || '' }))
+                        setCreateErrors((prev) => ({
+                          ...prev,
+                          username: v.trim() ? '' : t('credentials_error_username_required'),
+                        }))
+                      }}
+                    />
+                    {createErrors.username && (
+                      <div id="create-credential-instapaper-username-error" className="text-sm text-red-600">
+                        {createErrors.username}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      id="create-credential-instapaper-password"
+                      className="input"
+                      placeholder={t('credentials_field_instapaper_password_placeholder')}
+                      aria-label={t('credentials_field_instapaper_password_placeholder')}
+                      type="password"
+                      aria-invalid={Boolean(createErrors.password)}
+                      aria-describedby={createErrors.password ? 'create-credential-instapaper-password-error' : undefined}
+                      autoComplete="current-password"
+                      value={createObj.password || ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setJsonData(JSON.stringify({ username: createObj.username || '', password: v }))
+                        setCreateErrors((prev) => ({
+                          ...prev,
+                          password: v.trim() ? '' : t('credentials_error_password_required'),
+                        }))
+                      }}
+                    />
+                    {createErrors.password && (
+                      <div id="create-credential-instapaper-password-error" className="text-sm text-red-600">
+                        {createErrors.password}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <input
-                    id="create-credential-api-key"
-                    className="input"
-                    placeholder={t('credentials_field_api_key_placeholder')}
-                    aria-label={t('credentials_field_api_key_placeholder')}
-                    aria-invalid={Boolean(createErrors.api_key)}
-                    aria-describedby={createErrors.api_key ? 'create-credential-api-key-error' : undefined}
-                    value={createObj.api_key || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ miniflux_url: createObj.miniflux_url || '', api_key: v })); setCreateErrors(prev=>({ ...prev, api_key: v.trim()? '' : t('credentials_error_api_key_required') })) }}
-                  />
-                  {createErrors.api_key && <div id="create-credential-api-key-error" className="text-sm text-red-600">{createErrors.api_key}</div>}
+              )}
+              {kind === 'instapaper_app' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      id="create-credential-consumer-key"
+                      className="input"
+                      placeholder={t('credentials_field_consumer_key_placeholder')}
+                      aria-label={t('credentials_field_consumer_key_placeholder')}
+                      aria-invalid={Boolean(createErrors.consumer_key)}
+                      aria-describedby={createErrors.consumer_key ? 'create-credential-consumer-key-error' : undefined}
+                      value={createObj.consumer_key || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: v, consumer_secret: createObj.consumer_secret || '' })); setCreateErrors(prev=>({ ...prev, consumer_key: v.trim()? '' : t('credentials_error_required') })) }}
+                    />
+                    {createErrors.consumer_key && <div id="create-credential-consumer-key-error" className="text-sm text-red-600">{createErrors.consumer_key}</div>}
+                  </div>
+                  <div>
+                    <input
+                      id="create-credential-consumer-secret"
+                      className="input"
+                      placeholder={t('credentials_field_consumer_secret_placeholder')}
+                      aria-label={t('credentials_field_consumer_secret_placeholder')}
+                      aria-invalid={Boolean(createErrors.consumer_secret)}
+                      aria-describedby={createErrors.consumer_secret ? 'create-credential-consumer-secret-error' : undefined}
+                      value={createObj.consumer_secret || ''}
+                      onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: createObj.consumer_key || '', consumer_secret: v })); setCreateErrors(prev=>({ ...prev, consumer_secret: v.trim()? '' : t('credentials_error_required') })) }}
+                    />
+                    {createErrors.consumer_secret && <div id="create-credential-consumer-secret-error" className="text-sm text-red-600">{createErrors.consumer_secret}</div>}
+                  </div>
                 </div>
-              </div>
-            )}
-            {kind === 'instapaper' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <input
-                    id="create-credential-instapaper-username"
-                    className="input"
-                    placeholder={t('credentials_field_instapaper_username_placeholder')}
-                    aria-label={t('credentials_field_instapaper_username_placeholder')}
-                    aria-invalid={Boolean(createErrors.username)}
-                    aria-describedby={createErrors.username ? 'create-credential-instapaper-username-error' : undefined}
-                    autoComplete="username"
-                    value={createObj.username || ''}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      setJsonData(JSON.stringify({ username: v, password: createObj.password || '' }))
-                      setCreateErrors((prev) => ({
-                        ...prev,
-                        username: v.trim() ? '' : t('credentials_error_username_required'),
-                      }))
-                    }}
-                  />
-                  {createErrors.username && (
-                    <div id="create-credential-instapaper-username-error" className="text-sm text-red-600">
-                      {createErrors.username}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <input
-                    id="create-credential-instapaper-password"
-                    className="input"
-                    placeholder={t('credentials_field_instapaper_password_placeholder')}
-                    aria-label={t('credentials_field_instapaper_password_placeholder')}
-                    type="password"
-                    aria-invalid={Boolean(createErrors.password)}
-                    aria-describedby={createErrors.password ? 'create-credential-instapaper-password-error' : undefined}
-                    autoComplete="current-password"
-                    value={createObj.password || ''}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      setJsonData(JSON.stringify({ username: createObj.username || '', password: v }))
-                      setCreateErrors((prev) => ({
-                        ...prev,
-                        password: v.trim() ? '' : t('credentials_error_password_required'),
-                      }))
-                    }}
-                  />
-                  {createErrors.password && (
-                    <div id="create-credential-instapaper-password-error" className="text-sm text-red-600">
-                      {createErrors.password}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {kind === 'instapaper_app' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <input
-                    id="create-credential-consumer-key"
-                    className="input"
-                    placeholder={t('credentials_field_consumer_key_placeholder')}
-                    aria-label={t('credentials_field_consumer_key_placeholder')}
-                    aria-invalid={Boolean(createErrors.consumer_key)}
-                    aria-describedby={createErrors.consumer_key ? 'create-credential-consumer-key-error' : undefined}
-                    value={createObj.consumer_key || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: v, consumer_secret: createObj.consumer_secret || '' })); setCreateErrors(prev=>({ ...prev, consumer_key: v.trim()? '' : t('credentials_error_required') })) }}
-                  />
-                  {createErrors.consumer_key && <div id="create-credential-consumer-key-error" className="text-sm text-red-600">{createErrors.consumer_key}</div>}
-                </div>
-                <div>
-                  <input
-                    id="create-credential-consumer-secret"
-                    className="input"
-                    placeholder={t('credentials_field_consumer_secret_placeholder')}
-                    aria-label={t('credentials_field_consumer_secret_placeholder')}
-                    aria-invalid={Boolean(createErrors.consumer_secret)}
-                    aria-describedby={createErrors.consumer_secret ? 'create-credential-consumer-secret-error' : undefined}
-                    value={createObj.consumer_secret || ''}
-                    onChange={e => { const v=e.target.value; setJsonData(JSON.stringify({ consumer_key: createObj.consumer_key || '', consumer_secret: v })); setCreateErrors(prev=>({ ...prev, consumer_secret: v.trim()? '' : t('credentials_error_required') })) }}
-                  />
-                  {createErrors.consumer_secret && <div id="create-credential-consumer-secret-error" className="text-sm text-red-600">{createErrors.consumer_secret}</div>}
-                </div>
-              </div>
-            )}
-            <div>
-              <button
-                type="submit"
-                className="btn"
-                disabled={
-                  !(
-                    hasDescription &&
-                    (
-                      (kind === 'site_login' && !!(siteConfigId.trim() && createObj.username?.trim() && createObj.password?.trim())) ||
-                      (kind === 'miniflux' && !!(createObj.miniflux_url && isValidUrl(createObj.miniflux_url) && createObj.api_key?.trim())) ||
-                      (kind === 'instapaper' && !!(createObj.username?.trim() && createObj.password?.trim())) ||
-                      (kind === 'instapaper_app' && !!(createObj.consumer_key?.trim() && createObj.consumer_secret?.trim()))
-                    )
-                  )
-                }
-                title={t('form_fill_required')}
-              >
-                {t('btn_create')}
-              </button>
+              )}
             </div>
-          </form>
+          </ConfigEditorPanel>
           <div className="card p-0 overflow-hidden">
             {(!data.items && !Array.isArray(data)) || (Array.isArray(data) ? data.length === 0 : (data.items?.length ?? 0) === 0) ? (
               <div className="p-4">
@@ -860,24 +882,28 @@ export default function Credentials() {
             </div>
           )}
           {editing && (
-            <div
-              className="card p-4 mt-3 md:ml-auto md:max-w-xl"
-              role="dialog"
-              aria-modal="true"
+            <ConfigEditorPanel
+              id="edit-credential"
               aria-labelledby="edit-credential-heading"
+              title={<span id="edit-credential-heading">{t('credentials_edit_heading', { id: editing.id })}</span>}
+              role="form"
+              onSubmit={(event) => {
+                event.preventDefault()
+                saveEdit()
+              }}
+              submitLabel={t('btn_save')}
+              cancelLabel={t('btn_cancel')}
+              onCancel={() => {
+                setEditing(null)
+                setEditDescription('')
+                setEditErrors({})
+                setEditSiteConfigId('')
+              }}
+              submitButtonProps={{ disabled: !canSubmitEdit, title: t('form_fill_required') }}
+              contentClassName="gap-3 md:grid-cols-1"
+              autoFocus
             >
-              <form
-                role="form"
-                aria-labelledby="edit-credential-heading"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  saveEdit()
-                }}
-                className="space-y-3"
-              >
-                <h3 id="edit-credential-heading" className="font-semibold">
-                  {t('credentials_edit_heading', { id: editing.id })}
-                </h3>
+              <div className="md:col-span-full space-y-3">
                 <div className="text-sm text-gray-700 dark:text-gray-300">{t('credentials_kind_display', { kind: editing.kind })}</div>
                 <div>
                   <input
@@ -896,6 +922,7 @@ export default function Credentials() {
                         description: v.trim() ? '' : t('credentials_error_description_required'),
                       }))
                     }}
+                    data-config-editor-initial-focus
                   />
                   {editErrors.description && (
                     <div id="edit-credential-description-error" className="text-sm text-red-600">
@@ -1050,41 +1077,8 @@ export default function Credentials() {
                     </div>
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="btn"
-                    disabled={
-                      !editing ||
-                      !(
-                        hasEditDescription &&
-                        (
-                          (editing.kind === 'site_login' && !!(editSiteConfigId.trim() && editingObj?.username?.trim())) ||
-                          (editing.kind === 'miniflux' && !!(editingObj?.miniflux_url && isValidUrl(editingObj.miniflux_url))) ||
-                          (editing.kind === 'instapaper') ||
-                          (editing.kind === 'instapaper_app' && !!(editingObj?.consumer_key?.trim()))
-                        )
-                      )
-                    }
-                    title={t('form_fill_required')}
-                  >
-                    {t('btn_save')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setEditing(null)
-                      setEditDescription('')
-                      setEditErrors({})
-                      setEditSiteConfigId('')
-                    }}
-                  >
-                    {t('btn_cancel')}
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+            </ConfigEditorPanel>
           )}
           </>
         )}
