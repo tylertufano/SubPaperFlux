@@ -651,9 +651,15 @@ export default function Feeds() {
                             ))}
                           </select>
                         </td>
-                        <td className="td flex gap-2">
-                          <button type="button" className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
-                          <button type="button" className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
+                        <td className="td">
+                          <div
+                            className="flex flex-wrap gap-2 sm:flex-nowrap"
+                            role="group"
+                            aria-label={t('actions_label')}
+                          >
+                            <button type="button" className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
+                            <button type="button" className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
+                          </div>
                         </td>
                       </>
                     ) : (
@@ -701,9 +707,15 @@ export default function Feeds() {
                             return siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
                           })()
                         }</td>
-                        <td className="td flex gap-2">
-                          <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
-                          <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
+                        <td className="td">
+                          <div
+                            className="flex flex-wrap gap-2 sm:flex-nowrap"
+                            role="group"
+                            aria-label={t('actions_label')}
+                          >
+                            <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
+                            <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
+                          </div>
                         </td>
                       </>
                     )}

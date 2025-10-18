@@ -271,43 +271,49 @@ export default function Jobs() {
                               </span>
                             )}
                           </td>
-                          <td className="td flex gap-2">
-                            <button
-                              type="button"
-                              className="btn"
-                              aria-expanded={Boolean(expanded[j.id])}
-                              aria-controls={expanded[j.id] ? `job-row-details-${j.id}` : undefined}
-                              onClick={async () => {
-                                const next = { ...expanded, [j.id]: !expanded[j.id] }
-                                setExpanded(next)
-                                if (!detailsCache[j.id]) {
-                                  try {
-                                    const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
-                                    setDetailsCache({ ...detailsCache, [j.id]: full })
-                                  } catch (e) {
-                                    // ignore errors here; banner not necessary for details
-                                  }
-                                }
-                              }}
-                            >{t('jobs_details')}</button>
-                            {(j.status === 'failed' || j.status === 'dead') && (
+                          <td className="td">
+                            <div
+                              className="flex flex-wrap gap-2 sm:flex-nowrap"
+                              role="group"
+                              aria-label={t('actions_label')}
+                            >
                               <button
                                 type="button"
                                 className="btn"
+                                aria-expanded={Boolean(expanded[j.id])}
+                                aria-controls={expanded[j.id] ? `job-row-details-${j.id}` : undefined}
                                 onClick={async () => {
-                                  try {
-                                    await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id })
-                                    setBanner({ kind: 'success', message: t('btn_retry') })
-                                    mutate()
-                                  } catch (e: any) {
-                                    setBanner({
-                                      kind: 'error',
-                                      message: t('jobs_retry_failed', { reason: e.message || String(e) }),
-                                    })
+                                  const next = { ...expanded, [j.id]: !expanded[j.id] }
+                                  setExpanded(next)
+                                  if (!detailsCache[j.id]) {
+                                    try {
+                                      const full = await v1.getJobV1JobsJobIdGet({ jobId: j.id })
+                                      setDetailsCache({ ...detailsCache, [j.id]: full })
+                                    } catch (e) {
+                                      // ignore errors here; banner not necessary for details
+                                    }
                                   }
                                 }}
-                              >{t('btn_retry')}</button>
-                            )}
+                              >{t('jobs_details')}</button>
+                              {(j.status === 'failed' || j.status === 'dead') && (
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  onClick={async () => {
+                                    try {
+                                      await v1.retryJobV1JobsJobIdRetryPost({ jobId: j.id })
+                                      setBanner({ kind: 'success', message: t('btn_retry') })
+                                      mutate()
+                                    } catch (e: any) {
+                                      setBanner({
+                                        kind: 'error',
+                                        message: t('jobs_retry_failed', { reason: e.message || String(e) }),
+                                      })
+                                    }
+                                  }}
+                                >{t('btn_retry')}</button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                         {expanded[j.id] && (
