@@ -50,7 +50,7 @@ export interface ApiConfig {
         [key: string]: any;
     } | null;
     /**
-     *
+     * Cookies that should be persisted after a request completes.
      * @type {any}
      * @memberof ApiConfig
      */

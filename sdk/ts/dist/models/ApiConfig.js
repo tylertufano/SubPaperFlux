@@ -61,11 +61,11 @@ function ApiConfigToJSON(value) {
         return null;
     }
     return {
-        'endpoint': value.endpoint,
-        'method': value.method,
-        'headers': value.headers,
-        'body': value.body,
-        'cookies': value.cookies,
+        endpoint: value.endpoint,
+        method: value.method,
+        headers: value.headers,
+        body: value.body,
+        cookies: value.cookies,
         'cookies_to_store': value.cookiesToStore,
     };
 }
