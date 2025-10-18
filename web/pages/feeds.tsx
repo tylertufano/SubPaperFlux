@@ -586,7 +586,7 @@ export default function Feeds() {
                         <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} aria-label={t('feeds_field_poll_placeholder')} /></td>
                         <td className="td">
                           {editRow.lastRssPollAt ? (
-                            <div className="space-y-1 text-sm">
+                            <div className="space-y-1">
                               <div>{editRow.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</div>
                               <p className="text-xs text-gray-500">{t('feeds_field_lookback_locked_hint')}</p>
                             </div>

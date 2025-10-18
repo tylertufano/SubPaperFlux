@@ -422,7 +422,7 @@ export default function Admin() {
                           <td className="td">
                             <div className={`font-medium ${connectivityClass}`}>{connectivityLabel}</div>
                             {statusCode != null && (
-                              <div className="text-sm text-gray-700 dark:text-gray-300">{t('admin_integrations_status_code', { status: statusCode })}</div>
+                              <div className="text-gray-700 dark:text-gray-300">{t('admin_integrations_status_code', { status: statusCode })}</div>
                             )}
                             {lastChecked && (
                               <div className="text-xs text-gray-500">{t('admin_integrations_last_checked', { time: lastChecked })}</div>
@@ -431,8 +431,8 @@ export default function Admin() {
                               <div className="text-xs text-red-600">{t('admin_integrations_error_message', { message: error })}</div>
                             )}
                           </td>
-                          <td className="td text-sm text-gray-800">{rateLimitDescription}</td>
-                          <td className="td text-sm text-gray-800">{backoffDescription}</td>
+                          <td className="td text-gray-800">{rateLimitDescription}</td>
+                          <td className="td text-gray-800">{backoffDescription}</td>
                           <td className="td">
                             <div className="flex flex-col gap-2 items-start">
                               <button
@@ -500,7 +500,7 @@ export default function Admin() {
                     <tr key={tbl} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                       <td className="td">{tbl}</td>
                       <td className="td">{t((info as any).enabled ? 'boolean_yes' : 'boolean_no')}</td>
-                      <td className="td text-sm">
+                      <td className="td">
                         select_owner: {String((info as any).policies?.select_owner)}; mod_owner: {String((info as any).policies?.mod_owner)}; del_owner: {String((info as any).policies?.del_owner)}
                       </td>
                       <td className="td">{(info as any).error ? `${(info as any).error}${(info as any).hint ? ` — ${(info as any).hint}` : ''}` : ''}</td>

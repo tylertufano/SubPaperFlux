@@ -906,7 +906,7 @@ export default function AdminUsers() {
                                 </div>
                                 <div>
                                   <div className="font-medium text-gray-900 dark:text-gray-100">{displayName(user)}</div>
-                                  <div className="text-sm text-gray-600">{user.email || t('admin_users_email_unknown')}</div>
+                                  <div className="text-gray-600">{user.email || t('admin_users_email_unknown')}</div>
                                   <div className="text-xs text-gray-500">{user.id}</div>
                                 </div>
                               </div>
@@ -974,7 +974,7 @@ export default function AdminUsers() {
                                 {badge.label}
                               </span>
                             </td>
-                            <td className="td align-top text-sm text-gray-800">
+                            <td className="td align-top text-gray-800">
                               {formatDateTime(user.last_login_at, t('admin_users_last_login_unknown'))}
                             </td>
                             <td className="td align-top">

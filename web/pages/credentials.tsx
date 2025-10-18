@@ -719,7 +719,7 @@ export default function Credentials() {
                     <tr key={c.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
                       <td className="td">
                         <div className="font-medium text-gray-900 dark:text-gray-100">{c.description}</div>
-                        <div className="text-sm text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
+                        <div className="text-gray-500">{t('credentials_table_id_caption', { id: c.id })}</div>
                       </td>
                       <td className="td">{c.kind}</td>
                       <td className="td">
