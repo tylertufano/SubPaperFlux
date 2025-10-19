@@ -285,7 +285,7 @@ def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_pa
         }
     ]
 
-        import requests
+    import requests
 
     session = requests.Session()
     try:
@@ -314,6 +314,7 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
     class FakeSession:
         def __init__(self):
             self.cookies = requests.cookies.RequestsCookieJar()
+            self.headers: dict[str, str] = {}
 
         def request(self, method, url, headers=None, params=None, json=None):
             self.cookies.set("session_token", "abc123", domain="api.example.com", path="/")
@@ -329,7 +330,9 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
             pass
 
     jsonlib = json
-    monkeypatch.setattr("subpaperflux_login.requests.Session", lambda: FakeSession())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_login.requests.Session", lambda: FakeSession()
+    )
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -387,6 +390,7 @@ def test_perform_login_and_save_cookies_missing_required_cookie(monkeypatch, tmp
     class MissingRefreshSession:
         def __init__(self):
             self.cookies = requests.cookies.RequestsCookieJar()
+            self.headers: dict[str, str] = {}
 
         def request(self, method, url, headers=None, params=None, json=None):
             self.cookies.set("session_token", "abc123", domain="api.example.com", path="/")
@@ -400,7 +404,10 @@ def test_perform_login_and_save_cookies_missing_required_cookie(monkeypatch, tmp
             pass
 
     jsonlib = json
-    monkeypatch.setattr("subpaperflux_login.requests.Session", lambda: MissingRefreshSession())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_login.requests.Session",
+        lambda: MissingRefreshSession(),
+    )
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -560,6 +567,14 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
         def __init__(self, entries: Optional[list[dict[str, object]]] = None):
             self.entries = entries or []
             self.called = False
+            self.login_type = "selenium"
+
+        def login_and_update(self, *args, **kwargs):
+            self.called = True
+            return {
+                "cookies": [dict(entry) for entry in self.entries],
+                "login_type": self.login_type,
+            }
 
         def get_new_rss_entries(self, **kwargs):  # type: ignore[override]
             self.called = True
@@ -567,6 +582,10 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
 
     tracking_spf = TrackingSpf()
     monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", tracking_spf.login_and_update)
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.get_new_rss_entries",
+        tracking_spf.get_new_rss_entries,
+    )
 
     with pytest.raises(CookieAuthenticationError) as exc:
         poll_rss_and_publish(
@@ -592,6 +611,10 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
 
     success_spf = TrackingSpf([])
     monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", success_spf.login_and_update)
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.get_new_rss_entries",
+        success_spf.get_new_rss_entries,
+    )
     res = poll_rss_and_publish(
         feed_id=feed_id,
         owner_user_id="user-1",
@@ -714,6 +737,7 @@ def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
         def __init__(self):
             self.status_code = 200
             self._content = b"<rss></rss>"
+            self.text = self._content.decode()
 
         @property
         def content(self):
@@ -741,8 +765,13 @@ def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux_rss.requests.get", lambda *_, **__: FakeFeedResponse())
-    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.requests.get",
+        lambda *_, **__: FakeFeedResponse(),
+    )
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.feedparser.parse", lambda _: FakeFeed()
+    )
 
     fetch_calls = []
 
@@ -750,7 +779,9 @@ def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
         fetch_calls.append((url, cookies))
         raise subpaperflux_rss.PaywalledContentError(url, indicator="simulated")
 
-    monkeypatch.setattr("subpaperflux_rss.get_article_html_with_cookies", fake_fetch)
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.get_article_html_with_cookies", fake_fetch
+    )
     pair_id = format_site_login_pair_id("cred_paywall", "sc_paywall")
 
     res = poll_rss_and_publish(

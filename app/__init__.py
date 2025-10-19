@@ -1,6 +1,6 @@
-"""SubPaperFlux API package (skeleton).
+"""SubPaperFlux service package.
 
-This package provides a minimal FastAPI app with direct OIDC auth.
-It is intentionally decoupled from the existing subpaperflux.py script.
+This package exposes the FastAPI application, background jobs, and
+shared utilities that replace the legacy standalone script.
 """
 
