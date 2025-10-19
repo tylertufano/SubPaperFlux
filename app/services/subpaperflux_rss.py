@@ -260,19 +260,64 @@ def _apply_cookies_to_session(
     for cookie in cookies:
         if not isinstance(cookie, dict):
             continue
+
         name = cookie.get("name")
         value = cookie.get("value")
-        if not name or value is None:
+
+        if not name:
+            logging.debug("Encountered cookie without a name. Skipping.")
             continue
+
+        if value is None:
+            logging.debug("Cookie '%s' is missing a value. Skipping.", name)
+            continue
+
+        value_str = value if isinstance(value, str) else str(value)
+        if value_str == "":
+            logging.debug("Cookie '%s' has an empty value. Skipping.", name)
+            continue
+
+        cookie_variants: List[Dict[str, Any]] = [cookie]
+
         domain = cookie.get("domain")
-        if domain and hostname and not _cookie_domain_matches(hostname, domain):
-            continue
-        cookie_payload = {"name": str(name), "value": str(value)}
-        if cookie.get("path"):
-            cookie_payload["path"] = cookie.get("path")
-        if cookie.get("domain"):
-            cookie_payload["domain"] = cookie.get("domain")
-        session.cookies.set(**cookie_payload)
+        domain_str = str(domain) if domain is not None else None
+
+        if hostname and domain_str and not _cookie_domain_matches(hostname, domain_str):
+            cloned_cookie = dict(cookie)
+            cloned_cookie["domain"] = hostname
+            cookie_variants.append(cloned_cookie)
+            logging.debug(
+                "Cookie '%s' domain '%s' does not match hostname '%s'; adding host-specific variant.",
+                name,
+                domain_str,
+                hostname,
+            )
+
+        for cookie_variant in cookie_variants:
+            cookie_kwargs: Dict[str, Any] = {}
+            variant_domain = cookie_variant.get("domain")
+            path = cookie_variant.get("path")
+            expires = cookie_variant.get("expiry") or cookie_variant.get("expires")
+            secure = cookie_variant.get("secure")
+
+            if variant_domain:
+                cookie_kwargs["domain"] = variant_domain
+            if path:
+                cookie_kwargs["path"] = path
+            if expires:
+                cookie_kwargs["expires"] = expires
+            if secure is not None:
+                cookie_kwargs["secure"] = secure
+
+            logging.debug(
+                "Attaching cookie '%s' (domain=%s, path=%s, expires=%s) to session.",
+                name,
+                cookie_kwargs.get("domain"),
+                cookie_kwargs.get("path"),
+                cookie_kwargs.get("expires"),
+            )
+
+            session.cookies.set(str(name), value_str, **cookie_kwargs)
 
 
 def _serialize_requests_cookie(cookie: Any) -> Dict[str, Any]:
