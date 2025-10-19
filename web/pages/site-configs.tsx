@@ -479,7 +479,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={`${idPrefix}-username-selector`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_username_selector_placeholder')}
             aria-label={t('site_configs_field_username_selector_placeholder')}
             aria-invalid={Boolean(errors['selenium.username_selector'])}
@@ -501,7 +501,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={`${idPrefix}-password-selector`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_password_selector_placeholder')}
             aria-label={t('site_configs_field_password_selector_placeholder')}
             aria-invalid={Boolean(errors['selenium.password_selector'])}
@@ -523,7 +523,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={`${idPrefix}-login-selector`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_login_selector_placeholder')}
             aria-label={t('site_configs_field_login_selector_placeholder')}
             aria-invalid={Boolean(errors['selenium.login_button_selector'])}
@@ -545,7 +545,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={`${idPrefix}-post-login-selector`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_post_login_selector_placeholder')}
             aria-label={t('site_configs_field_post_login_selector_placeholder')}
             value={config?.post_login_selector ?? ''}
@@ -561,7 +561,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={`${idPrefix}-cookies`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_cookies_placeholder')}
             aria-label={t('site_configs_field_cookies_placeholder')}
             value={config?.cookies_to_store ?? ''}
@@ -681,7 +681,7 @@ export default function SiteConfigs() {
           </label>
           <input
             id={`${idPrefix}-login-url`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_login_url_placeholder')}
             aria-invalid={Boolean(errors['api.login_url'])}
             aria-describedby={[
@@ -717,7 +717,7 @@ export default function SiteConfigs() {
           </label>
           <select
             id={`${idPrefix}-method`}
-            className="input"
+            className="input w-full"
             value={config?.method ?? 'POST'}
             aria-invalid={Boolean(errors['api.method'])}
             aria-describedby={errors['api.method'] ? `${idPrefix}-method-error` : undefined}
@@ -741,7 +741,7 @@ export default function SiteConfigs() {
           </label>
           <select
             id={`${idPrefix}-payload-mode`}
-            className="input"
+            className="input w-full"
             value={payloadMode}
             onChange={(e) => {
               const value = e.target.value === 'form' ? 'form' : 'json'
@@ -759,7 +759,7 @@ export default function SiteConfigs() {
           </label>
           <input
             id={`${idPrefix}-login-id`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_login_id_param_placeholder')}
             aria-invalid={Boolean(errors['api.login_id_param'])}
             aria-describedby={errors['api.login_id_param'] ? `${idPrefix}-login-id-error` : undefined}
@@ -780,7 +780,7 @@ export default function SiteConfigs() {
           </label>
           <input
             id={`${idPrefix}-password-param`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_password_param_placeholder')}
             aria-invalid={Boolean(errors['api.password_param'])}
             aria-describedby={errors['api.password_param'] ? `${idPrefix}-password-param-error` : undefined}
@@ -801,7 +801,7 @@ export default function SiteConfigs() {
           </label>
           <input
             id={`${idPrefix}-api-cookies`}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_api_cookies_placeholder')}
             aria-invalid={Boolean(errors['api.cookies_to_store'])}
             aria-describedby={[
@@ -857,7 +857,7 @@ export default function SiteConfigs() {
                     </label>
                     <input
                       id={keyId}
-                      className="input"
+                      className="input w-full"
                       placeholder={t('site_configs_field_custom_body_key_placeholder')}
                       aria-label={t('site_configs_field_custom_body_key_label', { index: index + 1 })}
                       value={entry.key}
@@ -872,7 +872,7 @@ export default function SiteConfigs() {
                     </label>
                     <input
                       id={valueId}
-                      className="input"
+                      className="input w-full"
                       placeholder={t('site_configs_field_custom_body_value_placeholder')}
                       aria-label={t('site_configs_field_custom_body_value_label', { index: index + 1 })}
                       value={entry.value}
@@ -916,7 +916,7 @@ export default function SiteConfigs() {
         <div>
           <input
             id={successClassId}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_success_text_class_placeholder')}
             aria-label={t('site_configs_field_success_text_class_placeholder')}
             aria-invalid={Boolean(errors.success_text_class)}
@@ -945,7 +945,7 @@ export default function SiteConfigs() {
         <div>
           <input
             id={expectedTextId}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_expected_success_text_placeholder')}
             aria-label={t('site_configs_field_expected_success_text_placeholder')}
             aria-invalid={Boolean(errors.expected_success_text)}
@@ -974,7 +974,7 @@ export default function SiteConfigs() {
         <div className="md:col-span-2">
           <input
             id={requiredCookiesId}
-            className="input"
+            className="input w-full"
             placeholder={t('site_configs_field_required_cookies_placeholder')}
             aria-label={t('site_configs_field_required_cookies_placeholder')}
             aria-invalid={Boolean(errors.required_cookies)}
@@ -1107,7 +1107,7 @@ export default function SiteConfigs() {
           <div>
             <input
               id="create-site-config-name"
-              className="input"
+              className="input w-full"
               placeholder={t('site_configs_field_name_placeholder')}
               aria-label={t('site_configs_field_name_placeholder')}
               aria-invalid={Boolean(createErrors.name)}
@@ -1124,7 +1124,7 @@ export default function SiteConfigs() {
           <div>
             <input
               id="create-site-config-url"
-              className="input"
+              className="input w-full"
               placeholder={t('site_configs_field_url_placeholder')}
               aria-label={t('site_configs_field_url_placeholder')}
               aria-invalid={Boolean(createErrors.site_url)}
@@ -1264,7 +1264,7 @@ export default function SiteConfigs() {
             <div>
               <input
                 id="edit-site-config-name"
-                className="input"
+                className="input w-full"
                 placeholder={t('site_configs_field_name_placeholder')}
                 aria-label={t('site_configs_field_name_placeholder')}
                 aria-invalid={Boolean(editErrors.name)}
@@ -1281,7 +1281,7 @@ export default function SiteConfigs() {
             <div>
               <input
                 id="edit-site-config-url"
-                className="input"
+                className="input w-full"
                 placeholder={t('site_configs_field_url_placeholder')}
                 aria-label={t('site_configs_field_url_placeholder')}
                 aria-invalid={Boolean(editErrors.site_url)}
