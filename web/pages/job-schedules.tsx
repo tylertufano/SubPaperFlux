@@ -7,6 +7,7 @@ import {
   AutocompleteMultiSelect,
   AutocompleteSingleSelect,
   Breadcrumbs,
+  ConfigEditorPanel,
   EmptyState,
   Nav,
 } from "../components";
@@ -72,6 +73,9 @@ type ScheduleFormProps = {
   isSubmitting?: boolean;
   onCreateTag?: (label: string) => Promise<AutocompleteOption | null>;
   onCreateFolder?: (label: string) => Promise<AutocompleteOption | null>;
+  title: string;
+  className?: string;
+  headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 };
 
 const PAGE_SIZE = 20;
@@ -372,6 +376,9 @@ function ScheduleForm({
   isSubmitting,
   onCreateTag,
   onCreateFolder,
+  title,
+  className,
+  headingLevel = 'h3',
 }: ScheduleFormProps) {
   const { t } = useI18n();
   const initialType = (initialSchedule?.jobType as JobType) ?? DEFAULT_JOB_TYPE;
@@ -1169,161 +1176,159 @@ function ScheduleForm({
     }
   }
 
+  const submitLabel = mode === "edit"
+    ? t("job_schedules_btn_update")
+    : t("job_schedules_btn_create");
+  const cancelLabel = mode === "edit" && onCancel
+    ? t("job_schedules_btn_cancel_edit")
+    : undefined;
+
   return (
-    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col md:col-span-2">
-          <label
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            htmlFor="schedule-name"
-          >
-            {t("job_schedules_field_schedule_name")}
-          </label>
-          <input
-            id="schedule-name"
-            className="input"
-            value={scheduleName}
-            onChange={(e) => setScheduleName(e.target.value)}
-            aria-invalid={Boolean(errors.scheduleName)}
-            aria-describedby={
-              errors.scheduleName ? "schedule-name-error" : undefined
-            }
-          />
-          {errors.scheduleName && (
-            <p id="schedule-name-error" className="text-sm text-red-600 mt-1">
-              {errors.scheduleName}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col">
-          <label
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            htmlFor="schedule-job-type"
-          >
-            {t("job_schedules_field_job_type")}
-          </label>
-          <select
-            id="schedule-job-type"
-            className="input"
-            value={jobType}
-            onChange={(e) => handleJobTypeChange(e.target.value as JobType)}
-            aria-invalid={Boolean(errors.jobType)}
-            aria-describedby={
-              errors.jobType ? "schedule-job-type-error" : undefined
-            }
-          >
-            {JOB_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {jobTypeLabel(type, t)}
-              </option>
-            ))}
-          </select>
-          {errors.jobType && (
-            <p
-              id="schedule-job-type-error"
-              className="text-sm text-red-600 mt-1"
-            >
-              {errors.jobType}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col">
-          <label
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            htmlFor="schedule-frequency"
-          >
-            {t("job_schedules_field_frequency")}
-          </label>
-          <input
-            id="schedule-frequency"
-            className="input"
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-            aria-invalid={Boolean(errors.frequency)}
-            aria-describedby={
-              errors.frequency ? "schedule-frequency-error" : undefined
-            }
-          />
-          {errors.frequency && (
-            <p
-              id="schedule-frequency-error"
-              className="text-sm text-red-600 mt-1"
-            >
-              {errors.frequency}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col">
-          <label
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            htmlFor="schedule-next-run"
-          >
-            {t("job_schedules_field_next_run")}
-          </label>
-          <input
-            id="schedule-next-run"
-            type="datetime-local"
-            className="input"
-            value={nextRunAt}
-            onChange={(e) => setNextRunAt(e.target.value)}
-            aria-invalid={Boolean(errors.nextRunAt)}
-            aria-describedby={
-              errors.nextRunAt ? "schedule-next-run-error" : undefined
-            }
-          />
-          <p className="text-sm text-gray-600 mt-1">
-            {t("job_schedules_field_next_run_help")}
-          </p>
-          {errors.nextRunAt && (
-            <p
-              id="schedule-next-run-error"
-              className="text-sm text-red-600 mt-1"
-            >
-              {errors.nextRunAt}
-            </p>
-          )}
-        </div>
-        <label className="inline-flex items-center gap-2 md:col-span-2">
-          <input
-            id="schedule-active"
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {t("job_schedules_field_active")}
-          </span>
+    <ConfigEditorPanel
+      className={className}
+      title={title}
+      headingLevel={headingLevel}
+      onSubmit={handleSubmit}
+      submitLabel={submitLabel}
+      cancelLabel={cancelLabel}
+      onCancel={cancelLabel ? onCancel : undefined}
+      isSubmitting={isSubmitting}
+      contentClassName="gap-4 md:grid-cols-2"
+      noValidate
+    >
+      <div className="flex flex-col md:col-span-2">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="schedule-name"
+        >
+          {t("job_schedules_field_schedule_name")}
         </label>
-      </div>
-
-      <div className="space-y-4">{renderJobSpecificFields()}</div>
-
-      {formError && (
-        <Alert
-          kind="error"
-          message={formError}
-          onClose={() => setFormError(null)}
+        <input
+          id="schedule-name"
+          className="input"
+          value={scheduleName}
+          onChange={(e) => setScheduleName(e.target.value)}
+          aria-invalid={Boolean(errors.scheduleName)}
+          aria-describedby={
+            errors.scheduleName ? "schedule-name-error" : undefined
+          }
         />
-      )}
-
-      <div className="flex items-center gap-3">
-        <button type="submit" className="btn" disabled={Boolean(isSubmitting)}>
-          {mode === "edit"
-            ? t("job_schedules_btn_update")
-            : t("job_schedules_btn_create")}
-        </button>
-        {mode === "edit" && onCancel ? (
-          <button
-            type="button"
-            className="btn"
-            onClick={onCancel}
-            disabled={Boolean(isSubmitting)}
-          >
-            {t("job_schedules_btn_cancel_edit")}
-          </button>
-        ) : null}
+        {errors.scheduleName && (
+          <p id="schedule-name-error" className="text-sm text-red-600 mt-1">
+            {errors.scheduleName}
+          </p>
+        )}
       </div>
-    </form>
+      <div className="flex flex-col">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="schedule-job-type"
+        >
+          {t("job_schedules_field_job_type")}
+        </label>
+        <select
+          id="schedule-job-type"
+          className="input"
+          value={jobType}
+          onChange={(e) => handleJobTypeChange(e.target.value as JobType)}
+          aria-invalid={Boolean(errors.jobType)}
+          aria-describedby={
+            errors.jobType ? "schedule-job-type-error" : undefined
+          }
+        >
+          {JOB_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {jobTypeLabel(type, t)}
+            </option>
+          ))}
+        </select>
+        {errors.jobType && (
+          <p
+            id="schedule-job-type-error"
+            className="text-sm text-red-600 mt-1"
+          >
+            {errors.jobType}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="schedule-frequency"
+        >
+          {t("job_schedules_field_frequency")}
+        </label>
+        <input
+          id="schedule-frequency"
+          className="input"
+          value={frequency}
+          onChange={(e) => setFrequency(e.target.value)}
+          aria-invalid={Boolean(errors.frequency)}
+          aria-describedby={
+            errors.frequency ? "schedule-frequency-error" : undefined
+          }
+        />
+        {errors.frequency && (
+          <p
+            id="schedule-frequency-error"
+            className="text-sm text-red-600 mt-1"
+          >
+            {errors.frequency}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="schedule-next-run"
+        >
+          {t("job_schedules_field_next_run")}
+        </label>
+        <input
+          id="schedule-next-run"
+          type="datetime-local"
+          className="input"
+          value={nextRunAt}
+          onChange={(e) => setNextRunAt(e.target.value)}
+          aria-invalid={Boolean(errors.nextRunAt)}
+          aria-describedby={
+            errors.nextRunAt ? "schedule-next-run-error" : undefined
+          }
+        />
+        <p className="text-sm text-gray-600 mt-1">
+          {t("job_schedules_field_next_run_help")}
+        </p>
+        {errors.nextRunAt && (
+          <p
+            id="schedule-next-run-error"
+            className="text-sm text-red-600 mt-1"
+          >
+            {errors.nextRunAt}
+          </p>
+        )}
+      </div>
+      <label className="inline-flex items-center gap-2 md:col-span-2">
+        <input
+          id="schedule-active"
+          type="checkbox"
+          checked={isActive}
+          onChange={(e) => setIsActive(e.target.checked)}
+        />
+        <span className="text-sm text-gray-700 dark:text-gray-300">
+          {t("job_schedules_field_active")}
+        </span>
+      </label>
+      <div className="md:col-span-full space-y-4">{renderJobSpecificFields()}</div>
+      {formError && (
+        <div className="md:col-span-full">
+          <Alert
+            kind="error"
+            message={formError}
+            onClose={() => setFormError(null)}
+          />
+        </div>
+      )}
+    </ConfigEditorPanel>
   );
 }
 
@@ -1809,47 +1814,43 @@ export default function JobSchedulesPage() {
         )}
 
         {canManageSchedules ? (
-          <div className="card p-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              {t("job_schedules_create_heading")}
-            </h2>
-            <ScheduleForm
-              mode="create"
-              credentials={credentials}
-              siteConfigs={siteConfigs}
-              feeds={feeds}
-              tags={tagsList}
-              folders={foldersList}
-              schedules={schedules}
-              onSubmit={handleCreate}
-              isSubmitting={isCreating}
-              onCreateTag={handleCreateTag}
-              onCreateFolder={handleCreateFolder}
-            />
-          </div>
+          <ScheduleForm
+            mode="create"
+            title={t("job_schedules_create_heading")}
+            className="mb-4"
+            headingLevel="h2"
+            credentials={credentials}
+            siteConfigs={siteConfigs}
+            feeds={feeds}
+            tags={tagsList}
+            folders={foldersList}
+            schedules={schedules}
+            onSubmit={handleCreate}
+            isSubmitting={isCreating}
+            onCreateTag={handleCreateTag}
+            onCreateFolder={handleCreateFolder}
+          />
         ) : null}
 
         {editingSchedule ? (
-          <div className="card p-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              {t("job_schedules_edit_heading", { id: editingSchedule.id })}
-            </h2>
-            <ScheduleForm
-              mode="edit"
-              initialSchedule={editingSchedule}
-              credentials={credentials}
-              siteConfigs={siteConfigs}
-              feeds={feeds}
-              tags={tagsList}
-              folders={foldersList}
-              schedules={schedules}
-              onSubmit={handleUpdate}
-              onCancel={() => setEditingSchedule(null)}
-              isSubmitting={isEditing}
-              onCreateTag={handleCreateTag}
-              onCreateFolder={handleCreateFolder}
-            />
-          </div>
+          <ScheduleForm
+            mode="edit"
+            title={t("job_schedules_edit_heading", { id: editingSchedule.id })}
+            className="mb-4"
+            headingLevel="h2"
+            initialSchedule={editingSchedule}
+            credentials={credentials}
+            siteConfigs={siteConfigs}
+            feeds={feeds}
+            tags={tagsList}
+            folders={foldersList}
+            schedules={schedules}
+            onSubmit={handleUpdate}
+            onCancel={() => setEditingSchedule(null)}
+            isSubmitting={isEditing}
+            onCreateTag={handleCreateTag}
+            onCreateFolder={handleCreateFolder}
+          />
         ) : null}
 
         {isLoading && <p className="text-gray-600">{t("loading_text")}</p>}

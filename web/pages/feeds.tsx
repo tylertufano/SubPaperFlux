@@ -1,5 +1,13 @@
 import useSWR from 'swr'
-import { Alert, AutocompleteMultiSelect, AutocompleteSingleSelect, Breadcrumbs, EmptyState, Nav } from '../components'
+import {
+  Alert,
+  AutocompleteMultiSelect,
+  AutocompleteSingleSelect,
+  Breadcrumbs,
+  ConfigEditorPanel,
+  EmptyState,
+  Nav,
+} from '../components'
 import { v1, feeds as feedsApi } from '../lib/openapi'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../lib/i18n'
@@ -450,15 +458,21 @@ export default function Feeds() {
       <main className="container py-6">
         <h2 id="feeds-heading" className="text-xl font-semibold mb-3">{t('feeds_title')}</h2>
         {banner && <div className="mb-3"><Alert kind={banner.kind} message={banner.message} onClose={() => setBanner(null)} /></div>}
-        <form
+        <ConfigEditorPanel
           id="create-feed"
-          className="card p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3"
-          role="form"
           aria-labelledby="create-feed-heading"
-          onSubmit={(e) => { e.preventDefault(); createFeed() }}
+          title={<span id="create-feed-heading">{t('feeds_create_heading')}</span>}
+          role="form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            createFeed()
+          }}
+          submitLabel={t('btn_create')}
+          contentClassName="md:grid-cols-4"
         >
-          <h3 id="create-feed-heading" className="font-semibold md:col-span-4">{t('feeds_create_heading')}</h3>
-          <label className="sr-only" htmlFor="create-feed-url">{t('feeds_field_url_placeholder')}</label>
+          <label className="sr-only" htmlFor="create-feed-url">
+            {t('feeds_field_url_placeholder')}
+          </label>
           <input
             id="create-feed-url"
             className="input md:col-span-2"
@@ -466,8 +480,11 @@ export default function Feeds() {
             aria-label={t('feeds_field_url_placeholder')}
             value={url}
             onChange={e => setUrl(e.target.value)}
+            data-config-editor-initial-focus
           />
-          <label className="sr-only" htmlFor="create-feed-poll">{t('feeds_field_poll_placeholder')}</label>
+          <label className="sr-only" htmlFor="create-feed-poll">
+            {t('feeds_field_poll_placeholder')}
+          </label>
           <input
             id="create-feed-poll"
             className="input"
@@ -476,7 +493,9 @@ export default function Feeds() {
             value={poll}
             onChange={e => setPoll(e.target.value)}
           />
-          <label className="sr-only" htmlFor="create-feed-lookback">{t('feeds_field_lookback_placeholder')}</label>
+          <label className="sr-only" htmlFor="create-feed-lookback">
+            {t('feeds_field_lookback_placeholder')}
+          </label>
           <input
             id="create-feed-lookback"
             className="input"
@@ -485,7 +504,9 @@ export default function Feeds() {
             value={lookback}
             onChange={e => setLookback(e.target.value)}
           />
-          <label className="sr-only" htmlFor="create-feed-site-config">{t('feeds_field_site_login_select')}</label>
+          <label className="sr-only" htmlFor="create-feed-site-config">
+            {t('feeds_field_site_login_select')}
+          </label>
           <select
             id="create-feed-site-config"
             className="input md:col-span-2"
@@ -542,10 +563,23 @@ export default function Feeds() {
               createOptionLabel={(option) => t('combobox_create_option', { option })}
             />
           </div>
-          <label className="inline-flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={paywalled} onChange={e => setPaywalled(e.target.checked)} /> {t('feeds_field_paywalled_label')}</label>
-          <label className="inline-flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={rssAuth} onChange={e => setRssAuth(e.target.checked)} /> {t('feeds_field_rss_auth_label')}</label>
-          <button type="submit" className="btn md:col-span-1">{t('btn_create')}</button>
-        </form>
+          <label className="inline-flex items-center gap-2 md:col-span-2">
+            <input
+              type="checkbox"
+              checked={paywalled}
+              onChange={e => setPaywalled(e.target.checked)}
+            />{' '}
+            {t('feeds_field_paywalled_label')}
+          </label>
+          <label className="inline-flex items-center gap-2 md:col-span-2">
+            <input
+              type="checkbox"
+              checked={rssAuth}
+              onChange={e => setRssAuth(e.target.checked)}
+            />{' '}
+            {t('feeds_field_rss_auth_label')}
+          </label>
+        </ConfigEditorPanel>
         {isLoading && <p className="text-gray-600">{t('loading_text')}</p>}
         {error && <Alert kind="error" message={String(error)} />}
         {data && (
@@ -580,145 +614,61 @@ export default function Feeds() {
               <tbody>
                 {(data.items || data).map((f: any) => (
                   <tr key={f.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-900">
-                    {editingId === f.id ? (
-                      <>
-                        <td className="td"><input className="input w-full" value={editRow.url} onChange={e => setEditRow({ ...editRow, url: e.target.value })} placeholder={t('feeds_field_url_placeholder')} aria-label={t('feeds_field_url_placeholder')} /></td>
-                        <td className="td"><input className="input w-full" value={editRow.pollFrequency} onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })} placeholder={t('feeds_field_poll_placeholder')} aria-label={t('feeds_field_poll_placeholder')} /></td>
-                        <td className="td">
-                          {editRow.lastRssPollAt ? (
-                            <div className="space-y-1">
-                              <div>{editRow.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</div>
-                              <p className="text-xs text-gray-500">{t('feeds_field_lookback_locked_hint')}</p>
-                            </div>
-                          ) : (
-                            <input className="input w-full" value={editRow.initialLookbackPeriod} onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })} placeholder={t('feeds_field_lookback_placeholder')} aria-label={t('feeds_field_lookback_placeholder')} />
-                          )}
-                        </td>
-                        <td className="td"><input type="checkbox" aria-label={t('feeds_field_paywalled_label')} checked={editRow.isPaywalled} onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })} /></td>
-                        <td className="td"><input type="checkbox" aria-label={t('feeds_field_rss_auth_label')} checked={editRow.rssRequiresAuth} onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })} /></td>
-                        <td className="td">
-                          <AutocompleteMultiSelect
-                            id={`edit-feed-tags-${f.id}`}
-                            label={t('feeds_field_tags_label')}
-                            placeholder={t('feeds_field_tags_placeholder')}
-                            options={tagOptions}
-                            value={Array.isArray(editRow.tagIds) ? editRow.tagIds : []}
-                            onChange={(next) => setEditRow({ ...editRow, tagIds: next })}
-                            noOptionsLabel={t('combobox_no_options')}
-                            helpText={t('feeds_field_tags_help')}
-                            getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
-                            onCreate={handleCreateTag}
-                            createOptionLabel={(option) => t('combobox_create_option', { option })}
-                          />
-                        </td>
-                        <td className="td">
-                          <AutocompleteSingleSelect
-                            id={`edit-feed-folder-${f.id}`}
-                            label={t('feeds_field_folder_label')}
-                            placeholder={t('feeds_field_folder_placeholder')}
-                            options={folderOptions}
-                            value={editRow.folderId ? editRow.folderId : null}
-                            onChange={(next) => setEditRow({ ...editRow, folderId: next ?? '' })}
-                            noOptionsLabel={t('combobox_no_options')}
-                            helpText={t('feeds_field_folder_help')}
-                            clearLabel={t('combobox_clear_selection')}
-                            onCreate={handleCreateFolder}
-                            createOptionLabel={(option) => t('combobox_create_option', { option })}
-                          />
-                        </td>
-                        <td className="td">
-                          <select
-                            className="input w-full"
-                            value={editRow.siteLoginSelection || ''}
-                            aria-required={Boolean(editRow.isPaywalled || editRow.rssRequiresAuth)}
-                            onChange={e => {
-                              const value = e.target.value
-                              const option = siteLoginOptions.find(opt => opt.value === value)
-                              setEditRow({
-                                ...editRow,
-                                siteLoginSelection: value,
-                                siteConfigId: option?.siteConfigId ?? '',
-                                siteLoginCredentialId: option?.credentialId ?? '',
-                              })
-                            }}
-                            aria-label={t('feeds_field_site_login_select')}
-                          >
-                            <option value="">{t('feeds_field_site_login_select')}</option>
-                            {siteLoginOptions.map(option => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="td">
-                          <div
-                            className="flex flex-wrap gap-2 sm:flex-nowrap"
-                            role="group"
-                            aria-label={t('actions_label')}
-                          >
-                            <button type="button" className="btn" onClick={() => saveEdit(f.id)}>{t('btn_save')}</button>
-                            <button type="button" className="btn" onClick={cancelEdit}>{t('btn_cancel')}</button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="td">{f.url}</td>
-                        <td className="td">{f.poll_frequency || f.pollFrequency}</td>
-                        <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</td>
-                        <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
-                        <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
-                        <td className="td">
-                          {(() => {
-                            const rawTags = Array.isArray(f.tag_ids ?? f.tagIds) ? (f.tag_ids ?? f.tagIds) : []
-                            if (!rawTags.length) return ''
-                            return rawTags
-                              .map((tagId: any) => {
-                                const normalized = tagId != null ? String(tagId) : ''
-                                return normalized ? tagLabelMap.get(normalized) || normalized : ''
-                              })
-                              .filter(Boolean)
-                              .join(', ')
-                          })()}
-                        </td>
-                        <td className="td">
-                          {(() => {
-                            const folderValue = f.folder_id ?? f.folderId
-                            if (!folderValue) return ''
-                            const normalized = String(folderValue)
-                            return folderLabelMap.get(normalized) || normalized
-                          })()}
-                        </td>
-                        <td className="td">{
-                          (() => {
-                            const id = f.site_config_id || f.siteConfigId
-                            const credentialId = f.site_login_credential_id || f.siteLoginCredentialId
-                            if (!id) return ''
-                            const key = String(id)
-                            if (credentialId) {
-                              const pairKey = `${credentialId}::${key}`
-                              const pairLabel = siteLoginPairLabelMap.get(pairKey)
-                              if (pairLabel) return pairLabel
-                              const credLabel = credentialLabelMap.get(String(credentialId)) || String(credentialId)
-                              const configLabel = siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
-                              return `${credLabel} • ${configLabel}`
-                            }
-                            return siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
-                          })()
-                        }</td>
-                        <td className="td">
-                          <div
-                            className="flex flex-wrap gap-2 sm:flex-nowrap"
-                            role="group"
-                            aria-label={t('actions_label')}
-                          >
-                            <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
-                            <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
-                          </div>
-                        </td>
-                      </>
-                    )}
+                    <>
+                      <td className="td">{f.url}</td>
+                      <td className="td">{f.poll_frequency || f.pollFrequency}</td>
+                      <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</td>
+                      <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
+                      <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
+                      <td className="td">
+                        {(() => {
+                          const rawTags = Array.isArray(f.tag_ids ?? f.tagIds) ? (f.tag_ids ?? f.tagIds) : []
+                          if (!rawTags.length) return ''
+                          return rawTags
+                            .map((tagId: any) => {
+                              const normalized = tagId != null ? String(tagId) : ''
+                              return normalized ? tagLabelMap.get(normalized) || normalized : ''
+                            })
+                            .filter(Boolean)
+                            .join(', ')
+                        })()}
+                      </td>
+                      <td className="td">
+                        {(() => {
+                          const folderValue = f.folder_id ?? f.folderId
+                          if (!folderValue) return ''
+                          const normalized = String(folderValue)
+                          return folderLabelMap.get(normalized) || normalized
+                        })()}
+                      </td>
+                      <td className="td">{
+                        (() => {
+                          const id = f.site_config_id || f.siteConfigId
+                          const credentialId = f.site_login_credential_id || f.siteLoginCredentialId
+                          if (!id) return ''
+                          const key = String(id)
+                          if (credentialId) {
+                            const pairKey = `${credentialId}::${key}`
+                            const pairLabel = siteLoginPairLabelMap.get(pairKey)
+                            if (pairLabel) return pairLabel
+                            const credLabel = credentialLabelMap.get(String(credentialId)) || String(credentialId)
+                            const configLabel = siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
+                            return `${credLabel} • ${configLabel}`
+                          }
+                          return siteConfigLabelMap.get(key) || siteConfigMap.get(key) || key
+                        })()}
+                      </td>
+                      <td className="td">
+                        <div
+                          className="flex flex-wrap gap-2 sm:flex-nowrap"
+                          role="group"
+                          aria-label={t('actions_label')}
+                        >
+                          <button type="button" className="btn" onClick={() => startEdit(f)}>{t('btn_edit')}</button>
+                          <button type="button" className="btn" onClick={() => deleteFeed(f.id)}>{t('btn_delete')}</button>
+                        </div>
+                      </td>
+                    </>
                   </tr>
                 ))}
               </tbody>
@@ -726,6 +676,137 @@ export default function Feeds() {
             )}
           </div>
         )}
+        {editingId && editRow ? (
+          <ConfigEditorPanel
+            id="edit-feed"
+            aria-labelledby="edit-feed-heading"
+            title={<span id="edit-feed-heading">{t('feeds_edit_heading')}</span>}
+            role="form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (editingId) {
+                void saveEdit(editingId)
+              }
+            }}
+            submitLabel={t('btn_save')}
+            cancelLabel={t('btn_cancel')}
+            onCancel={cancelEdit}
+            autoFocus
+            contentClassName="md:grid-cols-4"
+          >
+            <label className="sr-only" htmlFor="edit-feed-url">
+              {t('feeds_field_url_placeholder')}
+            </label>
+            <input
+              id="edit-feed-url"
+              className="input md:col-span-2"
+              value={editRow.url || ''}
+              onChange={e => setEditRow({ ...editRow, url: e.target.value })}
+              aria-label={t('feeds_field_url_placeholder')}
+              data-config-editor-initial-focus
+            />
+            <label className="sr-only" htmlFor="edit-feed-poll">
+              {t('feeds_field_poll_placeholder')}
+            </label>
+            <input
+              id="edit-feed-poll"
+              className="input"
+              value={editRow.pollFrequency || ''}
+              onChange={e => setEditRow({ ...editRow, pollFrequency: e.target.value })}
+              aria-label={t('feeds_field_poll_placeholder')}
+            />
+            <div className="md:col-span-1">
+              <label className="sr-only" htmlFor="edit-feed-lookback">
+                {t('feeds_field_lookback_placeholder')}
+              </label>
+              <input
+                id="edit-feed-lookback"
+                className="input"
+                value={editRow.initialLookbackPeriod || ''}
+                onChange={e => setEditRow({ ...editRow, initialLookbackPeriod: e.target.value })}
+                aria-label={t('feeds_field_lookback_placeholder')}
+                disabled={Boolean(editRow.lastRssPollAt)}
+                aria-disabled={Boolean(editRow.lastRssPollAt)}
+              />
+              {Boolean(editRow.lastRssPollAt) && (
+                <p className="text-xs text-gray-600 mt-1">{t('feeds_field_lookback_locked_hint')}</p>
+              )}
+            </div>
+            <label className="inline-flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(editRow.isPaywalled)}
+                onChange={e => setEditRow({ ...editRow, isPaywalled: e.target.checked })}
+              />{' '}
+              {t('feeds_field_paywalled_label')}
+            </label>
+            <label className="inline-flex items-center gap-2 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={Boolean(editRow.rssRequiresAuth)}
+                onChange={e => setEditRow({ ...editRow, rssRequiresAuth: e.target.checked })}
+              />{' '}
+              {t('feeds_field_rss_auth_label')}
+            </label>
+            <div className="md:col-span-4">
+              <AutocompleteMultiSelect
+                id="edit-feed-tags"
+                label={t('feeds_field_tags_label')}
+                placeholder={t('feeds_field_tags_placeholder')}
+                options={tagOptions}
+                value={Array.isArray(editRow.tagIds) ? editRow.tagIds : []}
+                onChange={(next) => setEditRow({ ...editRow, tagIds: next })}
+                noOptionsLabel={t('combobox_no_options')}
+                helpText={t('feeds_field_tags_help')}
+                getRemoveLabel={(option) => t('combobox_remove_option', { option: option.label })}
+                onCreate={handleCreateTag}
+                createOptionLabel={(option) => t('combobox_create_option', { option })}
+              />
+            </div>
+            <div className="md:col-span-4">
+              <AutocompleteSingleSelect
+                id="edit-feed-folder"
+                label={t('feeds_field_folder_label')}
+                placeholder={t('feeds_field_folder_placeholder')}
+                options={folderOptions}
+                value={editRow.folderId ? editRow.folderId : null}
+                onChange={(next) => setEditRow({ ...editRow, folderId: next ?? '' })}
+                noOptionsLabel={t('combobox_no_options')}
+                helpText={t('feeds_field_folder_help')}
+                clearLabel={t('combobox_clear_selection')}
+                onCreate={handleCreateFolder}
+                createOptionLabel={(option) => t('combobox_create_option', { option })}
+              />
+            </div>
+            <label className="sr-only" htmlFor="edit-feed-site-config">
+              {t('feeds_field_site_login_select')}
+            </label>
+            <select
+              id="edit-feed-site-config"
+              className="input md:col-span-2"
+              value={editRow.siteLoginSelection || ''}
+              aria-required={Boolean(editRow.isPaywalled || editRow.rssRequiresAuth)}
+              onChange={e => {
+                const value = e.target.value
+                const option = siteLoginOptions.find(opt => opt.value === value)
+                setEditRow({
+                  ...editRow,
+                  siteLoginSelection: value,
+                  siteConfigId: option?.siteConfigId ?? '',
+                  siteLoginCredentialId: option?.credentialId ?? '',
+                })
+              }}
+              aria-label={t('feeds_field_site_login_select')}
+            >
+              <option value="">{t('feeds_field_site_login_select')}</option>
+              {siteLoginOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </ConfigEditorPanel>
+        ) : null}
       </main>
     </div>
   )

@@ -357,24 +357,26 @@ describe("FeedsPage", () => {
 
     fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
-    const editPaywalledCheckbox = within(row).getByLabelText("Paywalled") as HTMLInputElement;
+    const editForm = await screen.findByRole("form", { name: "Edit Feed" });
+
+    const editPaywalledCheckbox = within(editForm).getByLabelText("Paywalled") as HTMLInputElement;
     expect(editPaywalledCheckbox.checked).toBe(false);
     fireEvent.click(editPaywalledCheckbox);
     expect(editPaywalledCheckbox.checked).toBe(true);
 
-    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+    fireEvent.click(within(editForm).getByRole("button", { name: "Save" }));
 
     await screen.findByText(
       "Site login credentials are required when RSS requires authentication or content is paywalled",
     );
     expect(openApiSpies.updateFeed).not.toHaveBeenCalled();
 
-    const editSelect = within(row).getByLabelText(
+    const editSelect = within(editForm).getByLabelText(
       "Select a site login or configuration (optional)",
     ) as HTMLSelectElement;
     fireEvent.change(editSelect, { target: { value: "cred-1::config-1" } });
 
-    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+    fireEvent.click(within(editForm).getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(openApiSpies.updateFeed).toHaveBeenCalledTimes(1));
     const updatePayload = openApiSpies.updateFeed.mock.calls[0][0].feed;
@@ -404,19 +406,43 @@ describe("FeedsPage", () => {
 
     fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
 
-    expect(within(row).queryByLabelText("Initial lookback (first poll only)")).toBeNull();
+    const editForm = await screen.findByRole("form", { name: "Edit Feed" });
+
+    const initialLookbackInput = within(editForm).getByLabelText(
+      "Initial lookback (first poll only)",
+    ) as HTMLInputElement;
+    expect(initialLookbackInput).toBeDisabled();
+    expect(initialLookbackInput.value).toBe("48h");
     expect(
-      within(row).getByText("Initial lookback can only be updated before the first poll runs."),
+      within(editForm).getByText("Initial lookback can only be updated before the first poll runs."),
     ).toBeInTheDocument();
 
-    const pollInput = within(row).getByLabelText("Poll frequency (e.g., 1h)") as HTMLInputElement;
+    const pollInput = within(editForm).getByLabelText("Poll frequency (e.g., 1h)") as HTMLInputElement;
     fireEvent.change(pollInput, { target: { value: "2h" } });
 
-    fireEvent.click(within(row).getByRole("button", { name: "Save" }));
+    fireEvent.click(within(editForm).getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(openApiSpies.updateFeed).toHaveBeenCalledTimes(1));
 
     const updateArgs = openApiSpies.updateFeed.mock.calls[0][0];
     expect(updateArgs.feed).not.toHaveProperty("initialLookbackPeriod");
+  });
+
+  it("closes the edit panel without saving when cancelled", async () => {
+    renderPage();
+
+    const table = await screen.findByRole("table", { name: "Feeds table" });
+    const row = within(table).getByText("https://news.example.com/rss").closest("tr") as HTMLTableRowElement;
+
+    fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
+
+    const editForm = await screen.findByRole("form", { name: "Edit Feed" });
+    const pollInput = within(editForm).getByLabelText("Poll frequency (e.g., 1h)") as HTMLInputElement;
+    fireEvent.change(pollInput, { target: { value: "30m" } });
+
+    fireEvent.click(within(editForm).getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() => expect(screen.queryByRole("form", { name: "Edit Feed" })).not.toBeInTheDocument());
+    expect(openApiSpies.updateFeed).not.toHaveBeenCalled();
   });
 });
