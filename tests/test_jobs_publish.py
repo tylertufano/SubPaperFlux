@@ -506,7 +506,10 @@ def test_handle_publish_after_rss_poll_without_credentials(monkeypatch, tmp_path
                 }
             ]
 
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.get_new_rss_entries",
+        FakeSpf.get_new_rss_entries,
+    )
 
     with next(get_session()) as session:
         feed = Feed(
