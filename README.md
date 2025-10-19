@@ -1,8 +1,8 @@
 # SubPaperFlux
 
-SubPaperFlux continuously bridges RSS feeds and Instapaper, with optional paywall-aware fetching and Miniflux cookie updates. It can log in to sites via headless Chrome to capture authentication cookies, push those cookies to Miniflux feeds, poll RSS for new entries (storing them locally as bookmarks), and publish them to Instapaper. It maintains lightweight state per INI file so it can run as a long‑lived service.
+SubPaperFlux continuously bridges RSS feeds and Instapaper, with optional paywall-aware fetching and Miniflux cookie updates. It can log in to sites via headless Chrome to capture authentication cookies, push those cookies to Miniflux feeds, poll RSS for new entries (storing them locally as bookmarks), and publish them to Instapaper. It maintains lightweight state per configuration so it can run as a long‑lived service.
 
-This repo contains the main service script `subpaperflux.py`, a Dockerfile for a slim runtime, and example configuration formats.
+The standalone script has been replaced by a FastAPI backend (`app.main`) and a background worker (`app.worker`) that share a common database. This repository also ships a Next.js UI, Docker assets, and example configuration formats so the API-first service can be deployed alongside the worker.
 
 **Key Features**
 - Headless logins: Uses Selenium + Chrome to authenticate and capture cookies.
@@ -130,7 +130,7 @@ INI Files
   feed_url = https://example.com/feed.xml
   poll_frequency = 1h                  ; default 1h
   initial_lookback_period = 24h        ; only on first run
-  is_paywalled = false                 ; if true, script can fetch HTML with cookies
+  is_paywalled = false                 ; if true, the worker can fetch HTML with cookies
   rss_requires_auth = false            ; if true, fetch feed with cookies
 
   [INSTAPAPER_CONFIG]
@@ -144,7 +144,7 @@ INI Files
   ```
 
 Notes
-- Prefer the web UI credential flow (see [docs/instapaper-onboarding.md](docs/instapaper-onboarding.md)) to collect a description, username, and password, exchange them for Instapaper tokens, and persist the encrypted secrets. If you cannot use the UI, you can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI. When the INI references `instapaper_id` and tokens are missing, the script will attempt the exchange, persist the tokens in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
+- Prefer the web UI credential flow (see [docs/instapaper-onboarding.md](docs/instapaper-onboarding.md)) to collect a description, username, and password, exchange them for Instapaper tokens, and persist the encrypted secrets. If you cannot use the UI, you can temporarily include an `[INSTAPAPER_LOGIN]` section with `email` and `password` in the INI. When the INI references `instapaper_id` and tokens are missing, the worker will attempt the exchange, persist the tokens in `credentials.json`, and then remove `[INSTAPAPER_LOGIN]` from the INI.
 - Per‑INI state is stored in `your_feed.ctrl`. You can set flags there:
   - force_run: Set to `true` to force a login/poll cycle on next loop.
   - force_sync_and_purge: Set to `true` to trigger Instapaper sync + retention purge.
@@ -155,15 +155,18 @@ Environment Variables
 - SPF_PROFILE: Optional label for the current deployment profile. When set, the UI exposes it via `/ui-config` so you can confirm whether you're on dev, stage, or prod.
 
 Running Locally
-- Install dependencies: `pip install -r requirements.txt`
-- Run against a single INI: `python subpaperflux.py /path/to/config/myfeed.ini`
-- Or a directory of INIs: `python subpaperflux.py /path/to/config`
+- Install dependencies: `pip install -r requirements.api.txt -r requirements.txt`
+- Provide configuration files in a directory (see the templates section below) and export `CONFIG_DIR=/absolute/path/to/config` or pass `config_dir` payloads when enqueuing jobs.
+- Start the API (exposes `/v1/*` endpoints and the configuration UI): `uvicorn app.main:app --reload --port 8000`
+- Start the worker in a separate shell to process jobs and schedules: `python -m app.worker`
+- Create credentials, site configs, and feeds through the API/UI, then queue jobs via `/v1/jobs` or recurring schedules via `/v1/job-schedules`.
 
 Running with Docker
-- Build: `docker build -t subpaperflux .`
-- Run: `docker run --rm -e DEBUG_LOGGING=1 -v /absolute/path/to/config:/config subpaperflux`
-  - The container runs `python ./subpaperflux.py /config` by default.
-  - Ensure `credentials.json`, `site_configs.json`, and `instapaper_app_creds.json` exist under `/config`.
+- Build images or pull the published ones.
+- Use Docker Compose to launch the stack with a shared profile. For example: `docker compose -f templates/docker-compose.example.yml up --build`
+  - The template starts Postgres, the API (`uvicorn app.main:app`), the background worker (`python -m app.worker`), and the optional Next.js web UI.
+  - Mount your configuration directory (credentials, site configs, Instapaper app creds, INI files) into the API and worker containers under `/config`.
+  - Set `CREDENTIALS_ENC_KEY` (32-byte base64 urlsafe string) and any required OIDC/Instapaper environment variables via the provided `env/*.env` profile files.
 
 Profile-based Docker Compose configuration
 - Copy one of the profile templates (`templates/env.dev.example`, `templates/env.stage.example`, or `templates/env.prod.example`) to `env/<profile>.env` and customize the values.
@@ -235,10 +238,11 @@ To customize the welcome message:
 If any fields are left blank the UI falls back to safe defaults so visitors always see a friendly welcome and sign-in button.
 
 Quickstart
-- mkdir `config/`; copy and rename templates above into `config/`.
-- Edit IDs in `yourfeed.ini` to match keys in your JSON files.
-- Run locally: `python subpaperflux.py ./config/yourfeed.ini`
-- Or Docker: `docker run --rm -v "$PWD/config":/config subpaperflux`
+- mkdir `config/`; copy and rename the templates above into `config/`.
+- Edit IDs in `yourfeed.ini` to match keys in your JSON files and upload them through the UI or API.
+- Start the API (`uvicorn app.main:app --reload --port 8000`) and worker (`python -m app.worker`) or launch the Compose stack (`docker compose -f templates/docker-compose.example.yml up`).
+- Use `/v1/site-configs`, `/v1/credentials`, and `/v1/feeds` (or the web UI) to register the configuration data backed by those files.
+- Trigger logins, RSS ingestion, and Instapaper publishing either ad hoc via `/v1/jobs` or on a schedule via `/v1/job-schedules`.
 
 ## Testing
 

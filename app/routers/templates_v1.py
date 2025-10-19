@@ -118,8 +118,8 @@ TEMPLATE_DEFINITIONS: List[TemplateDefinition] = [
     TemplateDefinition(
         id="docker-compose-worker",
         filename="docker-compose.example.yml",
-        title="Docker Compose (worker)",
-        description="Compose stack for running the worker service locally.",
+        title="Docker Compose (API + worker)",
+        description="Compose stack for running the API, worker, and optional web UI.",
         categories=["docker"],
     ),
 ]

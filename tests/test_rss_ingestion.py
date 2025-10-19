@@ -169,6 +169,7 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
         def __init__(self, content: bytes):
             self.status_code = 200
             self._content = content
+            self.text = content.decode()
 
         @property
         def content(self):
@@ -180,7 +181,9 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
     def fake_requests_get(url, headers=None, timeout=30):
         return FakeFeedResponse(b"<rss></rss>")
 
-    monkeypatch.setattr("subpaperflux_rss.requests.get", fake_requests_get)
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.requests.get", fake_requests_get
+    )
 
     published = datetime(2024, 1, 2, tzinfo=timezone.utc)
 
@@ -201,7 +204,9 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.feedparser.parse", lambda _: FakeFeed()
+    )
 
     captured_headers: dict[str, str] | None = None
 
@@ -211,7 +216,8 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
         return "<html>full content</html>"
 
     monkeypatch.setattr(
-        "subpaperflux_rss.get_article_html_with_cookies", fake_article_fetch
+        "app.services.subpaperflux_rss.get_article_html_with_cookies",
+        fake_article_fetch,
     )
 
     config = configparser.ConfigParser()
@@ -306,7 +312,9 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr(
+        "app.services.subpaperflux_rss.feedparser.parse", lambda _: FakeFeed()
+    )
 
     captured_cookies: list[dict[str, object]] | None = None
 
@@ -316,7 +324,8 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
         return "<html>full content</html>"
 
     monkeypatch.setattr(
-        "subpaperflux_rss.get_article_html_with_cookies", fake_article_fetch
+        "app.services.subpaperflux_rss.get_article_html_with_cookies",
+        fake_article_fetch,
     )
 
     config = configparser.ConfigParser()

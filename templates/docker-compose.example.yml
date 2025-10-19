@@ -1,38 +1,77 @@
-# Template docker-compose file for SubPaperFlux
+# Minimal docker-compose stack for the SubPaperFlux API + worker + UI
 # Copy to your project root as docker-compose.yml and adjust values.
+# Once running, create credentials/site configs/feeds via the API or UI and
+# schedule login/RSS/publish jobs with `/v1/job-schedules`.
 
 services:
-  subpaperflux:
-    # Use the published Docker image from Docker Hub
-    image: tylertufano/subpaperflux:latest
-
-    container_name: subpaperflux
+  db:
+    image: postgres:15
     restart: unless-stopped
-
     environment:
-      # Enable verbose logging and ChromeDriver logs
-      - DEBUG_LOGGING=0
-      # Save a screenshot after successful login (useful for debugging)
-      - ENABLE_SCREENSHOTS=0
-      # To reuse the profile-specific .env files, add an env_file and copy one of
-      # templates/env.{dev,stage,prod}.example to ./env/<profile>.env. Example:
-      # env_file:
-      #   - ./env/dev.env
-      # Optional: set container timezone for logs
-      # - TZ=UTC
-
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
     volumes:
-      # Mount your configuration directory containing:
-      #  - credentials.json
-      #  - site_configs.json
-      #  - instapaper_app_creds.json
-      #  - one or more .ini files (e.g., myfeed.ini)
-      # State files (.ctrl, cookie_state.json) will be written here as well.
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    image: tylertufano/subpaperflux:latest
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # Load shared environment defaults exported from templates/env.<profile>.example
+    env_file:
+      - ./env/dev.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      SPF_CONFIG_DIR: /config
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      USER_MGMT_CORE: ${USER_MGMT_CORE:-1}
+    volumes:
       - ./config:/config:rw
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
 
-    # Optional: if you encounter Chrome shared memory issues, you can increase shm-size.
-    # Note: The Dockerfile already uses --disable-dev-shm-usage.
-    # shm_size: '1gb'
+  worker:
+    image: tylertufano/subpaperflux:latest
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - ./env/dev.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
+      CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
+      SPF_CONFIG_DIR: /config
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
+      WORKER_BACKOFF_BASE: ${WORKER_BACKOFF_BASE:-2}
+    volumes:
+      - ./config:/config:rw
+    depends_on:
+      - db
 
-    # Optional: run as a specific user/group (match host UID:GID)
-    # user: "1000:1000"
+  web:
+    image: tylertufano/subpaperflux-web:latest
+    restart: unless-stopped
+    env_file:
+      - ./env/dev.env
+    environment:
+      NODE_ENV: development
+      API_BASE: ${API_BASE:-http://api:8000}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace_me}
+      OIDC_ISSUER: ${OIDC_ISSUER:-http://localhost/oidc}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-subpaperflux-dev}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-dev-secret}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata: {}
