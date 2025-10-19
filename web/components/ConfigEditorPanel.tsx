@@ -56,6 +56,8 @@ export default function ConfigEditorPanel({
     contentClassName || 'md:grid-cols-2',
   )
 
+  // Only refocus when the auto focus flag or selector changes so we avoid
+  // stealing focus on subsequent renders triggered by input updates.
   useEffect(() => {
     if (!autoFocus) return
     const node = formRef.current
@@ -80,7 +82,7 @@ export default function ConfigEditorPanel({
         return
       }
     }
-  }, [autoFocus, children, focusSelector])
+  }, [autoFocus, focusSelector])
 
   const HeadingTag = headingLevel as keyof JSX.IntrinsicElements
 
