@@ -21,7 +21,7 @@ export type ConfigEditorPanelProps = {
   submitButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>
   cancelButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>
   headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-} & Omit<FormHTMLAttributes<HTMLFormElement>, 'children'>
+} & Omit<FormHTMLAttributes<HTMLFormElement>, 'children' | 'title'>
 
 const DEFAULT_FOCUS_SELECTOR =
   '[data-config-editor-initial-focus], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
