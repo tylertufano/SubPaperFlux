@@ -10,10 +10,9 @@ import pytest
 import requests
 
 from sqlmodel import select
-
+from app.services import subpaperflux_login, subpaperflux_rss
 
 def test_sanitize_headers_for_logging_redacts_sensitive_fields():
-    import subpaperflux
 
     headers = {
         "Authorization": "secret-token",
@@ -21,7 +20,7 @@ def test_sanitize_headers_for_logging_redacts_sensitive_fields():
         "User-Agent": "ExampleAgent/1.0",
     }
 
-    sanitized = subpaperflux._sanitize_headers_for_logging(headers)
+    sanitized = subpaperflux_rss._sanitize_headers_for_logging(headers)
 
     assert sanitized["Authorization"] == "<redacted>"
     assert sanitized["Cookie"] == "<redacted>"
@@ -29,7 +28,6 @@ def test_sanitize_headers_for_logging_redacts_sensitive_fields():
 
 
 def test_get_article_html_with_cookies_attaches_session(monkeypatch):
-    import subpaperflux
 
     class FakeSession:
         def __init__(self):
@@ -47,13 +45,13 @@ def test_get_article_html_with_cookies_attaches_session(monkeypatch):
             return response
 
     fake_session = FakeSession()
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: fake_session)
+    monkeypatch.setattr("app.services.subpaperflux_rss.requests.Session", lambda: fake_session)
 
     cookies = [
         {"name": "sessionid", "value": "abc123", "domain": "example.com", "path": "/"},
     ]
 
-    html = subpaperflux.get_article_html_with_cookies(
+    html = subpaperflux_rss.get_article_html_with_cookies(
         "https://example.com/articles/paywalled", cookies
     )
 
@@ -62,7 +60,6 @@ def test_get_article_html_with_cookies_attaches_session(monkeypatch):
 
 
 def test_get_article_html_with_cookies_detects_login_redirect(monkeypatch):
-    import subpaperflux
 
     class FakeSession:
         def __init__(self):
@@ -77,12 +74,12 @@ def test_get_article_html_with_cookies_detects_login_redirect(monkeypatch):
             response.encoding = "utf-8"
             return response
 
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
+    monkeypatch.setattr("app.services.subpaperflux_rss.requests.Session", lambda: FakeSession())
 
     cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
 
     assert (
-        subpaperflux.get_article_html_with_cookies(
+        subpaperflux_rss.get_article_html_with_cookies(
             "https://example.com/articles/paywalled", cookies
         )
         is None
@@ -90,7 +87,6 @@ def test_get_article_html_with_cookies_detects_login_redirect(monkeypatch):
 
 
 def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch, caplog):
-    import subpaperflux
 
     class FakeSession:
         def __init__(self):
@@ -106,13 +102,13 @@ def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch, caplog)
             response.headers = {"Content-Type": "text/html; charset=utf-8"}
             return response
 
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
+    monkeypatch.setattr("app.services.subpaperflux_rss.requests.Session", lambda: FakeSession())
 
     cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
 
     with caplog.at_level(logging.DEBUG):
-        with pytest.raises(subpaperflux.PaywalledContentError) as exc:
-            subpaperflux.get_article_html_with_cookies(
+        with pytest.raises(subpaperflux_rss.PaywalledContentError) as exc:
+            subpaperflux_rss.get_article_html_with_cookies(
                 "https://example.com/articles/paywalled", cookies
             )
 
@@ -130,7 +126,6 @@ def test_get_article_html_with_cookies_detects_paywall_copy(monkeypatch, caplog)
 
 
 def test_get_article_html_with_cookies_merges_header_overrides(monkeypatch):
-    import subpaperflux
 
     class FakeSession:
         def __init__(self):
@@ -148,12 +143,12 @@ def test_get_article_html_with_cookies_merges_header_overrides(monkeypatch):
             return response
 
     fake_session = FakeSession()
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: fake_session)
+    monkeypatch.setattr("app.services.subpaperflux_rss.requests.Session", lambda: fake_session)
 
     cookies = [{"name": "sessionid", "value": "abc123", "domain": "example.com"}]
     overrides = {"Referer": "https://example.com/start", "Accept-Language": "en-US"}
 
-    html = subpaperflux.get_article_html_with_cookies(
+    html = subpaperflux_rss.get_article_html_with_cookies(
         "https://example.com/articles/paywalled", cookies, header_overrides=overrides
     )
 
@@ -169,7 +164,6 @@ def test_get_article_html_with_cookies_merges_header_overrides(monkeypatch):
 
 
 def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
-    import subpaperflux
 
     class FakeFeedResponse:
         def __init__(self, content: bytes):
@@ -186,7 +180,7 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
     def fake_requests_get(url, headers=None, timeout=30):
         return FakeFeedResponse(b"<rss></rss>")
 
-    monkeypatch.setattr("subpaperflux.requests.get", fake_requests_get)
+    monkeypatch.setattr("subpaperflux_rss.requests.get", fake_requests_get)
 
     published = datetime(2024, 1, 2, tzinfo=timezone.utc)
 
@@ -207,7 +201,7 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
 
     captured_headers: dict[str, str] | None = None
 
@@ -217,7 +211,7 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
         return "<html>full content</html>"
 
     monkeypatch.setattr(
-        "subpaperflux.get_article_html_with_cookies", fake_article_fetch
+        "subpaperflux_rss.get_article_html_with_cookies", fake_article_fetch
     )
 
     config = configparser.ConfigParser()
@@ -249,7 +243,7 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
         }
     }
 
-    entries = subpaperflux.get_new_rss_entries(
+    entries = subpaperflux_rss.get_new_rss_entries(
         config_file="/tmp/config.ini",
         feed_url="https://example.com/rss.xml",
         instapaper_config={},
@@ -270,7 +264,6 @@ def test_get_new_rss_entries_passes_header_overrides(monkeypatch):
 
 
 def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
-    import subpaperflux
 
     published = datetime(2024, 1, 2, tzinfo=timezone.utc)
 
@@ -294,7 +287,7 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
             return response
 
     fake_session = FakeSession()
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: fake_session)
+    monkeypatch.setattr("app.services.subpaperflux_rss.requests.Session", lambda: fake_session)
 
     class FakeEntry:
         title = "Paywalled Story"
@@ -313,7 +306,7 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
 
     captured_cookies: list[dict[str, object]] | None = None
 
@@ -323,7 +316,7 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
         return "<html>full content</html>"
 
     monkeypatch.setattr(
-        "subpaperflux.get_article_html_with_cookies", fake_article_fetch
+        "subpaperflux_rss.get_article_html_with_cookies", fake_article_fetch
     )
 
     config = configparser.ConfigParser()
@@ -353,7 +346,7 @@ def test_get_new_rss_entries_merges_feed_issued_cookies(monkeypatch):
         },
     ]
 
-    entries = subpaperflux.get_new_rss_entries(
+    entries = subpaperflux_rss.get_new_rss_entries(
         config_file="/tmp/config.ini",
         feed_url="https://example.com/rss.xml",
         instapaper_config={},
@@ -427,7 +420,10 @@ def test_poll_rss_stores_pending_bookmarks(tmp_path, monkeypatch):
                     }
                 ]
 
-        monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+        monkeypatch.setattr(
+            "app.services.subpaperflux_rss.get_new_rss_entries",
+            FakeSpf.get_new_rss_entries,
+        )
 
         res = poll_rss_and_publish(
             instapaper_id="cred-instapaper",
@@ -466,7 +462,6 @@ def test_poll_rss_passes_site_header_overrides(tmp_path, monkeypatch):
     from app.jobs.util_subpaperflux import poll_rss_and_publish
     from app.models import Feed, SiteConfig, SiteLoginType
 
-    import subpaperflux
 
     original_db_url = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = "sqlite://"
@@ -515,7 +510,7 @@ def test_poll_rss_passes_site_header_overrides(tmp_path, monkeypatch):
 
         class FakeSpf:
             merge_header_overrides = staticmethod(
-                subpaperflux.merge_header_overrides
+                subpaperflux_rss.merge_header_overrides
             )
 
             @staticmethod
@@ -523,7 +518,10 @@ def test_poll_rss_passes_site_header_overrides(tmp_path, monkeypatch):
                 captured_headers.append(kwargs.get("header_overrides"))
                 return []
 
-        monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+        monkeypatch.setattr(
+            "app.services.subpaperflux_rss.get_new_rss_entries",
+            FakeSpf.get_new_rss_entries,
+        )
 
         res = poll_rss_and_publish(
             feed_id=feed_id,
@@ -586,7 +584,10 @@ def test_poll_rss_initial_lookback_only_first_run(tmp_path, monkeypatch):
                 observed_states.append(kwargs.get("state"))
                 return []
 
-        monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+        monkeypatch.setattr(
+            "app.services.subpaperflux_rss.get_new_rss_entries",
+            FakeSpf.get_new_rss_entries,
+        )
 
         first_res = poll_rss_and_publish(
             feed_id=feed_id,
@@ -748,7 +749,10 @@ def test_poll_rss_without_instapaper_credentials(tmp_path, monkeypatch):
                     }
                 ]
 
-        monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: FakeSpf())
+        monkeypatch.setattr(
+            "app.services.subpaperflux_rss.get_new_rss_entries",
+            FakeSpf.get_new_rss_entries,
+        )
 
         res = poll_rss_and_publish(
             feed_id=feed_id,

@@ -9,7 +9,6 @@ from typing import Optional
 
 import pytest
 import requests
-import subpaperflux
 from sqlmodel import select
 
 from app.db import get_session_ctx, init_db
@@ -22,6 +21,7 @@ from app.jobs.util_subpaperflux import (
 )
 from app.models import Cookie, Credential, Feed, SiteConfig, SiteLoginType
 from app.security.crypto import decrypt_dict, encrypt_dict
+from app.services import subpaperflux_login, subpaperflux_rss
 
 
 class DummySPFModule:
@@ -59,7 +59,7 @@ def test_cookie_records_include_credential_reference(monkeypatch, tmp_path):
             {"name": "session", "value": "abc", "expiry": future_expiry},
         ]
     )
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: dummy_spf)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", dummy_spf.login_and_update)
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -155,7 +155,8 @@ def test_perform_login_and_save_cookies_rejects_blank_values(monkeypatch, tmp_pa
         ]
     )
     monkeypatch.setattr(
-        "app.jobs.util_subpaperflux._import_spf", lambda: blank_cookie_spf
+        "app.services.subpaperflux_login.login_and_update",
+        blank_cookie_spf.login_and_update,
     )
 
     with get_session_ctx() as session:
@@ -204,7 +205,7 @@ def test_apply_cookies_clones_domain_for_subdomain_requests():
         {"name": "sessionid", "value": "abc123", "domain": "substack.com"},
     ]
 
-    subpaperflux._apply_cookies_to_session(
+    subpaperflux_rss._apply_cookies_to_session(
         session,
         cookies,
         hostname="newsletter.substack.com",
@@ -284,12 +285,11 @@ def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_pa
         }
     ]
 
-    import subpaperflux
-    import requests
+        import requests
 
     session = requests.Session()
     try:
-        subpaperflux._apply_cookies_to_session(session, cookies)
+        subpaperflux_rss._apply_cookies_to_session(session, cookies)
         # The session should rely on `requests`' cookie jar to set headers on
         # a per-request basis, so the default session headers must remain
         # untouched here. This ensures domain/path scoping remains intact.
@@ -311,8 +311,6 @@ def test_retrieved_cookies_preserve_values_in_request_header(monkeypatch, tmp_pa
 def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: subpaperflux)
-
     class FakeSession:
         def __init__(self):
             self.cookies = requests.cookies.RequestsCookieJar()
@@ -331,7 +329,7 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
             pass
 
     jsonlib = json
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: FakeSession())
+    monkeypatch.setattr("subpaperflux_login.requests.Session", lambda: FakeSession())
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -386,8 +384,6 @@ def test_perform_login_and_save_cookies_api(monkeypatch, tmp_path):
 def test_perform_login_and_save_cookies_missing_required_cookie(monkeypatch, tmp_path):
     _setup_env(monkeypatch, tmp_path)
 
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: subpaperflux)
-
     class MissingRefreshSession:
         def __init__(self):
             self.cookies = requests.cookies.RequestsCookieJar()
@@ -404,7 +400,7 @@ def test_perform_login_and_save_cookies_missing_required_cookie(monkeypatch, tmp
             pass
 
     jsonlib = json
-    monkeypatch.setattr("subpaperflux.requests.Session", lambda: MissingRefreshSession())
+    monkeypatch.setattr("subpaperflux_login.requests.Session", lambda: MissingRefreshSession())
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -456,7 +452,7 @@ def test_perform_login_and_save_cookies_surface_error(monkeypatch, tmp_path):
         ]
     )
     dummy_spf.error = "boom"
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: dummy_spf)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", dummy_spf.login_and_update)
 
     with get_session_ctx() as session:
         credential = Credential(
@@ -554,7 +550,7 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
         "expiry": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp(),
     }
     expired_login = DummySPFModule([expired_cookie])
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: expired_login)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", expired_login.login_and_update)
     perform_login_and_save_cookies(
         site_login_pair_id=pair_id,
         owner_user_id="user-1",
@@ -570,7 +566,7 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
             return [dict(entry) for entry in self.entries]
 
     tracking_spf = TrackingSpf()
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: tracking_spf)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", tracking_spf.login_and_update)
 
     with pytest.raises(CookieAuthenticationError) as exc:
         poll_rss_and_publish(
@@ -588,14 +584,14 @@ def test_rss_poll_requires_fresh_cookies(monkeypatch, tmp_path):
         "expiry": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp(),
     }
     fresh_login = DummySPFModule([fresh_cookie])
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: fresh_login)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", fresh_login.login_and_update)
     perform_login_and_save_cookies(
         site_login_pair_id=pair_id,
         owner_user_id="user-1",
     )
 
     success_spf = TrackingSpf([])
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: success_spf)
+    monkeypatch.setattr("app.services.subpaperflux_login.login_and_update", success_spf.login_and_update)
     res = poll_rss_and_publish(
         feed_id=feed_id,
         owner_user_id="user-1",
@@ -745,18 +741,16 @@ def test_poll_rss_invalidates_cookies_on_paywall(monkeypatch, tmp_path):
             )()
             self.entries = [FakeEntry()]
 
-    monkeypatch.setattr("subpaperflux.requests.get", lambda *_, **__: FakeFeedResponse())
-    monkeypatch.setattr("subpaperflux.feedparser.parse", lambda _: FakeFeed())
+    monkeypatch.setattr("subpaperflux_rss.requests.get", lambda *_, **__: FakeFeedResponse())
+    monkeypatch.setattr("subpaperflux_rss.feedparser.parse", lambda _: FakeFeed())
 
     fetch_calls = []
 
     def fake_fetch(url, cookies, header_overrides=None):
         fetch_calls.append((url, cookies))
-        raise subpaperflux.PaywalledContentError(url, indicator="simulated")
+        raise subpaperflux_rss.PaywalledContentError(url, indicator="simulated")
 
-    monkeypatch.setattr("subpaperflux.get_article_html_with_cookies", fake_fetch)
-    monkeypatch.setattr("app.jobs.util_subpaperflux._import_spf", lambda: subpaperflux)
-
+    monkeypatch.setattr("subpaperflux_rss.get_article_html_with_cookies", fake_fetch)
     pair_id = format_site_login_pair_id("cred_paywall", "sc_paywall")
 
     res = poll_rss_and_publish(
@@ -797,7 +791,7 @@ class _FakeWait:
 
 def test_verify_success_text_success(monkeypatch):
     wait = _FakeWait(element=_FakeElement("Signed in successfully"))
-    assert subpaperflux._verify_success_text(
+    assert subpaperflux_login._verify_success_text(
         wait,
         "alert alert-success",
         "Signed in",
@@ -808,7 +802,7 @@ def test_verify_success_text_success(monkeypatch):
 
 def test_verify_success_text_mismatch(monkeypatch):
     wait = _FakeWait(element=_FakeElement("Something went wrong"))
-    assert not subpaperflux._verify_success_text(
+    assert not subpaperflux_login._verify_success_text(
         wait,
         "alert alert-success",
         "Signed in",
@@ -817,8 +811,8 @@ def test_verify_success_text_mismatch(monkeypatch):
 
 
 def test_verify_success_text_timeout(monkeypatch):
-    wait = _FakeWait(exc=subpaperflux.TimeoutException("timeout"))
-    assert not subpaperflux._verify_success_text(
+    wait = _FakeWait(exc=subpaperflux_login.TimeoutException("timeout"))
+    assert not subpaperflux_login._verify_success_text(
         wait,
         "alert alert-success",
         "Signed in",

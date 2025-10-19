@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-import subpaperflux
+from app.services import subpaperflux_login
 
 
 class _DummyResponse:
@@ -27,7 +27,7 @@ def test_execute_api_step_uses_form_payload_for_urlencoded_headers():
     }
     context = {"username": "alice", "password": "secret"}
 
-    response = subpaperflux._execute_api_step(
+    response = subpaperflux_login._execute_api_step(
         session, step_config, context, "cfg", "login"
     )
 
@@ -49,7 +49,7 @@ def test_execute_api_step_defaults_to_json_when_not_urlencoded():
     }
     context = {"username": "alice", "password": "secret"}
 
-    response = subpaperflux._execute_api_step(
+    response = subpaperflux_login._execute_api_step(
         session, step_config, context, "cfg", "login"
     )
 

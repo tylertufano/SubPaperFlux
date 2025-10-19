@@ -23,6 +23,12 @@ from ..models import (
     Tag as TagModel,
 )
 from ..security.crypto import decrypt_dict, encrypt_dict, is_encrypted
+from ..services import (
+    subpaperflux_instapaper,
+    subpaperflux_login,
+    subpaperflux_miniflux,
+    subpaperflux_rss,
+)
 
 
 class CookieAuthenticationError(RuntimeError):
@@ -150,15 +156,6 @@ def _coerce_header_mapping_like(value: Any) -> Dict[str, str]:
     return {}
 
 
-def _merge_header_overrides_local(*candidates: Any) -> Dict[str, str]:
-    merged: Dict[str, str] = {}
-    for candidate in candidates:
-        headers = _coerce_header_mapping_like(candidate)
-        if headers:
-            merged.update(headers)
-    return merged
-
-
 def _ensure_default_api_user_agent(api_config: Optional[Dict[str, Any]]) -> None:
     if not isinstance(api_config, dict):
         return
@@ -176,13 +173,6 @@ def _ensure_default_api_user_agent(api_config: Optional[Dict[str, Any]]) -> None
 
     if normalized_headers:
         api_config["headers"] = normalized_headers
-
-
-def _import_spf():
-    # Lazy import to avoid heavy init until needed
-    import importlib
-
-    return importlib.import_module("subpaperflux")
 
 
 _API_LOGGING_PATCH_ATTR = "__subpaperflux_api_logging_patched__"
@@ -824,8 +814,7 @@ def perform_login_and_save_cookies(
     site_login_pair_id: str,
     owner_user_id: Optional[str],
 ) -> Dict[str, Any]:
-    spf = _import_spf()
-    _ensure_api_logging_patch(spf)
+    _ensure_api_logging_patch(subpaperflux_login)
 
     (
         credential_id,
@@ -842,7 +831,7 @@ def perform_login_and_save_cookies(
         "Dispatching %s login for site_config=%s", login_type, site_config_id
     )
 
-    login_result = spf.login_and_update(
+    login_result = subpaperflux_login.login_and_update(
         site_config_id, site_config, login_credentials
     )
 
@@ -1217,7 +1206,6 @@ def poll_rss_and_publish(
     site_login_pair_id: Optional[str] = None,
     owner_user_id: Optional[str] = None,
 ) -> Dict[str, int]:
-    spf = _import_spf()
     from datetime import datetime, timezone, timedelta
 
     resolved_dir = resolve_config_dir()
@@ -1347,17 +1335,11 @@ def poll_rss_and_publish(
             value = rss_ini.get(key)
             if value:
                 header_candidates.append(value)
-        extract_prefixed = getattr(spf, "_extract_prefixed_headers", None)
-        if callable(extract_prefixed):
-            prefixed = extract_prefixed(rss_ini)
-            if prefixed:
-                header_candidates.append(prefixed)
+        prefixed = subpaperflux_rss.extract_prefixed_headers(rss_ini)
+        if prefixed:
+            header_candidates.append(prefixed)
 
-    merge_headers = getattr(spf, "merge_header_overrides", None)
-    if not callable(merge_headers):
-        merge_headers = _merge_header_overrides_local
-
-    header_overrides = merge_headers(*header_candidates)
+    header_overrides = subpaperflux_rss.merge_header_overrides(*header_candidates)
 
     cookie_invalidator = None
     if site_login_pair_id:
@@ -1374,7 +1356,7 @@ def poll_rss_and_publish(
 
         cookie_invalidator = _invalidate_cookies
 
-    new_entries = spf.get_new_rss_entries(
+    new_entries = subpaperflux_rss.get_new_rss_entries(
         config_file=os.path.join(resolved_dir, "adhoc.ini"),
         feed_url=feed_url,
         instapaper_config=instapaper_cfg,
@@ -1785,7 +1767,6 @@ def push_miniflux_cookies(
     site_login_pair_id: str,
     owner_user_id: Optional[str],
 ) -> Dict[str, Any]:
-    spf = _import_spf()
     resolved_dir = resolve_config_dir()
     creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
     miniflux_cfg = (
@@ -1806,7 +1787,7 @@ def push_miniflux_cookies(
     from ..util.ratelimit import limiter as _limiter
 
     _limiter.wait("miniflux")
-    spf.update_miniflux_feed_with_cookies(
+    subpaperflux_miniflux.update_miniflux_feed_with_cookies(
         miniflux_cfg, cookies, config_name=pair_id, feed_ids_str=ids_str
     )
     return {
@@ -1827,7 +1808,6 @@ def publish_url(
     config_dir: Optional[str] = None,
     raw_html_content: Optional[str] = None,
 ) -> Dict[str, Any]:
-    spf = _import_spf()
     resolved_dir = resolve_config_dir(config_dir)
     creds = _load_json(os.path.join(resolved_dir, "credentials.json"))
     app_creds_file = _load_json(os.path.join(resolved_dir, "instapaper_app_creds.json"))
@@ -1885,7 +1865,7 @@ def publish_url(
                     "deduped": True,
                 }
 
-    result = spf.publish_to_instapaper(
+    result = subpaperflux_instapaper.publish_to_instapaper(
         instapaper_cfg,
         app_creds,
         url,
