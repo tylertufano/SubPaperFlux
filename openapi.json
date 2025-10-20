@@ -423,6 +423,32 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Test Site Config V1 Site Configs  Config Id  Test Post"
+                },
+                "example": {
+                  "ok": true,
+                  "login_type": "api",
+                  "status": 200,
+                  "context": {
+                    "steps": [
+                      {"name": "login", "status_code": 200, "ok": true}
+                    ],
+                    "cookies": {
+                      "found": [
+                        {"name": "sessionid"}
+                      ],
+                      "found_names": ["sessionid"],
+                      "expected": ["sessionid"],
+                      "required": ["sessionid"],
+                      "missing_expected": [],
+                      "missing_required": []
+                    },
+                    "resolved_cookie_map": {
+                      "csrftoken": {
+                        "source": "$.token",
+                        "value": "abc123"
+                      }
+                    }
+                  }
                 }
               }
             }

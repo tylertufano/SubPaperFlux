@@ -1,6 +1,7 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+import requests
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import TypeAdapter
@@ -14,6 +15,7 @@ from ..models import SiteConfig as SiteConfigModel, SiteLoginType
 from ..schemas import SiteConfig as SiteConfigSchema
 from ..schemas import SiteConfigOut, SiteConfigsPage
 from ..security.csrf import csrf_protect
+from ..services.subpaperflux_login import _execute_api_step, _extract_json_pointer
 from ..util.quotas import enforce_user_quota
 
 
@@ -136,6 +138,215 @@ def _summarize_login_payload(
         "has_body": bool(api.get("body")),
         "cookies_to_store": cookies_to_store,
     }
+
+
+def _serialize_cookie(cookie: Any) -> Dict[str, Any]:
+    payload = {"name": cookie.name, "value": cookie.value}
+    if getattr(cookie, "domain", None):
+        payload["domain"] = cookie.domain
+    if getattr(cookie, "path", None):
+        payload["path"] = cookie.path
+    if getattr(cookie, "expires", None) is not None:
+        payload["expiry"] = cookie.expires
+    if getattr(cookie, "secure", False):
+        payload["secure"] = True
+    rest = getattr(cookie, "_rest", {}) or {}
+    if rest.get("HttpOnly") or rest.get("httponly"):
+        payload["httpOnly"] = True
+    return payload
+
+
+def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
+    api_config = dict(sc.api_config or {})
+    if not api_config:
+        return {
+            "ok": False,
+            "error": "missing_api_config",
+            "login_type": SiteLoginType.API.value,
+        }
+
+    endpoint = api_config.get("endpoint")
+    method = (api_config.get("method") or "").upper()
+    if not endpoint or not method:
+        return {
+            "ok": False,
+            "error": "missing_endpoint_or_method",
+            "login_type": SiteLoginType.API.value,
+        }
+
+    cookies_to_store = list(api_config.get("cookies_to_store") or [])
+    cookie_map: Dict[str, Any] = dict(api_config.get("cookies") or {})
+    if not cookies_to_store and cookie_map:
+        cookies_to_store = list(cookie_map.keys())
+
+    required_cookie_names = list(sc.required_cookies or [])
+    if not required_cookie_names:
+        required_cookie_names = list(cookies_to_store)
+
+    expected_cookie_names: List[str] = list(cookies_to_store)
+    if not expected_cookie_names:
+        expected_cookie_names = list(required_cookie_names)
+
+    context: Dict[str, Any] = {
+        "username": "dummy-user",
+        "password": "dummy-password",
+        "credential.username": "dummy-user",
+        "credential.password": "dummy-password",
+        "config_name": sc.name,
+        "site_url": sc.site_url,
+    }
+
+    session = requests.Session()
+    step_results: List[Dict[str, Any]] = []
+    login_response: Optional[requests.Response] = None
+
+    try:
+        pre_login_steps = api_config.get("pre_login") or []
+        if isinstance(pre_login_steps, dict):
+            pre_login_steps = [pre_login_steps]
+
+        for idx, step in enumerate(pre_login_steps):
+            if not isinstance(step, dict):
+                continue
+            name = f"pre_login[{idx}]"
+            response = _execute_api_step(
+                session,
+                {
+                    "endpoint": step.get("endpoint"),
+                    "method": step.get("method"),
+                    "headers": step.get("headers"),
+                    "body": step.get("body"),
+                },
+                context,
+                sc.name,
+                name,
+            )
+            step_result = {
+                "name": name,
+                "status_code": getattr(response, "status_code", None),
+                "ok": bool(response) and getattr(response, "status_code", 0) < 400,
+            }
+            if response is None:
+                step_result["error"] = "request_failed"
+            elif response.status_code >= 400:
+                step_result["error"] = "http_error"
+            step_results.append(step_result)
+            if not step_result["ok"]:
+                login_response = response
+                break
+
+        execute_login = True
+        if step_results and not step_results[-1]["ok"]:
+            execute_login = False
+
+        if execute_login:
+            login_response = _execute_api_step(
+                session,
+                {
+                    "endpoint": api_config.get("endpoint"),
+                    "method": api_config.get("method"),
+                    "headers": api_config.get("headers"),
+                    "body": api_config.get("body"),
+                },
+                context,
+                sc.name,
+                "login",
+            )
+            login_result = {
+                "name": "login",
+                "status_code": getattr(login_response, "status_code", None),
+                "ok": bool(login_response)
+                and getattr(login_response, "status_code", 0) < 400,
+            }
+            if login_response is None:
+                login_result["error"] = "request_failed"
+            elif login_response.status_code >= 400:
+                login_result["error"] = "http_error"
+            step_results.append(login_result)
+
+        jar_cookies = {cookie.name: cookie for cookie in session.cookies}
+        serialized_cookies = [_serialize_cookie(cookie) for cookie in jar_cookies.values()]
+
+        resolved_cookie_map: Dict[str, Dict[str, Any]] = {}
+        body_json: Any = None
+        if login_response is not None:
+            try:
+                body_json = login_response.json()
+            except ValueError:
+                body_json = None
+
+        for cookie_name, source in cookie_map.items():
+            value: Any = None
+            if isinstance(source, str):
+                if source.startswith("$."):
+                    value = _extract_json_pointer(body_json, source[2:])
+                else:
+                    cookie_obj = jar_cookies.get(source)
+                    if cookie_obj:
+                        value = cookie_obj.value
+            resolved_cookie_map[cookie_name] = {
+                "source": source,
+                "value": value,
+            }
+
+        found_cookie_names = sorted(jar_cookies.keys())
+        missing_expected = [
+            name for name in expected_cookie_names if name and name not in jar_cookies
+        ]
+        missing_required = [
+            name for name in required_cookie_names if name and name not in jar_cookies
+        ]
+
+        context_payload = {
+            "steps": step_results,
+            "cookies": {
+                "found": serialized_cookies,
+                "found_names": found_cookie_names,
+                "expected": expected_cookie_names,
+                "required": required_cookie_names,
+                "missing_expected": missing_expected,
+                "missing_required": missing_required,
+            },
+            "resolved_cookie_map": resolved_cookie_map,
+        }
+
+        overall_ok = (
+            all(step.get("ok") for step in step_results)
+            and not missing_required
+            and not missing_expected
+        )
+
+        result: Dict[str, Any] = {
+            "ok": bool(overall_ok),
+            "status": getattr(login_response, "status_code", None),
+            "login_type": SiteLoginType.API.value,
+            "context": context_payload,
+        }
+
+        if not overall_ok:
+            errors: List[str] = []
+            for step in step_results:
+                if not step.get("ok"):
+                    if step.get("error") == "request_failed":
+                        errors.append(f"{step['name']} request failed")
+                    elif step.get("error") == "http_error":
+                        errors.append(
+                            f"{step['name']} returned status {step.get('status_code')}"
+                        )
+            if missing_required:
+                errors.append(
+                    "missing required cookies: " + ", ".join(sorted(missing_required))
+                )
+            elif missing_expected:
+                errors.append(
+                    "missing expected cookies: " + ", ".join(sorted(missing_expected))
+                )
+            if errors:
+                result["error"] = "; ".join(errors)
+
+        return result
+    finally:
+        session.close()
 
 
 @router.post(
@@ -393,6 +604,8 @@ def test_site_config(
     if not sc or sc.owner_user_id != current_user["sub"]:
         return {"ok": False, "error": "not_found"}
     login_type = SiteLoginType(sc.login_type)
+    if login_type == SiteLoginType.API:
+        return _test_api_site_config(sc)
     if login_type != SiteLoginType.SELENIUM:
         return {
             "ok": False,
@@ -427,6 +640,7 @@ def test_site_config(
             return {
                 "ok": ok,
                 "status": r.status_code,
+                "login_type": login_type.value,
                 "found": {
                     "username_selector": found_user,
                     "password_selector": found_pass,
@@ -434,6 +648,6 @@ def test_site_config(
                 },
             }
     except httpx.RequestError as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": str(e), "login_type": login_type.value}
 
 

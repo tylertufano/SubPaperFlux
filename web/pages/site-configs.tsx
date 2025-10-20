@@ -64,6 +64,61 @@ type SiteConfigList = SiteConfigsPage | Array<SiteConfigRecord>
 
 type LoginType = 'selenium' | 'api'
 
+type TranslateFn = (key: string, vars?: Record<string, any>) => string
+
+function formatTestResultMessage(result: any, t: TranslateFn): string {
+  if (result && (result as any).login_type === 'api') {
+    const context = (result as any).context ?? {}
+    const steps = Array.isArray(context.steps) ? context.steps : []
+    const stepSummary = steps.length
+      ? steps
+          .map((step: any) => {
+            const name = typeof step?.name === 'string' ? step.name : 'step'
+            const statusValue = step?.status_code ?? step?.statusCode ?? 'ERR'
+            return `${name}:${statusValue ?? 'ERR'}`
+          })
+          .join(', ')
+      : t('site_configs_test_result_none')
+
+    const cookiesInfo = context.cookies ?? {}
+    const foundNames = Array.isArray(cookiesInfo.found_names) ? cookiesInfo.found_names : []
+    const missingRequired = Array.isArray(cookiesInfo.missing_required) ? cookiesInfo.missing_required : []
+    const missingExpected = Array.isArray(cookiesInfo.missing_expected) ? cookiesInfo.missing_expected : []
+
+    const statusValue =
+      (result as any).status ?? (result as any).status_code ?? context.status ?? context.status_code ?? null
+    const statusLabel =
+      statusValue === null || statusValue === undefined
+        ? 'n/a'
+        : typeof statusValue === 'number'
+        ? statusValue.toString()
+        : String(statusValue)
+
+    if (result.ok) {
+      const cookiesLabel = foundNames.length
+        ? foundNames.join(', ')
+        : t('site_configs_test_result_none')
+      return t('site_configs_test_result_api_success', {
+        status: statusLabel,
+        steps: stepSummary,
+        cookies: cookiesLabel,
+      })
+    }
+
+    const missing = missingRequired.length ? missingRequired : missingExpected
+    const missingLabel = missing.length ? missing.join(', ') : t('site_configs_test_result_none')
+    return t('site_configs_test_result_api_failure', {
+      status: statusLabel,
+      steps: stepSummary,
+      missing: missingLabel,
+    })
+  }
+
+  return t('site_configs_test_result_generic', {
+    result: JSON.stringify(result),
+  })
+}
+
 function createEmptyForm(loginType: LoginType): SiteConfigFormState {
   if (loginType === 'selenium') {
     const base: SeleniumSiteConfigForm = {
@@ -1191,9 +1246,10 @@ export default function SiteConfigs() {
                               onClick={async () => {
                                 try {
                                   const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
+                                  const message = formatTestResultMessage(result, t)
                                   setBanner({
                                     kind: result.ok ? 'success' : 'error',
-                                    message: t('site_configs_test_result', { result: JSON.stringify(result) }),
+                                    message,
                                   })
                                 } catch (err: any) {
                                   setBanner({ kind: 'error', message: err?.message || String(err) })
