@@ -265,7 +265,16 @@ def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
             step_results.append(login_result)
 
         jar_cookies = {cookie.name: cookie for cookie in session.cookies}
-        serialized_cookies = [_serialize_cookie(cookie) for cookie in jar_cookies.values()]
+        relevant_cookie_names = (
+            set(expected_cookie_names)
+            | set(required_cookie_names)
+            | set(cookie_map.keys())
+        )
+        serialized_cookies = [
+            _serialize_cookie(cookie)
+            for cookie in jar_cookies.values()
+            if not relevant_cookie_names or cookie.name in relevant_cookie_names
+        ]
 
         resolved_cookie_map: Dict[str, Dict[str, Any]] = {}
         body_json: Any = None
@@ -295,7 +304,10 @@ def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
             for name, metadata in resolved_cookie_map.items()
             if metadata.get("value") is not None
         }
-        known_cookie_names = jar_cookie_names | resolved_cookie_names
+        if relevant_cookie_names:
+            known_cookie_names = (jar_cookie_names & relevant_cookie_names) | resolved_cookie_names
+        else:
+            known_cookie_names = jar_cookie_names | resolved_cookie_names
         found_cookie_names = sorted(known_cookie_names)
         missing_expected = [
             name
