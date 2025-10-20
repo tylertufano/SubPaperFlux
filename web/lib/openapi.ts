@@ -1640,7 +1640,17 @@ export const v1 = {
 
   testInstapaperV1IntegrationsInstapaperTestPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.testInstapaperV1IntegrationsInstapaperTestPost({ requestBody }),
   testMinifluxV1IntegrationsMinifluxTestPost: async ({ requestBody }: { requestBody: any }) => (await getClients()).v1.testMinifluxV1IntegrationsMinifluxTestPost({ requestBody }),
-  testSiteConfigV1SiteConfigsConfigIdTestPost: async ({ configId }: { configId: string }) => (await getClients()).v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId }),
+  testSiteConfigV1SiteConfigsConfigIdTestPost: async ({
+    configId,
+    credentialId,
+  }: {
+    configId: string
+    credentialId?: string
+  }) =>
+    (await getClients()).v1.testSiteConfigV1SiteConfigsConfigIdTestPost({
+      configId,
+      ...(credentialId !== undefined ? { credentialId } : {}),
+    }),
 
   getStatusV1StatusGet: async () => (await getClients()).v1.getStatusV1StatusGet(),
   dbStatusV1StatusDbGet: async () => (await getClients()).v1.dbStatusV1StatusDbGet(),
