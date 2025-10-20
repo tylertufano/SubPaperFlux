@@ -195,6 +195,15 @@
               "type": "string",
               "title": "Config Id"
             }
+          },
+          {
+            "name": "credential_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Credential Id"
+            }
           }
         ],
         "responses": {
