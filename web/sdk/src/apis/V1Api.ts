@@ -350,6 +350,7 @@ export interface GetRoleV1AdminRolesRoleIdGetRequest {
 
 export interface GetSiteConfigV1V1SiteConfigsConfigIdGetRequest {
     configId: any;
+    credentialId?: any;
 }
 
 export interface GetTokenV1MeTokensTokenIdGetRequest {
@@ -581,7 +582,6 @@ export interface TestMinifluxV1IntegrationsMinifluxTestPostRequest {
 
 export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
     configId: any;
-    credentialId?: any;
 }
 
 export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
@@ -2331,6 +2331,10 @@ export class V1Api extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters.credentialId !== undefined) {
+            queryParameters['credential_id'] = requestParameters.credentialId;
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -4217,9 +4221,6 @@ export class V1Api extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-        if (requestParameters.credentialId !== undefined && requestParameters.credentialId !== null) {
-            queryParameters['credential_id'] = requestParameters.credentialId;
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

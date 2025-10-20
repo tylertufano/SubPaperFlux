@@ -350,6 +350,7 @@ export interface GetRoleV1AdminRolesRoleIdGetRequest {
 
 export interface GetSiteConfigV1V1SiteConfigsConfigIdGetRequest {
     configId: any;
+    credentialId?: any;
 }
 
 export interface GetTokenV1MeTokensTokenIdGetRequest {
@@ -2330,6 +2331,10 @@ export class V1Api extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters.credentialId !== undefined) {
+            queryParameters['credential_id'] = requestParameters.credentialId;
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
