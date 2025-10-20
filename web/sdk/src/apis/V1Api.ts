@@ -677,9 +677,6 @@ export class V1Api extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-        if (requestParameters.credentialId !== undefined && requestParameters.credentialId !== null) {
-            queryParameters['credential_id'] = requestParameters.credentialId;
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
