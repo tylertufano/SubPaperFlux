@@ -602,7 +602,6 @@ export default function Feeds() {
                 <tr>
                   <th className="th">{t('url_label')}</th>
                   <th className="th">{t('poll_label')}</th>
-                  <th className="th">{t('lookback_label')}</th>
                   <th className="th">{t('paywalled_label')}</th>
                   <th className="th">{t('rss_auth_label')}</th>
                   <th className="th">{t('feeds_table_tags_label')}</th>
@@ -617,7 +616,6 @@ export default function Feeds() {
                     <>
                       <td className="td">{f.url}</td>
                       <td className="td">{f.poll_frequency || f.pollFrequency}</td>
-                      <td className="td">{f.initial_lookback_period || f.initialLookbackPeriod || t('feeds_field_lookback_not_set')}</td>
                       <td className="td">{t((f.is_paywalled ?? f.isPaywalled) ? 'boolean_yes' : 'boolean_no')}</td>
                       <td className="td">{t((f.rss_requires_auth ?? f.rssRequiresAuth) ? 'boolean_yes' : 'boolean_no')}</td>
                       <td className="td">
