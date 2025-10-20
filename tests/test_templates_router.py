@@ -41,12 +41,12 @@ def test_list_templates(client: TestClient):
     assert templates, "Expected at least one template in the response"
 
     expected = {
-        "subpaperflux-config": "subpaperflux.example.ini",
-        "credentials-store": "credentials.example.json",
-        "site-configs": "site_configs.example.json",
-        "instapaper-app": "instapaper_app_creds.example.json",
+        "env-dev-profile": "env.dev.example",
+        "env-stage-profile": "env.stage.example",
+        "env-prod-profile": "env.prod.example",
         "docker-compose-api": "docker-compose.api.example.yml",
         "docker-compose-worker": "docker-compose.example.yml",
+        "docker-compose-prod": "docker-compose.prod.yml",
     }
 
     for template_id, filename in expected.items():
@@ -65,13 +65,13 @@ def test_list_templates(client: TestClient):
 
 
 def test_download_template(client: TestClient):
-    response = client.get("/v1/templates/subpaperflux-config/download")
+    response = client.get("/v1/templates/env-dev-profile/download")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/octet-stream")
     disposition = response.headers.get("content-disposition", "")
     assert "attachment" in disposition
-    assert "subpaperflux.example.ini" in disposition
-    assert response.content == _read_template("subpaperflux.example.ini")
+    assert "env.dev.example" in disposition
+    assert response.content == _read_template("env.dev.example")
 
 
 def test_download_missing_template(client: TestClient):

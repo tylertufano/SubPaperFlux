@@ -23,6 +23,7 @@ Requirements
 - Instapaper app credentials (consumer key/secret) and an Instapaper login that the web UI can exchange for long-lived tokens.
 
 Configuration Overview
+- SubPaperFlux now persists configuration data (credentials, site configs, feeds) in Postgres via the API and web UI. The schemas below document the legacy file formats to help operators migrating existing `.ini`/`.json` assets into the database-driven model.
 - Put all configuration files in one directory and point the service to either a single `.ini` in that directory or the whole directory.
 - The service expects these files:
   - `credentials.json`: IDs and secrets for logins, Instapaper, and Miniflux. Instapaper entries should start with placeholders; complete the onboarding flow in the UI to exchange the username/password for tokens and persist them.
@@ -165,7 +166,7 @@ Running with Docker
 - Build images or pull the published ones.
 - Use Docker Compose to launch the stack with a shared profile. For example: `docker compose -f templates/docker-compose.example.yml up --build`
   - The template starts Postgres, the API (`uvicorn app.main:app`), the background worker (`python -m app.worker`), and the optional Next.js web UI.
-  - Mount your configuration directory (credentials, site configs, Instapaper app creds, INI files) into the API and worker containers under `/config`.
+  - All configuration (credentials, site configs, feeds) is stored through the API in Postgres, so no host volume is required for legacy `.ini`/`.json` assets.
   - Set `CREDENTIALS_ENC_KEY` (32-byte base64 urlsafe string) and any required OIDC/Instapaper environment variables via the provided `env/*.env` profile files.
 
 Profile-based Docker Compose configuration
@@ -195,19 +196,18 @@ Operational Details
   machine-readable error code, HTTP status, and optional `details` payload when available.
 
 Security & Tips
-- Treat `credentials.json` and `instapaper_app_creds.json` as secrets. Do not commit them.
+- Treat credentials and Instapaper app secrets managed through the API as sensitive; restrict database and backup access accordingly.
 - Use a dedicated Instapaper app key/secret for this service.
 - For private feeds and paywalled content, confirm the site’s terms of service allow automated access.
 - Pin package versions in `requirements.txt` for reproducibility in long‑running setups.
 
 Templates
-- Copy these templates, place them in your config directory, rename (remove `.example`), and edit values:
-  - `templates/subpaperflux.example.ini` → `yourfeed.ini`
-  - `templates/credentials.example.json` → `credentials.json`
-  - `templates/site_configs.example.json` → `site_configs.json`
-  - `templates/instapaper_app_creds.example.json` → `instapaper_app_creds.json`
+- Copy these templates, place them alongside your Compose files, rename (remove `.example`), and edit values:
   - `templates/env.{dev,stage,prod}.example` → `env/<profile>.env` for Docker Compose profiles
-- After copying `credentials.json`, run through the Instapaper onboarding flow in the UI so the referenced `instapaper_id` entries receive tokens automatically.
+  - `templates/docker-compose.api.example.yml` → `docker-compose.yml` (API + Postgres for local development)
+  - `templates/docker-compose.example.yml` → `docker-compose.yml` (API + worker + optional web)
+  - `templates/docker-compose.prod.yml` → `docker-compose.yml` (production stack)
+- Provision credentials, site configurations, and feeds directly through the API or web UI instead of maintaining local `.ini`/`.json` files.
 
 ## Observability
 
@@ -238,11 +238,11 @@ To customize the welcome message:
 If any fields are left blank the UI falls back to safe defaults so visitors always see a friendly welcome and sign-in button.
 
 Quickstart
-- mkdir `config/`; copy and rename the templates above into `config/`.
-- Edit IDs in `yourfeed.ini` to match keys in your JSON files and upload them through the UI or API.
+- Copy one of the `templates/env.<profile>.example` files to `env/dev.env` (or similar) and customize values such as the OIDC issuer, API base URL, and feature flags.
+- Export `CREDENTIALS_ENC_KEY` (32-byte base64 urlsafe string) and run database migrations via `alembic upgrade head` (or `docker compose run migrate`).
 - Start the API (`uvicorn app.main:app --reload --port 8000`) and worker (`python -m app.worker`) or launch the Compose stack (`docker compose -f templates/docker-compose.example.yml up`).
-- Use `/v1/site-configs`, `/v1/credentials`, and `/v1/feeds` (or the web UI) to register the configuration data backed by those files.
-- Trigger logins, RSS ingestion, and Instapaper publishing either ad hoc via `/v1/jobs` or on a schedule via `/v1/job-schedules`.
+- Create credentials, site configurations, and feeds through the API or UI (`/v1/credentials`, `/v1/site-configs`, `/v1/feeds`).
+- Schedule logins, RSS ingestion, and Instapaper publishing via `/v1/job-schedules` or trigger jobs on demand through `/v1/jobs`.
 
 ## Testing
 

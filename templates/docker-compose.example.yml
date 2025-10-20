@@ -26,11 +26,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
       CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
-      SPF_CONFIG_DIR: /config
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       USER_MGMT_CORE: ${USER_MGMT_CORE:-1}
-    volumes:
-      - ./config:/config:rw
     depends_on:
       - db
     ports:
@@ -45,12 +42,9 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://app:app@db:5432/app}
       CREDENTIALS_ENC_KEY: ${CREDENTIALS_ENC_KEY}
-      SPF_CONFIG_DIR: /config
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
       WORKER_BACKOFF_BASE: ${WORKER_BACKOFF_BASE:-2}
-    volumes:
-      - ./config:/config:rw
     depends_on:
       - db
 
