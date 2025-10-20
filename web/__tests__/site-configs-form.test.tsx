@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithSWR, makeSWRSuccess, type RenderWithSWROptions } from './helpers/renderWithSWR'
 import SiteConfigs from '../pages/site-configs'
+import type { CredentialsPage } from '../sdk/src/models/CredentialsPage'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import type { SiteConfigSeleniumOut } from '../sdk/src/models/SiteConfigSeleniumOut'
@@ -11,6 +12,7 @@ import type { SiteConfigRecord } from '../lib/openapi'
 
 const openApiSpies = vi.hoisted(() => ({
   listSiteConfigs: vi.fn(),
+  listCredentials: vi.fn(),
   createSiteConfig: vi.fn(),
   deleteSiteConfig: vi.fn(),
   testSiteConfig: vi.fn(),
@@ -48,6 +50,7 @@ vi.mock('../lib/openapi', () => ({
   __esModule: true,
   v1: {
     listSiteConfigsV1V1SiteConfigsGet: openApiSpies.listSiteConfigs,
+    listCredentialsV1V1CredentialsGet: openApiSpies.listCredentials,
     testSiteConfigV1SiteConfigsConfigIdTestPost: openApiSpies.testSiteConfig,
   },
   siteConfigs: {
@@ -58,6 +61,7 @@ vi.mock('../lib/openapi', () => ({
 }))
 
 export const listSiteConfigsMock = openApiSpies.listSiteConfigs
+export const listCredentialsMock = openApiSpies.listCredentials
 export const createSiteConfigMock = openApiSpies.createSiteConfig
 export const deleteSiteConfigMock = openApiSpies.deleteSiteConfig
 export const testSiteConfigMock = openApiSpies.testSiteConfig
@@ -100,6 +104,24 @@ const apiItem: SiteConfigApiOut = {
   },
 }
 
+const defaultCredentialsResponse: CredentialsPage = {
+  items: [
+    {
+      id: 'cred-1',
+      kind: 'site_login',
+      description: 'API Example credential',
+      data: {},
+      ownerUserId: 'user-1',
+      siteConfigId: 'api-config-1',
+    },
+  ],
+  total: 1,
+  page: 1,
+  size: 25,
+  hasNext: false,
+  totalPages: 1,
+}
+
 const rawApiItemResponse = {
   id: 'api-config-raw',
   login_type: 'api',
@@ -130,6 +152,7 @@ export const defaultSiteConfigsResponse: SiteConfigsPage = {
 
 export type SiteConfigsSetupOptions = {
   data?: SiteConfigsPage | SiteConfigApiOut[] | SiteConfigSeleniumOut[] | SiteConfigRecord[]
+  credentials?: CredentialsPage
   locale?: string
   swr?: RenderWithSWROptions['swr']
 }
@@ -141,6 +164,7 @@ export type SiteConfigFormControls = {
   successTextClass: HTMLInputElement
   expectedSuccessText: HTMLInputElement
   requiredCookies: HTMLInputElement
+  testCredentialSelect?: HTMLSelectElement
   usernameSelector?: HTMLInputElement
   passwordSelector?: HTMLInputElement
   loginSelector?: HTMLInputElement
@@ -198,14 +222,19 @@ function resolveInputs(withinForm: ReturnType<typeof within>): SiteConfigFormCon
     base.apiCustomKeyInputs = withinForm.queryAllByLabelText(/Custom payload key/i) as HTMLInputElement[]
     base.apiCustomValueInputs = withinForm.queryAllByLabelText(/Custom payload value/i) as HTMLInputElement[]
   }
+  const testCredentialSelect = withinForm.queryByLabelText('Credential for testing', { selector: 'select' }) as HTMLSelectElement | null
+  if (testCredentialSelect) {
+    base.testCredentialSelect = testCredentialSelect
+  }
   return base
 }
 
 export async function setup(options: SiteConfigsSetupOptions = {}): Promise<SiteConfigsSetupResult> {
-  const { data = defaultSiteConfigsResponse, locale = 'en', swr } = options
+  const { data = defaultSiteConfigsResponse, credentials = defaultCredentialsResponse, locale = 'en', swr } = options
 
   Object.values(openApiSpies).forEach((spy) => spy.mockReset())
   openApiSpies.listSiteConfigs.mockResolvedValue(data)
+  openApiSpies.listCredentials.mockResolvedValue(credentials)
 
   let currentData: typeof data = data
 
@@ -231,7 +260,11 @@ export async function setup(options: SiteConfigsSetupOptions = {}): Promise<Site
     matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/site-configs',
     value: () => makeSWRSuccess(currentData, { mutate }),
   }
-  const handlers = [baseHandler, ...(swr?.handlers ?? [])]
+  const credentialsHandler = {
+    matcher: (key: any) => Array.isArray(key) && key[0] === '/v1/credentials',
+    value: () => makeSWRSuccess(credentials),
+  }
+  const handlers = [baseHandler, credentialsHandler, ...(swr?.handlers ?? [])]
   const swrConfig: RenderWithSWROptions['swr'] = {
     ...swr,
     handlers,
@@ -300,6 +333,65 @@ describe('site configs table display', () => {
       const apiCells = within(apiRow).getAllByRole('cell')
       expect(seleniumCells).toHaveLength(4)
       expect(apiCells).toHaveLength(4)
+    } finally {
+      unmount()
+    }
+  })
+
+  it('uses the selected credential when testing API configurations', async () => {
+    const tableData: SiteConfigsPage = {
+      items: [apiItem],
+      total: 1,
+      page: 1,
+      size: 25,
+      hasNext: false,
+      totalPages: 1,
+    }
+    const credentialsData: CredentialsPage = {
+      items: [
+        {
+          id: 'cred-1',
+          kind: 'site_login',
+          description: 'Primary credential',
+          data: {},
+          ownerUserId: 'user-1',
+          siteConfigId: 'api-config-1',
+        },
+        {
+          id: 'cred-2',
+          kind: 'site_login',
+          description: 'Secondary credential',
+          data: {},
+          ownerUserId: 'user-1',
+          siteConfigId: 'api-config-1',
+        },
+      ],
+      total: 2,
+      page: 1,
+      size: 25,
+      hasNext: false,
+      totalPages: 1,
+    }
+
+    const { unmount } = await setup({ data: tableData, credentials: credentialsData })
+
+    try {
+      const select = (await screen.findByLabelText('Credential for testing')) as HTMLSelectElement
+      expect(select.value).toBe('cred-1')
+
+      fireEvent.change(select, { target: { value: 'cred-2' } })
+      expect(select.value).toBe('cred-2')
+
+      testSiteConfigMock.mockResolvedValueOnce({ ok: true, login_type: 'api', context: {} })
+
+      const testButton = await screen.findByRole('button', { name: 'Test Login' })
+      fireEvent.click(testButton)
+
+      await waitFor(() => expect(testSiteConfigMock).toHaveBeenCalledTimes(1))
+      expect(testSiteConfigMock.mock.calls[0][0]).toMatchObject({
+        configId: 'api-config-1',
+        credentialId: 'cred-2',
+      })
     } finally {
       unmount()
     }

@@ -11,10 +11,15 @@ from sqlmodel import select
 from ..audit import record_audit_log
 from ..auth.oidc import get_current_user
 from ..db import get_session
-from ..models import SiteConfig as SiteConfigModel, SiteLoginType
+from ..models import (
+    Credential as CredentialModel,
+    SiteConfig as SiteConfigModel,
+    SiteLoginType,
+)
 from ..schemas import SiteConfig as SiteConfigSchema
 from ..schemas import SiteConfigOut, SiteConfigsPage
 from ..security.csrf import csrf_protect
+from ..security.crypto import decrypt_dict
 from ..services.subpaperflux_login import _execute_api_step, _extract_json_pointer
 from ..util.quotas import enforce_user_quota
 
@@ -156,7 +161,9 @@ def _serialize_cookie(cookie: Any) -> Dict[str, Any]:
     return payload
 
 
-def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
+def _test_api_site_config(
+    sc: SiteConfigModel, credential: Optional[CredentialModel] = None
+) -> Dict[str, Any]:
     api_config = dict(sc.api_config or {})
     if not api_config:
         return {
@@ -195,6 +202,30 @@ def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
         "config_name": sc.name,
         "site_url": sc.site_url,
     }
+
+    credential_payload: Optional[Dict[str, Any]] = None
+    credential_id: Optional[str] = None
+    if credential is not None:
+        credential_id = getattr(credential, "id", None)
+        try:
+            credential_payload = decrypt_dict(credential.data or {})
+        except Exception:  # pragma: no cover - defensive
+            credential_payload = {}
+
+        if credential_payload:
+            context["credential"] = dict(credential_payload)
+            for key, value in credential_payload.items():
+                dotted_key = f"credential.{key}"
+                context[dotted_key] = value
+            username_value = credential_payload.get("username")
+            if isinstance(username_value, str) and username_value:
+                context["username"] = username_value
+            password_value = credential_payload.get("password")
+            if isinstance(password_value, str) and password_value:
+                context["password"] = password_value
+        if credential_id:
+            context["credential.id"] = credential_id
+            context["credential_id"] = credential_id
 
     session = requests.Session()
     step_results: List[Dict[str, Any]] = []
@@ -332,6 +363,11 @@ def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
             },
             "resolved_cookie_map": resolved_cookie_map,
         }
+
+        if credential_id:
+            context_payload["credential_id"] = credential_id
+        if credential_payload:
+            context_payload["credential"] = credential_payload
 
         overall_ok = (
             all(step.get("ok") for step in step_results)
@@ -621,14 +657,38 @@ def delete_site_config_v1(
     summary="Test site config selectors against the login page",
 )
 def test_site_config(
-    config_id: str, current_user=Depends(get_current_user), session=Depends(get_session)
+    config_id: str,
+    credential_id: Optional[str] = Query(default=None, alias="credential_id"),
+    current_user=Depends(get_current_user),
+    session=Depends(get_session),
 ):
     sc = session.get(SiteConfigModel, config_id)
     if not sc or sc.owner_user_id != current_user["sub"]:
         return {"ok": False, "error": "not_found"}
     login_type = SiteLoginType(sc.login_type)
     if login_type == SiteLoginType.API:
-        return _test_api_site_config(sc)
+        credential_record: Optional[CredentialModel] = None
+        if credential_id:
+            credential_record = session.get(CredentialModel, credential_id)
+            if (
+                not credential_record
+                or credential_record.owner_user_id != current_user["sub"]
+            ):
+                raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Credential not found")
+            if credential_record.kind != "site_login":
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    detail="Credential must be of kind 'site_login'",
+                )
+            if (
+                credential_record.site_config_id
+                and credential_record.site_config_id != sc.id
+            ):
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    detail="Credential is not assigned to this site config",
+                )
+        return _test_api_site_config(sc, credential_record)
     if login_type != SiteLoginType.SELENIUM:
         return {
             "ok": False,

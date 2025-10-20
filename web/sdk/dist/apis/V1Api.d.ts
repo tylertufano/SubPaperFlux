@@ -374,6 +374,7 @@ export interface TestMinifluxV1IntegrationsMinifluxTestPostRequest {
 }
 export interface TestSiteConfigV1SiteConfigsConfigIdTestPostRequest {
     configId: any;
+    credentialId?: any;
 }
 export interface ToggleJobScheduleV1JobSchedulesScheduleIdTogglePostRequest {
     scheduleId: any;

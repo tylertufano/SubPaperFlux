@@ -17,6 +17,7 @@ import {
 import { useI18n } from '../lib/i18n'
 import { buildBreadcrumbs } from '../lib/breadcrumbs'
 import { useRouter } from 'next/router'
+import type { Credential } from '../sdk/src/models/Credential'
 import type { SiteConfigsPage } from '../sdk/src/models/SiteConfigsPage'
 import type { SiteConfigApiOut } from '../sdk/src/models/SiteConfigApiOut'
 import { SiteConfigApiOutFromJSON } from '../sdk/src/models/SiteConfigApiOut'
@@ -406,11 +407,36 @@ export default function SiteConfigs() {
   const { data, error, isLoading, mutate } = useSWR(['/v1/site-configs'], async (): Promise<SiteConfigList> =>
     v1.listSiteConfigsV1V1SiteConfigsGet({}),
   )
+  const { data: credentialsData } = useSWR(
+    ['/v1/credentials', 'site-configs'],
+    () => v1.listCredentialsV1V1CredentialsGet({ page: 1, size: 200 }),
+  )
   const [form, setForm] = useState<SiteConfigFormState>(() => createEmptyForm('selenium'))
   const [createErrors, setCreateErrors] = useState<LocalizedErrors>({})
   const [banner, setBanner] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
   const [editing, setEditing] = useState<SiteConfigFormState | null>(null)
   const [editErrors, setEditErrors] = useState<LocalizedErrors>({})
+  const [testCredentialSelections, setTestCredentialSelections] = useState<Record<string, string>>({})
+
+  const siteLoginCredentials = useMemo(() => {
+    const items = (credentialsData?.items ?? []) as Credential[]
+    return items.filter((cred) => cred?.kind === 'site_login')
+  }, [credentialsData])
+
+  const credentialsBySiteConfig = useMemo(() => {
+    const map = new Map<string, Credential[]>()
+    for (const cred of siteLoginCredentials) {
+      const siteConfigId = cred?.siteConfigId != null ? String(cred.siteConfigId) : ''
+      if (!siteConfigId) continue
+      const existing = map.get(siteConfigId)
+      if (existing) {
+        existing.push(cred)
+      } else {
+        map.set(siteConfigId, [cred])
+      }
+    }
+    return map
+  }, [siteLoginCredentials])
 
   function updateCreateLoginType(type: LoginType) {
     setForm((current) => {
@@ -1240,24 +1266,103 @@ export default function SiteConfigs() {
                         <td className="td">{resolveLoginTypeLabel(loginType)}</td>
                         <td className="td">
                           <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              className="btn btn-compact"
-                              onClick={async () => {
-                                try {
-                                  const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
-                                  const message = formatTestResultMessage(result, t)
-                                  setBanner({
-                                    kind: result.ok ? 'success' : 'error',
-                                    message,
-                                  })
-                                } catch (err: any) {
-                                  setBanner({ kind: 'error', message: err?.message || String(err) })
-                                }
-                              }}
-                            >
-                              {t('site_configs_test_button')}
-                            </button>
+                            {loginType === 'api' ? (
+                              (() => {
+                                const credentialOptions = credentialsBySiteConfig.get(sc.id) ?? []
+                                const firstOption = credentialOptions.find((cred) => cred?.id != null)
+                                const defaultId = firstOption ? String(firstOption.id) : ''
+                                const selectedId = testCredentialSelections[sc.id] ?? defaultId
+                                const hasSelection = Boolean(selectedId)
+                                const disabledTitle = !hasSelection
+                                  ? credentialOptions.length === 0
+                                    ? t('site_configs_test_no_credentials_hint')
+                                    : t('site_configs_test_select_hint')
+                                  : undefined
+                                return (
+                                  <>
+                                    {credentialOptions.length > 0 ? (
+                                      <label className="text-sm" key={`${sc.id}-credential-select`}>
+                                        <span className="sr-only">{t('site_configs_test_select_label')}</span>
+                                        <select
+                                          className="input"
+                                          value={selectedId}
+                                          onChange={(e) => {
+                                            const value = e.target.value
+                                            setTestCredentialSelections((prev) => ({
+                                              ...prev,
+                                              [sc.id]: value,
+                                            }))
+                                          }}
+                                          aria-label={t('site_configs_test_select_label')}
+                                        >
+                                          {credentialOptions.map((cred) => {
+                                            const optionId = cred?.id != null ? String(cred.id) : ''
+                                            if (!optionId) return null
+                                            const description =
+                                              typeof cred?.description === 'string'
+                                                ? cred.description.trim()
+                                                : ''
+                                            const label = description || optionId
+                                            return (
+                                              <option key={optionId} value={optionId}>
+                                                {label}
+                                              </option>
+                                            )
+                                          })}
+                                        </select>
+                                      </label>
+                                    ) : (
+                                      <span className="text-sm text-gray-500" key={`${sc.id}-credential-empty`}>
+                                        {t('site_configs_test_no_credentials')}
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="btn btn-compact"
+                                      disabled={!hasSelection}
+                                      title={disabledTitle}
+                                      onClick={async () => {
+                                        if (!hasSelection) return
+                                        try {
+                                          const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({
+                                            configId: sc.id,
+                                            credentialId: selectedId,
+                                          })
+                                          const message = formatTestResultMessage(result, t)
+                                          setBanner({
+                                            kind: result.ok ? 'success' : 'error',
+                                            message,
+                                          })
+                                        } catch (err: any) {
+                                          setBanner({ kind: 'error', message: err?.message || String(err) })
+                                        }
+                                      }}
+                                    >
+                                      {t('site_configs_test_button')}
+                                    </button>
+                                  </>
+                                )
+                              })()
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-compact"
+                                onClick={async () => {
+                                  try {
+                                    const result = await v1.testSiteConfigV1SiteConfigsConfigIdTestPost({ configId: sc.id })
+                                    const message = formatTestResultMessage(result, t)
+                                    setBanner({
+                                      kind: result.ok ? 'success' : 'error',
+                                      message,
+                                    })
+                                  } catch (err: any) {
+                                    setBanner({ kind: 'error', message: err?.message || String(err) })
+                                  }
+                                }}
+                              >
+                                {t('site_configs_test_button')}
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="btn btn-compact"
