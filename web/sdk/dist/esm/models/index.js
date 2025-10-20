@@ -56,6 +56,8 @@ export * from './SiteConfigApiOut';
 export * from './SiteConfigSelenium';
 export * from './SiteConfigSeleniumOut';
 export * from './SiteConfigsPage';
+export * from './SiteLoginCookie';
+export * from './SiteLoginCookiesOut';
 export * from './SiteWelcomeContent';
 export * from './SiteWelcomeSettingOut';
 export * from './SiteWelcomeSettingUpdate';
