@@ -71,6 +71,7 @@ def test_test_api_site_config_success(monkeypatch):
     assert result["status"] == 200
     context = result["context"]
     assert [step["name"] for step in context["steps"]] == ["pre_login[0]", "login"]
+    assert set(context["cookies"]["found_names"]) == {"sessionid", "csrftoken"}
     assert context["cookies"]["missing_expected"] == []
     assert context["cookies"]["missing_required"] == []
     assert context["resolved_cookie_map"]["csrftoken"]["value"] == "token-123"

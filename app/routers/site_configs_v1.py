@@ -289,12 +289,23 @@ def _test_api_site_config(sc: SiteConfigModel) -> Dict[str, Any]:
                 "value": value,
             }
 
-        found_cookie_names = sorted(jar_cookies.keys())
+        jar_cookie_names = set(jar_cookies.keys())
+        resolved_cookie_names = {
+            name
+            for name, metadata in resolved_cookie_map.items()
+            if metadata.get("value") is not None
+        }
+        known_cookie_names = jar_cookie_names | resolved_cookie_names
+        found_cookie_names = sorted(known_cookie_names)
         missing_expected = [
-            name for name in expected_cookie_names if name and name not in jar_cookies
+            name
+            for name in expected_cookie_names
+            if name and name not in known_cookie_names
         ]
         missing_required = [
-            name for name in required_cookie_names if name and name not in jar_cookies
+            name
+            for name in required_cookie_names
+            if name and name not in known_cookie_names
         ]
 
         context_payload = {
