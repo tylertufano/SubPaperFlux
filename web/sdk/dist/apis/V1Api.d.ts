@@ -169,7 +169,6 @@ export interface GetRoleV1AdminRolesRoleIdGetRequest {
 }
 export interface GetSiteConfigV1V1SiteConfigsConfigIdGetRequest {
     configId: any;
-    credentialId?: any;
 }
 export interface GetTokenV1MeTokensTokenIdGetRequest {
     tokenId: any;
