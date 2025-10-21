@@ -1535,6 +1535,9 @@ class V1Api extends runtime.BaseAPI {
                 throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling getSiteConfigV1V1SiteConfigsConfigIdGet.');
             }
             const queryParameters = {};
+            if (requestParameters.credentialId !== undefined) {
+                queryParameters['credential_id'] = requestParameters.credentialId;
+            }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
@@ -3215,9 +3218,6 @@ class V1Api extends runtime.BaseAPI {
                 throw new runtime.RequiredError('configId', 'Required parameter requestParameters.configId was null or undefined when calling testSiteConfigV1SiteConfigsConfigIdTestPost.');
             }
             const queryParameters = {};
-            if (requestParameters.credentialId !== undefined && requestParameters.credentialId !== null) {
-                queryParameters['credential_id'] = requestParameters.credentialId;
-            }
             const headerParameters = {};
             if (this.configuration && this.configuration.accessToken) {
                 const token = this.configuration.accessToken;
