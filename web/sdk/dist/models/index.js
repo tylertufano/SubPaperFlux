@@ -72,8 +72,6 @@ __exportStar(require("./SiteConfigApiOut"), exports);
 __exportStar(require("./SiteConfigSelenium"), exports);
 __exportStar(require("./SiteConfigSeleniumOut"), exports);
 __exportStar(require("./SiteConfigsPage"), exports);
-__exportStar(require("./SiteLoginCookie"), exports);
-__exportStar(require("./SiteLoginCookiesOut"), exports);
 __exportStar(require("./SiteWelcomeContent"), exports);
 __exportStar(require("./SiteWelcomeSettingOut"), exports);
 __exportStar(require("./SiteWelcomeSettingUpdate"), exports);
